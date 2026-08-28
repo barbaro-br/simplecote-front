@@ -5,6 +5,8 @@ import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { rotuloStatus } from './CotacoesPage'
 import { ItensSection } from './ItensSection'
+import { ParticipantesSection } from './ParticipantesSection'
+import { RespostasSection } from './RespostasSection'
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { AbrirCotacaoDialog } from './AbrirCotacaoDialog'
 import {
@@ -120,6 +122,12 @@ export function CotacaoDetalhePage() {
       )}
 
       <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={status === 'RASCUNHO'} />
+
+      {status !== 'CANCELADA' && (
+        <ParticipantesSection cotacaoId={id} podeConvidar={status === 'RASCUNHO'} />
+      )}
+
+      {(status === 'ABERTA' || status === 'ENCERRADA') && <RespostasSection cotacaoId={id} />}
 
       {dialog === 'abrir' && (
         <AbrirCotacaoDialog

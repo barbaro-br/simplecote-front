@@ -3,10 +3,13 @@ import { api, baixarArquivo } from '@/shared/api/api-client'
 import type {
   AbrirCotacaoValues,
   AdicionarItemValues,
+  CorrecaoLance,
   CotacaoDetalhe,
   CotacaoDuplicada,
   CotacaoResumo,
   CriarCotacaoValues,
+  GridAoVivo,
+  ParticipanteDaCotacao,
   Pedido,
   Resultado,
 } from './cotacoes.schema'
@@ -15,6 +18,9 @@ const listaKey = ['cotacoes'] as const
 const detalheKey = (id: string) => ['cotacao', id] as const
 const resultadoKey = (id: string) => ['cotacao', id, 'resultado'] as const
 const pedidosKey = (id: string) => ['cotacao', id, 'pedidos'] as const
+const participantesKey = (id: string) => ['cotacao', id, 'participantes'] as const
+const aoVivoKey = (id: string) => ['cotacao', id, 'ao-vivo'] as const
+const correcoesKey = (id: string) => ['cotacao', id, 'correcoes'] as const
 
 export function useCotacoes() {
   return useQuery({
@@ -121,3 +127,76 @@ export const baixarResultadoXlsx = (id: string) =>
 
 export const baixarPedidoPdf = (pedidoId: string) =>
   baixarArquivo(`/api/pedidos/${pedidoId}.pdf`, `pedido-${pedidoId}.pdf`)
+
+// --- Participantes e respostas (change admin-cotacoes-participantes-respostas) ---
+
+export function useParticipantes(cotacaoId: string) {
+  return useQuery({
+    queryKey: participantesKey(cotacaoId),
+    queryFn: () => api.get<ParticipanteDaCotacao[]>(`/api/cotacoes/${cotacaoId}/participantes`),
+  })
+}
+
+export function useConvidarEmpresas(cotacaoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (empresaIds: string[]) =>
+      api.post<unknown>(`/api/cotacoes/${cotacaoId}/participantes`, { empresaIds }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: participantesKey(cotacaoId) }),
+  })
+}
+
+export function useReenviarConvite(cotacaoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (participanteId: string) =>
+      api.post<unknown>(`/api/participantes/${participanteId}/reenviar-convite`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: participantesKey(cotacaoId) }),
+  })
+}
+
+// Leitura pontual da grade — sem refetchInterval (polling é Fase 2).
+export function useAoVivo(cotacaoId: string) {
+  return useQuery({
+    queryKey: aoVivoKey(cotacaoId),
+    queryFn: () => api.get<GridAoVivo>(`/api/cotacoes/${cotacaoId}/ao-vivo`),
+  })
+}
+
+export function useCorrecoes(cotacaoId: string) {
+  return useQuery({
+    queryKey: correcoesKey(cotacaoId),
+    queryFn: () => api.get<CorrecaoLance[]>(`/api/cotacoes/${cotacaoId}/correcoes`),
+  })
+}
+
+type CorrigirLanceArgs = {
+  participanteId: string
+  itemId: string
+  preco?: number
+  naoCotado?: boolean
+}
+
+export function useCorrigirLance(cotacaoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ participanteId, itemId, preco, naoCotado }: CorrigirLanceArgs) =>
+      api.put<void>(`/api/participantes/${participanteId}/lances/${itemId}`, { preco, naoCotado }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: correcoesKey(cotacaoId) })
+    },
+  })
+}
+
+export function useReabrirParticipante(cotacaoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (participanteId: string) =>
+      api.post<void>(`/api/participantes/${participanteId}/reabrir`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: participantesKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+    },
+  })
+}
