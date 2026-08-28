@@ -301,7 +301,10 @@ export const produtoSchema = z.object({
   nome: z.string().min(1, 'Informe o nome do produto'),
   codigoBarras: z.string().optional(),
   unidade: z.enum(tiposDeEmbalagem, { message: 'Informe o tipo de embalagem' }),
-  quantidadePorEmbalagem: z.coerce
+  // z.number() (não z.coerce.number()): com zod v4 o coerce produz input type
+  // `unknown`, o que quebra o Resolver<> tipado do useForm<ProdutoFormValues>.
+  // A conversão de string→number fica no register(..., { valueAsNumber: true }).
+  quantidadePorEmbalagem: z
     .number()
     .int()
     .min(1, 'A quantidade por embalagem deve ser no mínimo 1'),
@@ -393,7 +396,7 @@ export function ProdutoForm({ aoSalvar }: { aoSalvar: () => void }) {
       <Input
         type="number"
         min={1}
-        {...form.register('quantidadePorEmbalagem')}
+        {...form.register('quantidadePorEmbalagem', { valueAsNumber: true })}
         placeholder="Quantidade por embalagem"
       />
 
