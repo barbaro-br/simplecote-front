@@ -24,40 +24,42 @@ Ver `proposal.md` — Why. Estado atual:
 
 ### 1. Estrutura de `src/admin/cotacoes/`
 ```
-cotacoes.schema.ts   tipos (CotacaoResumo, CotacaoDetalhe, ItemCotacao, Participante, Resultado, Pedido) + zod de CriarCotacao/AbrirCotacao/CorrigirLance
+cotacoes.schema.ts   tipos (CotacaoResumo, CotacaoDetalhe, ItemCotacao, ItemOmitido, CotacaoDuplicada,
+                     Pedido, ItemPedido, Resultado) + zod de CriarCotacao/AbrirCotacao/AdicionarItem
 cotacoes.api.ts      hooks: useCotacoes, useCotacao(id), useCriarCotacao, useDuplicarCotacao,
-                     useAdicionarItem, useRemoverItem, useConvidarEmpresas, useReenviarConvite,
+                     useAdicionarItem, useRemoverItem,
                      useAbrir, useEncerrar, useReabrir, useCancelar, useApurar,
-                     useCorrigirLance, useReabrirParticipante,
                      useResultado(id), usePedidos(id), useEnviarPedido, baixarResultadoXlsx(id), baixarPedidoPdf(id)
 CotacoesPage.tsx        lista + filtro por status (dashboard, rota index de /admin)
 NovaCotacaoPage.tsx     form título + "duplicar de…"
-CotacaoDetalhePage.tsx  orquestra: cabeçalho de status/ações, ItensSection, ParticipantesSection, RespostasSection
-ResultadoPage.tsx       vencedores + pedidos + exportações
-componentes: ConfirmarDialog, AbrirCotacaoDialog, ItensSection, ParticipantesSection, RespostasSection
+CotacaoDetalhePage.tsx  orquestra: cabeçalho de status/ações, ItensSection
+ResultadoPage.tsx       vencedores (derivados de pedidos) + pedidos + exportações
+componentes: ConfirmarDialog, AbrirCotacaoDialog, ItensSection
 ```
-Tipos derivados da resposta real do backend (conferir no Swagger durante a implementação); os union de status vêm de `shared/domain/tipos-base.ts`.
+Tipos derivados do contrato real (`GET /v3/api-docs` do backend em execução): `CotacaoResponse` = `{id,titulo,status,prazo,criadaEm,encerradaEm,itens[]}` (sem participantes/lances); `ItemCotacaoResponse` usa campos `*Snapshot`; `AdicionarItemRequest` = `{produtoId,quantidade}`; `ResultadoDTO` = `{pedidos:PedidoDTO[], itensSemVencedor:ItemCotacaoResponse[]}`. Os union de status vêm de `shared/domain/tipos-base.ts` (já batem com o enum do backend — `alinhar-contrato-api` não é bloqueio).
+
+> `ParticipantesSection` / `RespostasSection` / `useConvidarEmpresas` / `useReenviarConvite` / `useCorrigirLance` / `useReabrirParticipante` / leitura de `ao-vivo` e `correcoes` **saíram para `admin-cotacoes-participantes-respostas`** — o backend não tem `GET` de participantes, `ParticipanteResponse` não identifica a Empresa, e `Celula` do `GridAoVivoDTO` não traz `participanteId`.
 
 ### 2. Rotas
 `src/routes.tsx`: rota index de `/admin` passa a ser `<CotacoesPage />` (hoje é um `<div>`); adicionar `cotacoes/nova` → `<NovaCotacaoPage />`, `cotacoes/:id` → `<CotacaoDetalhePage />`, `cotacoes/:id/resultado` → `<ResultadoPage />`. `AdminLayout`: transformar "Cotações" (hoje `<div>`) num `<Link to="/admin">` (ou `/admin/cotacoes`).
 
 ### 3. Diálogo de confirmação
-Um componente `ConfirmarDialog` (título, descrição da consequência, ação). Usado em `apurar` e `cancelar` obrigatoriamente; `abrir` usa um dialog próprio porque coleta o `prazo` (`<input type="datetime-local">` → ISO com timezone). `encerrar`/`reabrir` são reversíveis → sem dialog (ou um confirm leve). O texto da consequência de `apurar` segue o exemplo do `spec.md` regra 8.
+Um componente `ConfirmarDialog` (título, descrição da consequência, ação). Usado em `apurar` e `cancelar` obrigatoriamente; `abrir` usa um dialog próprio porque coleta o `prazo` (`<input type="datetime-local">` → ISO com timezone). `encerrar`/`reabrir` são reversíveis → sem dialog (ou um confirm leve). O texto da consequência de `apurar` segue o exemplo do `spec.md` regra 8. Sem lib de dialog (shadcn dialog não está instalado) — um overlay simples com `role="dialog"` e foco no botão de confirmar.
 
 ### 4. Downloads binários (XLSX/PDF)
 Adicionar ao `api-client` (ou um helper local em `cotacoes.api.ts`) uma função que faz `fetch` com o header `Authorization`, lê `response.blob()`, e dispara o download via `URL.createObjectURL` + `<a download>` temporário. Não é `useQuery` — é uma ação imperativa disparada por clique.
 
-### 5. Correção de lance / respostas
-A `RespostasSection` mostra, por participante, a grade item×lance vinda de `GET /{id}` (ou de um endpoint de respostas se existir — conferir o shape de `CotacaoResponse`). Editar um lance abre um mini-form (`preco` ou "não cotado") → `PUT /api/participantes/{pid}/lances/{itemId}`. "Reabrir resposta" é um botão por participante `RESPONDIDO`.
+### 5. Resultado → "vencedor por item" derivado
+`GET /{id}/resultado` (`ResultadoDTO`) devolve `pedidos[]` (um por Empresa vencedora) + `itensSemVencedor[]`. Não há uma lista plana item→vencedor: a `ResultadoPage` percorre `pedidos[].itens[]` e, para cada `itemCotacaoId`, exibe o `pedido.empresaNome` como vencedor e os preços (`precoEmbalagem`, `precoUnitario`, `subtotal`) que já vêm prontos. `itensSemVencedor` lista os itens sem lance. Nenhum cálculo de domínio no front.
 
 ## Risks / Trade-offs
 
-- **Shape das respostas do backend desconhecido em detalhe** (`CotacaoResponse`, `ResultadoDTO`, `GridAoVivoDTO`, `PedidoDTO`) → conferir no Swagger na implementação; se um campo esperado não existir (ex.: grade de respostas dentro de `GET /{id}`), pausar e decidir (endpoint adicional vs. derivar). 
-- **`abrir` exige `prazo`** com timezone — usar `datetime-local` e converter para ISO-8601 com offset; o backend espera `OffsetDateTime`. Cobrir com teste.
-- **Volume da change** — são ~5 telas. Mitigar: implementar na ordem lista → criar → detalhe(itens → convite → estado) → resultado, rodando `npx vitest run` a cada fatia; se estourar, `resultado`/`correção de lance` podem virar uma sub-change, mas o alvo é entregar tudo.
-- **Depende de `alinhar-contrato-api`** para o `StatusCotacao` correto; se aplicada antes, usar o enum já corrigido; se não, esta change não deve redefinir o enum — apenas consumi-lo (e sinalizar se ainda estiver errado).
-- **`AuthGuard` + backend com auth ligada** — a verificação e2e desta change depende de `ligar-front-ao-backend` ter deixado o login funcionando.
+- **Contrato conferido no `GET /v3/api-docs` do backend vivo** (feito na fase de descoberta). Divergências estruturais em participantes/respostas → movidas para `admin-cotacoes-participantes-respostas` (escolha do usuário). O resto do contrato bate.
+- **`abrir` exige `prazo`** com timezone — o campo é `<input type="datetime-local">` (valor sem offset) convertido para ISO-8601 com offset via `new Date(local).toISOString()`. Cobrir com teste.
+- **Volume da change** — telas: lista → criar → detalhe (itens + estado) → resultado, rodando `npx vitest run` a cada fatia.
+- **`StatusCotacao`** de `shared/domain/tipos-base.ts` já bate com o enum do backend (`RASCUNHO|ABERTA|ENCERRADA|PEDIDOS_GERADOS|CANCELADA`) — `alinhar-contrato-api` não é pré-requisito.
+- **`AuthGuard` + backend com auth ligada** — a verificação e2e depende de `ligar-front-ao-backend` (já validado).
 
 ## Open Questions
 
-- `GET /api/cotacoes/{id}` já devolve a grade de respostas (lances por participante×item) ou isso só vem de `GET /{id}/ao-vivo`? Resolver no Swagger na implementação: se a grade só existe no `ao-vivo`, a `RespostasSection` fora do polling usa uma leitura pontual desse mesmo endpoint (sem o `refetchInterval`), sem trazer a Fase 2 para o escopo.
+- ~~`GET /api/cotacoes/{id}` já devolve a grade de respostas?~~ **Resolvido**: não — `CotacaoResponse` só tem `itens[]` (snapshots dos produtos, sem lances). A grade de respostas está em `GET /{id}/ao-vivo` (`GridAoVivoDTO`); consumi-la faz parte de `admin-cotacoes-participantes-respostas`.

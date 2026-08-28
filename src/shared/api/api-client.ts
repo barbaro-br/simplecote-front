@@ -131,3 +131,43 @@ export const api = {
     fetchWrapper<T>(endpoint, { ...options, method: 'PUT', body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(endpoint: string, options?: RequestInit) => fetchWrapper<T>(endpoint, { ...options, method: 'DELETE' }),
 }
+
+/**
+ * Baixa um arquivo binário autenticado (XLSX, PDF) e dispara o download no navegador.
+ * Não é `useQuery` — é uma ação imperativa por clique. Mantém a mesma política de
+ * `401` do `fetchWrapper` (sessão expirada → handler / redirect).
+ */
+export async function baixarArquivo(endpoint: string, nomeArquivo: string): Promise<void> {
+  const token = getToken()
+  const response = await fetch(`${getBaseUrl()}${endpoint}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      limparToken()
+      if (sessaoExpiradaHandler) {
+        sessaoExpiradaHandler()
+      } else {
+        window.location.assign('/login')
+      }
+      throw new SessaoExpiradaError()
+    }
+    throw new ApiError({
+      type: 'about:blank',
+      title: 'Erro no download',
+      status: response.status,
+      detail: 'Não foi possível baixar o arquivo.',
+    })
+  }
+
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = nomeArquivo
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
