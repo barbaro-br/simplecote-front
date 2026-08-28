@@ -9,6 +9,9 @@ import { CotacoesPage } from './admin/cotacoes/CotacoesPage'
 import { NovaCotacaoPage } from './admin/cotacoes/NovaCotacaoPage'
 import { CotacaoDetalhePage } from './admin/cotacoes/CotacaoDetalhePage'
 import { ResultadoPage } from './admin/cotacoes/ResultadoPage'
+import { TemaClaro } from './representante/TemaClaro'
+import { CotacaoPorTokenPage } from './representante/cotacao/CotacaoPorTokenPage'
+import { PedidoPorTokenPage } from './representante/pedido/PedidoPorTokenPage'
 
 export const routes = createBrowserRouter([
   {
@@ -51,11 +54,16 @@ export const routes = createBrowserRouter([
     ],
   },
   {
-    path: '/cotacao/:token',
-    element: <div>Cotação Representante (Em breve)</div>,
-  },
-  {
-    path: '/pedido/:token',
-    element: <div>Pedido Representante (Em breve)</div>,
+    element: <TemaClaro />,
+    children: [
+      {
+        path: '/cotacao/:token',
+        element: <CotacaoPorTokenPage />,
+      },
+      {
+        path: '/pedido/:token',
+        element: <PedidoPorTokenPage />,
+      },
+    ],
   },
 ])
