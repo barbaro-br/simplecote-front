@@ -41,20 +41,7 @@ O sistema SHALL permitir, enquanto a Cotação está em `RASCUNHO`, adicionar it
 - **WHEN** a Cotação está `ABERTA`, `ENCERRADA`, `PEDIDOS_GERADOS` ou `CANCELADA`
 - **THEN** os controles de adicionar/remover item não são exibidos ou ficam desabilitados
 
-### Requirement: Convidar Empresas
-O sistema SHALL permitir selecionar uma ou mais Empresas ativas do Comprador e convidá-las para a Cotação (`POST /api/cotacoes/{id}/participantes` com `empresaIds`), listar os participantes com seu status de convite, reenviar o convite de um participante (`POST /api/participantes/{participanteId}/reenviar-convite`) e copiar o link mágico do participante.
-
-#### Scenario: Convite de empresas
-- **WHEN** o Comprador seleciona duas Empresas e confirma o convite
-- **THEN** os participantes passam a aparecer na lista com o status de convite retornado pela API
-
-#### Scenario: Reenviar convite
-- **WHEN** o Comprador aciona "Reenviar" num participante
-- **THEN** o sistema chama a API de reenvio e reflete o novo status/instante do convite
-
-#### Scenario: Erro de convite é exibido
-- **WHEN** a API rejeita o convite (ex.: Empresa sem representante, cotação fora de `RASCUNHO`)
-- **THEN** a mensagem `ProblemDetail` do backend é exibida, sem alterar a lista
+> **Movido**: os requisitos "Convidar Empresas" e "Correção de lance e reabertura de resposta pelo admin" saíram desta change para `admin-cotacoes-participantes-respostas`. Motivo: o backend não expõe `GET /api/cotacoes/{id}/participantes` (só o `POST` devolve a lista), `ParticipanteResponse` não identifica a Empresa, e `GridAoVivoDTO.Celula` não traz `participanteId` — sem essa fiação a `ParticipantesSection` e a correção de lance não têm como carregar/ligar os dados após um reload. Depende de mudança no `simplecote-back`.
 
 ### Requirement: Transições de estado com confirmação
 O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação que nomeie a consequência antes de `cancelar` e `apurar` (operações irreversíveis, regra 8 do `spec.md`). O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida.
@@ -74,17 +61,6 @@ O sistema SHALL disparar as transições de estado da Cotação — abrir com `p
 #### Scenario: Transição inválida mostra o erro do backend
 - **WHEN** a API rejeita uma transição (ex.: apurar uma cotação ainda `ABERTA` com pendências que o backend não permite)
 - **THEN** a mensagem `ProblemDetail` é exibida e o status na tela não muda
-
-### Requirement: Correção de lance e reabertura de resposta pelo admin
-O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`) e reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`), a partir da tela de detalhe da Cotação.
-
-#### Scenario: Admin corrige um lance
-- **WHEN** o Comprador edita o preço (ou marca não cotado) de um lance de um participante e confirma
-- **THEN** o sistema chama a API de correção e a grade de respostas reflete o novo valor
-
-#### Scenario: Admin reabre a resposta de um participante
-- **WHEN** o Comprador aciona "Reabrir resposta" num participante `RESPONDIDO`
-- **THEN** o sistema chama a API e o participante volta a aparecer como editável pelo representante
 
 ### Requirement: Resultado da apuração e pedidos
 O sistema SHALL exibir o resultado de uma Cotação apurada (`GET /api/cotacoes/{id}/resultado`): vencedor por item identificado pelo **nome da Empresa** (não do representante), preço da embalagem e preço unitário derivado que já vêm prontos da API. SHALL listar os pedidos gerados (`GET /api/cotacoes/{id}/pedidos`), permitir enviar um pedido (`POST /api/pedidos/{id}/enviar`), baixar o resultado em XLSX (`GET /api/cotacoes/{id}/resultado.xlsx`) e baixar o PDF de um pedido (`GET /api/pedidos/{id}.pdf`).

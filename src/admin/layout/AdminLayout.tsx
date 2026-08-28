@@ -15,10 +15,9 @@ export function AdminLayout() {
       <aside className="w-64 border-r bg-background p-4 flex flex-col">
         <h1 className="text-xl font-bold text-primary mb-8">SimpleCote</h1>
         <nav className="space-y-2 flex flex-col flex-1">
-          <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground">Dashboard</Link>
+          <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground">Cotações</Link>
           <Link to="/admin/produtos" className="text-sm text-muted-foreground hover:text-foreground">Produtos</Link>
           <Link to="/admin/empresas" className="text-sm text-muted-foreground hover:text-foreground">Empresas</Link>
-          <div className="text-sm text-muted-foreground">Cotações</div>
         </nav>
         <button
           id="sidebar-logout"
