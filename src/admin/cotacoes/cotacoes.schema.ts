@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { StatusCotacao, PedidoStatus } from '@/shared/domain/tipos-base'
+import type { StatusCotacao, PedidoStatus, ParticipanteStatus } from '@/shared/domain/tipos-base'
 
 // Tipos espelhando o contrato real do backend (GET /v3/api-docs).
 
@@ -92,3 +92,70 @@ export const adicionarItemSchema = z.object({
   quantidade: z.number().int().min(1, 'A quantidade deve ser no mínimo 1'),
 })
 export type AdicionarItemValues = z.infer<typeof adicionarItemSchema>
+
+// --- Participantes e grade ao vivo (change admin-cotacoes-participantes-respostas) ---
+
+export type ConviteStatus = 'ENVIADO' | 'FALHOU'
+
+export type ParticipanteDaCotacao = {
+  participanteId: string
+  empresaId: string
+  empresaNome: string
+  representanteNome: string
+  conviteStatus: ConviteStatus | null
+  participanteStatus: ParticipanteStatus
+  linkMagico: string
+}
+
+export type StatusCelula = 'COTADO' | 'NAO_COTADO' | 'PENDENTE'
+
+export type CelulaGrid = {
+  participanteId: string
+  empresaId: string
+  empresa: string
+  preco: number | null
+  precoUnitario: number | null
+  status: StatusCelula
+}
+
+export type ItemGrid = {
+  itemCotacaoId: string
+  nome: string
+  unidade: string
+  quantidadePorEmbalagem: number
+  quantidadeSolicitada: number
+  ultimoPrecoUnitario: number | null
+  menorPrecoUnitario: number | null
+  precos: CelulaGrid[]
+}
+
+export type GridAoVivo = {
+  status: StatusCotacao
+  respondidos: number
+  totalParticipantes: number
+  itens: ItemGrid[]
+}
+
+export type CorrecaoLance = {
+  id: string
+  lanceId: string
+  participanteId: string
+  itemCotacaoId: string
+  usuarioId: string
+  statusAnterior: string | null
+  statusNovo: string | null
+  precoAnterior: number | null
+  precoNovo: number | null
+  criadoEm: string
+}
+
+// Correção de lance pelo admin: preço da embalagem OU "não cotado".
+export const corrigirLanceSchema = z
+  .object({
+    preco: z.number().min(0).optional(),
+    naoCotado: z.boolean().optional(),
+  })
+  .refine((v) => v.naoCotado === true || typeof v.preco === 'number', {
+    message: 'Informe um preço ou marque como não cotado',
+  })
+export type CorrigirLanceValues = z.infer<typeof corrigirLanceSchema>

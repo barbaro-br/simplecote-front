@@ -71,6 +71,12 @@ function setup(status: StatusCotacao, itensIniciais: Item[] = []) {
       state.status = 'PEDIDOS_GERADOS'
       return HttpResponse.json(state)
     }),
+    // Seções ParticipantesSection / RespostasSection (montadas por status)
+    http.get('*/api/cotacoes/c-1/participantes', () => HttpResponse.json([])),
+    http.get('*/api/empresas', () => HttpResponse.json([])),
+    http.get('*/api/cotacoes/c-1/ao-vivo', () =>
+      HttpResponse.json({ status: state.status, respondidos: 0, totalParticipantes: 0, itens: [] }),
+    ),
     http.post('*/api/cotacoes/c-1/:acao', ({ params }) => {
       chamadas[params.acao as string] = (chamadas[params.acao as string] ?? 0) + 1
       return HttpResponse.json(state)
