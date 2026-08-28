@@ -11,6 +11,34 @@ cp .env.example .env.development   # ajuste VITE_API_BASE_URL se o backend não 
 
 O backend local sobe em `http://localhost:8080` via `./mvnw spring-boot:test-run` no repositório `simplecote-back` (ver `spec.md` §6).
 
+## Desenvolvimento local
+
+Roteiro para rodar front + backend juntos, com autenticação real:
+
+1. **Backend** — no repositório `simplecote-back` (requer **Docker** rodando, para o Postgres via Testcontainers):
+
+   ```bash
+   AUTH_ENABLED=true ./mvnw spring-boot:test-run
+   ```
+
+   Sobe em `http://localhost:8080` com a auth ligada e o perfil de dev, que semeia (`SeedDadosDev`) um admin e alguns dados de exemplo.
+
+2. **Front** — neste repositório:
+
+   ```bash
+   cp .env.example .env.development   # VITE_API_BASE_URL=http://localhost:8080
+   npm run dev
+   ```
+
+3. **Login** — abra `http://localhost:5173/login` e entre com as credenciais semeadas:
+
+   | Campo | Valor |
+   | ----- | ----- |
+   | E-mail | `admin@dev.local` |
+   | Senha | `admin123` |
+
+   O JWT fica em `sessionStorage` e o app redireciona para `/admin`. Recarregar a página mantém a sessão; um `401` numa chamada autenticada leva de volta para `/login`.
+
 ## Scripts
 
 | Comando         | O que faz                                    |

@@ -30,9 +30,10 @@ O roteiro do README instrui subir o backend com `AUTH_ENABLED=true` e logar como
 
 - Alternativa — backend dev com `auth.enabled=false` + o front injetar um "token de dev" falso para satisfazer o guard: recria a muleta que o `spec.md` §2 descrevia para quando não havia JWT; hoje só adiciona um caminho que não é o de produção. Rejeitada para o fluxo de demo; pode virar um atalho opcional documentado, não o padrão.
 
-### 2. `.env.development` versionado, `.env.example` como referência
-`.env.development` com `VITE_API_BASE_URL=http://localhost:8080` (Vite carrega em `npm run dev`). `.env.example` idêntico + comentário. `.gitignore` ignora `*.local`, não `.env*` → ambos são versionados. Conferir `git check-ignore`.
+### 2. `.env.example` versionado como referência; `.env.development` é local
+`.env.example` (já versionado) tem `VITE_API_BASE_URL=http://localhost:8080` + comentário citando `spec.md` §6. `.env.development` é criado pelo dev com `cp .env.example .env.development` (passo do README, tarefa 2.1) e o Vite o carrega em `npm run dev`.
 
+- `.env.development` **não é versionado**: o `~/.gitignore_global` do ambiente ignora `.env.*` com exceção só de `.env.example`/`.env.template`. Isso é o padrão convencional de Vite e casa com o passo `cp` do README — não vale adicionar `!.env.development` ao `.gitignore` do projeto só para versionar um `.env`. `git check-ignore .env.example` não retorna nada (rastreado); `git check-ignore .env.development` retorna o arquivo (local), e está tudo certo.
 - Com `VITE_API_BASE_URL` explícito, o `api-client` monta URL absoluta e o proxy do Vite deixa de ser o caminho — os dois modos (proxy com base vazia / base absoluta) passam a funcionar; o `.env` torna o comportamento explícito e igual ao de produção.
 
 ### 3. Correções de contrato: mínimas e verificadas contra o servidor
@@ -46,4 +47,4 @@ O `spec.md` já é a fonte única do front e já tem a estrutura de fases. Marca
 - **Backend não sobe** (Docker/Testcontainers ausente na máquina) → a verificação ponta a ponta fica bloqueada. Mitigar: o roteiro do README lista o pré-requisito (Docker); se o ambiente não permitir, entregar a parte de `.env`/doc/roadmap e marcar a verificação como pendente, sinalizando.
 - **Muitas divergências de contrato** → a change incha. Mitigar: teto de "ajustes pontuais"; divergência estrutural → pausa e vira item de outra change.
 - **`spec.md` §1/§2 fala em "sem login até o JWT existir"** — agora está defasado; o roadmap deve corrigir esse texto também, não só a §7.
-- **Conflito com `limpar-scaffold-shadcn`** no `.env.example` → coordenar: se aquela change já criou o arquivo, aqui só valida; senão, cria aqui.
+- **Conflito com `limpar-scaffold-shadcn`** no `.env.example` → coordenar: se aquela change já criou o arquivo, aqui só valida; senão, cria aqui. (Resolvido: `.env.example` e `.env.development` já existem, conteúdo conferido.)

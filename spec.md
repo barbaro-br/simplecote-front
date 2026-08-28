@@ -13,7 +13,7 @@ Duas áreas, dois públicos, duas prioridades de design:
 - **Painel do admin/operador** (`/admin/**`) — desktop-first, denso em dado (tabelas, grade de preços), usado por quem já teria isso numa planilha. Prioridade: deixar comparar preço rápido e não deixar errar operação irreversível (apurar, cancelar).
 - **Tela do representante** (`/cotacao/:token`, `/pedido/:token`) — mobile-first, aberta pelo link mágico, sem login. Prioridade: preencher preço com o polegar, em pé, com 3G ruim, sem medo de perder o que já digitou.
 
-O front **não introduz autenticação antes do backend ter `autenticacao-jwt` implementado** (ainda não está — `simplecote-back` Fase "por último"). Enquanto isso, o painel do admin abre direto, sem tela de login, contra a API aberta (mesma lógica do backend: constrói tudo primeiro, pluga a sessão de verdade por último — seção 7). A tela do representante nunca teve login: sempre foi só o token na URL.
+O backend `autenticacao-jwt` já está pronto e o front **já autentica de verdade**: `/login` troca e-mail/senha por um JWT, guardado em memória + `sessionStorage`; toda chamada de `/admin/**` leva o header `Authorization`; um guard redireciona pro login sem sessão (seção 7). O `compradorId` vem do próprio JWT — não há mais "Comprador fixo de dev". A tela do representante continua sem login: sempre foi só o token na URL.
 
 ---
 
@@ -27,7 +27,8 @@ Reaproveita **todos** os termos de `simplecote-back/spec.md` §2 (Comprador, Pro
 | Fila de sincronização | O conjunto de rascunhos locais pendentes de confirmação, por token de participante. |
 | Autosave | O envio automático de um lance ao servidor pouco depois do representante parar de digitar (debounce), sem precisar de um botão "salvar". |
 | Grade (grid) | A tabela do painel do admin com linhas = itens da cotação, colunas = representantes (mesma estrutura do "grid ao vivo" do backend, `spec.md` §10.5). |
-| Sessão de dev | Enquanto não há JWT, o painel assume um único Comprador fixo (o mesmo `00000000-0000-0000-0000-000000000001` semeado pelo backend em dev) — não é um conceito novo, é só o front reconhecendo a mesma muleta que o backend usa (`spec.md` §7). |
+
+> Nota histórica: havia aqui um termo "Sessão de dev" (Comprador fixo enquanto não existia JWT). O JWT já existe, o painel loga de verdade e o `compradorId` vem do token — o termo foi removido.
 
 ---
 
@@ -68,7 +69,7 @@ Pasta por feature, espelhando o pacote-por-feature do backend (`spec.md` §5) �
 
 ```
 src/
-├── admin/                    (área logada — hoje sem login de verdade, ver §1)
+├── admin/                    (área logada — login real via JWT, ver §1 e §7)
 │   ├── layout/                AdminLayout, Sidebar, Topbar
 │   ├── produtos/               lista, cadastro, bipagem
 │   ├── empresas/                cadastro (nome só)
@@ -106,29 +107,31 @@ Cada feature (`produtos/`, `cotacoes/`, etc.) tem: `*.api.ts` (hooks TanStack Qu
 ### Como trabalhar
 Mesma disciplina do backend (`spec.md` §7): **uma fatia por vez** (tipos → hook de API → componente → teste), rodar `npm test` e só avançar com testes verdes. A **fatia de referência (seção 16, Produtos)** define a forma; copiá-la nas demais.
 
-### Autenticação: front também espera o JWT por último
-O painel do admin **nunca guarda token de sessão até `autenticacao-jwt` existir no backend**. Quando existir: entra uma tela de login, um `AuthProvider` guarda o JWT (memória + `sessionStorage`, nunca `localStorage` — token de sessão não é rascunho, não deve sobreviver a um dispositivo compartilhado), e toda chamada de `admin/` passa a levar o header `Authorization`. **Nenhuma tela de feature muda** — só o `api-client` ganha o header e as rotas `/admin/**` ganham um guard que redireciona pro login sem sessão.
+### Autenticação: JWT já existe — o painel loga de verdade
+O backend `autenticacao-jwt` está pronto e o front já tem o caminho real: tela de `/login`, um `AuthProvider` que guarda o JWT em memória + `sessionStorage` (nunca `localStorage` — token de sessão não é rascunho), o `api-client` mandando o header `Authorization` em toda chamada, um `AuthGuard` que redireciona `/admin/**` para `/login` sem sessão, e um `SessaoExpiradaBridge` que desloga e volta pro login quando uma chamada autenticada recebe `401`. **Nenhuma tela de feature mudou** por causa disso. (Histórico: enquanto o JWT não existia, o painel abria direto contra a API aberta — essa muleta não existe mais.)
 
 ### Fases (espelham as fases do backend, que já estão prontas)
 
+Legenda: ✅ feito · 🟡 parcial · ❌ pendente. Estado em **2026-08-28** — ver "## Estado atual" no fim do documento.
+
 **Fase 1 — o ciclo completo, painel + representante:**
-1. Setup do projeto (seção 6) + shell de rotas (admin vazio + representante vazio) + `api-client` + `AnaliseComprasDTO`/tipos base.
-2. Produtos, Empresas, Representantes — CRUD (fatia de referência, seção 16; Representante depende de uma Empresa já existir, backend `spec.md` §10.10).
-3. Cotações: criar, montar itens, convidar **empresas** (não representantes individuais — backend `spec.md` §10.10), abrir.
-4. **Tela do representante por token** (seção 10.2 completa: visualizar, digitar preço, autosave, fila de sincronização, finalizar) — é a tela de maior risco do MVP, entra cedo de propósito, não no fim.
-5. Encerrar, apurar, ver resultado, pedidos (lista + PDF), enviar pedido.
+1. ✅ Setup do projeto (seção 6) + shell de rotas (admin + representante) + `api-client` + tipos base (`shared/domain/tipos-base.ts`).
+2. 🟡 Produtos, Empresas, Representantes — CRUD (fatia de referência, seção 16). Produtos ✅ e Empresas ✅ (com o representante principal criado junto, inline). `/admin/representantes` dedicada ❌.
+3. ❌ Cotações: criar, montar itens, convidar **empresas** (não representantes individuais — backend `spec.md` §10.10), abrir. Rota `/admin/cotacoes` ainda é placeholder.
+4. ❌ **Tela do representante por token** (seção 10.2 completa: visualizar, digitar preço, autosave, fila de sincronização, finalizar) — maior risco do MVP. `/cotacao/:token` e `/pedido/:token` ainda são placeholders.
+5. ❌ Encerrar, apurar, ver resultado, pedidos (lista + PDF), enviar pedido.
 
-**Fase 2 — acompanhamento:** grade ao vivo (polling, seção 10.1); nenhuma tela de lembrete é necessária (o lembrete é 100% backend/e-mail).
+**Fase 2 — acompanhamento:** ❌ grade ao vivo (polling, seção 10.1); nenhuma tela de lembrete é necessária (o lembrete é 100% backend/e-mail).
 
-**Fase 3 — inteligência e povoamento:** tela de análises (Recharts); importação de catálogo (upload de arquivo); scanner GTIN (bipagem de produto, com ou sem cotação em rascunho aberta); botão duplicar cotação anterior; cancelar cotação.
+**Fase 3 — inteligência e povoamento:** ❌ tela de análises (Recharts); importação de catálogo (upload de arquivo); scanner GTIN (bipagem de produto, com ou sem cotação em rascunho aberta); botão duplicar cotação anterior; cancelar cotação.
 
-**Por último:** tela de login + guard de rota + header JWT (ver acima).
+**Por último:** ✅ tela de login + guard de rota + header JWT + tratamento de `401`/sessão expirada (ver acima).
 
 ---
 
 ## 8. Modelo de telas e rotas
 
-### 8.1 Admin (`/admin/**`, hoje sem guard)
+### 8.1 Admin (`/admin/**`, protegido pelo `AuthGuard` — redireciona a `/login` sem JWT)
 
 | Rota | Tela | Backend |
 |---|---|---|
@@ -499,3 +502,32 @@ test('abre o formulário de novo produto', async () => {
 ```
 
 > **Copie exatamente esta forma** nas demais features: schema `zod` espelhando o DTO do backend, hooks `*.api.ts` como único ponto de contato com a rede, formulário `react-hook-form`, página que só orquestra hook + componentes, teste com MSW simulando a API. `api.get`/`api.post` (seção 3) resolve a URL relativa a `VITE_API_BASE_URL` — nenhuma feature conhece a URL completa do backend.
+
+---
+
+## Estado atual (2026-08-28)
+
+Snapshot do que está feito e do que falta, com os itens rastreáveis por change do OpenSpec (`openspec/changes/`).
+
+### Feito
+
+- **Setup + infra**: shell de rotas (`routes.tsx`), `api-client` (`fetch` + `ProblemDetail` → `ApiError`, header `Authorization`, tratamento de `401`), tipos base, MSW compartilhado (`src/setupTests.ts`). Changes: `setup-inicial-projeto`, `melhoria-setup-inicial`, `corrigir-build-e-tipos` (build `tsc -b` + `vite build` verde).
+- **Auth (fase "por último")**: `/login`, `AuthContext` (JWT em `sessionStorage`), `AuthGuard` em `/admin/**`, `SessaoExpiradaBridge` (401 → logout + `/login`). Testado. Changes: `auth-com-teste`.
+- **Produtos** (`/admin/produtos`): listar, criar, editar, inativar, lookup por GTIN. Change `feature-produtos`.
+- **Empresas** (`/admin/empresas`): listar, criar (empresa + representante principal inline), editar nome, inativar. Change `feature-empresa-representante-e-edicao`.
+- **Ligação front ↔ backend local**: `.env.example`/`.env.development` (`VITE_API_BASE_URL`), seção "Desenvolvimento local" no `README.md`. Change `ligar-front-ao-backend` (esta).
+
+### Gap até a Fase 1 completa
+
+- **Cotações (admin)** — `/admin/cotacoes` ainda é placeholder: criar, montar itens, convidar empresas, abrir, encerrar/reabrir/cancelar, apurar, ver resultado, pedidos (lista + PDF/XLSX), enviar pedido. Change: `admin-cotacoes` (+ follow-up para apurar/resultado/pedidos se não couber).
+- **Tela do representante por token** — `/cotacao/:token` e `/pedido/:token` ainda são placeholders: visualizar, digitar preço, autosave, **fila de sincronização** (seção 10.2, maior risco do MVP), finalizar. Change: `representante-cotacao-token`.
+- **Contrato API** — conferir shapes reais contra o backend vivo (Swagger) e corrigir divergências pontuais. Change: `alinhar-contrato-api`. As tarefas 3.1–3.4 de `ligar-front-ao-backend` (verificação ponta a ponta com o backend rodando) ficaram **pendentes** — precisam de Docker + `simplecote-back` no ar.
+
+### Follow-ups explícitos
+
+- **`/admin/representantes` dedicada** — hoje o representante só nasce junto da empresa; falta a tela de listar/editar/inativar/trocar de empresa (backend `spec.md` §10.10).
+- **Fase 2 — grade ao vivo** (`/admin/cotacoes/:id/ao-vivo`): polling (seção 10.1).
+- **Fase 3** — tela de análises (Recharts), importação de catálogo (upload), scanner GTIN (`@zxing/browser`), duplicar cotação, cancelar cotação.
+- **`/admin/usuarios`** — CRUD + trocar senha.
+- **Limpeza de scaffold shadcn** — change `limpar-scaffold-shadcn`.
+- **CI** — gate de `tsc -b` + `npm run build` + `npx vitest run` (hoje só roda localmente).
