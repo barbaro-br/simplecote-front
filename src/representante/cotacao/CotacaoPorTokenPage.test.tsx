@@ -56,9 +56,19 @@ function renderPage() {
 
 const campoPreco = () => screen.getByLabelText(/preço da embalagem/i)
 
-beforeEach(() => localStorage.clear())
+const mockStore: Record<string, string> = {}
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: (k: string) => mockStore[k] || null,
+    setItem: (k: string, v: string) => { mockStore[k] = String(v) },
+    removeItem: (k: string) => delete mockStore[k],
+    clear: () => { for (const k in mockStore) delete mockStore[k] }
+  }
+})
 
-test('token válido: mostra a saudação, o contexto e os itens', async () => {
+beforeEach(() => window.localStorage.clear())
+
+test('token válido: mostra a saudação, o contexto e os itens, com progresso', async () => {
   server.use(http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao())))
   renderPage()
 
@@ -66,9 +76,24 @@ test('token válido: mostra a saudação, o contexto e os itens', async () => {
   expect(screen.getByText(/Atacadão Central · cotação de Supermercado X/)).toBeInTheDocument()
   expect(screen.getByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /finalizar resposta/i })).toBeInTheDocument()
+  
+  // O item de mock está PENDENTE e preço null, então 0/1
+  expect(screen.getByText('Respondidos: 0/1')).toBeInTheDocument()
 })
 
-test('podeEditar falso: campos desabilitados e sem botão de finalizar', async () => {
+test('prazo alerta < 2h renderiza classe text-destructive', async () => {
+  // Simulando que falta menos de 2h
+  const daquiUmPouco = new Date()
+  daquiUmPouco.setMinutes(daquiUmPouco.getMinutes() + 60) // 1h no futuro
+  
+  server.use(http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao({ prazo: daquiUmPouco.toISOString() }))))
+  renderPage()
+
+  const prazoEl = await screen.findByText(/Prazo:/i)
+  expect(prazoEl).toHaveClass('text-destructive')
+})
+
+test('podeEditar falso: campos desabilitados e sem botão de finalizar/barra de progresso', async () => {
   server.use(
     http.get(`*/public/cotacoes/${TOKEN}`, () =>
       HttpResponse.json(cotacao({ podeEditar: false, participanteStatus: 'RESPONDIDO' })),
@@ -79,6 +104,7 @@ test('podeEditar falso: campos desabilitados e sem botão de finalizar', async (
   expect(await screen.findByText(/sua resposta já foi enviada/i)).toBeInTheDocument()
   expect(campoPreco()).toBeDisabled()
   expect(screen.queryByRole('button', { name: /finalizar resposta/i })).not.toBeInTheDocument()
+  expect(screen.queryByText(/Respondidos:/i)).not.toBeInTheDocument()
 })
 
 test('token inválido: estado de link inválido', async () => {
@@ -126,7 +152,7 @@ test('falha de rede: entrada persiste no localStorage e célula mostra "sem cone
   await sleep(APOS_DEBOUNCE)
 
   expect(await screen.findByText(/sem conexão/i)).toBeInTheDocument()
-  const fila = JSON.parse(localStorage.getItem(CHAVE_FILA) ?? '{}')
+  const fila = JSON.parse(window.localStorage.getItem(CHAVE_FILA) ?? '{}')
   expect(fila['i-1']).toMatchObject({ preco: 30 })
 })
 
@@ -149,7 +175,7 @@ test('erro 422: ProblemDetail exibido e entrada some da fila', async () => {
   await waitFor(() =>
     expect(screen.getByRole('alert')).toHaveTextContent('Preço acima do teto permitido.'),
   )
-  expect(localStorage.getItem(CHAVE_FILA)).toBeNull()
+  expect(window.localStorage.getItem(CHAVE_FILA)).toBeNull()
 })
 
 test('concorrência: duas edições rápidas no mesmo campo — estado final = último valor', async () => {
@@ -173,7 +199,7 @@ test('concorrência: duas edições rápidas no mesmo campo — estado final = �
 
   expect(await screen.findByText('✓ salvo')).toBeInTheDocument()
   expect(precos.at(-1)).toBe(12)
-  expect(localStorage.getItem(CHAVE_FILA)).toBeNull()
+  expect(window.localStorage.getItem(CHAVE_FILA)).toBeNull()
 })
 
 test('finalizar: bloqueado com pendência; libera (via online) e limpa a fila com 204', async () => {
@@ -202,5 +228,5 @@ test('finalizar: bloqueado com pendência; libera (via online) e limpa a fila co
   await waitFor(() => expect(finalizarBtn).toBeEnabled())
 
   await user.click(finalizarBtn)
-  await waitFor(() => expect(localStorage.getItem(CHAVE_FILA)).toBeNull())
+  await waitFor(() => expect(window.localStorage.getItem(CHAVE_FILA)).toBeNull())
 })
