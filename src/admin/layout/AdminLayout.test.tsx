@@ -27,7 +27,7 @@ function renderLayout(initial = '/admin/produtos') {
 }
 
 beforeEach(() => {
-  localStorage.clear()
+  window.localStorage.clear()
 })
 
 test('3.1 — a rota atual destaca o item de nav correspondente', () => {

@@ -102,6 +102,8 @@ export type ParticipanteDaCotacao = {
   empresaId: string
   empresaNome: string
   representanteNome: string
+  whatsappRepresentante?: string | null
+  emailRepresentante?: string | null
   conviteStatus: ConviteStatus | null
   participanteStatus: ParticipanteStatus
   linkMagico: string

@@ -8,7 +8,17 @@ import {
 
 const TOKEN = 'tok-abc'
 
-beforeEach(() => localStorage.clear())
+const mockStore: Record<string, string> = {}
+Object.defineProperty(globalThis, 'localStorage', {
+  value: {
+    getItem: (k: string) => mockStore[k] || null,
+    setItem: (k: string, v: string) => { mockStore[k] = String(v) },
+    removeItem: (k: string) => delete mockStore[k],
+    clear: () => { for (const k in mockStore) delete mockStore[k] }
+  }
+})
+
+beforeEach(() => globalThis.localStorage.clear())
 
 test('gravar / ler / remover / limpar', () => {
   expect(lerFila(TOKEN)).toEqual({})

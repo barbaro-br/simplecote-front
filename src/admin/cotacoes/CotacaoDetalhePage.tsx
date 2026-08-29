@@ -132,7 +132,12 @@ export function CotacaoDetalhePage() {
       <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={status === 'RASCUNHO'} />
 
       {status !== 'CANCELADA' && (
-        <ParticipantesSection cotacaoId={id} podeConvidar={status === 'RASCUNHO'} />
+        <ParticipantesSection
+          cotacaoId={id}
+          titulo={cotacao.titulo}
+          prazo={cotacao.prazo}
+          podeConvidar={status === 'RASCUNHO'}
+        />
       )}
 
       {(status === 'ABERTA' || status === 'ENCERRADA') && <RespostasSection cotacaoId={id} />}

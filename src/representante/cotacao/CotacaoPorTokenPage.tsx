@@ -6,6 +6,7 @@ import { ApiError } from '@/shared/api/api-client'
 import { ItemLanceCard } from './ItemLanceCard'
 import { useCotacaoPorToken, useFinalizar } from './cotacao-token.api'
 import { useFilaDeSincronizacao } from './useFilaDeSincronizacao'
+import { prazoExpirando, contarRespondidos } from './cotacao-token.derivados'
 
 export function CotacaoPorTokenPage() {
   const { token = '' } = useParams()
@@ -31,6 +32,10 @@ export function CotacaoPorTokenPage() {
 
   const d = cotacao.data
   const somenteLeitura = !d.podeEditar
+  const expirando = prazoExpirando(d.prazo)
+  const respondidos = contarRespondidos(d.itens)
+  const total = d.itens.length
+  const pct = total > 0 ? (respondidos / total) * 100 : 0
 
   async function aoFinalizar() {
     setErroFinal(null)
@@ -42,42 +47,58 @@ export function CotacaoPorTokenPage() {
     }
   }
 
+  // Comentário: TemaClaro.tsx atua como container de rolagem
   return (
-    <div className="mx-auto max-w-md p-4 space-y-4">
-      <header className="space-y-1">
+    <div className="mx-auto max-w-md pb-32">
+      <header className="sticky top-0 z-20 space-y-1 bg-background/95 backdrop-blur border-b px-4 py-3">
         <h1 className="text-xl font-semibold">Olá, {d.representanteNome.split(' ')[0]}!</h1>
         <p className="text-sm text-muted-foreground">
           {d.empresaNome} · cotação de {d.compradorNome}
         </p>
         <p className="text-base font-medium pt-1">{d.titulo}</p>
         {d.prazo && (
-          <p className="text-sm text-muted-foreground">Prazo: {dataHoraBr(d.prazo)}</p>
+          <p className={`text-sm ${expirando ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+            Prazo: {dataHoraBr(d.prazo)}
+          </p>
         )}
       </header>
 
-      {somenteLeitura && (
-        <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
-          {d.participanteStatus === 'RESPONDIDO'
-            ? 'Sua resposta já foi enviada. Os preços abaixo são só para conferência.'
-            : 'Esta cotação não está aberta para respostas.'}
-        </div>
-      )}
+      <div className="px-4 py-4 space-y-4">
+        {somenteLeitura && (
+          <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+            {d.participanteStatus === 'RESPONDIDO'
+              ? 'Sua resposta já foi enviada. Os preços abaixo são só para conferência.'
+              : 'Esta cotação não está aberta para respostas.'}
+          </div>
+        )}
 
-      <div className="space-y-3">
-        {d.itens.map((item) => (
-          <ItemLanceCard
-            key={item.itemCotacaoId}
-            item={item}
-            podeEditar={d.podeEditar}
-            status={fila.statusPorItem[item.itemCotacaoId]}
-            erro={fila.errosPorItem[item.itemCotacaoId]}
-            aoAssentar={(patch) => fila.gravarEEnviar(item.itemCotacaoId, patch)}
-          />
-        ))}
+        <div className="space-y-3">
+          {d.itens.map((item) => (
+            <div key={item.itemCotacaoId} className="scroll-mt-32">
+              <ItemLanceCard
+                item={item}
+                podeEditar={d.podeEditar}
+                status={fila.statusPorItem[item.itemCotacaoId]}
+                erro={fila.errosPorItem[item.itemCotacaoId]}
+                aoAssentar={(patch) => fila.gravarEEnviar(item.itemCotacaoId, patch)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {!somenteLeitura && (
-        <div className="space-y-2 pt-2">
+        <div className="sticky bottom-0 z-20 border-t bg-background/95 backdrop-blur px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-muted-foreground">Respondidos: {respondidos}/{total}</span>
+            <div className="h-2 w-1/2 overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full bg-primary transition-all duration-300"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+          
           {erroFinal && (
             <div role="alert" className="text-sm text-destructive">
               {erroFinal}
