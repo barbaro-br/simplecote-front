@@ -142,19 +142,26 @@ jobs:
   do job `deploy`) → custo aceitável (repo público, minutos grátis); evita passar
   artefato entre jobs.
 
+### D6. Desligar o auto-deploy nativo por config, não por toggle no dashboard
+
+`vercel.json` ganha `"git": { "deploymentEnabled": { "main": false } }`. Pushes em
+`main` deixam de disparar deploy automático via Git; o `vercel deploy --prebuilt
+--prod` do job `deploy` continua funcionando (a flag só afeta o gatilho automático).
+Vantagem sobre o toggle em Settings → Git: versionado, revisável no PR, e entra em
+vigor no mesmo merge que ativa a pipeline — um merge faz o cutover inteiro.
+
 ## Migration Plan
 
-1. **Secrets:** obter o `VERCEL_ORG_ID` (ver `tasks.md`) e rodar os dois
-   `gh secret set` (`VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`). `VERCEL_TOKEN` já existe.
-2. **Mergear este change** (`deploy.yml`) via PR. Conferir na aba Actions:
-   job `ci` roda no PR, job `deploy` **não** aparece.
-3. **Push/merge em `main`:** `ci` roda; passando, `deploy` roda e publica na Vercel.
-   Conferir o deployment no log do Actions e na URL da demo.
-4. **Só então desligar o nativo:** Vercel → Project → Settings → Git → desligar deploy
-   de produção automático.
-5. **Rollback:** reativar o auto-deploy nativo da Vercel e remover/desabilitar o
-   `deploy.yml`. Reverter o que já subiu: Vercel → promover o deployment anterior
-   (ou `vercel rollback`).
+1. **Secrets:** `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `VERCEL_TOKEN` no repo (feito).
+2. **PR** com `deploy.yml` + o bloco `git.deploymentEnabled` no `vercel.json`.
+   Conferir na aba Actions: job `ci` roda no PR, job `deploy` **não** aparece.
+3. **Merge em `main`:** `ci` roda; passando, `deploy` publica na Vercel via CLI. O
+   `git.deploymentEnabled.main=false` já vale nesse commit, então a Vercel **não**
+   cria um deployment "via Git" pra esse merge — só o do Actions. Conferir no log do
+   Actions e na URL da demo.
+4. **Rollback:** remover o bloco `git.deploymentEnabled` (volta o auto-deploy nativo)
+   e/ou desabilitar o `deploy.yml`. Reverter o que subiu: Vercel → promover o
+   deployment anterior (ou `vercel rollback`).
 
 ## Open Questions
 

@@ -12,11 +12,11 @@
 
 ## 3. Verificação — CI sem deploy (PR)
 
-- [ ] 3.1 Abrir um PR trivial no `simplecote-front` (ex.: linha em `README.md`). Verificar na aba **Actions** / checks do PR: job `ci` roda (`npm ci` → `npm run build` → `npx vitest run` → `npx oxlint`) e o job `deploy` **não** aparece.
-- [ ] 3.2 Num branch de PR, quebrar um teste de propósito e abrir PR. Verificar: check do PR fica vermelho no passo `npx vitest run`; `deploy` continua ausente. Descartar o branch depois.
+- [x] 3.1 Abrir um PR trivial no `simplecote-front`. Verificar na aba **Actions** / checks do PR: job `ci` roda (`npm ci` → `npm run build` → `npx vitest run` → `npx oxlint`) e o job `deploy` **não** aparece. — Feito no PR #1: `ci` = success, `deploy` = skipped.
+- [ ] 3.2 (opcional) Num branch de PR, quebrar um teste de propósito e abrir PR. Verificar: check do PR fica vermelho no passo `npx vitest run`; `deploy` continua ausente. Descartar o branch depois. — Pulável: o gate já ficou provado no 3.1.
 
-## 4. Verificação — primeiro deploy real e cutover
+## 4. Desligar o auto-deploy nativo + primeiro deploy real
 
-- [ ] 4.1 Mergear/pushar em `main` (o merge do próprio `deploy.yml` serve). Verificar na aba Actions: `ci` passa, então `deploy` roda `vercel pull` → `vercel build --prod` → `vercel deploy --prebuilt --prod` sem erro, e o log imprime a URL do deployment de produção.
-- [ ] 4.2 Abrir a URL da demo do cliente e confirmar que reflete o commit recém-mergeado (checar algo visível do último commit).
-- [ ] 4.3 Só depois de 4.1–4.2 verdes: Vercel → Project `prj_3KCt0k8mPZAbYNr8pRaLZCXiBVHa` → Settings → Git → **desligar** o deploy de produção automático. Verificar: a opção fica desmarcada; um push novo em `main` passa a publicar só pelo Actions (sem deployment "via Git" na aba Deployments da Vercel).
+- [x] 4.1 Desligar o auto-deploy da Vercel **por config** (em vez do toggle no dashboard): adicionar ao `vercel.json` `"git": { "deploymentEnabled": { "main": false } }`. Efeito: pushes em `main` não disparam mais deploy automático via Git; deploys explícitos via CLI (`vercel deploy --prebuilt --prod`) seguem funcionando. Verificar: `vercel.json` parseia e contém o bloco.
+- [ ] 4.2 Mergear o PR #1 em `main`. Verificar na aba Actions: `ci` passa, então `deploy` roda `vercel pull` → `vercel build --prod` → `vercel deploy --prebuilt --prod` sem erro, e o log imprime a URL do deployment de produção. (Na aba Deployments da Vercel, esse merge não deve gerar um deployment "via Git" — só o do Actions.)
+- [ ] 4.3 Abrir a URL da demo do cliente e confirmar que reflete o commit recém-mergeado.
