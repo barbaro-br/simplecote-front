@@ -15,6 +15,9 @@ type Props = {
 const FOCAVEIS =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
+// Pilha de dialogs abertos: com modais aninhados, só o do topo responde a `Escape`.
+const pilhaAberta: symbol[] = []
+
 /**
  * Dialog modal reutilizável: portal no `body`, overlay clique-fora, `Escape` fecha,
  * scroll-lock do body com cleanup, foco no container ao abrir e devolvido ao gatilho
@@ -33,6 +36,8 @@ export function Dialog({ open, onClose, title, ariaLabel, size = 'md', children 
   useEffect(() => {
     if (!open) return
 
+    const id = Symbol('dialog')
+    pilhaAberta.push(id)
     gatilhoRef.current = document.activeElement
     const overflowAntes = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -41,7 +46,12 @@ export function Dialog({ open, onClose, title, ariaLabel, size = 'md', children 
     const autofocus = container?.querySelector<HTMLElement>('[autofocus]')
     ;(autofocus ?? container)?.focus()
 
+    function noTopo() {
+      return pilhaAberta[pilhaAberta.length - 1] === id
+    }
+
     function onKeyDown(e: KeyboardEvent) {
+      if (!noTopo()) return
       if (e.key === 'Escape') {
         e.stopPropagation()
         onCloseRef.current()
@@ -65,6 +75,8 @@ export function Dialog({ open, onClose, title, ariaLabel, size = 'md', children 
     document.addEventListener('keydown', onKeyDown, true)
     return () => {
       document.removeEventListener('keydown', onKeyDown, true)
+      const i = pilhaAberta.indexOf(id)
+      if (i !== -1) pilhaAberta.splice(i, 1)
       document.body.style.overflow = overflowAntes
       if (gatilhoRef.current instanceof HTMLElement) gatilhoRef.current.focus()
     }

@@ -3,6 +3,8 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { useProdutos } from '@/admin/produtos/produtos.api'
+import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
+import type { Produto } from '@/admin/produtos/produtos.schema'
 import { adicionarItemSchema, type ItemCotacao } from './cotacoes.schema'
 import { useAdicionarItem, useRemoverItem } from './cotacoes.api'
 
@@ -20,11 +22,20 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   const [produtoId, setProdutoId] = useState('')
   const [quantidade, setQuantidade] = useState('1')
   const [formAberto, setFormAberto] = useState(false)
+  const [cadastroAberto, setCadastroAberto] = useState(false)
 
   function fecharForm() {
     setFormAberto(false)
+    setCadastroAberto(false)
     setProdutoId('')
     setQuantidade('1')
+  }
+
+  // Volta do cadastro aninhado: fecha só o 2º modal e deixa o novo Produto
+  // pré-selecionado no seletor do "adicionar item" (o 1º modal seguiu montado).
+  function aoCadastrarProduto(novo?: Produto) {
+    setCadastroAberto(false)
+    if (novo) setProdutoId(novo.id)
   }
 
   async function aoAdicionar() {
@@ -70,6 +81,13 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
                   </option>
                 ))}
             </select>
+            <button
+              type="button"
+              onClick={() => setCadastroAberto(true)}
+              className="mt-1 text-xs text-primary hover:underline"
+            >
+              Não achou? Cadastrar novo produto
+            </button>
           </div>
           <div>
             <label htmlFor="item-qtd" className="text-xs text-muted-foreground">
@@ -96,6 +114,16 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
             </Button>
           </div>
         </div>
+      </Dialog>
+
+      {/* 2º modal: cadastro de Produto sem sair da montagem da Cotação. */}
+      <Dialog
+        open={editavel && formAberto && cadastroAberto}
+        onClose={() => setCadastroAberto(false)}
+        size="lg"
+        ariaLabel="Cadastrar novo produto"
+      >
+        <ProdutoForm aoSalvar={aoCadastrarProduto} />
       </Dialog>
 
       <div className="rounded-md border overflow-hidden">
