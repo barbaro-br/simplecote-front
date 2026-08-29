@@ -45,12 +45,12 @@ function setup(opts: { convidarStatus?: number } = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={queryClient}>
-      <ParticipantesSection cotacaoId="c-1" podeConvidar />
+      <ParticipantesSection cotacaoId="c-1" titulo="Cotação 1" prazo="2026-08-30T10:00:00Z" podeConvidar />
     </QueryClientProvider>,
   )
 }
 
-test('convidar 2 empresas adiciona 2 participantes à lista', async () => {
+test('convidar 2 empresas adiciona 2 participantes à lista e exibe botões', async () => {
   setup()
   const user = userEvent.setup()
 
@@ -63,6 +63,16 @@ test('convidar 2 empresas adiciona 2 participantes à lista', async () => {
     expect(within(tabela).getByText('Atacadão Central')).toBeInTheDocument()
     expect(within(tabela).getByText('Distribuidora Sul')).toBeInTheDocument()
   })
+
+  // verifica botões
+  const wppButtons = await screen.findAllByRole('button', { name: /enviar por whatsapp/i })
+  expect(wppButtons).toHaveLength(2)
+
+  const mailButtons = await screen.findAllByRole('button', { name: /enviar por e-mail/i })
+  expect(mailButtons).toHaveLength(2)
+
+  const menuButtons = await screen.findAllByRole('button', { name: /mais opções/i })
+  expect(menuButtons).toHaveLength(2)
 })
 
 test('erro ProblemDetail no convite é exibido sem alterar a lista', async () => {
