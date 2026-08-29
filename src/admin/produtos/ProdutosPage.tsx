@@ -1,13 +1,16 @@
 import { useState } from 'react'
+import { Eye, EyeOff, Pencil } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
-import { useProdutos, useInativarProduto } from './produtos.api'
+import { IconButton } from '@/shared/components/ui/icon-button'
+import { useProdutos, useInativarProduto, useAtivarProduto } from './produtos.api'
 import { ProdutoForm } from './ProdutoForm'
 import type { Produto } from './produtos.schema'
 
 export function ProdutosPage() {
-  const { data: produtos, isLoading, error } = useProdutos()
+  const { data: produtos, isLoading, error } = useProdutos({ incluirInativos: true })
   const inativar = useInativarProduto()
+  const ativar = useAtivarProduto()
   const [mostrarForm, setMostrarForm] = useState(false)
   const [produtoEditando, setProdutoEditando] = useState<Produto | undefined>(undefined)
 
@@ -65,31 +68,39 @@ export function ProdutosPage() {
               </tr>
             ) : (
               produtos.map((produto) => (
-                <tr key={produto.id} className={produto.ativo ? 'hover:bg-muted/40 transition-colors' : 'opacity-50'}>
+                <tr
+                  key={produto.id}
+                  className={`transition-colors hover:bg-muted/40 ${produto.ativo ? '' : 'opacity-50 text-muted-foreground'}`}
+                >
                   <td className="px-4 py-3">{produto.nome} {produto.ativo ? '' : '(Inativo)'}</td>
                   <td className="px-4 py-3">{produto.codigoBarras ?? '—'}</td>
                   <td className="px-4 py-3">{produto.unidade}</td>
                   <td className="px-4 py-3 tabular-nums">{produto.quantidadePorEmbalagem}</td>
                   <td className="px-4 py-3 text-right">
-                    {produto.ativo && (
-                      <div className="flex gap-2 justify-end">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => abrirEditar(produto)}
-                        >
-                          Editar
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => inativar.mutate(produto.id)}
-                          disabled={inativar.isPending}
-                        >
-                          Inativar
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex gap-1 justify-end">
+                      {produto.ativo ? (
+                        <>
+                          <IconButton
+                            icon={Pencil}
+                            label="Editar"
+                            onClick={() => abrirEditar(produto)}
+                          />
+                          <IconButton
+                            icon={EyeOff}
+                            label="Inativar"
+                            onClick={() => inativar.mutate(produto.id)}
+                            disabled={inativar.isPending}
+                          />
+                        </>
+                      ) : (
+                        <IconButton
+                          icon={Eye}
+                          label="Ativar"
+                          onClick={() => ativar.mutate(produto.id)}
+                          disabled={ativar.isPending}
+                        />
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

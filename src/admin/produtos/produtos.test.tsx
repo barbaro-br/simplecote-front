@@ -80,6 +80,34 @@ test('abre o formulário de novo produto, preenche e salva', async () => {
   })
 })
 
+test('produto inativo aparece apagado com "Ativar"; clicar reativa', async () => {
+  const lista = [
+    { id: '1', nome: 'Arroz 5kg', codigoBarras: '1234567890123', unidade: 'Fardo', quantidadePorEmbalagem: 30, ativo: true },
+    { id: '9', nome: 'Produto Descontinuado', codigoBarras: null, unidade: 'Caixa', quantidadePorEmbalagem: 1, ativo: false },
+  ]
+  server.use(
+    http.get('*/api/produtos', () => HttpResponse.json(lista)),
+    http.post('*/api/produtos/:id/ativar', ({ params }) => {
+      const p = lista.find((x) => x.id === params.id)
+      if (p) p.ativo = true
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText(/Produto Descontinuado/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Ativar' })).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Ativar' }))
+
+  await waitFor(() => {
+    expect(screen.queryByRole('button', { name: 'Ativar' })).not.toBeInTheDocument()
+  })
+  expect(screen.getAllByRole('button', { name: 'Inativar' })).toHaveLength(2)
+})
+
 test('edita um produto existente', async () => {
   renderComQuery(<ProdutosPage />)
   const user = userEvent.setup()

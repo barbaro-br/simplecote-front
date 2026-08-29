@@ -4,10 +4,14 @@ import type { Produto, ProdutoFormValues } from './produtos.schema'
 
 const chave = ['produtos'] as const
 
-export function useProdutos() {
+// Padrão: só ativos (`queryKey ['produtos']`), que é o que o seletor de
+// "adicionar item" espera. A tela de Produtos passa `{ incluirInativos: true }`.
+export function useProdutos(opts?: { incluirInativos?: boolean }) {
+  const incluirInativos = opts?.incluirInativos ?? false
   return useQuery({
-    queryKey: chave,
-    queryFn: () => api.get<Produto[]>('/api/produtos'),
+    queryKey: incluirInativos ? ([...chave, { incluirInativos: true }] as const) : chave,
+    queryFn: () =>
+      api.get<Produto[]>(`/api/produtos${incluirInativos ? '?incluirInativos=true' : ''}`),
   })
 }
 
@@ -28,6 +32,14 @@ export function useInativarProduto() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => api.post<void>(`/api/produtos/${id}/inativar`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: chave }),
+  })
+}
+
+export function useAtivarProduto() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.post<void>(`/api/produtos/${id}/ativar`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: chave }),
   })
 }
