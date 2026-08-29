@@ -54,36 +54,44 @@ Roteiro para rodar front + backend juntos, com autenticação real:
 `VITE_API_BASE_URL` — base URL da API. Definida em `.env.development` (local, não versionado);
 `.env.example` é o template versionado. Ver `spec.md` §6.
 
-## Deploy no Heroku
+## Deploy na Vercel
 
-App separado do backend. **Pré-requisito:** o `simplecote-back` já publicado (change irmã `preparar-deploy-heroku`) — precisamos da URL dele.
+App separado do backend. **Pré-requisito:** o `simplecote-back` já publicado no Heroku — precisamos da URL dele.
 
-Pré-requisitos: [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli), `heroku login`.
+Toda a configuração de build/roteamento/headers está versionada em `vercel.json`
+(`buildCommand: npm run build`, `outputDirectory: dist`, `rewrites` de SPA para `/index.html`,
+headers de segurança e `Cache-Control: immutable` para `/assets/*`).
 
-```bash
-heroku create <app-front>
-heroku buildpacks:add -a <app-front> heroku/nodejs
-heroku buildpacks:add -a <app-front> heroku-community/static
-
-heroku config:set -a <app-front> VITE_API_BASE_URL=https://<app-back>.herokuapp.com
-
-git push heroku main
-```
-
-O buildpack `heroku/nodejs` roda `npm ci` + `npm run build` (script `build`) → `dist/`; o
-`heroku-community/static` serve o `dist/` (config em `static.json`: `routes: {"/**": "index.html"}`
-para o SPA fallback, `https_only`). O `VITE_API_BASE_URL` é lido no build via `process.env`.
+1. **Importar o repo** — no painel da Vercel, *Add New… → Project* e conecte este repositório
+   GitHub. O framework **Vite** é auto-detectado; build e output vêm do `vercel.json`, não mexa
+   nos campos.
+2. **Node.js Version** — em *Project → Settings → Build & Deployment*, fixe **24.x**
+   (o `package.json` usa o range `>=24 <25`, que a Vercel não interpreta; sem fixar, ela usa o
+   default dela).
+3. **Environment Variable** — em *Project → Settings → Environment Variables*, adicione
+   `VITE_API_BASE_URL = https://<app-back>.herokuapp.com` (ao menos no ambiente *Production*;
+   *Preview* também se for usar). Lida no `vite build` via `process.env`.
+4. **Deploy** — a Vercel faz deploy automático a cada push em `main`; o primeiro roda na
+   importação.
 
 **Contrato cruzado com o backend:**
 
-| No `simplecote-back` | Vale a URL deste app (`<app-front>`) |
+| No `simplecote-back` (Heroku) | Vale a URL deste app na Vercel (`https://<projeto>.vercel.app`) |
 | --- | --- |
 | `SIMPLECOTE_BASE_URL` | o link mágico do representante é `/cotacao/{token}`, rota deste front |
-| `SIMPLECOTE_CORS_ORIGINS` | idem |
+| `SIMPLECOTE_CORS_ORIGINS` | idem — sem isso as chamadas do front dão CORS |
 
-Verificação pós-deploy: abrir a URL, logar em `/login`, e **recarregar** em `/admin/cotacoes`
-e num link `/cotacao/<token>` — as duas rotas têm que resolver (é o `static.json` que faz o
-history fallback). Conferir na aba Network que as chamadas vão para `<app-back>` e não dão CORS.
+```bash
+heroku config:set -a <app-back> \
+  SIMPLECOTE_BASE_URL=https://<projeto>.vercel.app \
+  SIMPLECOTE_CORS_ORIGINS=https://<projeto>.vercel.app
+```
 
-> Plano B, se o buildpack `heroku-community/static` sair do ar: `heroku/nodejs` + um
-> `Procfile` com `web: npx serve -s dist -l $PORT` (adicionar `serve` às `dependencies`).
+> **URLs circulares:** front e back referenciam a URL um do outro. Se ainda não souber uma
+> das duas, suba com um placeholder, faça o deploy das duas pontas, e então corrija
+> `VITE_API_BASE_URL` (Vercel) e `SIMPLECOTE_*` (Heroku) com as URLs reais + redeploy.
+
+Verificação pós-deploy: abrir a URL da Vercel, logar em `/login`, e **recarregar** em
+`/admin/cotacoes` e num link `/cotacao/<token>` — as duas rotas têm que resolver (é o
+`rewrites` do `vercel.json` que faz o history fallback). Conferir na aba Network que as
+chamadas vão para `<app-back>` e não dão CORS.
