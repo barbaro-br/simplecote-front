@@ -9,7 +9,7 @@ import { useState } from 'react'
 
 type LookupStatus = 'idle' | 'buscando' | 'sugerido' | 'nao-encontrado'
 
-export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: () => void, produtoParaEditar?: Produto }) {
+export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produtoCriado?: Produto) => void, produtoParaEditar?: Produto }) {
   const isEdit = !!produtoParaEditar
   const criar = useCriarProduto()
   const atualizar = useAtualizarProduto()
@@ -56,11 +56,13 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: () => v
     try {
       if (isEdit) {
         await atualizar.mutateAsync({ id: produtoParaEditar.id, valores })
+        form.reset()
+        aoSalvar()
       } else {
-        await criar.mutateAsync(valores)
+        const novo = await criar.mutateAsync(valores)
+        form.reset()
+        aoSalvar(novo)
       }
-      form.reset()
-      aoSalvar()
     } catch (e: any) {
       // SessaoExpiradaError é transitório: a navegação para /login já aconteceu.
       if (e instanceof SessaoExpiradaError) return
@@ -132,7 +134,7 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: () => v
       {genericError && <p className="text-sm text-destructive">{genericError}</p>}
 
       <div className="flex gap-2 justify-end">
-        <Button type="button" variant="outline" onClick={aoSalvar} disabled={isPending}>Cancelar</Button>
+        <Button type="button" variant="outline" onClick={() => aoSalvar()} disabled={isPending}>Cancelar</Button>
         <Button type="submit" disabled={isPending}>
           {isPending ? 'Salvando…' : 'Salvar'}
         </Button>

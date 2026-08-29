@@ -17,11 +17,11 @@ type Item = {
   quantidadePorEmbalagemSnapshot: number
 }
 
-function novoItem(produtoId: string, quantidade: number): Item {
+function novoItem(produtoId: string, quantidade: number, nomeSnapshot = 'Arroz Tipo 1 5kg'): Item {
   return {
     id: `item-${Math.random().toString(36).slice(2, 8)}`,
     produtoId,
-    nomeSnapshot: 'Arroz Tipo 1 5kg',
+    nomeSnapshot,
     codigoBarrasSnapshot: null,
     unidadeSnapshot: 'Fardo',
     quantidadeSolicitada: quantidade,
@@ -41,17 +41,24 @@ function setup(status: StatusCotacao, itensIniciais: Item[] = []) {
   }
   const chamadas: Record<string, number> = {}
   let prazoRecebido: string | null = null
+  const produtos: Array<Record<string, unknown>> = [
+    { id: 'p-1', nome: 'Arroz Tipo 1 5kg', codigoBarras: null, unidade: 'Fardo', quantidadePorEmbalagem: 1, ativo: true },
+  ]
 
   server.use(
     http.get('*/api/cotacoes/c-1', () => HttpResponse.json(state)),
-    http.get('*/api/produtos', () =>
-      HttpResponse.json([
-        { id: 'p-1', nome: 'Arroz Tipo 1 5kg', codigoBarras: null, unidade: 'Fardo', quantidadePorEmbalagem: 1, ativo: true },
-      ]),
-    ),
+    http.get('*/api/produtos', () => HttpResponse.json(produtos)),
+    http.post('*/api/produtos', async ({ request }) => {
+      const body = (await request.json()) as Record<string, unknown>
+      const novo = { id: 'novo-1', ...body, ativo: true }
+      produtos.push(novo)
+      chamadas.criarProduto = (chamadas.criarProduto ?? 0) + 1
+      return HttpResponse.json(novo, { status: 201 })
+    }),
     http.post('*/api/cotacoes/c-1/itens', async ({ request }) => {
       const body = (await request.json()) as { produtoId: string; quantidade: number }
-      state.itens.push(novoItem(body.produtoId, body.quantidade))
+      const nome = (produtos.find((p) => p.id === body.produtoId)?.nome as string) ?? 'Arroz Tipo 1 5kg'
+      state.itens.push(novoItem(body.produtoId, body.quantidade, nome))
       return HttpResponse.json(state, { status: 201 })
     }),
     http.delete('*/api/cotacoes/c-1/itens/:itemId', ({ params }) => {
@@ -136,6 +143,44 @@ test('3.2 — em RASCUNHO adiciona e remove item', async () => {
   await waitFor(() => {
     expect(screen.queryByRole('cell', { name: 'Arroz Tipo 1 5kg' })).not.toBeInTheDocument()
   })
+})
+
+test('3.5 — cadastra Produto novo no modal aninhado, volta pré-selecionado e adiciona à cotação', async () => {
+  setup('RASCUNHO')
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await user.click(
+    within(screen.getByRole('dialog', { name: 'Adicionar item' })).getByRole('button', {
+      name: /Cadastrar novo produto/i,
+    }),
+  )
+
+  // 2º modal (cadastro) empilhado
+  const cadastro = () => screen.getByRole('dialog', { name: 'Cadastrar novo produto' })
+  await user.type(within(cadastro()).getByPlaceholderText('Nome do produto'), 'Feijão Carioca 1kg')
+  const qtd = within(cadastro()).getByPlaceholderText('Quantidade por embalagem')
+  await user.clear(qtd)
+  await user.type(qtd, '10')
+  await user.click(within(cadastro()).getByRole('button', { name: /Salvar/i }))
+
+  // 2º modal fecha; o 1º segue e o novo Produto está pré-selecionado
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog', { name: 'Cadastrar novo produto' })).not.toBeInTheDocument(),
+  )
+  const seletor = within(screen.getByRole('dialog', { name: 'Adicionar item' })).getByLabelText(
+    'Produto',
+  ) as HTMLSelectElement
+  await waitFor(() => expect(seletor.value).toBe('novo-1'))
+
+  await user.click(
+    within(screen.getByRole('dialog', { name: 'Adicionar item' })).getByRole('button', {
+      name: 'Adicionar',
+    }),
+  )
+
+  expect(await screen.findByRole('cell', { name: 'Feijão Carioca 1kg' })).toBeInTheDocument()
 })
 
 test('3.2 — em ABERTA os controles de item não aparecem', async () => {

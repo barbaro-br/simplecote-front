@@ -15,7 +15,12 @@ export function useCriarProduto() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (valores: ProdutoFormValues) => api.post<Produto>('/api/produtos', valores),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: chave }),
+    onSuccess: (novo) => {
+      // Insere na hora para o catálogo já refletir (ex.: pré-seleção no
+      // "adicionar item"); o invalidate reconcilia com o servidor depois.
+      queryClient.setQueryData<Produto[]>(chave, (old) => [...(old ?? []), novo])
+      queryClient.invalidateQueries({ queryKey: chave })
+    },
   })
 }
 
