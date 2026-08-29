@@ -113,6 +113,14 @@ export function CotacaoDetalhePage() {
             Ver resultado
           </Link>
         )}
+        {(status === 'ABERTA' || status === 'ENCERRADA') && (
+          <Link
+            to={`/admin/cotacoes/${id}/ao-vivo`}
+            className="inline-flex h-9 items-center rounded-md border px-4 text-sm font-medium hover:bg-muted"
+          >
+            Acompanhar ao vivo
+          </Link>
+        )}
       </div>
 
       {erroAcao && (

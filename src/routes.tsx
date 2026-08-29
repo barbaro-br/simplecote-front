@@ -8,6 +8,7 @@ import { LoginPage } from './admin/login/LoginPage'
 import { CotacoesPage } from './admin/cotacoes/CotacoesPage'
 import { NovaCotacaoPage } from './admin/cotacoes/NovaCotacaoPage'
 import { CotacaoDetalhePage } from './admin/cotacoes/CotacaoDetalhePage'
+import { GradeAoVivoPage } from './admin/cotacoes/GradeAoVivoPage'
 import { ResultadoPage } from './admin/cotacoes/ResultadoPage'
 import { TemaClaro } from './representante/TemaClaro'
 import { CotacaoPorTokenPage } from './representante/cotacao/CotacaoPorTokenPage'
@@ -42,6 +43,10 @@ export const routes = createBrowserRouter([
           {
             path: 'cotacoes/:id',
             element: <CotacaoDetalhePage />,
+          },
+          {
+            path: 'cotacoes/:id/ao-vivo',
+            element: <GradeAoVivoPage />,
           },
           {
             path: 'cotacoes/:id/resultado',
