@@ -1,18 +1,21 @@
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { produtoSchema, tiposDeEmbalagem, type ProdutoFormValues, type Produto } from './produtos.schema'
-import { useCriarProduto, useAtualizarProduto, useLookupProduto } from './produtos.api'
+import { useCriarProduto, useAtualizarProduto, useLookupProdutoPorGtin } from './produtos.api'
 import { SessaoExpiradaError } from '@/shared/api/api-client'
 import { useState } from 'react'
+
+type LookupStatus = 'idle' | 'buscando' | 'sugerido' | 'nao-encontrado'
 
 export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: () => void, produtoParaEditar?: Produto }) {
   const isEdit = !!produtoParaEditar
   const criar = useCriarProduto()
   const atualizar = useAtualizarProduto()
-  const lookup = useLookupProduto()
+  const lookup = useLookupProdutoPorGtin()
   const [genericError, setGenericError] = useState<string | null>(null)
+  const [lookupStatus, setLookupStatus] = useState<LookupStatus>('idle')
   
   const form = useForm<ProdutoFormValues>({
     resolver: zodResolver(produtoSchema),
@@ -26,18 +29,25 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: () => v
 
   const isPending = criar.isPending || atualizar.isPending
 
+  const codigoBarras = useWatch({ control: form.control, name: 'codigoBarras' })
+
   async function handleLookup() {
-    const gtin = form.getValues('codigoBarras')
+    const gtin = form.getValues('codigoBarras')?.trim()
     if (!gtin) return
-    
+
+    setLookupStatus('buscando')
     try {
       const result = await lookup.mutateAsync(gtin)
       if (result) {
-        form.setValue('nome', result.nome, { shouldValidate: true })
+        form.setValue('nome', result.nome, { shouldDirty: true, shouldValidate: true })
+        setLookupStatus('sugerido')
+      } else {
+        // 404 do provedor: não encontrado é normal — degrada, não trava.
+        setLookupStatus('nao-encontrado')
       }
-    } catch (e) {
-      // Degrada graciosamente
-      console.warn('Falha no lookup', e)
+    } catch {
+      // Rede/servidor: mesma degradação uniforme.
+      setLookupStatus('nao-encontrado')
     }
   }
 
@@ -61,23 +71,40 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: () => v
   return (
     <form onSubmit={form.handleSubmit(aoEnviar)} className="space-y-4 rounded-md border p-4 bg-muted/20">
       <h2 className="text-lg font-medium">{isEdit ? 'Editar Produto' : 'Novo Produto'}</h2>
-      
-      <div>
-        <Input {...form.register('nome')} placeholder="Nome do produto" />
-        {form.formState.errors.nome && (
-          <p className="text-sm text-destructive mt-1">{form.formState.errors.nome.message}</p>
-        )}
-      </div>
 
+      {/* Código de barras primeiro: o fluxo natural é bipar/digitar e deixar o sistema trazer o nome. */}
       <div>
         <div className="flex gap-2">
-          <Input {...form.register('codigoBarras')} placeholder="Código de barras (GTIN)" />
-          <Button type="button" variant="outline" onClick={handleLookup} disabled={lookup.isPending}>
-            {lookup.isPending ? 'Buscando...' : 'Buscar Nome'}
+          <Input
+            {...form.register('codigoBarras', { onChange: () => setLookupStatus('idle') })}
+            placeholder="Código de barras (GTIN)"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleLookup}
+            disabled={!codigoBarras?.trim() || lookup.isPending}
+          >
+            {lookup.isPending ? 'Buscando…' : 'Buscar'}
           </Button>
         </div>
         {form.formState.errors.codigoBarras && (
           <p className="text-sm text-destructive mt-1">{form.formState.errors.codigoBarras.message}</p>
+        )}
+        {lookupStatus === 'sugerido' && (
+          <p className="text-xs text-muted-foreground mt-1">Nome sugerido pelo código de barras.</p>
+        )}
+        {lookupStatus === 'nao-encontrado' && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Não encontrado — preencha o nome manualmente.
+          </p>
+        )}
+      </div>
+
+      <div>
+        <Input {...form.register('nome')} placeholder="Nome do produto" />
+        {form.formState.errors.nome && (
+          <p className="text-sm text-destructive mt-1">{form.formState.errors.nome.message}</p>
         )}
       </div>
 
