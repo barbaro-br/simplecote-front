@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AdminLayout } from './admin/layout/AdminLayout'
 import { AuthGuard } from './shared/auth/AuthGuard'
 
@@ -14,6 +14,12 @@ import { CotacaoPorTokenPage } from './representante/cotacao/CotacaoPorTokenPage
 import { PedidoPorTokenPage } from './representante/pedido/PedidoPorTokenPage'
 
 export const routes = createBrowserRouter([
+  {
+    // Raiz e qualquer rota desconhecida → painel. O AuthGuard de /admin
+    // manda pra /login quem não estiver autenticado.
+    path: '/',
+    element: <Navigate to="/admin" replace />,
+  },
   {
     path: '/login',
     element: <LoginPage />,
@@ -65,5 +71,9 @@ export const routes = createBrowserRouter([
         element: <PedidoPorTokenPage />,
       },
     ],
+  },
+  {
+    path: '*',
+    element: <Navigate to="/admin" replace />,
   },
 ])
