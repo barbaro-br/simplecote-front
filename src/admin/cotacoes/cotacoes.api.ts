@@ -155,11 +155,23 @@ export function useReenviarConvite(cotacaoId: string) {
   })
 }
 
-// Leitura pontual da grade — sem refetchInterval (polling é Fase 2).
+// Leitura pontual da grade — sem refetchInterval.
 export function useAoVivo(cotacaoId: string) {
   return useQuery({
     queryKey: aoVivoKey(cotacaoId),
     queryFn: () => api.get<GridAoVivo>(`/api/cotacoes/${cotacaoId}/ao-vivo`),
+  })
+}
+
+// Grade da tela de acompanhamento, com polling condicional (spec.md §10.1):
+// revalida a cada ~5s enquanto a Cotação está ABERTA e para quando sai de
+// ABERTA. Sem dado ainda → não faz poll. `refetchIntervalInBackground` fica
+// no default `false`, então o poll pausa quando a aba perde o foco.
+export function useGradeAoVivo(cotacaoId: string) {
+  return useQuery({
+    queryKey: aoVivoKey(cotacaoId),
+    queryFn: () => api.get<GridAoVivo>(`/api/cotacoes/${cotacaoId}/ao-vivo`),
+    refetchInterval: (query) => (query.state.data?.status === 'ABERTA' ? 5000 : false),
   })
 }
 

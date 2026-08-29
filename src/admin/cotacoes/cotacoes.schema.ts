@@ -125,6 +125,9 @@ export type ItemGrid = {
   quantidadePorEmbalagem: number
   quantidadeSolicitada: number
   ultimoPrecoUnitario: number | null
+  /** Referência de última compra (back `ultima-compra-por-produto`); `null` se nunca comprado ou o back ainda não expõe. */
+  ultimaCompraEmpresa?: string | null
+  ultimaCompraEm?: string | null
   menorPrecoUnitario: number | null
   precos: CelulaGrid[]
 }
