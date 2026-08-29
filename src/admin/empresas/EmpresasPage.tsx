@@ -1,13 +1,16 @@
 import { useState } from 'react'
+import { Eye, EyeOff, Pencil } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
-import { useEmpresas, useInativarEmpresa } from './empresas.api'
+import { IconButton } from '@/shared/components/ui/icon-button'
+import { useEmpresas, useInativarEmpresa, useAtivarEmpresa } from './empresas.api'
 import { EmpresaForm } from './EmpresaForm'
 import type { Empresa } from './empresas.schema'
 
 export function EmpresasPage() {
-  const { data: empresas, isLoading, error } = useEmpresas()
+  const { data: empresas, isLoading, error } = useEmpresas({ incluirInativos: true })
   const inativar = useInativarEmpresa()
+  const ativar = useAtivarEmpresa()
   const [mostrarForm, setMostrarForm] = useState(false)
   const [empresaEditando, setEmpresaEditando] = useState<Empresa | undefined>(undefined)
 
@@ -62,30 +65,38 @@ export function EmpresasPage() {
               </tr>
             ) : (
               empresas.map((empresa) => (
-                <tr key={empresa.id} className={empresa.ativo ? 'hover:bg-muted/40 transition-colors' : 'opacity-50'}>
+                <tr
+                  key={empresa.id}
+                  className={`transition-colors hover:bg-muted/40 ${empresa.ativo ? '' : 'opacity-50 text-muted-foreground'}`}
+                >
                   <td className="px-4 py-3">
                     {empresa.nome} {empresa.ativo ? '' : '(Inativa)'}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {empresa.ativo && (
-                      <div className="flex gap-2 justify-end">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => abrirEditar(empresa)}
-                        >
-                          Editar
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => inativar.mutate(empresa.id)}
-                          disabled={inativar.isPending}
-                        >
-                          Inativar
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex gap-1 justify-end">
+                      {empresa.ativo ? (
+                        <>
+                          <IconButton
+                            icon={Pencil}
+                            label="Editar"
+                            onClick={() => abrirEditar(empresa)}
+                          />
+                          <IconButton
+                            icon={EyeOff}
+                            label="Inativar"
+                            onClick={() => inativar.mutate(empresa.id)}
+                            disabled={inativar.isPending}
+                          />
+                        </>
+                      ) : (
+                        <IconButton
+                          icon={Eye}
+                          label="Ativar"
+                          onClick={() => ativar.mutate(empresa.id)}
+                          disabled={ativar.isPending}
+                        />
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

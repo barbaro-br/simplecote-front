@@ -76,6 +76,36 @@ test('abre formulário, preenche empresa e representante, e salva', async () => 
   })
 })
 
+test('empresa inativa aparece apagada com "Ativar"; clicar reativa e a linha acende', async () => {
+  const lista = [
+    { id: '1', nome: 'Fornecedor A LTDA', ativo: true },
+    { id: '2', nome: 'Fornecedor Velho', ativo: false },
+  ]
+  server.use(
+    http.get('*/api/empresas', () => HttpResponse.json(lista)),
+    http.post('*/api/empresas/:id/ativar', ({ params }) => {
+      const e = lista.find((x) => x.id === params.id)
+      if (e) e.ativo = true
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText(/Fornecedor Velho/)).toBeInTheDocument()
+  // a inativa não tem "Inativar" nem "Editar", só "Ativar"
+  expect(screen.getByRole('button', { name: 'Ativar' })).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Ativar' }))
+
+  await waitFor(() => {
+    // reativada → passa a ter "Editar" e "Inativar", some o "Ativar"
+    expect(screen.queryByRole('button', { name: 'Ativar' })).not.toBeInTheDocument()
+  })
+  expect(screen.getAllByRole('button', { name: 'Inativar' })).toHaveLength(2)
+})
+
 test('edita o nome de uma empresa existente', async () => {
   renderComQuery(<EmpresasPage />)
   const user = userEvent.setup()
