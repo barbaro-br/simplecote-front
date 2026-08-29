@@ -36,13 +36,20 @@ export function useAtualizarProduto() {
   })
 }
 
+/** Shape de `DadosProdutoExternoDTO` (200 do provedor externo). */
 export type ProdutoLookupResult = {
   gtin: string
   nome: string
 }
 
-export function useLookupProduto() {
+// Consulta externa por Código de Barras (GTIN) — requisito `admin/produtos`.
+// `{ lookup: true }` faz o `404` do provedor (não encontrado, normal) virar
+// `null` em vez de `ApiError`; o retorno é `ProdutoLookupResult | null`.
+export function useLookupProdutoPorGtin() {
   return useMutation({
-    mutationFn: (gtin: string) => api.get<ProdutoLookupResult>(`/api/produtos/lookup?gtin=${gtin}`, { lookup: true }),
+    mutationFn: (gtin: string) =>
+      api.get<ProdutoLookupResult>(`/api/produtos/lookup?gtin=${encodeURIComponent(gtin)}`, {
+        lookup: true,
+      }),
   })
 }

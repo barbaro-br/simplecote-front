@@ -35,10 +35,9 @@ beforeEach(() => {
       }, { status: 200 })
     }),
     http.get('*/api/produtos/lookup', ({ request }) => {
-      const url = new URL(request.url)
-      const gtin = url.searchParams.get('gtin')
+      const gtin = new URL(request.url).searchParams.get('gtin')
       if (gtin === '1111111111111') {
-        return HttpResponse.json({ gtin, nome: 'Produto GTIN 111' })
+        return HttpResponse.json({ gtin, nome: 'Arroz Tio João 5kg' })
       }
       return new HttpResponse(null, { status: 404 })
     }),
@@ -100,19 +99,64 @@ test('edita um produto existente', async () => {
   })
 })
 
-test('busca nome do produto pelo código de barras', async () => {
+test('lookup por código de barras: acha → preenche o nome e avisa que foi sugerido', async () => {
   renderComQuery(<ProdutosPage />)
   const user = userEvent.setup()
-  
+
   expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: /Novo produto/i }))
 
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByPlaceholderText('Código de barras (GTIN)'), '1111111111111')
-
-  await user.click(dialog.getByRole('button', { name: /Buscar Nome/i }))
+  await user.click(dialog.getByRole('button', { name: 'Buscar' }))
 
   await waitFor(() => {
-    expect(dialog.getByPlaceholderText('Nome do produto')).toHaveValue('Produto GTIN 111')
+    expect(dialog.getByPlaceholderText('Nome do produto')).toHaveValue('Arroz Tio João 5kg')
+  })
+  expect(dialog.getByText(/sugerido pelo código de barras/i)).toBeInTheDocument()
+})
+
+test('lookup sem resultado (404): degrada para preenchimento manual e ainda salva', async () => {
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByPlaceholderText('Código de barras (GTIN)'), '9999999999999')
+  await user.click(dialog.getByRole('button', { name: 'Buscar' }))
+
+  expect(await dialog.findByText(/não encontrado/i)).toBeInTheDocument()
+
+  await user.type(dialog.getByPlaceholderText('Nome do produto'), 'Produto Manual')
+  const quantidade = dialog.getByPlaceholderText('Quantidade por embalagem')
+  await user.clear(quantidade)
+  await user.type(quantidade, '5')
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
+
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+})
+
+test('sem código de barras: "Buscar" fica desabilitado e o produto salva normalmente', async () => {
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  expect(dialog.getByRole('button', { name: 'Buscar' })).toBeDisabled()
+
+  await user.type(dialog.getByPlaceholderText('Nome do produto'), 'Sem Código')
+  const quantidade = dialog.getByPlaceholderText('Quantidade por embalagem')
+  await user.clear(quantidade)
+  await user.type(quantidade, '5')
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
+
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
