@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
@@ -62,16 +62,17 @@ test('abre formulário, preenche empresa e representante, e salva', async () => 
   
   expect(await screen.findByText('Fornecedor A LTDA')).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: /Nova Empresa/i }))
-  
-  await user.type(screen.getByPlaceholderText('Nome da empresa (ex: Atacadão)'), 'Novo Fornecedor')
-  await user.type(screen.getByPlaceholderText('Nome do representante'), 'João Silva')
-  await user.type(screen.getByPlaceholderText('E-mail'), 'joao@email.com')
-  await user.type(screen.getByPlaceholderText('WhatsApp (opcional)'), '11999999999')
-  
-  await user.click(screen.getByRole('button', { name: /Salvar/i }))
-  
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByPlaceholderText('Nome da empresa (ex: Atacadão)'), 'Novo Fornecedor')
+  await user.type(dialog.getByPlaceholderText('Nome do representante'), 'João Silva')
+  await user.type(dialog.getByPlaceholderText('E-mail'), 'joao@email.com')
+  await user.type(dialog.getByPlaceholderText('WhatsApp (opcional)'), '11999999999')
+
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
+
   await waitFor(() => {
-    expect(screen.queryByPlaceholderText('Nome da empresa (ex: Atacadão)')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
 
@@ -81,14 +82,15 @@ test('edita o nome de uma empresa existente', async () => {
   
   expect(await screen.findByText('Fornecedor A LTDA')).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: /Editar/i }))
-  
-  const nomeInput = screen.getByPlaceholderText('Nome da empresa (ex: Atacadão)')
+
+  const dialog = within(screen.getByRole('dialog'))
+  const nomeInput = dialog.getByPlaceholderText('Nome da empresa (ex: Atacadão)')
   await user.clear(nomeInput)
   await user.type(nomeInput, 'Fornecedor A Editado')
-  
-  await user.click(screen.getByRole('button', { name: /Salvar/i }))
-  
+
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
+
   await waitFor(() => {
-    expect(screen.queryByPlaceholderText('Nome da empresa (ex: Atacadão)')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

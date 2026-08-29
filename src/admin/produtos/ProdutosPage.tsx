@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/shared/components/ui/button'
+import { Dialog } from '@/shared/components/ui/dialog'
 import { useProdutos, useInativarProduto } from './produtos.api'
 import { ProdutoForm } from './ProdutoForm'
 import type { Produto } from './produtos.schema'
@@ -32,17 +33,17 @@ export function ProdutosPage() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Catálogo de produtos</h1>
-        <Button onClick={mostrarForm ? fecharForm : abrirNovo}>
-          {mostrarForm ? 'Ocultar' : 'Novo produto'}
-        </Button>
+        <Button onClick={abrirNovo}>Novo produto</Button>
       </div>
 
-      {mostrarForm && (
-        <ProdutoForm 
-          aoSalvar={fecharForm} 
-          produtoParaEditar={produtoEditando} 
-        />
-      )}
+      <Dialog
+        open={mostrarForm}
+        onClose={fecharForm}
+        size="lg"
+        ariaLabel={produtoEditando ? 'Editar produto' : 'Novo produto'}
+      >
+        <ProdutoForm aoSalvar={fecharForm} produtoParaEditar={produtoEditando} />
+      </Dialog>
 
       <div className="rounded-md border overflow-hidden">
         <table className="w-full text-sm">

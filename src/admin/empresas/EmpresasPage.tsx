@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/shared/components/ui/button'
+import { Dialog } from '@/shared/components/ui/dialog'
 import { useEmpresas, useInativarEmpresa } from './empresas.api'
 import { EmpresaForm } from './EmpresaForm'
 import type { Empresa } from './empresas.schema'
@@ -32,17 +33,17 @@ export function EmpresasPage() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Fornecedores (Empresas)</h1>
-        <Button onClick={mostrarForm ? fecharForm : abrirNovo}>
-          {mostrarForm ? 'Ocultar' : 'Nova Empresa'}
-        </Button>
+        <Button onClick={abrirNovo}>Nova Empresa</Button>
       </div>
 
-      {mostrarForm && (
-        <EmpresaForm 
-          aoSalvar={fecharForm} 
-          empresaParaEditar={empresaEditando} 
-        />
-      )}
+      <Dialog
+        open={mostrarForm}
+        onClose={fecharForm}
+        size="lg"
+        ariaLabel={empresaEditando ? 'Editar empresa' : 'Nova empresa'}
+      >
+        <EmpresaForm aoSalvar={fecharForm} empresaParaEditar={empresaEditando} />
+      </Dialog>
 
       <div className="rounded-md border overflow-hidden">
         <table className="w-full text-sm">
