@@ -121,13 +121,16 @@ test('3.2 — em RASCUNHO adiciona e remove item', async () => {
   const user = userEvent.setup()
   await screen.findByRole('heading', { name: 'Compra semanal' })
 
-  // espera o catálogo carregar no <select>
-  await screen.findByRole('option', { name: 'Arroz Tipo 1 5kg' })
-  await user.selectOptions(screen.getByLabelText('Produto'), 'p-1')
   await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  const dialog = within(screen.getByRole('dialog'))
+  // espera o catálogo carregar no <select> do modal
+  await dialog.findByRole('option', { name: 'Arroz Tipo 1 5kg' })
+  await user.selectOptions(dialog.getByLabelText('Produto'), 'p-1')
+  await user.click(dialog.getByRole('button', { name: 'Adicionar' }))
 
   const linhaItem = await screen.findByRole('cell', { name: 'Arroz Tipo 1 5kg' })
   expect(linhaItem).toBeInTheDocument()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: 'Remover' }))
   await waitFor(() => {
