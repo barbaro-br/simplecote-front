@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:heroku": "vite --mode heroku",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
