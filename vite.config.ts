@@ -12,6 +12,15 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const proxyTarget = env.VITE_PROXY_TARGET || 'http://localhost:8080'
 
+  // Tira o header `Origin` da requisição encaminhada: sem ele o back trata como
+  // não-CORS e não exige a origem na allowlist (o navegador manda `Origin` em
+  // POST/PUT/DELETE mesmo same-origin). Necessário pro modo `heroku`.
+  type ProxyReqLike = { removeHeader(name: string): void }
+  type ProxyLike = { on(ev: 'proxyReq', cb: (r: ProxyReqLike) => void): void }
+  const stripOrigin = (proxy: ProxyLike) => {
+    proxy.on('proxyReq', (proxyReq) => proxyReq.removeHeader('origin'))
+  }
+
   return {
     plugins: [react(), tailwindcss()],
     build: {
@@ -40,10 +49,12 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: proxyTarget,
           changeOrigin: true,
+          configure: stripOrigin,
         },
         '/public': {
           target: proxyTarget,
           changeOrigin: true,
+          configure: stripOrigin,
         },
       },
     },
