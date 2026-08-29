@@ -61,7 +61,7 @@ export function EmpresasPage() {
               </tr>
             ) : (
               empresas.map((empresa) => (
-                <tr key={empresa.id} className={empresa.ativo ? 'hover:bg-muted/30' : 'opacity-50'}>
+                <tr key={empresa.id} className={empresa.ativo ? 'hover:bg-muted/40 transition-colors' : 'opacity-50'}>
                   <td className="px-4 py-3">
                     {empresa.nome} {empresa.ativo ? '' : '(Inativa)'}
                   </td>

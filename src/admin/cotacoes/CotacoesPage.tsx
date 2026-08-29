@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { dataHoraBr } from '@/shared/format/formatters'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
+import { StatusBadge } from '@/shared/components/StatusBadge'
 import { useCotacoes } from './cotacoes.api'
 
 const STATUS: { valor: StatusCotacao; rotulo: string }[] = [
@@ -74,13 +75,13 @@ export function CotacoesPage() {
               </tr>
             ) : (
               lista.map((c) => (
-                <tr key={c.id} className="hover:bg-muted/30">
+                <tr key={c.id} className="hover:bg-muted/40 transition-colors">
                   <td className="px-4 py-3">
                     <Link to={`/admin/cotacoes/${c.id}`} className="text-primary hover:underline">
                       {c.titulo}
                     </Link>
                   </td>
-                  <td className="px-4 py-3">{rotuloStatus(c.status)}</td>
+                  <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                   <td className="px-4 py-3">{c.prazo ? dataHoraBr(c.prazo) : '—'}</td>
                 </tr>
               ))

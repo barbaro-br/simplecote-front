@@ -1,9 +1,43 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import {
+  Building2,
+  FileText,
+  LogOut,
+  Package,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from 'lucide-react'
 import { useAuth } from '@/shared/auth/AuthContext'
+
+const SIDEBAR_KEY = 'simplecote:sidebar'
+
+const ITENS = [
+  { to: '/admin', label: 'Cotações', Icon: FileText, end: true },
+  { to: '/admin/produtos', label: 'Produtos', Icon: Package, end: false },
+  { to: '/admin/empresas', label: 'Empresas', Icon: Building2, end: false },
+] as const
+
+function lerColapsada(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === '1'
+  } catch {
+    return false
+  }
+}
 
 export function AdminLayout() {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const [colapsada, setColapsada] = useState<boolean>(lerColapsada)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_KEY, colapsada ? '1' : '0')
+    } catch {
+      // localStorage indisponível — o estado fica só em memória nesta sessão
+    }
+  }, [colapsada])
 
   function handleLogout() {
     logout()
@@ -12,19 +46,59 @@ export function AdminLayout() {
 
   return (
     <div className="flex min-h-screen bg-card text-foreground">
-      <aside className="w-64 border-r bg-background p-4 flex flex-col">
-        <h1 className="text-xl font-bold text-primary mb-8">SimpleCote</h1>
-        <nav className="space-y-2 flex flex-col flex-1">
-          <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground">Cotações</Link>
-          <Link to="/admin/produtos" className="text-sm text-muted-foreground hover:text-foreground">Produtos</Link>
-          <Link to="/admin/empresas" className="text-sm text-muted-foreground hover:text-foreground">Empresas</Link>
+      <aside
+        className={`${colapsada ? 'w-16' : 'w-64'} border-r bg-background p-4 flex flex-col transition-[width] duration-200`}
+      >
+        <div className="flex items-center justify-between mb-8">
+          {!colapsada && <h1 className="text-xl font-bold text-primary">SimpleCote</h1>}
+          <button
+            type="button"
+            onClick={() => setColapsada((v) => !v)}
+            aria-label={colapsada ? 'Expandir menu' : 'Recolher menu'}
+            aria-expanded={!colapsada}
+            className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            {colapsada ? (
+              <PanelLeftOpen className="size-4" aria-hidden />
+            ) : (
+              <PanelLeftClose className="size-4" aria-hidden />
+            )}
+          </button>
+        </div>
+
+        <nav className="space-y-1 flex flex-col flex-1">
+          {ITENS.map(({ to, label, Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              title={label}
+              aria-label={label}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                  isActive
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                } ${colapsada ? 'justify-center' : ''}`
+              }
+            >
+              <Icon className="size-4 shrink-0" aria-hidden />
+              {!colapsada && <span>{label}</span>}
+            </NavLink>
+          ))}
         </nav>
+
         <button
           id="sidebar-logout"
           onClick={handleLogout}
-          className="w-full text-left text-sm text-muted-foreground hover:text-destructive transition-colors mt-4 pt-4 border-t"
+          title="Sair"
+          aria-label="Sair"
+          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors mt-4 pt-4 border-t ${
+            colapsada ? 'justify-center' : ''
+          }`}
         >
-          Sair
+          <LogOut className="size-4 shrink-0" aria-hidden />
+          {!colapsada && <span>Sair</span>}
         </button>
       </aside>
       <main className="flex-1 p-8">
@@ -33,4 +107,3 @@ export function AdminLayout() {
     </div>
   )
 }
-

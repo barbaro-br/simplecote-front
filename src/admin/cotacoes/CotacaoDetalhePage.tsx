@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
 import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
-import { rotuloStatus } from './CotacoesPage'
+import { StatusBadge } from '@/shared/components/StatusBadge'
 import { ItensSection } from './ItensSection'
 import { ParticipantesSection } from './ParticipantesSection'
 import { RespostasSection } from './RespostasSection'
@@ -65,9 +65,9 @@ export function CotacaoDetalhePage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold">{cotacao.titulo}</h1>
-          <p className="text-sm text-muted-foreground">
-            Status: <span className="font-medium text-foreground">{rotuloStatus(status)}</span>
-            {cotacao.prazo && <> · Prazo: {dataHoraBr(cotacao.prazo)}</>}
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <StatusBadge status={status} />
+            {cotacao.prazo && <span>· Prazo: {dataHoraBr(cotacao.prazo)}</span>}
           </p>
         </div>
         <Link to="/admin" className="text-sm text-primary hover:underline">

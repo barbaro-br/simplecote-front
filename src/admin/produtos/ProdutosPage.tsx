@@ -64,7 +64,7 @@ export function ProdutosPage() {
               </tr>
             ) : (
               produtos.map((produto) => (
-                <tr key={produto.id} className={produto.ativo ? 'hover:bg-muted/30' : 'opacity-50'}>
+                <tr key={produto.id} className={produto.ativo ? 'hover:bg-muted/40 transition-colors' : 'opacity-50'}>
                   <td className="px-4 py-3">{produto.nome} {produto.ativo ? '' : '(Inativo)'}</td>
                   <td className="px-4 py-3">{produto.codigoBarras ?? '—'}</td>
                   <td className="px-4 py-3">{produto.unidade}</td>
