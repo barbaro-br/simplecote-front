@@ -13,3 +13,10 @@ export function dataHoraBr(dataIsoZ: string): string {
     timeStyle: 'short',
   }).format(data)
 }
+
+export function dataBr(dataIsoZ: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    dateStyle: 'short',
+  }).format(new Date(dataIsoZ))
+}

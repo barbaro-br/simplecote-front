@@ -8,6 +8,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { useCotacoes } from './cotacoes.api'
+import { PainelDashboard } from '../analise/PainelDashboard'
 
 const STATUS: { valor: StatusCotacao; rotulo: string }[] = [
   { valor: 'RASCUNHO', rotulo: 'Rascunho' },
@@ -42,6 +43,7 @@ export function CotacoesPage() {
 
   return (
     <div className="space-y-5 max-w-5xl">
+      <PainelDashboard onStatusClick={setFiltro} />
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Cotações</h1>
