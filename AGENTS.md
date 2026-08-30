@@ -1,81 +1,50 @@
 # AGENTS.md
 
-Lido por qualquer agente de código que trabalhe neste repo (Antigravity, Claude Code, …).
+Lido por qualquer agente de código que trabalhe neste projeto (Antigravity, Claude Code, …).
 Regras curtas e duras. Se uma bater de frente com o que você "acha melhor": as regras ganham.
 
 ## Regras inquebráveis
 
 1. **Faça só o que a tarefa pede.** Nada de melhoria em código adjacente, arquivo novo,
-   dependência ou abstração que a tarefa não exige. Tentado a mexer em algo fora do
-   escopo → **liste, pergunte, espere**. Não infira desejo não dito do usuário.
-   Um arquivo que a tarefa/change **não nomeia** não entra no diff sem você dizer, no
-   report daquela tarefa, **qual arquivo e por quê**. Incluir arquivo fora do escopo
-   calado = violação, mesmo que a suíte fique verde.
-2. **Edite o código ANTES de marcar `[x]`.** Nunca marque tarefa concluída sem um diff
-   correspondente. Se a tarefa não precisa de mudança, **diga isso explicitamente** — não
-   marque calado.
-3. **Depois de cada tarefa:** `npm test` (vitest) + `npm run build` (tsc) + `npm run lint`
-   (oxlint). **Vermelho = pare.** Não avance pra próxima tarefa com a suíte quebrada.
-4. **Nunca edite um teste pra ele passar** a menos que o comportamento tenha mudado de
-   propósito — e aí diga qual comportamento e por quê, no mesmo diff. Não afrouxe asserção
-   (`{name:'X'}` → `/X/i`; `getByPlaceholderText` → `getByLabelText` sem adicionar o
-   `<label>` de verdade) só pra ficar verde.
-5. **`git diff package.json` fica vazio.** Zero dependência nova sem aprovação explícita.
-   Nada de `npx shadcn add/init` (puxa `@radix-ui/*`; este repo usa `@base-ui/react`).
-6. **Não commite nem pushe.** Deixe as mudanças no working tree pra revisão humana.
-7. **Menor mudança possível.** Restyle mexe em classe/markup — não transforma um arquivo
-   de 120 linhas em 280. Se o diff de um arquivo passar de ~2× o que a tarefa implica,
-   **pare e explique**.
-8. **Não "conserte" infra de teste fora da change.** Mock global, `beforeEach`/`afterEach`
-   de setup, config de jsdom, helper de `render` — só mexe se a tarefa é sobre isso. Se um
-   teste **pré-existente** quebra ou flakea por interação de ambiente (ex.: `window.localStorage`
-   sumindo no worker), **reporte e pare** — não remende um arquivo que a change não possui.
-   `src/admin/layout/AdminLayout.test.tsx` já foi "consertado" assim 2×; deixa quieto.
+   dependência ou abstração que a tarefa não exige. Um arquivo que a change **não nomeia** não entra no diff sem você dizer **qual arquivo e por quê**. Incluir arquivo fora do escopo calado = violação.
+2. **Edite o código ANTES de marcar `[x]`.** Nunca marque tarefa concluída sem um diff correspondente.
+3. **Checagem de Saúde OBRIGATÓRIA:** Depois de cada tarefa, rode os testes, build e linter da respectiva aplicação (Front ou Back). **Vermelho = pare.**
+4. **Resolução de Erros e Limite de Tentativas:** Se o código ou teste quebrar após sua alteração, faça no máximo **3 tentativas** de correção. Se falhar na 3ª, **desfaça a alteração daquela tarefa (git restore/checkout)** e chame o humano. Não entre em loop infinito.
+5. **Busca de Impacto (Discovery Obrigatório):** Antes de alterar a assinatura de uma função, classe, componente ou DTO exportado, **busque ativamente (grep)** onde ele é usado no repositório. Atualize os consumidores. Se o impacto for gigante (ex: 20+ arquivos), avise antes de prosseguir.
+6. **Integridade de Testes:** Nunca edite um teste pré-existente pra ele passar a menos que o comportamento tenha mudado de propósito — e aí diga o porquê.
+7. **Sem Commits:** Não commite nem pushe. Deixe as mudanças no working tree.
+8. **Não "conserte" infra fora da change:** Mock global, setups, config de DB, helper de render — só mexe se a tarefa for sobre isso.
+
+## Autonomia e Modo "Auto-Approve"
+
+1. **Permissão Total Autorizada:** Quando configurado no ambiente (flag CLI `--dangerously-skip-permissions` ou IDE destravada), você tem permissão irrestrita para rodar scripts, alterar arquivos e avançar tarefas **sem perguntar "posso continuar?"**.
+2. **Execução Contínua:** Vá de ponta a ponta na spec. Só pare se encontrar um impeditivo real (erro persistente ou ambiguidade de escopo).
+3. **Tratamento de Exceções:** Nenhuma exceção deve ser engolida silenciosamente (ex: `catch(e) {}` vazio). Falhas de API no front devem refletir na UI. No back, use o Logger oficial.
+
+## Fatos do projeto (Front-end)
+*Diretório: `simplecote-front`*
+
+- **Stack:** Vite + React 19 + TypeScript + Tailwind v4 + `@base-ui/react` + componentes hand-rolled estilo shadcn em `src/shared/components/ui/`. Fonte Geist.
+- **Comandos:** `npm run dev`, `npm run build` (`tsc -b && vite build`), `npm test` (`vitest run`), `npm run lint` (`oxlint`).
+- **Trabalho de UI:** Entenda o propósito e estados (loading/erro/etc). Reuse tokens e primitives (`variants`), copy em **pt-BR**. Telas `/representante` são mobile-first, tema claro forçado.
+- Testes usam **MSW** (mockam a API). Passar no MSW não garante a integração real.
+- **Não puxe dependências extras:** Zero dependência nova (ex: `shadcn add`) sem aprovação explícita.
+
+## Fatos do projeto (Back-end)
+*Diretório: `simplecote-back`*
+
+- **Stack:** Java 25 + Spring Boot 4.1.1 + Maven.
+- **Testes e DB:** PostgreSQL, Flyway, Testcontainers, JUnit Jupiter.
+- **Comandos:** `./mvnw spring-boot:run` (iniciar), `./mvnw clean test` (testar), `./mvnw clean package -DskipTests` (build).
+- **Banco e Migrações (Flyway):** **NUNCA altere um arquivo de migração (`V*.sql`) já aplicado.** Se a tarefa exige mudança no banco, crie sempre um **NOVO arquivo** de migração com a numeração subsequente. Nunca drope/delete colunas ou tabelas sem consultar o humano.
 
 ## Handoff — ao terminar a change OU ao parar
 
 Escreva um resumo com:
-- **arquivos novos** (caminho + o que é)
-- **arquivos tracked modificados** (caminho + 1 linha do que mudou)
-- **testes pré-existentes que você alterou** — cada um: qual asserção e **por quê** (que
-  comportamento mudou de propósito). Se não alterou nenhum, diga isso.
-- **qualquer coisa fora do escopo** da change que entrou no diff, e o motivo
-- resultado de `npx tsc -b`, `npx vitest run`, `npx oxlint` (código de saída)
-
-## Loop de trabalho
-
-Uma tarefa por vez. O "spec" é `openspec/changes/<change>/{proposal,design,tasks}.md`.
-Implemente **exatamente** o que ele descreve. Ao terminar, confira cada requisito do
-spec contra o que você fez. Volte a iterar só dentro do escopo. **Pare e chame o humano**
-quando uma correção mudaria o spec, adicionaria escopo, ou exigiria operação arriscada
-(deploy, migração, credencial, apagar coisa).
-
-## Trabalho de UI
-
-Antes de mexer numa tela, saiba: o propósito dela, quem usa, e **todos os estados**
-(carregando / vazio / erro / desabilitado / somente-leitura / link inválido).
-
-- Reuse `src/shared/components/ui/*` e os tokens de cor em `src/index.css`.
-- **Estenda** um primitivo (adicione uma `variant`), **não** forke nem crie `Button2` local.
-- Copy em **pt-BR**. Não renomeie texto de UI ("Confirmar pedido" → "Confirmar") sem a
-  tarefa pedir.
-- Telas do **representante** (`src/representante/**`): mobile-first, **tema claro forçado**
-  (`.tema-claro`), header/rodapé sticky, alvo de toque ≥ 48px.
-- Depois: renderize e cheque quebra visual / acessibilidade / estados / responsivo.
-
-## Fatos do projeto
-
-- **Stack:** Vite + React 19 + TypeScript + Tailwind v4 + `@base-ui/react` + componentes
-  hand-rolled estilo shadcn em `src/shared/components/ui/`. Fonte Geist. `import.meta.env`
-  pra env (`VITE_API_BASE_URL` = base absoluta da API).
-- **Comandos:** `npm run dev` · `npm run build` (`tsc -b && vite build`) · `npm test`
-  (`vitest run`) · `npm run lint` (`oxlint`). OpenSpec: `openspec` (no PATH).
-- **Não toque** em `.github/workflows/**`, `vercel.json`, `openspec/specs/**` a menos que
-  a tarefa seja explicitamente sobre eles.
-- Testes usam MSW (mockam a API) — passar nos testes **não** garante que a integração real
-  funciona.
+- **Arquivos novos e modificados** (caminho + resumo de 1 linha).
+- **Testes pré-existentes que você alterou** e qual comportamento justificou a mudança.
+- **Fora do escopo** que entrou no diff e o motivo.
+- **Status da suíte:** Resultado do build/test/lint das aplicações que você tocou.
 
 ---
-
-_Regras destiladas dos skills `ai-loop`, `moyu` e `anti-ui-slop` (agentic-awesome-skills),
-mais o que a gente aprendeu apanhando neste repo._
+_Regras destiladas dos skills `ai-loop`, `moyu` e `anti-ui-slop`, com proteções rígidas de circuito (circuit breakers) e autonomia injetadas._

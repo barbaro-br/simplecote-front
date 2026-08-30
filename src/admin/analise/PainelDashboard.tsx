@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Card } from '@/shared/components/ui/card'
+import { AnimatedNumber } from '@/shared/components/ui/animated-number'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { moeda } from '@/shared/format/formatters'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
@@ -61,14 +62,14 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
             className="flex items-center justify-between w-full hover:underline text-left"
           >
             <span className="text-sm">Encerradas sem apurar</span>
-            <span className="font-semibold">{data.contadores.encerradasSemApurar}</span>
+            <span className="font-semibold"><AnimatedNumber value={data.contadores.encerradasSemApurar} /></span>
           </button>
           <button
             onClick={() => onStatusClick('PEDIDOS_GERADOS')}
             className="flex items-center justify-between w-full hover:underline text-left"
           >
             <span className="text-sm">Apuradas sem pedido</span>
-            <span className="font-semibold">{data.contadores.apuradasSemPedido}</span>
+            <span className="font-semibold"><AnimatedNumber value={data.contadores.apuradasSemPedido} /></span>
           </button>
         </div>
       </Card>
@@ -77,10 +78,10 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
       <Card className="p-4 flex flex-col justify-between">
         <h2 className="text-sm font-medium text-muted-foreground mb-2">Gastos (mês atual)</h2>
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-2xl font-bold">{moeda(parseNum(data.gastos.mesAtual))}</span>
+          <span className="text-2xl font-bold"><AnimatedNumber value={parseNum(data.gastos.mesAtual)} formatter={moeda} /></span>
         </div>
         <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
-          <span>vs {moeda(parseNum(data.gastos.mesAnterior))}</span>
+          <span>vs <AnimatedNumber value={parseNum(data.gastos.mesAnterior)} formatter={moeda} /></span>
           {data.gastos.variacaoPct && (
             <span
               className={
@@ -97,7 +98,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
         <div className="pt-3 border-t">
           <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Economia (90d)</span>
           <div className="text-sm font-medium text-green-600 mt-1">
-            {moeda(parseNum(data.gastos.economia90d))}
+            <AnimatedNumber value={parseNum(data.gastos.economia90d)} formatter={moeda} />
           </div>
         </div>
       </Card>

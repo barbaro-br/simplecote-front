@@ -7,7 +7,7 @@ const PASSOS = [
   {
     titulo: 'Pronto para começar!',
     conteudo: 'fim',
-    desc: 'Preencha os preços, deslize um card para limpar, e toque em Finalizar quando terminar.',
+    desc: 'Preencha os preços, deslize um card para limpar, e toque em Finalizar para enviar sua resposta oficialmente ao sistema.',
   },
 ] as const
 

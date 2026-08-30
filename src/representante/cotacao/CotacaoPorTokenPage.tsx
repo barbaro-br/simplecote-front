@@ -5,6 +5,7 @@ import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError } from '@/shared/api/api-client'
 import { ItemLanceCard } from './ItemLanceCard'
 import { ConfirmarEnvioDialog } from './ConfirmarEnvioDialog'
+import { usePullToRefresh } from '@/shared/hooks/usePullToRefresh'
 import { TelaDeSucesso } from './TelaDeSucesso'
 import { TutorialOnboarding } from './TutorialOnboarding'
 import { useCotacaoPorToken, useFinalizar } from './cotacao-token.api'
@@ -38,6 +39,7 @@ export function CotacaoPorTokenPage() {
   const cotacao = useCotacaoPorToken(token)
   const fila = useFilaDeSincronizacao(token)
   const finalizar = useFinalizar(token)
+  const { isRefreshing, pullY } = usePullToRefresh(() => cotacao.refetch())
 
   const [erroFinal, setErroFinal] = useState<string | null>(null)
   const [confirmando, setConfirmando] = useState(false)
@@ -92,6 +94,14 @@ export function CotacaoPorTokenPage() {
     return (
       <>
         {tutorialEl}
+      {(pullY > 0 || isRefreshing) && (
+        <div className="flex justify-center w-full transition-transform" style={{ transform: `translateY(${pullY}px)`, height: 0 }}>
+          <div className="bg-background shadow-md rounded-full px-3 py-1 text-sm z-50 flex items-center gap-2 border">
+            {isRefreshing ? <span className="animate-spin inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full" /> : <span className="inline-block w-4 h-4 text-center text-muted-foreground">↓</span>}
+            {isRefreshing ? "Atualizando..." : "Puxe para atualizar"}
+          </div>
+        </div>
+      )}
         <p className="p-6 text-muted-foreground">Carregando…</p>
       </>
     )
@@ -138,6 +148,14 @@ export function CotacaoPorTokenPage() {
   return (
     <div className="mx-auto max-w-2xl pb-40">
       {tutorialEl}
+      {(pullY > 0 || isRefreshing) && (
+        <div className="flex justify-center w-full transition-transform" style={{ transform: `translateY(${pullY}px)`, height: 0 }}>
+          <div className="bg-background shadow-md rounded-full px-3 py-1 text-sm z-50 flex items-center gap-2 border">
+            {isRefreshing ? <span className="animate-spin inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full" /> : <span className="inline-block w-4 h-4 text-center text-muted-foreground">↓</span>}
+            {isRefreshing ? "Atualizando..." : "Puxe para atualizar"}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2 px-4 pt-6">
         {somenteLeitura && (

@@ -13,4 +13,7 @@ export type Empresa = {
   id: string
   nome: string
   ativo: boolean
+  nomeRepresentante?: string
+  emailRepresentante?: string
+  whatsappRepresentante?: string
 }

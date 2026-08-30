@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { RouteTransition } from '@/shared/components/ui/route-transition'
 
 /**
  * Wrapper das rotas do representante (`/cotacao/:token`, `/pedido/:token`):
@@ -8,7 +8,7 @@ import { Outlet } from 'react-router-dom'
 export function TemaClaro() {
   return (
     <div className="tema-claro min-h-screen bg-background text-foreground [color-scheme:light]">
-      <Outlet />
+      <RouteTransition />
     </div>
   )
 }
