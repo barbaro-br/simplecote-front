@@ -67,40 +67,78 @@ export function EmpresaForm({
   }
 
   return (
-    <form onSubmit={form.handleSubmit(aoEnviar)} className="space-y-4 rounded-md border p-4 bg-muted/20">
-      <h2 className="text-lg font-medium">{isEdit ? 'Editar Empresa' : 'Novo Fornecedor'}</h2>
+    <form onSubmit={form.handleSubmit(aoEnviar)} className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight">{isEdit ? 'Editar Fornecedor' : 'Novo Fornecedor'}</h2>
+        <p className="text-sm text-muted-foreground">{isEdit ? 'Atualize as informações da empresa.' : 'Cadastre uma nova empresa e seu representante.'}</p>
+      </div>
       
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-sm font-medium mb-2 text-muted-foreground">Dados da Empresa</h3>
-          <Input {...form.register('nome')} placeholder="Nome da empresa (ex: Atacadão)" />
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <label htmlFor="nome" className="text-sm font-medium">
+            Nome da empresa
+          </label>
+          <Input 
+            id="nome" 
+            {...form.register('nome')} 
+            placeholder="Ex: Atacadão S/A" 
+            className={form.formState.errors.nome ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
           {form.formState.errors.nome && (
-            <p className="text-sm text-destructive mt-1">{form.formState.errors.nome.message}</p>
+            <p className="text-[13px] text-destructive font-medium">{form.formState.errors.nome.message}</p>
           )}
         </div>
 
         {!isEdit && (
-          <div className="space-y-4 border-t pt-4 mt-4">
-            <h3 className="text-sm font-medium text-muted-foreground">Representante Principal</h3>
-            
+          <div className="space-y-4 rounded-md border p-4 bg-muted/10">
             <div>
-              <Input {...form.register('nomeRepresentante')} placeholder="Nome do representante" />
+              <h3 className="font-medium">Representante Principal</h3>
+              <p className="text-xs text-muted-foreground">Quem responderá pelas cotações desta empresa.</p>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="nomeRepresentante" className="text-sm font-medium">
+                Nome do representante
+              </label>
+              <Input 
+                id="nomeRepresentante" 
+                {...form.register('nomeRepresentante')} 
+                placeholder="Ex: João Silva" 
+                className={form.formState.errors.nomeRepresentante ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
               {form.formState.errors.nomeRepresentante && (
-                <p className="text-sm text-destructive mt-1">{form.formState.errors.nomeRepresentante.message}</p>
+                <p className="text-[13px] text-destructive font-medium">{form.formState.errors.nomeRepresentante.message}</p>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Input type="email" {...form.register('emailRepresentante')} placeholder="E-mail" />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="emailRepresentante" className="text-sm font-medium">
+                  E-mail
+                </label>
+                <Input 
+                  id="emailRepresentante" 
+                  type="email" 
+                  {...form.register('emailRepresentante')} 
+                  placeholder="joao@atacadao.com" 
+                  className={form.formState.errors.emailRepresentante ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
                 {form.formState.errors.emailRepresentante && (
-                  <p className="text-sm text-destructive mt-1">{form.formState.errors.emailRepresentante.message}</p>
+                  <p className="text-[13px] text-destructive font-medium">{form.formState.errors.emailRepresentante.message}</p>
                 )}
               </div>
-              <div>
-                <Input {...form.register('whatsappRepresentante')} placeholder="WhatsApp (opcional)" />
+              <div className="space-y-2">
+                <label htmlFor="whatsappRepresentante" className="text-sm font-medium">
+                  WhatsApp <span className="text-muted-foreground font-normal">(opcional)</span>
+                </label>
+                <Input 
+                  id="whatsappRepresentante" 
+                  {...form.register('whatsappRepresentante')} 
+                  placeholder="(11) 99999-9999" 
+                  className={form.formState.errors.whatsappRepresentante ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
                 {form.formState.errors.whatsappRepresentante && (
-                  <p className="text-sm text-destructive mt-1">{form.formState.errors.whatsappRepresentante.message}</p>
+                  <p className="text-[13px] text-destructive font-medium">{form.formState.errors.whatsappRepresentante.message}</p>
                 )}
               </div>
             </div>
@@ -108,10 +146,14 @@ export function EmpresaForm({
         )}
       </div>
 
-      {genericError && <p className="text-sm text-destructive">{genericError}</p>}
+      {genericError && (
+        <div role="alert" className="text-[13px] text-destructive font-medium bg-destructive/10 border border-destructive/20 p-3 rounded-md">
+          {genericError}
+        </div>
+      )}
 
-      <div className="flex gap-2 justify-end mt-6">
-        <Button type="button" variant="outline" onClick={aoSalvar} disabled={isPending}>Cancelar</Button>
+      <div className="flex gap-2 justify-end pt-2 border-t">
+        <Button type="button" variant="ghost" onClick={aoSalvar} disabled={isPending}>Cancelar</Button>
         <Button type="submit" disabled={isPending}>
           {isPending ? 'Salvando…' : 'Salvar'}
         </Button>
