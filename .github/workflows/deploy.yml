@@ -3,6 +3,10 @@ name: CI e Deploy
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'openspec/**'
+      - 'docs/**'
+      - '**/*.md'
   pull_request:
 
 jobs:
