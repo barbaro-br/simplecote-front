@@ -39,7 +39,7 @@ export const BottomSheetHeader = ({
 
 export const BottomSheetTitle = React.forwardRef<
   HTMLHeadingElement,
-  BaseDialog.TitleProps
+  React.ComponentPropsWithoutRef<typeof BaseDialog.Title>
 >(({ className, ...props }, ref) => (
   <BaseDialog.Title
     ref={ref}
