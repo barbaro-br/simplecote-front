@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FileText, Plus, RefreshCw, Search, ServerCrash } from 'lucide-react'
 import { dataHoraBr } from '@/shared/format/formatters'
+import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 import { StatusBadge } from '@/shared/components/StatusBadge'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
-import { useCotacoes } from './cotacoes.api'
+import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
+import { useCotacoes, useDuplicarCotacao } from './cotacoes.api'
 import { PainelDashboard } from '../analise/PainelDashboard'
 
 const STATUS: { valor: StatusCotacao; rotulo: string }[] = [
@@ -33,6 +35,24 @@ export function CotacoesPage() {
   const { data: cotacoes, isLoading, error, refetch, isFetching } = useCotacoes()
   const [filtro, setFiltro] = useState<Filtro>('TODOS')
   const [busca, setBusca] = useState('')
+
+  const navigate = useNavigate()
+  const duplicar = useDuplicarCotacao()
+  const [erroDup, setErroDup] = useState<string | null>(null)
+
+  function aoDuplicar(id: string) {
+    setErroDup(null)
+    duplicar.mutate(id, {
+      onSuccess: (data) =>
+        navigate(`/admin/cotacoes/${data.cotacao.id}`, { state: { omitidos: data.omitidos } }),
+      onError: (e) => {
+        if (e instanceof SessaoExpiradaError) return
+        setErroDup(
+          e instanceof ApiError ? e.message : 'Não foi possível duplicar. Tente novamente.',
+        )
+      },
+    })
+  }
 
   const total = cotacoes?.length ?? 0
   const lista = (cotacoes ?? [])
@@ -99,6 +119,12 @@ export function CotacoesPage() {
         </div>
       </div>
 
+      {erroDup && (
+        <div role="alert" className="text-sm text-destructive font-medium">
+          {erroDup}
+        </div>
+      )}
+
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
@@ -106,6 +132,9 @@ export function CotacoesPage() {
               <th className="px-4 py-3 font-medium">Título</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Prazo</th>
+              <th className="px-4 py-3 font-medium w-12">
+                <span className="sr-only">Ações</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -121,11 +150,14 @@ export function CotacoesPage() {
                   <td className="px-4 py-3">
                     <Skeleton className="h-4 w-28" />
                   </td>
+                  <td className="px-4 py-3">
+                    <Skeleton className="size-7 rounded-md" />
+                  </td>
                 </tr>
               ))
             ) : error ? (
               <tr>
-                <td colSpan={3} className="px-4 py-12">
+                <td colSpan={4} className="px-4 py-12">
                   <div className="flex flex-col items-center gap-3 text-center">
                     <ServerCrash className="size-8 text-destructive/40" aria-hidden />
                     <div>
@@ -151,7 +183,7 @@ export function CotacoesPage() {
               </tr>
             ) : !lista.length ? (
               <tr>
-                <td colSpan={3} className="px-4 py-12">
+                <td colSpan={4} className="px-4 py-12">
                   <div className="flex flex-col items-center gap-2 text-center">
                     <FileText className="size-8 text-muted-foreground/25" aria-hidden />
                     <p className="text-sm font-medium">
@@ -181,6 +213,20 @@ export function CotacoesPage() {
                   </td>
                   <td className="px-4 py-3 tabular-nums text-muted-foreground">
                     {c.prazo ? dataHoraBr(c.prazo) : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <MenuAcoes
+                      items={[
+                        {
+                          label:
+                            duplicar.isPending && duplicar.variables === c.id
+                              ? 'Duplicando…'
+                              : 'Duplicar',
+                          onSelect: () => aoDuplicar(c.id),
+                          disabled: duplicar.isPending,
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))

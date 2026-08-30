@@ -221,3 +221,62 @@ test('3.4 — Abrir envia o prazo em ISO', async () => {
   // ISO-8601 canônico (com offset Z)
   expect(new Date(prazo as string).toISOString()).toBe(prazo)
 })
+
+// --- duplicar-cotacao-ui ---
+
+const COPIA = {
+  id: 'c-2',
+  titulo: 'Compra semanal (cópia)',
+  status: 'RASCUNHO' as StatusCotacao,
+  prazo: null,
+  criadaEm: '2026-08-10T12:00:00Z',
+  encerradaEm: null as string | null,
+  itens: [] as Item[],
+}
+
+test('sem itens omitidos no state, nenhum aviso de duplicação aparece', async () => {
+  setup('RASCUNHO')
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(screen.queryByText(/não copiados nesta duplicação/i)).not.toBeInTheDocument()
+})
+
+test('"Duplicar" no sucesso navega para a cópia e mostra o aviso de itens omitidos', async () => {
+  setup('RASCUNHO')
+  server.use(
+    http.post('*/api/cotacoes/c-1/duplicar', () =>
+      HttpResponse.json({
+        cotacao: COPIA,
+        omitidos: [
+          { produtoId: 'p-9', nome: 'Feijão 1kg', motivo: 'Produto inativado' },
+          { produtoId: 'p-8', nome: 'Óleo 900ml', motivo: 'Produto inativado' },
+        ],
+      }),
+    ),
+    http.get('*/api/cotacoes/c-2', () => HttpResponse.json(COPIA)),
+    http.get('*/api/cotacoes/c-2/participantes', () => HttpResponse.json([])),
+  )
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Duplicar' }))
+
+  expect(await screen.findByRole('heading', { name: 'Compra semanal (cópia)' })).toBeInTheDocument()
+  const aviso = screen.getByRole('status')
+  expect(aviso).toHaveTextContent('Feijão 1kg — Produto inativado')
+  expect(aviso).toHaveTextContent('Óleo 900ml — Produto inativado')
+})
+
+test('"Duplicar" com erro mostra a mensagem em alerta e não navega', async () => {
+  setup('RASCUNHO')
+  server.use(
+    http.post('*/api/cotacoes/c-1/duplicar', () =>
+      HttpResponse.json(
+        { type: 'about:blank', title: 'Conflito', status: 409, detail: 'Não foi possível duplicar.' },
+        { status: 409 },
+      ),
+    ),
+  )
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Duplicar' }))
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível duplicar.')
+  expect(screen.getByRole('heading', { name: 'Compra semanal' })).toBeInTheDocument()
+})
