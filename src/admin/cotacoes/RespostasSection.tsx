@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { CelulaGrid } from './cotacoes.schema'
@@ -24,9 +25,28 @@ export function RespostasSection({ cotacaoId }: { cotacaoId: string }) {
   const [naoCotado, setNaoCotado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
-  if (grid.isLoading) return <p className="text-muted-foreground">Carregando respostas…</p>
-  if (grid.error)
-    return <p className="text-destructive">Erro ao carregar as respostas: {grid.error.message}</p>
+  if (grid.isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Respostas</CardTitle>
+        </CardHeader>
+        <div className="p-4 text-sm text-muted-foreground">Carregando respostas…</div>
+      </Card>
+    )
+  }
+
+  if (grid.error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Respostas</CardTitle>
+        </CardHeader>
+        <div className="p-4 text-sm text-destructive">Erro ao carregar as respostas: {grid.error.message}</div>
+      </Card>
+    )
+  }
+
   if (!grid.data) return null
 
   // Colunas = participantes; se a lista ainda não carregou, deriva das células da grade.
@@ -69,29 +89,33 @@ export function RespostasSection({ cotacaoId }: { cotacaoId: string }) {
 
   if (!grid.data.itens.length) {
     return (
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">Respostas</h2>
-        <p className="text-sm text-muted-foreground">Nenhum item na cotação.</p>
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>Respostas</CardTitle>
+        </CardHeader>
+        <div className="p-4 pt-0 text-sm text-muted-foreground">Nenhum item na cotação.</div>
+      </Card>
     )
   }
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-baseline gap-3">
-        <h2 className="text-lg font-medium">Respostas</h2>
-        <span className="text-sm text-muted-foreground">
-          {grid.data.respondidos}/{grid.data.totalParticipantes} responderam
-        </span>
-      </div>
+    <Card className="overflow-hidden">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <CardTitle>Respostas</CardTitle>
+          <span className="text-sm text-muted-foreground">
+            {grid.data.respondidos}/{grid.data.totalParticipantes} responderam
+          </span>
+        </div>
+      </CardHeader>
 
       {erro && (
-        <div role="alert" className="text-sm text-destructive">
+        <div role="alert" className="px-4 pb-4 text-sm text-destructive">
           {erro}
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-md border">
+      <div className="overflow-x-auto border-t">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr className="text-left text-muted-foreground">
@@ -104,7 +128,7 @@ export function RespostasSection({ cotacaoId }: { cotacaoId: string }) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 px-1 text-xs"
+                        className="h-6 px-1 text-xs -ml-1 text-muted-foreground hover:text-foreground"
                         onClick={() => reabrir.mutate(c.participanteId)}
                         disabled={reabrir.isPending}
                       >
@@ -116,10 +140,10 @@ export function RespostasSection({ cotacaoId }: { cotacaoId: string }) {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-border">
             {grid.data.itens.map((item) => (
-              <tr key={item.itemCotacaoId}>
-                <td className="px-4 py-2">{item.nome}</td>
+              <tr key={item.itemCotacaoId} className="hover:bg-muted/50 transition-colors">
+                <td className="px-4 py-2 font-medium">{item.nome}</td>
                 {colunas.map((col) => {
                   const celula = item.precos.find((c) => c.participanteId === col.participanteId)
                   const emEdicao =
@@ -128,7 +152,7 @@ export function RespostasSection({ cotacaoId }: { cotacaoId: string }) {
                   return (
                     <td key={col.participanteId} className="px-4 py-2">
                       {emEdicao ? (
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-2 min-w-[140px]">
                           <Input
                             type="number"
                             min={0}
@@ -137,23 +161,25 @@ export function RespostasSection({ cotacaoId }: { cotacaoId: string }) {
                             disabled={naoCotado}
                             onChange={(e) => setPreco(e.target.value)}
                             aria-label="Preço da embalagem"
+                            className="h-8 text-sm"
                           />
-                          <label className="flex items-center gap-1 text-xs">
+                          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                             <input
                               type="checkbox"
                               checked={naoCotado}
                               onChange={(e) => setNaoCotado(e.target.checked)}
+                              className="rounded border-input text-primary focus:ring-primary"
                             />
                             não cotado
                           </label>
-                          <div className="flex gap-1">
-                            <Button size="sm" className="h-6 px-2 text-xs" onClick={salvar} disabled={corrigir.isPending}>
+                          <div className="flex gap-1 mt-1">
+                            <Button size="sm" className="h-6 px-2 text-xs flex-1" onClick={salvar} disabled={corrigir.isPending}>
                               Salvar
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-6 px-2 text-xs"
+                              className="h-6 px-2 text-xs flex-1 text-muted-foreground hover:text-foreground hover:bg-muted"
                               onClick={() => setEditando(null)}
                             >
                               Cancelar
@@ -163,7 +189,7 @@ export function RespostasSection({ cotacaoId }: { cotacaoId: string }) {
                       ) : (
                         <button
                           type="button"
-                          className="tabular-nums text-primary hover:underline"
+                          className="tabular-nums text-primary hover:underline hover:text-primary/80 transition-colors text-left"
                           onClick={() => abrirEdicao(item.itemCotacaoId, col.participanteId, celula)}
                         >
                           {textoCelula(celula)}
@@ -177,6 +203,6 @@ export function RespostasSection({ cotacaoId }: { cotacaoId: string }) {
           </tbody>
         </table>
       </div>
-    </section>
+    </Card>
   )
 }

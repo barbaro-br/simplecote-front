@@ -39,15 +39,15 @@ type LinhaProps = {
 // `memo` por linha (spec.md §14): o poll não deve re-renderizar linhas iguais.
 const LinhaItem = memo(function LinhaItem({ item, colunas, aoCorrigir }: LinhaProps) {
   return (
-    <tr className="transition-colors hover:bg-muted/40">
-      <td className="px-4 py-2 whitespace-nowrap">
+    <tr className="group transition-colors hover:bg-muted/40">
+      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-3 whitespace-nowrap border-r shadow-[1px_0_0_0_var(--border)]">
         <UltimaCompraPopover item={item} />
       </td>
       {colunas.map((col) => {
         const celula = item.precos.find((c) => c.participanteId === col.participanteId)
         if (!celula) {
           return (
-            <td key={col.participanteId} className="px-4 py-2 text-muted-foreground">
+            <td key={col.participanteId} className="px-4 py-3 text-muted-foreground text-center">
               —
             </td>
           )
@@ -58,25 +58,39 @@ const LinhaItem = memo(function LinhaItem({ item, colunas, aoCorrigir }: LinhaPr
           item.menorPrecoUnitario != null &&
           celula.precoUnitario === item.menorPrecoUnitario
         return (
-          <td key={col.participanteId} className="px-1 py-1">
+          <td key={col.participanteId} className="px-2 py-2 min-w-[140px]">
             <button
               type="button"
               onClick={() => aoCorrigir(item, celula)}
               aria-label={`Corrigir lance de ${col.empresa} para ${item.nome}`}
-              className={`w-full rounded px-2 py-1 text-left transition-colors hover:bg-muted ${
-                ehMenor ? 'bg-success/10 text-success font-medium' : ''
+              className={`w-full h-full min-h-[3rem] rounded-md px-3 py-2 text-left transition-colors border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+                ehMenor 
+                  ? 'bg-success/5 border-success/20 ring-1 ring-success/20' 
+                  : 'bg-transparent border-transparent hover:bg-muted/50'
               }`}
             >
-              <span className="block text-xs text-muted-foreground">{rotuloStatus(celula.status)}</span>
-              {celula.status === 'COTADO' && celula.preco != null ? (
-                <span className="block tabular-nums">
-                  {moeda(celula.preco)}
-                  {celula.precoUnitario != null && (
-                    <span className="text-xs text-muted-foreground"> · {moeda(celula.precoUnitario)}/un</span>
-                  )}
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-[11px] font-medium uppercase tracking-wider ${
+                  celula.status === 'COTADO' ? 'text-primary' : 'text-muted-foreground'
+                }`}>
+                  {rotuloStatus(celula.status)}
                 </span>
+                {ehMenor && <span className="text-[10px] font-bold bg-success text-success-foreground px-1.5 py-0.5 rounded-sm uppercase tracking-wider">Menor</span>}
+              </div>
+              
+              {celula.status === 'COTADO' && celula.preco != null ? (
+                <div className="flex flex-col">
+                  <span className={`tabular-nums font-semibold ${ehMenor ? 'text-success' : 'text-foreground'}`}>
+                    {moeda(celula.preco)}
+                  </span>
+                  {celula.precoUnitario != null && (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {moeda(celula.precoUnitario)} / un
+                    </span>
+                  )}
+                </div>
               ) : (
-                <span className="block text-muted-foreground">—</span>
+                <span className="block text-muted-foreground/50 text-sm">—</span>
               )}
             </button>
           </td>
@@ -121,44 +135,50 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
   }
 
   if (!grade.itens.length) {
-    return <p className="text-sm text-muted-foreground">Nenhum item na cotação.</p>
+    return <p className="text-sm text-muted-foreground p-4 rounded-md border border-dashed text-center">Nenhum item na cotação.</p>
   }
 
   return (
     <>
-      <div className="overflow-x-auto rounded-md border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50">
-            <tr className="text-left text-muted-foreground">
-              <th className="px-4 py-2 font-medium">Item</th>
-              {colunas.map((c) => (
-                <th key={c.participanteId} className="px-4 py-2 font-medium">
-                  {c.empresa}
+      <div className="rounded-md border bg-card text-card-foreground shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 border-b">
+              <tr className="text-left text-muted-foreground">
+                <th className="sticky left-0 z-20 bg-muted/50 px-4 py-3 font-medium border-r shadow-[1px_0_0_0_var(--border)] backdrop-blur-sm">
+                  Item
                 </th>
+                {colunas.map((c) => (
+                  <th key={c.participanteId} className="px-4 py-3 font-medium min-w-[140px]">
+                    {c.empresa}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {grade.itens.map((item) => (
+                <LinhaItem
+                  key={item.itemCotacaoId}
+                  item={item}
+                  colunas={colunas}
+                  aoCorrigir={abrirCorrecao}
+                />
               ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {grade.itens.map((item) => (
-              <LinhaItem
-                key={item.itemCotacaoId}
-                item={item}
-                colunas={colunas}
-                aoCorrigir={abrirCorrecao}
-              />
-            ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <Dialog open={alvo != null} onClose={() => setAlvo(null)} title="Corrigir lance">
         {alvo && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              {alvo.celula.empresa} — {alvo.item.nome}
-            </p>
-            <div>
-              <label htmlFor="corr-preco" className="text-xs text-muted-foreground">
+          <div className="space-y-4">
+            <div className="rounded-md bg-muted p-3">
+              <p className="text-sm font-medium">{alvo.celula.empresa}</p>
+              <p className="text-sm text-muted-foreground">{alvo.item.nome}</p>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label htmlFor="corr-preco" className="text-sm font-medium">
                 Preço da embalagem
               </label>
               <Input
@@ -169,27 +189,32 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
                 value={preco}
                 disabled={naoCotado}
                 onChange={(e) => setPreco(e.target.value)}
+                className="text-lg h-12"
               />
             </div>
-            <label className="flex items-center gap-2 text-sm">
+            
+            <label className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-muted cursor-pointer transition-colors">
               <input
                 type="checkbox"
                 checked={naoCotado}
                 onChange={(e) => setNaoCotado(e.target.checked)}
+                className="rounded border-input text-primary focus:ring-primary w-4 h-4"
               />
-              Não cotado
+              Marcar como "Não cotado"
             </label>
+            
             {erro && (
-              <p role="alert" className="text-sm text-destructive">
+              <p role="alert" className="text-sm text-destructive font-medium">
                 {erro}
               </p>
             )}
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setAlvo(null)}>
+            
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="ghost" onClick={() => setAlvo(null)}>
                 Cancelar
               </Button>
               <Button type="button" onClick={salvar} disabled={corrigir.isPending}>
-                {corrigir.isPending ? 'Salvando…' : 'Salvar'}
+                {corrigir.isPending ? 'Salvando…' : 'Salvar correção'}
               </Button>
             </div>
           </div>

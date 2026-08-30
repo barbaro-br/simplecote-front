@@ -159,8 +159,8 @@ test('3.5 — cadastra Produto novo no modal aninhado, volta pré-selecionado e 
 
   // 2º modal (cadastro) empilhado
   const cadastro = () => screen.getByRole('dialog', { name: 'Cadastrar novo produto' })
-  await user.type(within(cadastro()).getByPlaceholderText('Nome do produto'), 'Feijão Carioca 1kg')
-  const qtd = within(cadastro()).getByPlaceholderText('Quantidade por embalagem')
+  await user.type(within(cadastro()).getByLabelText('Nome do produto'), 'Feijão Carioca 1kg')
+  const qtd = within(cadastro()).getByLabelText('Qtd. por embalagem')
   await user.clear(qtd)
   await user.type(qtd, '10')
   await user.click(within(cadastro()).getByRole('button', { name: /Salvar/i }))

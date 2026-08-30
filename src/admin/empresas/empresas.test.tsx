@@ -64,10 +64,10 @@ test('abre formulário, preenche empresa e representante, e salva', async () => 
   await user.click(screen.getByRole('button', { name: /Nova Empresa/i }))
 
   const dialog = within(screen.getByRole('dialog'))
-  await user.type(dialog.getByPlaceholderText('Nome da empresa (ex: Atacadão)'), 'Novo Fornecedor')
-  await user.type(dialog.getByPlaceholderText('Nome do representante'), 'João Silva')
-  await user.type(dialog.getByPlaceholderText('E-mail'), 'joao@email.com')
-  await user.type(dialog.getByPlaceholderText('WhatsApp (opcional)'), '11999999999')
+  await user.type(dialog.getByLabelText('Nome da empresa'), 'Novo Fornecedor')
+  await user.type(dialog.getByLabelText('Nome do representante'), 'João Silva')
+  await user.type(dialog.getByLabelText('E-mail'), 'joao@email.com')
+  await user.type(dialog.getByLabelText(/WhatsApp/i), '11999999999')
 
   await user.click(dialog.getByRole('button', { name: /Salvar/i }))
 
@@ -114,7 +114,7 @@ test('edita o nome de uma empresa existente', async () => {
   await user.click(screen.getByRole('button', { name: /Editar/i }))
 
   const dialog = within(screen.getByRole('dialog'))
-  const nomeInput = dialog.getByPlaceholderText('Nome da empresa (ex: Atacadão)')
+  const nomeInput = dialog.getByLabelText('Nome da empresa')
   await user.clear(nomeInput)
   await user.type(nomeInput, 'Fornecedor A Editado')
 
@@ -124,3 +124,4 @@ test('edita o nome de uma empresa existente', async () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
+

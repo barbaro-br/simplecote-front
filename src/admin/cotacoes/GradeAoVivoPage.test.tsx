@@ -75,7 +75,7 @@ test('2.1/2.2 — cabeçalho, células por status e menor preço destacado', asy
   const celMenor = screen.getByRole('button', {
     name: 'Corrigir lance de Atacado União para Arroz 5kg',
   })
-  expect(celMenor.className).toMatch(/text-success/)
+  expect(within(celMenor).getByText('Menor')).toBeInTheDocument()
 })
 
 test('3.1 — popover de última compra: com dado e sem dado', async () => {
@@ -90,7 +90,7 @@ test('3.1 — popover de última compra: com dado e sem dado', async () => {
   const tip = await screen.findByRole('tooltip')
   expect(tip).toHaveTextContent('Última compra')
   expect(tip).toHaveTextContent('Atacado União')
-  expect(tip).toHaveTextContent('/un')
+  expect(tip).toHaveTextContent('/ un')
   await user.unhover(screen.getByText('Arroz 5kg'))
 
   await user.hover(screen.getByText('Feijão 1kg'))
@@ -123,7 +123,7 @@ test('4.1 — corrigir lance pela célula reflete na grade sem esperar o poll', 
   )
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByLabelText('Preço da embalagem'), '99')
-  await user.click(dialog.getByRole('button', { name: 'Salvar' }))
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
 
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 

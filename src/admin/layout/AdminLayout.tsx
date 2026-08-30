@@ -7,6 +7,7 @@ import {
   Package,
   PanelLeftClose,
   PanelLeftOpen,
+  ShoppingBag,
 } from 'lucide-react'
 import { useAuth } from '@/shared/auth/AuthContext'
 
@@ -49,8 +50,15 @@ export function AdminLayout() {
       <aside
         className={`${colapsada ? 'w-16' : 'w-64'} border-r bg-background p-4 flex flex-col transition-[width] duration-200`}
       >
-        <div className="flex items-center justify-between mb-8">
-          {!colapsada && <h1 className="text-xl font-bold text-primary">SimpleCote</h1>}
+        <div className={`flex items-center mb-8 ${colapsada ? 'justify-center' : 'justify-between'}`}>
+          {!colapsada && (
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                <ShoppingBag className="size-4" aria-hidden />
+              </div>
+              <span className="truncate text-lg font-semibold tracking-tight">SimpleCote</span>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => setColapsada((v) => !v)}
