@@ -5,6 +5,10 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/shared/auth/AuthContext'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
+import { Card } from '@/shared/components/ui/card'
+import { Input } from '@/shared/components/ui/input'
+import { Button } from '@/shared/components/ui/button'
+import { AlertTriangle } from 'lucide-react'
 
 const loginSchema = z.object({
   email: z.string().min(1, 'E-mail obrigatório').email('E-mail inválido'),
@@ -51,20 +55,19 @@ export function LoginPage() {
         </div>
 
         {/* Card do formulário */}
-        <div className="border bg-card rounded-xl p-8 shadow-sm space-y-6">
+        <Card className="p-8 space-y-6">
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
             {/* E-mail */}
             <div className="space-y-1.5">
               <label htmlFor="login-email" className="text-sm font-medium text-foreground">
                 E-mail
               </label>
-              <input
+              <Input
                 id="login-email"
                 type="email"
                 autoComplete="email"
                 placeholder="voce@empresa.com.br"
                 {...register('email')}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60 disabled:opacity-50"
                 disabled={isSubmitting}
               />
               {errors.email && (
@@ -77,13 +80,12 @@ export function LoginPage() {
               <label htmlFor="login-senha" className="text-sm font-medium text-foreground">
                 Senha
               </label>
-              <input
+              <Input
                 id="login-senha"
                 type="password"
                 autoComplete="current-password"
                 placeholder="••••••••"
                 {...register('senha')}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60 disabled:opacity-50"
                 disabled={isSubmitting}
               />
               {errors.senha && (
@@ -95,23 +97,24 @@ export function LoginPage() {
             {erroServidor && (
               <div
                 role="alert"
-                className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive"
+                className="flex items-center gap-2 rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive"
               >
+                <AlertTriangle className="size-4 shrink-0" />
                 {erroServidor}
               </div>
             )}
 
             {/* Submit */}
-            <button
+            <Button
               id="login-submit"
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/60 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full"
             >
               {isSubmitting ? 'Entrando…' : 'Entrar'}
-            </button>
+            </Button>
           </form>
-        </div>
+        </Card>
       </div>
     </div>
   )

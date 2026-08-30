@@ -63,19 +63,19 @@ export function CotacaoDetalhePage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{cotacao.titulo}</h1>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{cotacao.titulo}</h1>
           <p className="text-sm text-muted-foreground flex items-center gap-2">
             <StatusBadge status={status} />
             {cotacao.prazo && <span>· Prazo: {dataHoraBr(cotacao.prazo)}</span>}
           </p>
         </div>
-        <Link to="/admin" className="text-sm text-primary hover:underline">
+        <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors">
           ← Cotações
         </Link>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {status === 'RASCUNHO' && (
           <>
             <Button onClick={() => setDialog('abrir')}>Abrir</Button>
@@ -108,7 +108,7 @@ export function CotacaoDetalhePage() {
         {status === 'PEDIDOS_GERADOS' && (
           <Link
             to={`/admin/cotacoes/${id}/resultado`}
-            className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90"
           >
             Ver resultado
           </Link>
@@ -116,7 +116,7 @@ export function CotacaoDetalhePage() {
         {(status === 'ABERTA' || status === 'ENCERRADA') && (
           <Link
             to={`/admin/cotacoes/${id}/ao-vivo`}
-            className="inline-flex h-9 items-center rounded-md border px-4 text-sm font-medium hover:bg-muted"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground"
           >
             Acompanhar ao vivo
           </Link>
@@ -124,23 +124,25 @@ export function CotacaoDetalhePage() {
       </div>
 
       {erroAcao && (
-        <div role="alert" className="text-sm text-destructive">
+        <div role="alert" className="text-sm text-destructive font-medium">
           {erroAcao}
         </div>
       )}
 
-      <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={status === 'RASCUNHO'} />
+      <div className="space-y-6">
+        <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={status === 'RASCUNHO'} />
 
-      {status !== 'CANCELADA' && (
-        <ParticipantesSection
-          cotacaoId={id}
-          titulo={cotacao.titulo}
-          prazo={cotacao.prazo}
-          podeConvidar={status === 'RASCUNHO'}
-        />
-      )}
+        {status !== 'CANCELADA' && (
+          <ParticipantesSection
+            cotacaoId={id}
+            titulo={cotacao.titulo}
+            prazo={cotacao.prazo}
+            podeConvidar={status === 'RASCUNHO'}
+          />
+        )}
 
-      {(status === 'ABERTA' || status === 'ENCERRADA') && <RespostasSection cotacaoId={id} />}
+        {(status === 'ABERTA' || status === 'ENCERRADA') && <RespostasSection cotacaoId={id} />}
+      </div>
 
       {dialog === 'abrir' && (
         <AbrirCotacaoDialog

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
+import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { PackageX } from 'lucide-react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import type { Produto } from '@/admin/produtos/produtos.schema'
@@ -46,15 +48,15 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium">Itens</h2>
+    <Card className="overflow-hidden">
+      <CardHeader>
+        <CardTitle>Itens</CardTitle>
         {editavel && (
-          <Button type="button" onClick={() => setFormAberto(true)}>
+          <Button type="button" onClick={() => setFormAberto(true)} size="sm">
             Adicionar item
           </Button>
         )}
-      </div>
+      </CardHeader>
 
       <Dialog
         open={editavel && formAberto}
@@ -70,7 +72,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
               id="item-produto"
               value={produtoId}
               onChange={(e) => setProdutoId(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+              className="mt-1 h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="">Selecione…</option>
               {(produtos ?? [])
@@ -126,7 +128,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
         <ProdutoForm aoSalvar={aoCadastrarProduto} />
       </Dialog>
 
-      <div className="rounded-md border overflow-hidden">
+      <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr className="text-left text-muted-foreground">
@@ -136,17 +138,20 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
               {editavel && <th className="px-4 py-2 font-medium text-right">Ações</th>}
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-border">
             {!itens.length ? (
               <tr>
-                <td colSpan={editavel ? 4 : 3} className="px-4 py-6 text-center text-muted-foreground">
-                  Nenhum item.
+                <td colSpan={editavel ? 4 : 3} className="px-4 py-8 text-center text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <PackageX className="size-8 text-muted-foreground/50" />
+                    <p>Nenhum item adicionado.</p>
+                  </div>
                 </td>
               </tr>
             ) : (
               itens.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-4 py-2">{item.nomeSnapshot}</td>
+                <tr key={item.id} className="hover:bg-muted/50 transition-colors">
+                  <td className="px-4 py-2 font-medium">{item.nomeSnapshot}</td>
                   <td className="px-4 py-2">{item.unidadeSnapshot}</td>
                   <td className="px-4 py-2 tabular-nums">{item.quantidadeSolicitada}</td>
                   {editavel && (
@@ -154,6 +159,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => remover.mutate(item.id)}
                         disabled={remover.isPending}
                       >
@@ -167,6 +173,6 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
           </tbody>
         </table>
       </div>
-    </section>
+    </Card>
   )
 }

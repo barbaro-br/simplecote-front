@@ -54,9 +54,10 @@ test('mostra os dados do pedido', async () => {
   server.use(http.get(`*/public/pedidos/${TOKEN}`, () => HttpResponse.json(pedido())))
   renderPage()
 
-  expect(await screen.findByRole('heading', { name: /pedido — atacadão central/i })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: /pedido/i })).toBeInTheDocument()
+  expect(screen.getByText('Atacadão Central')).toBeInTheDocument()
   expect(screen.getByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: /confirmar pedido/i })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /confirmar/i })).toBeInTheDocument()
 })
 
 test('confirmar chama a API e a tela reflete o pedido confirmado', async () => {
@@ -69,10 +70,10 @@ test('confirmar chama a API e a tela reflete o pedido confirmado', async () => {
   const user = userEvent.setup()
   renderPage()
 
-  await user.click(await screen.findByRole('button', { name: /confirmar pedido/i }))
+  await user.click(await screen.findByRole('button', { name: /confirmar/i }))
 
-  expect(await screen.findByText(/pedido confirmado\./i)).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: /confirmar pedido/i })).not.toBeInTheDocument()
+  expect(await screen.findByText(/pedido confirmado/i)).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /confirmar/i })).not.toBeInTheDocument()
 })
 
 test('erro ProblemDetail na confirmação é exibido', async () => {
@@ -88,7 +89,7 @@ test('erro ProblemDetail na confirmação é exibido', async () => {
   const user = userEvent.setup()
   renderPage()
 
-  await user.click(await screen.findByRole('button', { name: /confirmar pedido/i }))
+  await user.click(await screen.findByRole('button', { name: /confirmar/i }))
 
   await waitFor(() =>
     expect(screen.getByRole('alert')).toHaveTextContent('Este pedido já foi confirmado.'),

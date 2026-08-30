@@ -63,7 +63,7 @@ describe('UI não exibe a mensagem de SessaoExpiradaError', () => {
     )
 
     const user = userEvent.setup()
-    await user.type(screen.getByPlaceholderText('Nome do produto'), 'Feijão 1kg')
+    await user.type(screen.getByLabelText('Nome do produto'), 'Feijão 1kg')
     await user.click(screen.getByRole('button', { name: /Salvar/i }))
 
     await waitFor(() => {

@@ -12,7 +12,7 @@ export function ToggleDuplo({ naoCotado, onChange, disabled, className }: Toggle
   return (
     <div
       className={cn(
-        'inline-flex h-9 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground w-full',
+        'inline-flex h-12 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground w-full',
         className,
       )}
     >
