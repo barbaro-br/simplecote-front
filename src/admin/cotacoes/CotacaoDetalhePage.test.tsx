@@ -46,6 +46,7 @@ function setup(status: StatusCotacao, itensIniciais: Item[] = []) {
   ]
 
   server.use(
+    http.get('*/api/analises/produtos/insight', () => HttpResponse.json({})),
     http.get('*/api/cotacoes/c-1', () => HttpResponse.json(state)),
     http.get('*/api/produtos', () => HttpResponse.json(produtos)),
     http.post('*/api/produtos', async ({ request }) => {
@@ -243,6 +244,7 @@ test('sem itens omitidos no state, nenhum aviso de duplicação aparece', async 
 test('"Duplicar" no sucesso navega para a cópia e mostra o aviso de itens omitidos', async () => {
   setup('RASCUNHO')
   server.use(
+    http.get('*/api/analises/produtos/insight', () => HttpResponse.json({})),
     http.post('*/api/cotacoes/c-1/duplicar', () =>
       HttpResponse.json({
         cotacao: COPIA,
@@ -267,6 +269,7 @@ test('"Duplicar" no sucesso navega para a cópia e mostra o aviso de itens omiti
 test('"Duplicar" com erro mostra a mensagem em alerta e não navega', async () => {
   setup('RASCUNHO')
   server.use(
+    http.get('*/api/analises/produtos/insight', () => HttpResponse.json({})),
     http.post('*/api/cotacoes/c-1/duplicar', () =>
       HttpResponse.json(
         { type: 'about:blank', title: 'Conflito', status: 409, detail: 'Não foi possível duplicar.' },

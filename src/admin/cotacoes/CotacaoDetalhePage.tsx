@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
 import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { StatusBadge } from '@/shared/components/StatusBadge'
 import { ItensSection } from './ItensSection'
-import { ParticipantesSection } from './ParticipantesSection'
 import { RespostasSection } from './RespostasSection'
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { AbrirCotacaoDialog } from './AbrirCotacaoDialog'
+import { RepresentantesModal } from './RepresentantesModal'
 import type { ItemOmitido } from './cotacoes.schema'
 import {
   useAbrir,
@@ -18,6 +18,7 @@ import {
   useDuplicarCotacao,
   useEncerrar,
   useReabrir,
+  useConvidarEmpresas
 } from './cotacoes.api'
 
 type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | null
@@ -34,9 +35,12 @@ export function CotacaoDetalhePage() {
   const cancelar = useCancelar(id)
   const apurar = useApurar(id)
   const duplicar = useDuplicarCotacao()
+  const convidar = useConvidarEmpresas(id)
 
   const [dialog, setDialog] = useState<DialogAberto>(null)
   const [erroAcao, setErroAcao] = useState<string | null>(null)
+  const [modalConviteAberto, setModalConviteAberto] = useState(false)
+  const [empresasSelecionadas, setEmpresasSelecionadas] = useState<string[]>([])
 
   // Itens que a duplicação não conseguiu copiar chegam via `state` da navegação.
   // Deriva no render (a rota `/admin/cotacoes/:id` não remonta ao trocar de id) e
@@ -82,72 +86,81 @@ export function CotacaoDetalhePage() {
     reabrir.isPending ||
     cancelar.isPending ||
     apurar.isPending ||
-    duplicar.isPending
+    duplicar.isPending ||
+    convidar.isPending
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{cotacao.titulo}</h1>
-          <p className="text-sm text-muted-foreground flex items-center gap-2">
-            <StatusBadge status={status} />
-            {cotacao.prazo && <span>· Prazo: {dataHoraBr(cotacao.prazo)}</span>}
-          </p>
+      <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border shadow-sm mb-6 space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">{cotacao.titulo}</h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <StatusBadge status={status} />
+              {cotacao.prazo && <span>· Prazo: {dataHoraBr(cotacao.prazo)}</span>}
+            </p>
+          </div>
+          <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors">
+            ← Cotações
+          </Link>
         </div>
-        <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors">
-          ← Cotações
-        </Link>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {status === 'RASCUNHO' && (
-          <>
-            <Button onClick={() => setDialog('abrir')}>Abrir</Button>
-            <Button variant="destructive" onClick={() => setDialog('cancelar')}>
-              Cancelar
+        <div className="flex flex-wrap items-center gap-2">
+          {status === 'RASCUNHO' && (
+            <>
+              <Button onClick={() => setDialog('abrir')}>Abrir</Button>
+              <Button variant="destructive" onClick={() => setDialog('cancelar')}>
+                Cancelar
+              </Button>
+            </>
+          )}
+          {status === 'ABERTA' && (
+            <>
+              <Button onClick={() => executar(() => encerrar.mutateAsync())} disabled={acaoPendente}>
+                Encerrar
+              </Button>
+              <Button variant="destructive" onClick={() => setDialog('cancelar')}>
+                Cancelar
+              </Button>
+            </>
+          )}
+          {status === 'ENCERRADA' && (
+            <>
+              <Button onClick={() => executar(() => reabrir.mutateAsync())} disabled={acaoPendente}>
+                Reabrir
+              </Button>
+              <Button onClick={() => setDialog('apurar')}>Apurar</Button>
+              <Button variant="destructive" onClick={() => setDialog('cancelar')}>
+                Cancelar
+              </Button>
+            </>
+          )}
+          {status === 'PEDIDOS_GERADOS' && (
+            <Link
+              to={`/admin/cotacoes/${id}/resultado`}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90"
+            >
+              Ver resultado
+            </Link>
+          )}
+          {(status === 'ABERTA' || status === 'ENCERRADA') && (
+            <Link
+              to={`/admin/cotacoes/${id}/ao-vivo`}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground"
+            >
+              Acompanhar ao vivo
+            </Link>
+          )}
+          <Button variant="secondary" onClick={aoDuplicar} disabled={acaoPendente}>
+            {duplicar.isPending ? 'Duplicando…' : 'Duplicar'}
+          </Button>
+
+          {status !== 'CANCELADA' && (
+            <Button variant="outline" onClick={() => setModalConviteAberto(true)}>
+              Representantes
             </Button>
-          </>
-        )}
-        {status === 'ABERTA' && (
-          <>
-            <Button onClick={() => executar(() => encerrar.mutateAsync())} disabled={acaoPendente}>
-              Encerrar
-            </Button>
-            <Button variant="destructive" onClick={() => setDialog('cancelar')}>
-              Cancelar
-            </Button>
-          </>
-        )}
-        {status === 'ENCERRADA' && (
-          <>
-            <Button onClick={() => executar(() => reabrir.mutateAsync())} disabled={acaoPendente}>
-              Reabrir
-            </Button>
-            <Button onClick={() => setDialog('apurar')}>Apurar</Button>
-            <Button variant="destructive" onClick={() => setDialog('cancelar')}>
-              Cancelar
-            </Button>
-          </>
-        )}
-        {status === 'PEDIDOS_GERADOS' && (
-          <Link
-            to={`/admin/cotacoes/${id}/resultado`}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90"
-          >
-            Ver resultado
-          </Link>
-        )}
-        {(status === 'ABERTA' || status === 'ENCERRADA') && (
-          <Link
-            to={`/admin/cotacoes/${id}/ao-vivo`}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground"
-          >
-            Acompanhar ao vivo
-          </Link>
-        )}
-        <Button variant="secondary" onClick={aoDuplicar} disabled={acaoPendente}>
-          {duplicar.isPending ? 'Duplicando…' : 'Duplicar'}
-        </Button>
+          )}
+        </div>
       </div>
 
       {omitidos.length > 0 && (
@@ -185,23 +198,26 @@ export function CotacaoDetalhePage() {
       <div className="space-y-6">
         <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={status === 'RASCUNHO'} />
 
-        {status !== 'CANCELADA' && (
-          <ParticipantesSection
-            cotacaoId={id}
-            titulo={cotacao.titulo}
-            prazo={cotacao.prazo}
-            podeConvidar={status === 'RASCUNHO'}
-          />
-        )}
-
         {(status === 'ABERTA' || status === 'ENCERRADA') && <RespostasSection cotacaoId={id} />}
       </div>
 
       {dialog === 'abrir' && (
         <AbrirCotacaoDialog
-          pendente={abrir.isPending}
+          pendente={abrir.isPending || convidar.isPending}
           onCancelar={() => setDialog(null)}
-          onAbrir={(prazoIso) => executar(() => abrir.mutateAsync({ prazo: prazoIso }))}
+          onAbrir={async (prazoIso) => {
+            setErroAcao(null)
+            try {
+              if (empresasSelecionadas.length > 0) {
+                await convidar.mutateAsync(empresasSelecionadas)
+                setEmpresasSelecionadas([])
+              }
+              await abrir.mutateAsync({ prazo: prazoIso })
+              setDialog(null)
+            } catch (e) {
+              tratarErro(e)
+            }
+          }}
         />
       )}
       {dialog === 'apurar' && (
@@ -224,6 +240,14 @@ export function CotacaoDetalhePage() {
           onConfirmar={() => executar(() => cancelar.mutateAsync())}
         />
       )}
+
+      <RepresentantesModal
+        cotacaoId={id} status={status}
+        open={modalConviteAberto}
+        onClose={() => setModalConviteAberto(false)}
+        selecionadas={empresasSelecionadas}
+        onToggle={(empresaId) => setEmpresasSelecionadas(s => s.includes(empresaId) ? s.filter(x => x !== empresaId) : [...s, empresaId])}
+      />
     </div>
   )
 }

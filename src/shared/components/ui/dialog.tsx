@@ -86,7 +86,7 @@ export function Dialog({ open, onClose, title, ariaLabel, size = 'md', children 
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -98,7 +98,7 @@ export function Dialog({ open, onClose, title, ariaLabel, size = 'md', children 
         aria-labelledby={title ? tituloId : undefined}
         aria-label={title ? undefined : (ariaLabel ?? 'Diálogo')}
         tabIndex={-1}
-        className={`w-full ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] overflow-y-auto space-y-4 rounded-lg border bg-card p-6 shadow-lg outline-none`}
+        className={`w-full ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] overflow-y-auto space-y-4 rounded-lg border bg-card p-6 shadow-lg outline-none animate-in zoom-in-95 duration-200`}
       >
         {title && (
           <div className="flex items-start justify-between">

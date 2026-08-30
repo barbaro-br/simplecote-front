@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
+import { AdicionarItemModal } from './AdicionarItemModal'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { PackageX } from 'lucide-react'
+import { PackageX, Trash2, Plus, Minus } from 'lucide-react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import type { Produto } from '@/admin/produtos/produtos.schema'
 import { adicionarItemSchema, type ItemCotacao } from './cotacoes.schema'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAdicionarItem, useRemoverItem } from './cotacoes.api'
 import { useInsightProdutos } from '../analise/analise.api'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
@@ -19,12 +21,99 @@ type Props = {
   editavel: boolean
 }
 
+function Stepper({
+  value,
+  onChange,
+  disabled
+}: {
+  value: number;
+  onChange: (val: number) => void;
+  disabled: boolean
+}) {
+  const [localVal, setLocalVal] = useState<number | ''>(value)
+
+  useEffect(() => {
+    setLocalVal(value)
+  }, [value])
+
+  const dec = () => {
+    if (typeof localVal === 'number' && localVal > 1) {
+      const next = localVal - 1
+      setLocalVal(next)
+      onChange(next)
+    }
+  }
+
+  const inc = () => {
+    const curr = typeof localVal === 'number' ? localVal : 0
+    const next = curr + 1
+    setLocalVal(next)
+    onChange(next)
+  }
+
+  const handleBlur = () => {
+    if (localVal === '' || localVal < 1) {
+      setLocalVal(value)
+    } else if (localVal !== value) {
+      onChange(localVal)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button  
+        type="button"
+        variant="outline"
+        size="icon"
+        className="size-7 h-7 w-7 rounded-full shrink-0"
+        onClick={dec}
+        disabled={disabled || (typeof localVal === 'number' && localVal <= 1)}
+      >
+        <Minus className="size-3" />
+      </Button>
+      <Input
+        type="number"
+        min={1}
+        className="h-7 w-12 text-center text-sm px-1 hide-arrows font-medium tabular-nums"
+        value={localVal}
+        onChange={(e) => setLocalVal(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+        onBlur={handleBlur}
+        disabled={disabled}
+      />
+      <Button  
+        type="button"
+        variant="outline"
+        size="icon"
+        className="size-7 h-7 w-7 rounded-full shrink-0"
+        onClick={inc}
+        disabled={disabled}
+      >
+        <Plus className="size-3" />
+      </Button>
+    </div>
+  )
+}
+
 export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   const { data: produtos } = useProdutos()
   const adicionar = useAdicionarItem(cotacaoId)
+  
+  
   const remover = useRemoverItem(cotacaoId)
-  const [produtoId, setProdutoId] = useState('')
-  const [quantidade, setQuantidade] = useState('1')
+  const queryClient = useQueryClient()
+  const useEdit = {
+    isPending: false,
+    mutate: ({ itemId, quantidade }: { itemId: string, quantidade: number }) => {
+      queryClient.setQueryData(['cotacao', cotacaoId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          itens: old.itens.map((i: any) => i.id === itemId ? { ...i, quantidadeSolicitada: quantidade } : i)
+        }
+      })
+    }
+  }
+
   const [formAberto, setFormAberto] = useState(false)
   const [cadastroAberto, setCadastroAberto] = useState(false)
   
@@ -33,23 +122,16 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
 
   function fecharForm() {
     setFormAberto(false)
-    setCadastroAberto(false)
-    setProdutoId('')
-    setQuantidade('1')
   }
 
-  // Volta do cadastro aninhado: fecha só o 2º modal e deixa o novo Produto
-  // pré-selecionado no seletor do "adicionar item" (o 1º modal seguiu montado).
-  function aoCadastrarProduto(novo?: Produto) {
-    setCadastroAberto(false)
-    if (novo) setProdutoId(novo.id)
+  function abrirCadastro() {
+    setFormAberto(false) // Close the items list modal
+    setCadastroAberto(true) // Open the product creation modal
   }
 
-  async function aoAdicionar() {
-    const parsed = adicionarItemSchema.safeParse({ produtoId, quantidade: Number(quantidade) })
-    if (!parsed.success) return
-    await adicionar.mutateAsync(parsed.data)
-    fecharForm()
+  function aoCadastrarProduto() {
+    setCadastroAberto(false)
+    setFormAberto(true) // Re-open the items list modal after creating
   }
 
   return (
@@ -57,75 +139,23 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
       <CardHeader>
         <CardTitle>Itens</CardTitle>
         {editavel && (
-          <Button type="button" onClick={() => setFormAberto(true)} size="sm">
+          <Button   type="button" onClick={() => setFormAberto(true)} size="sm">
             Adicionar item
           </Button>
         )}
       </CardHeader>
 
-      <Dialog
+      <AdicionarItemModal
+        cotacaoId={cotacaoId}
+        itens={itens}
         open={editavel && formAberto}
         onClose={fecharForm}
-        title="Adicionar item"
-      >
-        <div className="space-y-3">
-          <div>
-            <label htmlFor="item-produto" className="text-xs text-muted-foreground">
-              Produto
-            </label>
-            <select
-              id="item-produto"
-              value={produtoId}
-              onChange={(e) => setProdutoId(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="">Selecione…</option>
-              {(produtos ?? [])
-                .filter((p) => p.ativo)
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nome}
-                  </option>
-                ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => setCadastroAberto(true)}
-              className="mt-1 text-xs text-primary hover:underline"
-            >
-              Não achou? Cadastrar novo produto
-            </button>
-          </div>
-          <div>
-            <label htmlFor="item-qtd" className="text-xs text-muted-foreground">
-              Quantidade
-            </label>
-            <Input
-              id="item-qtd"
-              type="number"
-              min={1}
-              value={quantidade}
-              onChange={(e) => setQuantidade(e.target.value)}
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={fecharForm}>
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={aoAdicionar}
-              disabled={!produtoId || adicionar.isPending}
-            >
-              {adicionar.isPending ? 'Adicionando…' : 'Adicionar'}
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        aoCadastrarProduto={abrirCadastro}
+      />
 
       {/* 2º modal: cadastro de Produto sem sair da montagem da Cotação. */}
       <Dialog
-        open={editavel && formAberto && cadastroAberto}
+        open={editavel && cadastroAberto}
         onClose={() => setCadastroAberto(false)}
         size="lg"
         ariaLabel="Cadastrar novo produto"
@@ -156,23 +186,47 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
             ) : (
               itens.map((item) => {
                 const insight = query.data?.[item.produtoId] ?? null
+                
+                const liveProd = (produtos || []).find(p => p.id === item.produtoId);
+                const uRaw = (editavel && liveProd) ? liveProd.unidade : item.unidadeSnapshot;
+                const qt = (editavel && liveProd) ? liveProd.quantidadePorEmbalagem : item.quantidadePorEmbalagemSnapshot;
+                const tipoUnidade = uRaw.toUpperCase() === 'UNIDADE' ? 'UNITÁRIO' : uRaw.toUpperCase();
+                
+                const temCom = tipoUnidade.includes("COM"); 
+                const formatoEmbalagem = qt === 1 ? `${tipoUnidade} ${qt}` : `${tipoUnidade}${temCom ? "" : " COM"} ${qt}`;
+
                 return (
-                  <tr key={item.id} className="hover:bg-muted/50 transition-colors">
+                  <tr key={item.id} className="even:bg-muted/50 hover:bg-muted transition-colors group">
                     <td className="px-4 py-2 font-medium">
                       <UltimaCompraPopover item={{ nome: item.nomeSnapshot } as any} insight={insight} />
                     </td>
-                    <td className="px-4 py-2">{item.unidadeSnapshot}</td>
-                    <td className="px-4 py-2 tabular-nums">{item.quantidadeSolicitada}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-[11px] font-semibold tracking-wide ring-1 ring-inset ring-border text-foreground">
+                        {formatoEmbalagem}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {editavel ? (
+                        <Stepper
+                          value={item.quantidadeSolicitada}
+                          onChange={(v) => useEdit.mutate({ itemId: item.id, quantidade: v })}
+                          disabled={useEdit.isPending}
+                        />
+                      ) : (
+                        item.quantidadeSolicitada
+                      )}
+                    </td>
                     {editavel && (
                       <td className="px-4 py-2 text-right">
-                        <Button
+                        <Button  
                           variant="ghost"
                           size="sm"
                           className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                           onClick={() => remover.mutate(item.id)}
                           disabled={remover.isPending}
+                          aria-label="Remover"
                         >
-                          Remover
+                          <Trash2 className="size-4" />
                         </Button>
                       </td>
                     )}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { RouteTransition } from '@/shared/components/ui/route-transition'
 import {
   Building2,
   FileText,
@@ -114,7 +115,7 @@ export function AdminLayout() {
         </button>
       </aside>
       <main className="flex-1 p-8">
-        <Outlet />
+        <RouteTransition />
       </main>
     </div>
   )
