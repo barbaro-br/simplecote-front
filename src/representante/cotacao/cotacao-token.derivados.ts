@@ -10,6 +10,8 @@ export function prazoExpirando(prazo: string | null, agora: Date = new Date()): 
   return diff < DUAS_HORAS_EM_MS
 }
 
-export function contarRespondidos(itens: ItemLance[]): number {
-  return itens.filter((i) => i.preco != null || i.statusLance === 'NAO_COTADO').length
+// Bolha de progresso "N de T" da tela de preços: N conta só itens com preço
+// informado (campo vazio = não cotado, não entra na contagem).
+export function contarComPreco(itens: ItemLance[]): number {
+  return itens.filter((i) => i.preco != null).length
 }

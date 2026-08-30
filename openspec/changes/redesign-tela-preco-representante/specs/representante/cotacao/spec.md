@@ -1,10 +1,4 @@
-# representante/cotacao Specification
-
-## Purpose
-
-Tela pública por token para o representante responder uma Cotação sem login, do celular, com rede instável. A responsabilidade própria do front aqui é não perder o que já foi digitado; toda regra de domínio (tri-estado do lance, prazo, trava pós-finalização) é do backend.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Visualização da Cotação por token
 O sistema SHALL, em `/cotacao/:token`, carregar `GET /public/cotacoes/:token` e exibir exatamente o que a API retorna: título/status/prazo da Cotação, saudação com o `representanteNome` e contexto de `empresaNome` e `compradorNome`, e a lista de itens com os dados de snapshot, o lance do próprio participante e o `precoUnitario` derivado (calculado pelo backend). A tela SHALL ser mobile-first, sem a navegação do painel, e SHALL forçar tema claro. A edição dos campos SHALL seguir o indicador `podeEditar` vindo da API; o front não decide se pode editar.
@@ -72,21 +66,6 @@ O sistema SHALL, para cada item independentemente, aplicar o fluxo `digitando �
 - **WHEN** o representante edita rapidamente três itens diferentes
 - **THEN** o sistema dispara uma requisição por item (não um lote), para o feedback ser por célula
 
-### Requirement: Fila de sincronização resiliente a rede ruim
-O sistema SHALL manter, em `localStorage` sob a chave `simplecote:fila:{token}`, um mapa `itemCotacaoId → { preco?, naoCotado?, tentativas, ultimaTentativaEm }` dos itens ainda não confirmados pelo servidor. No sucesso de um item, sua entrada SHALL ser removida. Numa falha de rede, a entrada SHALL permanecer, `tentativas` SHALL ser incrementado e a célula SHALL ficar em `falhou`. Enquanto a fila não estiver vazia, um temporizador de 10s SHALL retentar cada entrada pendente na ordem de inserção; o evento `online` do navegador SHALL forçar uma tentativa imediata; e ao montar a tela com uma fila não-vazia o sistema SHALL disparar uma tentativa imediatamente.
-
-#### Scenario: Falha de rede mantém o rascunho
-- **WHEN** o envio de um item falha por rede
-- **THEN** a entrada continua na fila em `localStorage`, `tentativas` aumenta, a célula mostra "falhou" e o valor digitado não é perdido
-
-#### Scenario: Reenvio automático esvazia a fila
-- **WHEN** a rede volta e o temporizador de 10s dispara (ou o evento `online` ocorre)
-- **THEN** as entradas pendentes são reenviadas na ordem e, ao confirmar, saem da fila e as células ficam sincronizadas
-
-#### Scenario: Reabrir a aba retoma pendências
-- **WHEN** o representante fecha o navegador com itens pendentes e reabre `/cotacao/:token` depois
-- **THEN** ao montar, a tela lê a fila do `localStorage` e dispara um reenvio imediato das pendências
-
 ### Requirement: Finalização com trava e limpeza da fila
 O sistema SHALL manter o botão "Finalizar" (`POST /public/cotacoes/:token/finalizar`) numa barra de ação fixa na base da viewport (`sticky bottom`), sempre acessível sem rolar até o fim da lista, junto do título da cotação, da saudação/contexto e da linha de Prazo. A barra SHALL exibir uma **bolha de progresso "N de T"** onde N = número de itens com preço informado e T = total de itens; o número N SHALL ter uma animação de "pop" a cada vez que muda, e a bolha SHALL trocar para um destaque de cor (fundo `primary`) quando N = T. O botão SHALL ficar desabilitado, exibindo "Sincronizando N preço(s)…", enquanto a fila local daquele token não estiver vazia. Acionar "Finalizar" SHALL abrir primeiro o modal de confirmação (ver requisito "Confirmação antes de enviar a resposta"); o `POST` só ocorre depois que o representante confirma. A fila do token SHALL ser apagada inteira do `localStorage` somente quando o `finalizar` retornar sucesso (204). Em modo somente leitura a barra fixa não SHALL ser exibida.
 
@@ -109,6 +88,8 @@ O sistema SHALL manter o botão "Finalizar" (`POST /public/cotacoes/:token/final
 #### Scenario: Bolha destaca quando todos os itens têm preço
 - **WHEN** todos os itens da cotação têm preço informado
 - **THEN** a bolha aparece com o destaque de cor de "completo" (fundo `primary`)
+
+## ADDED Requirements
 
 ### Requirement: Gesto de deslizar para limpar o preço
 Em telas de toque, o sistema SHALL permitir arrastar um card de item para a esquerda; ao passar de um limiar (~70px), ao soltar o card o sistema SHALL apagar o preço daquele item. Durante o arrasto, um fundo de "limpar" (com ícone) SHALL aparecer atrás do card. O gesto SHALL ficar disponível apenas quando `podeEditar` é verdadeiro. Apagar o preço por esse gesto tem o mesmo efeito de apagá-lo pelo teclado: o indicador volta para a marca (✗) vermelha e o item é sincronizado como não cotado.
@@ -169,14 +150,3 @@ Na primeira vez que o dispositivo abre `/cotacao/:token`, o sistema SHALL exibir
 #### Scenario: Visitas seguintes não mostram o tutorial
 - **WHEN** o dispositivo abre `/cotacao/:token` e já há registro de tutorial concluído
 - **THEN** a tela abre direto na lista de itens, sem o tutorial
-
-### Requirement: Visualização e confirmação do pedido por token
-O sistema SHALL, em `/pedido/:token`, carregar `GET /public/pedidos/:token`, permitir baixar o PDF (`GET /public/pedidos/:token.pdf`) e confirmar o pedido (`POST /public/pedidos/:token/confirmar`). A tela SHALL ser mobile-first e sem a navegação do painel.
-
-#### Scenario: Ver e baixar o pedido
-- **WHEN** o representante acessa `/pedido/:token` com token válido
-- **THEN** os dados do pedido são exibidos e o PDF pode ser baixado
-
-#### Scenario: Confirmar o pedido
-- **WHEN** o representante aciona "Confirmar"
-- **THEN** o sistema chama a API de confirmação e a tela reflete o pedido confirmado; um erro `ProblemDetail` é exibido se a API recusar

@@ -163,3 +163,34 @@
     --success: oklch(0.65 0.15 150);
     --warning: oklch(0.75 0.15 70);
 }
+
+/*
+ * Microinterações da tela do representante que preenche preços
+ * (change redesign-tela-preco-representante). Usam tokens de tema, não cores fixas.
+ */
+@keyframes flashBorder {
+    0%   { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent); }
+    70%  { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent); }
+    100% { border-color: var(--border); box-shadow: none; }
+}
+.flash-green { animation: flashBorder 0.7s ease-out forwards; }
+
+@keyframes popNum {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+.pop { animation: popNum 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+@keyframes successDrop {
+    0%   { opacity: 0; transform: scale(0.7); }
+    60%  { transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+}
+.success-pop { animation: successDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.fade-in { animation: fadeIn 0.3s ease forwards; }
