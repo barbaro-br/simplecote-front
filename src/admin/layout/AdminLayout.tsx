@@ -8,6 +8,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ShoppingBag,
+  UserCog,
+  Users,
 } from 'lucide-react'
 import { useAuth } from '@/shared/auth/AuthContext'
 
@@ -17,6 +19,8 @@ const ITENS = [
   { to: '/admin', label: 'Cotações', Icon: FileText, end: true },
   { to: '/admin/produtos', label: 'Produtos', Icon: Package, end: false },
   { to: '/admin/empresas', label: 'Empresas', Icon: Building2, end: false },
+  { to: '/admin/representantes', label: 'Representantes', Icon: Users, end: false },
+  { to: '/admin/usuarios', label: 'Usuários', Icon: UserCog, end: false },
 ] as const
 
 function lerColapsada(): boolean {

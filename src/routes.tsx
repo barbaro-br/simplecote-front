@@ -4,6 +4,8 @@ import { AuthGuard } from './shared/auth/AuthGuard'
 
 import { ProdutosPage } from './admin/produtos/ProdutosPage'
 import { EmpresasPage } from './admin/empresas/EmpresasPage'
+import { RepresentantesPage } from './admin/representantes/RepresentantesPage'
+import { UsuariosPage } from './admin/usuarios/UsuariosPage'
 import { LoginPage } from './admin/login/LoginPage'
 import { CotacoesPage } from './admin/cotacoes/CotacoesPage'
 import { NovaCotacaoPage } from './admin/cotacoes/NovaCotacaoPage'
@@ -57,6 +59,14 @@ export const routes = createBrowserRouter([
           {
             path: 'empresas',
             element: <EmpresasPage />,
+          },
+          {
+            path: 'representantes',
+            element: <RepresentantesPage />,
+          },
+          {
+            path: 'usuarios',
+            element: <UsuariosPage />,
           },
         ],
       },
