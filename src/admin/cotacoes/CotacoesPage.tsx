@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FileText, Plus, RefreshCw, Search, ServerCrash } from 'lucide-react'
 import { dataHoraBr } from '@/shared/format/formatters'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 import { StatusBadge } from '@/shared/components/StatusBadge'
+import { Button } from '@/shared/components/ui/button'
+import { Card } from '@/shared/components/ui/card'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { useCotacoes } from './cotacoes.api'
 
 const STATUS: { valor: StatusCotacao; rotulo: string }[] = [
@@ -17,47 +21,83 @@ export function rotuloStatus(status: StatusCotacao): string {
   return STATUS.find((s) => s.valor === status)?.rotulo ?? status
 }
 
+type Filtro = StatusCotacao | 'TODOS'
+
+const FILTROS: { valor: Filtro; rotulo: string }[] = [
+  { valor: 'TODOS', rotulo: 'Todos' },
+  ...STATUS,
+]
+
 export function CotacoesPage() {
-  const { data: cotacoes, isLoading, error } = useCotacoes()
-  const [filtro, setFiltro] = useState<StatusCotacao | 'TODOS'>('TODOS')
+  const { data: cotacoes, isLoading, error, refetch, isFetching } = useCotacoes()
+  const [filtro, setFiltro] = useState<Filtro>('TODOS')
+  const [busca, setBusca] = useState('')
 
-  if (isLoading) return <p className="p-6 text-muted-foreground">Carregando cotações…</p>
-  if (error) return <p className="p-6 text-destructive">Erro ao carregar cotações: {error.message}</p>
-
-  const lista = (cotacoes ?? []).filter((c) => filtro === 'TODOS' || c.status === filtro)
+  const total = cotacoes?.length ?? 0
+  const lista = (cotacoes ?? [])
+    .filter((c) => filtro === 'TODOS' || c.status === filtro)
+    .filter(
+      (c) => busca.trim() === '' || c.titulo.toLowerCase().includes(busca.trim().toLowerCase()),
+    )
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Cotações</h1>
+    <div className="space-y-5 max-w-5xl">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Cotações</h1>
+          <p className="text-sm text-muted-foreground">
+            {isLoading
+              ? 'Carregando…'
+              : `${total} ${total === 1 ? 'cotação' : 'cotações'} no total`}
+          </p>
+        </div>
         <Link
           to="/admin/cotacoes/nova"
-          className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
         >
+          <Plus className="size-4" aria-hidden />
           Nova cotação
         </Link>
       </div>
 
-      <div className="flex items-center gap-2">
-        <label htmlFor="filtro-status" className="text-sm text-muted-foreground">
-          Filtrar por status
-        </label>
-        <select
-          id="filtro-status"
-          value={filtro}
-          onChange={(e) => setFiltro(e.target.value as StatusCotacao | 'TODOS')}
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-        >
-          <option value="TODOS">Todos</option>
-          {STATUS.map((s) => (
-            <option key={s.valor} value={s.valor}>
-              {s.rotulo}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-56 flex-1 max-w-xs">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <input
+            type="search"
+            aria-label="Buscar cotação"
+            placeholder="Buscar cotação…"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="h-9 w-full rounded-md border border-input bg-transparent pl-9 pr-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {FILTROS.map((f) => {
+            const ativo = filtro === f.valor
+            return (
+              <button
+                key={f.valor}
+                type="button"
+                aria-pressed={ativo}
+                onClick={() => setFiltro(f.valor)}
+                className={`h-7 rounded-full px-3 text-xs font-medium transition-colors ${
+                  ativo
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {f.rotulo}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      <div className="rounded-md border overflow-hidden">
+      <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr className="text-left text-muted-foreground">
@@ -67,28 +107,85 @@ export function CotacoesPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {!lista.length ? (
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i}>
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-4 w-48" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-4 w-28" />
+                  </td>
+                </tr>
+              ))
+            ) : error ? (
               <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
-                  Nenhuma cotação.
+                <td colSpan={3} className="px-4 py-12">
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    <ServerCrash className="size-8 text-destructive/40" aria-hidden />
+                    <div>
+                      <p className="text-sm font-medium">Falha ao carregar as cotações</p>
+                      <p className="text-xs text-muted-foreground">
+                        Verifique sua conexão e tente novamente.
+                      </p>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => refetch()}
+                      disabled={isFetching}
+                    >
+                      <RefreshCw
+                        className={`size-3.5 ${isFetching ? 'animate-spin' : ''}`}
+                        aria-hidden
+                      />
+                      Tentar novamente
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ) : !lista.length ? (
+              <tr>
+                <td colSpan={3} className="px-4 py-12">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <FileText className="size-8 text-muted-foreground/25" aria-hidden />
+                    <p className="text-sm font-medium">
+                      {total === 0 ? 'Nenhuma cotação ainda' : 'Nenhuma cotação para esse filtro'}
+                    </p>
+                    {total === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Crie a primeira cotação para começar.
+                      </p>
+                    )}
+                  </div>
                 </td>
               </tr>
             ) : (
               lista.map((c) => (
-                <tr key={c.id} className="hover:bg-muted/40 transition-colors">
+                <tr key={c.id} className="transition-colors hover:bg-muted/40">
                   <td className="px-4 py-3">
-                    <Link to={`/admin/cotacoes/${c.id}`} className="text-primary hover:underline">
+                    <Link
+                      to={`/admin/cotacoes/${c.id}`}
+                      className="font-medium text-primary hover:underline"
+                    >
                       {c.titulo}
                     </Link>
                   </td>
-                  <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
-                  <td className="px-4 py-3">{c.prazo ? dataHoraBr(c.prazo) : '—'}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={c.status} />
+                  </td>
+                  <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                    {c.prazo ? dataHoraBr(c.prazo) : '—'}
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
-      </div>
+      </Card>
     </div>
   )
 }
