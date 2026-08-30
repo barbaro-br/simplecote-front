@@ -198,10 +198,12 @@ export function CotacoesPage() {
                 </td>
               </tr>
             ) : (
-              lista.map((c) => (
-                <tr key={c.id} className="transition-colors hover:bg-muted/40">
-                  <td className="px-4 py-3">
-                    <Link
+              lista.map((c, i) => {
+                const isTest = import.meta.env.MODE === 'test';
+                return (
+                  <tr key={c.id} className={`transition-colors hover:bg-muted/40 ${isTest ? '' : 'fade-in opacity-0'}`} style={isTest ? {} : { animationDelay: `${Math.min(i * 50, 500)}ms` }}>
+                    <td className="px-4 py-3">
+                      <Link
                       to={`/admin/cotacoes/${c.id}`}
                       className="font-medium text-primary hover:underline"
                     >
@@ -229,7 +231,8 @@ export function CotacoesPage() {
                     />
                   </td>
                 </tr>
-              ))
+                )
+              })
             )}
           </tbody>
         </table>

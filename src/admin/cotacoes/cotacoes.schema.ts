@@ -20,6 +20,7 @@ export type ItemCotacao = {
   unidadeSnapshot: string
   quantidadeSolicitada: number
   quantidadePorEmbalagemSnapshot: number
+
 }
 
 export type CotacaoDetalhe = {

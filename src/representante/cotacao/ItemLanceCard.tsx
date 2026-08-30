@@ -7,6 +7,13 @@ import { VistoStatus } from './VistoStatus'
 
 const LIMIAR_SWIPE = 70
 
+const UNIT_ABBR: Record<string, string> = {
+  Fardo: 'fd',
+  Caixa: 'cx',
+  Cartela: 'crt',
+  Unidade: 'un',
+}
+
 function precoInicial(item: ItemLance): string {
   return item.preco != null ? String(item.preco) : ''
 }
@@ -115,6 +122,12 @@ export function ItemLanceCard({
   const temPreco = precoTexto.trim() !== ''
   const unitario = item.precoUnitario != null ? `unit. ${moeda(item.precoUnitario)}` : '—'
 
+  const unitAbbr = UNIT_ABBR[item.unidade] ?? item.unidade
+  const unitText =
+    item.unidade === 'Unidade'
+      ? `${unitAbbr} · comprar ${item.quantidadeSolicitada}`
+      : `${unitAbbr} com ${item.quantidadePorEmbalagemSnapshot}un · comprar ${item.quantidadeSolicitada}`
+
   const mensagem = (() => {
     if (erroLocal) return { texto: erroLocal, cor: 'text-destructive' }
     if (erro) return { texto: erro, cor: 'text-destructive' }
@@ -173,8 +186,7 @@ export function ItemLanceCard({
             )}
           </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {item.unidade} com {item.quantidadePorEmbalagemSnapshot}un · comprar{' '}
-            {item.quantidadeSolicitada}
+            {unitText}
           </p>
         </div>
 
