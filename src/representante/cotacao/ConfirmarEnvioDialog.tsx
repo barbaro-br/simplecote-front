@@ -1,4 +1,4 @@
-import { BottomSheetRoot, BottomSheetContent, BottomSheetHeader, BottomSheetTitle, BottomSheetClose } from '@/shared/components/ui/bottom-sheet'
+import { BottomSheetRoot, BottomSheetContent, BottomSheetHeader, BottomSheetTitle } from '@/shared/components/ui/bottom-sheet'
 import { Button } from '@/shared/components/ui/button'
 
 type Props = {
