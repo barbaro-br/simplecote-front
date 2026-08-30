@@ -117,17 +117,27 @@ jobs:
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
+      - name: Checar secrets da Vercel
+        run: |
+          for v in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!v}" ]; then echo "::error::secret $v vazio ou ausente no repositório"; exit 1; fi
+          done
       - run: npm i -g vercel@latest
-      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-      - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel pull --yes --environment=production
+      - run: vercel build --prod
+      - run: vercel deploy --prebuilt --prod
 ```
+
+O Vercel CLI lê `VERCEL_TOKEN` / `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` do ambiente —
+não precisa de `--token=` na linha (que quebra com "missing a value" se o secret
+vier vazio). O passo "Checar secrets" falha cedo e com mensagem clara nesse caso.
 
 ## Risks / Trade-offs
 
