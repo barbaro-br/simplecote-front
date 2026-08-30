@@ -9,6 +9,8 @@ import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import type { Produto } from '@/admin/produtos/produtos.schema'
 import { adicionarItemSchema, type ItemCotacao } from './cotacoes.schema'
 import { useAdicionarItem, useRemoverItem } from './cotacoes.api'
+import { useInsightProdutos } from '../analise/analise.api'
+import { UltimaCompraPopover } from './UltimaCompraPopover'
 
 type Props = {
   cotacaoId: string
@@ -25,6 +27,9 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   const [quantidade, setQuantidade] = useState('1')
   const [formAberto, setFormAberto] = useState(false)
   const [cadastroAberto, setCadastroAberto] = useState(false)
+  
+  const ids = itens.map(i => i.produtoId)
+  const query = useInsightProdutos(ids)
 
   function fecharForm() {
     setFormAberto(false)
@@ -149,26 +154,31 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
                 </td>
               </tr>
             ) : (
-              itens.map((item) => (
-                <tr key={item.id} className="hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-2 font-medium">{item.nomeSnapshot}</td>
-                  <td className="px-4 py-2">{item.unidadeSnapshot}</td>
-                  <td className="px-4 py-2 tabular-nums">{item.quantidadeSolicitada}</td>
-                  {editavel && (
-                    <td className="px-4 py-2 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => remover.mutate(item.id)}
-                        disabled={remover.isPending}
-                      >
-                        Remover
-                      </Button>
+              itens.map((item) => {
+                const insight = query.data?.[item.produtoId] ?? null
+                return (
+                  <tr key={item.id} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-2 font-medium">
+                      <UltimaCompraPopover item={{ nome: item.nomeSnapshot } as any} insight={insight} />
                     </td>
-                  )}
-                </tr>
-              ))
+                    <td className="px-4 py-2">{item.unidadeSnapshot}</td>
+                    <td className="px-4 py-2 tabular-nums">{item.quantidadeSolicitada}</td>
+                    {editavel && (
+                      <td className="px-4 py-2 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => remover.mutate(item.id)}
+                          disabled={remover.isPending}
+                        >
+                          Remover
+                        </Button>
+                      </td>
+                    )}
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
@@ -176,3 +186,4 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
     </Card>
   )
 }
+

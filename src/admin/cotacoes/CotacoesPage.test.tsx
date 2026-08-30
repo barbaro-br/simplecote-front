@@ -12,8 +12,23 @@ const COTACOES = [
   { id: '3', titulo: 'Limpeza Q3', status: 'ABERTA', prazo: '2026-08-31T12:00:00Z', criadaEm: '2026-08-03T12:00:00Z', encerradaEm: null },
 ]
 
-function renderPage() {
-  server.use(http.get('*/api/cotacoes', () => HttpResponse.json(COTACOES)))
+function renderPage(mockDashboardError = false) {
+  server.use(
+    http.get('*/api/cotacoes', () => HttpResponse.json(COTACOES)),
+    http.get('*/api/analises/dashboard', () => {
+      if (mockDashboardError) {
+        return new HttpResponse(null, { status: 500 })
+      }
+      return HttpResponse.json({
+        porStatus: { RASCUNHO: 1, ABERTA: 2 },
+        contadores: { encerradasSemApurar: 1, apuradasSemPedido: 0 },
+        proximosPrazos: [],
+        gastos: { mesAtual: '0', mesAnterior: '0', variacaoPct: null, economia90d: '0' },
+        topProdutos: [],
+        topEmpresas: [],
+      })
+    })
+  )
   const router = createMemoryRouter([{ path: '/admin', element: <CotacoesPage /> }], {
     initialEntries: ['/admin'],
   })
@@ -53,4 +68,25 @@ test('atalho "Nova cotação" aponta para o formulário de criação', async () 
     'href',
     '/admin/cotacoes/nova',
   )
+})
+
+test('a faixa do dashboard aparece e o atalho de "precisa de ação" filtra a lista de cotações', async () => {
+  renderPage()
+  // Wait for the dashboard to render completely
+  const btn = await screen.findByRole('button', { name: /Encerradas sem apurar/i })
+  expect(btn).toBeInTheDocument()
+  
+  const user = userEvent.setup()
+  await user.click(btn)
+
+  // O filtro selecionado agora deve ser ENCERRADA, ou seja, nenhum item na tabela (pois nenhum mockado tem ENCERRADA)
+  // Or actually, wait, the text says "Nenhuma cotação para esse filtro"
+  expect(await screen.findByText('Nenhuma cotação para esse filtro')).toBeInTheDocument()
+})
+
+test('a lista de cotações segue funcionando quando a análise falha', async () => {
+  renderPage(true)
+  expect(await screen.findByRole('link', { name: 'Compra semanal' })).toBeInTheDocument()
+  // The dashboard should not render its "Visão geral" text if it errored
+  expect(screen.queryByText('Visão geral')).not.toBeInTheDocument()
 })

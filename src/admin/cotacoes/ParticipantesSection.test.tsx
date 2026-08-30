@@ -85,3 +85,31 @@ test('erro ProblemDetail no convite é exibido sem alterar a lista', async () =>
   expect(await screen.findByRole('alert')).toHaveTextContent('Empresa sem representante ativo.')
   expect(screen.getByText('Nenhuma empresa convidada.')).toBeInTheDocument()
 })
+
+test('exibe insight da empresa ao passar mouse e tolera 422', async () => {
+  let chamou = 0
+  server.use(
+    http.get('*/api/analises/empresas/:id/insight', () => {
+      chamou++
+      return new HttpResponse(null, { status: 422 })
+    })
+  )
+  setup()
+  const user = userEvent.setup()
+  
+  await user.click(await screen.findByLabelText('Atacadão Central'))
+  await user.click(screen.getByRole('button', { name: /convidar selecionadas/i }))
+
+  const tabela = await screen.findByRole('table')
+  await waitFor(() => {
+    expect(within(tabela).getByText('Atacadão Central')).toBeInTheDocument()
+  })
+
+  expect(chamou).toBe(0) // sem hover, sem request
+
+  // hover
+  await user.hover(within(tabela).getByText('Atacadão Central'))
+  
+  expect(await screen.findByTestId('insight-empresa-vazio')).toBeInTheDocument()
+  expect(chamou).toBe(1)
+})
