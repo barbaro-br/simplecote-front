@@ -9,6 +9,15 @@ on:
       - '**/*.md'
   pull_request:
 
+# Base da API embutida no bundle em build time (api-client: import.meta.env.VITE_API_BASE_URL).
+# Fixada aqui, e não como env var de Production na Vercel, porque a URL do Heroku é pública
+# (está no README) e assim o deploy não depende de config no painel. Sem isto a base vira ''
+# e o front chama /api/** no próprio domínio da Vercel -> 405 no POST /api/auth/login; o
+# guard em vite.config.ts falha o build de produção nesse caso. Nível de workflow: o `ci`
+# (que roda `npm run build`) e o `deploy` (build + smoke) precisam da mesma var.
+env:
+  VITE_API_BASE_URL: https://immense-badlands-31311-934249812234.herokuapp.com
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -47,11 +56,35 @@ jobs:
           done
       - run: npm i -g vercel@latest
       - run: vercel pull --yes --environment=production
-      # A base da API entra no bundle em build time (api-client: import.meta.env.VITE_API_BASE_URL).
-      # Fixada aqui, e não como env var de Production na Vercel, porque a URL do Heroku é pública
-      # (está no README) e assim o deploy não depende de config no painel. Sem isto, a base vira ''
-      # e o front chama /api/** no próprio domínio da Vercel -> 405 no POST /api/auth/login.
       - run: vercel build --prod
-        env:
-          VITE_API_BASE_URL: https://immense-badlands-31311-934249812234.herokuapp.com
       - run: vercel deploy --prebuilt --prod
+      # Smoke pós-deploy: o "ci verde" só garante que compila + testes mockados passam.
+      # Este step valida o artefato REAL publicado — o bundle no ar precisa conter a URL
+      # do back, e o back precisa responder. Se falhar, o deploy já foi (rode `vercel
+      # rollback`), mas a pipeline fica vermelha e você sabe na hora, não pelo cliente.
+      - name: Smoke — bundle publicado fala com o back
+        run: |
+          alias_url="https://simplecote-front.vercel.app"
+          host="${VITE_API_BASE_URL#https://}"
+          ok=""
+          for i in 1 2 3 4 5; do
+            html=$(curl -fsS "$alias_url/" || true)
+            bundle=""
+            if [[ "$html" =~ (/assets/index-[A-Za-z0-9_-]+\.js) ]]; then bundle="${BASH_REMATCH[1]}"; fi
+            if [ -n "$bundle" ]; then
+              js=$(curl -fsS "$alias_url$bundle" || true)
+              case "$js" in *"$host"*) ok=1; break ;; esac
+            fi
+            echo "tentativa $i: bundle ainda não propagou, aguardando…"
+            sleep 6
+          done
+          if [ -z "$ok" ]; then
+            echo "::error::bundle publicado não contém $host — VITE_API_BASE_URL não entrou no build"
+            exit 1
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$VITE_API_BASE_URL/actuator/health")
+          if [ "$code" != "200" ]; then
+            echo "::error::back não respondeu 200 em $VITE_API_BASE_URL/actuator/health (got $code)"
+            exit 1
+          fi
+          echo "smoke ok — bundle chama $host, back /actuator/health 200"
