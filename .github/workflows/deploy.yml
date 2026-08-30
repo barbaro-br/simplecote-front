@@ -47,5 +47,11 @@ jobs:
           done
       - run: npm i -g vercel@latest
       - run: vercel pull --yes --environment=production
+      # A base da API entra no bundle em build time (api-client: import.meta.env.VITE_API_BASE_URL).
+      # Fixada aqui, e não como env var de Production na Vercel, porque a URL do Heroku é pública
+      # (está no README) e assim o deploy não depende de config no painel. Sem isto, a base vira ''
+      # e o front chama /api/** no próprio domínio da Vercel -> 405 no POST /api/auth/login.
       - run: vercel build --prod
+        env:
+          VITE_API_BASE_URL: https://immense-badlands-31311-934249812234.herokuapp.com
       - run: vercel deploy --prebuilt --prod
