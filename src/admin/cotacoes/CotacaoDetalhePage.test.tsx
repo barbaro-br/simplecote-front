@@ -49,6 +49,7 @@ function setup(status: StatusCotacao, itensIniciais: Item[] = []) {
     http.get('*/api/analises/produtos/insight', () => HttpResponse.json({})),
     http.get('*/api/cotacoes/c-1', () => HttpResponse.json(state)),
     http.get('*/api/produtos', () => HttpResponse.json(produtos)),
+    http.get('*/api/representantes', () => HttpResponse.json([])),
     http.post('*/api/produtos', async ({ request }) => {
       const body = (await request.json()) as Record<string, unknown>
       const novo = { id: 'novo-1', ...body, ativo: true }
@@ -131,10 +132,9 @@ test('3.2 — em RASCUNHO adiciona e remove item', async () => {
 
   await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
   const dialog = within(screen.getByRole('dialog'))
-  // espera o catálogo carregar no <select> do modal
-  await dialog.findByRole('option', { name: 'Arroz Tipo 1 5kg' })
-  await user.selectOptions(dialog.getByLabelText('Produto'), 'p-1')
-  await user.click(dialog.getByRole('button', { name: 'Adicionar' }))
+  const produto = await dialog.findByText('Arroz Tipo 1 5kg')
+  await user.click(produto)
+  await user.click(dialog.getByRole('button', { name: 'Concluído' }))
 
   const linhaItem = await screen.findByRole('cell', { name: 'Arroz Tipo 1 5kg' })
   expect(linhaItem).toBeInTheDocument()
@@ -153,12 +153,12 @@ test('3.5 — cadastra Produto novo no modal aninhado, volta pré-selecionado e 
 
   await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
   await user.click(
-    within(screen.getByRole('dialog', { name: 'Adicionar item' })).getByRole('button', {
+    within(screen.getByRole('dialog', { name: 'Adicionar Itens' })).getByRole('button', {
       name: /Cadastrar novo produto/i,
     }),
   )
 
-  // 2º modal (cadastro) empilhado
+  // 2º modal (cadastro) empilhado (o 1º fechou)
   const cadastro = () => screen.getByRole('dialog', { name: 'Cadastrar novo produto' })
   await user.type(within(cadastro()).getByLabelText('Nome do produto'), 'Feijão Carioca 1kg')
   const qtd = within(cadastro()).getByLabelText('Qtd. por embalagem')
@@ -166,20 +166,16 @@ test('3.5 — cadastra Produto novo no modal aninhado, volta pré-selecionado e 
   await user.type(qtd, '10')
   await user.click(within(cadastro()).getByRole('button', { name: /Salvar/i }))
 
-  // 2º modal fecha; o 1º segue e o novo Produto está pré-selecionado
+  // 2º modal fecha; o 1º reabre
   await waitFor(() =>
     expect(screen.queryByRole('dialog', { name: 'Cadastrar novo produto' })).not.toBeInTheDocument(),
   )
-  const seletor = within(screen.getByRole('dialog', { name: 'Adicionar item' })).getByLabelText(
-    'Produto',
-  ) as HTMLSelectElement
-  await waitFor(() => expect(seletor.value).toBe('novo-1'))
-
-  await user.click(
-    within(screen.getByRole('dialog', { name: 'Adicionar item' })).getByRole('button', {
-      name: 'Adicionar',
-    }),
-  )
+  const dialogReaberto = within(screen.getByRole('dialog', { name: 'Adicionar Itens' }))
+  
+  // Selecionar o novo produto e concluir
+  const novoProduto = await dialogReaberto.findByText('Feijão Carioca 1kg')
+  await user.click(novoProduto)
+  await user.click(dialogReaberto.getByRole('button', { name: 'Concluído' }))
 
   expect(await screen.findByRole('cell', { name: 'Feijão Carioca 1kg' })).toBeInTheDocument()
 })
