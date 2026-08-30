@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { prazoExpirando, contarRespondidos } from './cotacao-token.derivados'
+import { prazoExpirando, contarComPreco } from './cotacao-token.derivados'
 import type { ItemLance } from './cotacao-token.schema'
 
 describe('cotacao-token.derivados', () => {
@@ -29,17 +29,17 @@ describe('cotacao-token.derivados', () => {
     })
   })
 
-  describe('contarRespondidos', () => {
-    it('conta itens corretamente', () => {
+  describe('contarComPreco', () => {
+    it('conta só itens com preço informado (NAO_COTADO não entra)', () => {
       const itens = [
         { preco: null, statusLance: 'PENDENTE' },
-        { preco: 10, statusLance: 'PENDENTE' }, // respondido mas nao finalizado
+        { preco: 10, statusLance: 'COTADO' },
         { preco: null, statusLance: 'NAO_COTADO' },
-        { preco: null, statusLance: 'PENDENTE' },
+        { preco: 0, statusLance: 'COTADO' },
       ] as ItemLance[]
-      
-      expect(contarRespondidos(itens)).toBe(2)
-      expect(contarRespondidos([])).toBe(0)
+
+      expect(contarComPreco(itens)).toBe(2)
+      expect(contarComPreco([])).toBe(0)
     })
   })
 })
