@@ -16,5 +16,5 @@
 
 ## 4. Integração
 
-- [ ] 4.1 Abrir PR único para `main` com tudo de 1–3. Verificar na aba Actions: como o PR toca `deploy.yml` e `vite.config.ts` (não é só-de-docs), o `ci` roda e passa; `deploy` fica `skipped` (é `pull_request`).
-- [ ] 4.2 Após o merge: confirmar que o `deploy` rodou uma vez (revalida o publish) e que um push seguinte só-de-docs (ex.: editar um `openspec/**`) **não** dispara workflow. Verificar na aba Actions: sem run novo para o commit só-de-docs.
+- [x] 4.1 Abrir PR único para `main` com tudo de 1–3. — PR #3: `ci` success, `deploy` skipped.
+- [x] 4.2 Após o merge: confirmar que o `deploy` rodou uma vez e que um push seguinte só-de-docs **não** dispara workflow. — PR #3 mergeado (`df6393a`), run 33284457328 `ci`+`deploy` success. Depois o merge do PR #4 (`openspec/**`-only, sha `57616a0`) **não gerou run nenhum** → `paths-ignore` confirmado.
