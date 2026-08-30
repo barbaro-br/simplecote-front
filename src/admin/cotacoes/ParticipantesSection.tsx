@@ -9,6 +9,9 @@ import type { ParticipanteStatus } from '@/shared/domain/tipos-base'
 import type { ConviteStatus } from './cotacoes.schema'
 import { useConvidarEmpresas, useParticipantes, useReenviarConvite } from './cotacoes.api'
 import { montarMensagemConvite, urlWhatsApp, urlMailto } from './compartilhar-link'
+import { InsightEmpresaCard } from '../analise/InsightEmpresaCard'
+import { useInsightEmpresa } from '../analise/analise.api'
+import { HoverCard } from '@/shared/components/ui/HoverCard'
 
 const ROTULO_PARTICIPANTE: Record<ParticipanteStatus, string> = {
   CONVIDADO: 'Convidado',
@@ -24,6 +27,20 @@ function ConviteStatusBadge({ status }: { status: ConviteStatus | null }) {
     return <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">falha no envio</span>
   }
   return <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">convite não enviado</span>
+}
+
+function EmpresaHoverCell({ empresaId, nome }: { empresaId: string; nome: string }) {
+  const [enabled, setEnabled] = useState(false)
+  
+  const query = useInsightEmpresa(empresaId, { enabled })
+
+  return (
+    <div onMouseEnter={() => setEnabled(true)} onFocus={() => setEnabled(true)}>
+      <HoverCard trigger={<span className="font-medium hover:underline cursor-default">{nome}</span>}>
+        <InsightEmpresaCard insight={query.isPending ? null : query.isError ? 'erro' : query.data ?? null} />
+      </HoverCard>
+    </div>
+  )
 }
 
 type Props = {
@@ -155,7 +172,9 @@ export function ParticipantesSection({ cotacaoId, titulo, prazo, podeConvidar }:
 
                 return (
                   <tr key={p.participanteId} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-4 py-2 font-medium">{p.empresaNome}</td>
+                    <td className="px-4 py-2">
+                      <EmpresaHoverCell empresaId={p.empresaId} nome={p.empresaNome} />
+                    </td>
                     <td className="px-4 py-2 text-muted-foreground">{p.representanteNome}</td>
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
