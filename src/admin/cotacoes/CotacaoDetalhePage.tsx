@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
 import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
@@ -9,11 +9,13 @@ import { ParticipantesSection } from './ParticipantesSection'
 import { RespostasSection } from './RespostasSection'
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { AbrirCotacaoDialog } from './AbrirCotacaoDialog'
+import type { ItemOmitido } from './cotacoes.schema'
 import {
   useAbrir,
   useApurar,
   useCancelar,
   useCotacao,
+  useDuplicarCotacao,
   useEncerrar,
   useReabrir,
 } from './cotacoes.api'
@@ -22,6 +24,8 @@ type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | null
 
 export function CotacaoDetalhePage() {
   const { id = '' } = useParams()
+  const location = useLocation()
+  const navigate = useNavigate()
   const { data: cotacao, isLoading, error } = useCotacao(id)
 
   const abrir = useAbrir(id)
@@ -29,9 +33,28 @@ export function CotacaoDetalhePage() {
   const reabrir = useReabrir(id)
   const cancelar = useCancelar(id)
   const apurar = useApurar(id)
+  const duplicar = useDuplicarCotacao()
 
   const [dialog, setDialog] = useState<DialogAberto>(null)
   const [erroAcao, setErroAcao] = useState<string | null>(null)
+
+  // Itens que a duplicação não conseguiu copiar chegam via `state` da navegação.
+  // Deriva no render (a rota `/admin/cotacoes/:id` não remonta ao trocar de id) e
+  // guarda só a `key` da navegação dispensada, pra o aviso voltar numa duplicação nova.
+  const [dispensadoKey, setDispensadoKey] = useState<string | null>(null)
+  const omitidos: ItemOmitido[] =
+    dispensadoKey === location.key
+      ? []
+      : ((location.state as { omitidos?: ItemOmitido[] } | null)?.omitidos ?? [])
+
+  function aoDuplicar() {
+    setErroAcao(null)
+    duplicar.mutate(id, {
+      onSuccess: (data) =>
+        navigate(`/admin/cotacoes/${data.cotacao.id}`, { state: { omitidos: data.omitidos } }),
+      onError: tratarErro,
+    })
+  }
 
   function tratarErro(e: unknown) {
     if (e instanceof SessaoExpiradaError) return
@@ -58,7 +81,8 @@ export function CotacaoDetalhePage() {
     encerrar.isPending ||
     reabrir.isPending ||
     cancelar.isPending ||
-    apurar.isPending
+    apurar.isPending ||
+    duplicar.isPending
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -121,7 +145,36 @@ export function CotacaoDetalhePage() {
             Acompanhar ao vivo
           </Link>
         )}
+        <Button variant="secondary" onClick={aoDuplicar} disabled={acaoPendente}>
+          {duplicar.isPending ? 'Duplicando…' : 'Duplicar'}
+        </Button>
       </div>
+
+      {omitidos.length > 0 && (
+        <div
+          role="status"
+          className="flex items-start justify-between gap-3 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm"
+        >
+          <div>
+            <p className="font-medium">Itens não copiados nesta duplicação:</p>
+            <ul className="mt-1 list-disc pl-5 text-muted-foreground">
+              {omitidos.map((o) => (
+                <li key={o.produtoId}>
+                  {o.nome} — {o.motivo}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDispensadoKey(location.key)}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Dispensar aviso"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {erroAcao && (
         <div role="alert" className="text-sm text-destructive font-medium">
