@@ -37,7 +37,7 @@ test('filtrar por status reduz as linhas', async () => {
   await screen.findByRole('link', { name: 'Compra semanal' })
   const user = userEvent.setup()
 
-  await user.selectOptions(screen.getByLabelText('Filtrar por status'), 'ABERTA')
+  await user.click(screen.getByRole('button', { name: 'Aberta' }))
 
   const linhas = within(screen.getByRole('table')).getAllByRole('row')
   // 1 header + 2 ABERTA
