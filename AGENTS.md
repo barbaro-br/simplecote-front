@@ -8,6 +8,9 @@ Regras curtas e duras. Se uma bater de frente com o que você "acha melhor": as 
 1. **Faça só o que a tarefa pede.** Nada de melhoria em código adjacente, arquivo novo,
    dependência ou abstração que a tarefa não exige. Tentado a mexer em algo fora do
    escopo → **liste, pergunte, espere**. Não infira desejo não dito do usuário.
+   Um arquivo que a tarefa/change **não nomeia** não entra no diff sem você dizer, no
+   report daquela tarefa, **qual arquivo e por quê**. Incluir arquivo fora do escopo
+   calado = violação, mesmo que a suíte fique verde.
 2. **Edite o código ANTES de marcar `[x]`.** Nunca marque tarefa concluída sem um diff
    correspondente. Se a tarefa não precisa de mudança, **diga isso explicitamente** — não
    marque calado.
@@ -23,6 +26,21 @@ Regras curtas e duras. Se uma bater de frente com o que você "acha melhor": as 
 7. **Menor mudança possível.** Restyle mexe em classe/markup — não transforma um arquivo
    de 120 linhas em 280. Se o diff de um arquivo passar de ~2× o que a tarefa implica,
    **pare e explique**.
+8. **Não "conserte" infra de teste fora da change.** Mock global, `beforeEach`/`afterEach`
+   de setup, config de jsdom, helper de `render` — só mexe se a tarefa é sobre isso. Se um
+   teste **pré-existente** quebra ou flakea por interação de ambiente (ex.: `window.localStorage`
+   sumindo no worker), **reporte e pare** — não remende um arquivo que a change não possui.
+   `src/admin/layout/AdminLayout.test.tsx` já foi "consertado" assim 2×; deixa quieto.
+
+## Handoff — ao terminar a change OU ao parar
+
+Escreva um resumo com:
+- **arquivos novos** (caminho + o que é)
+- **arquivos tracked modificados** (caminho + 1 linha do que mudou)
+- **testes pré-existentes que você alterou** — cada um: qual asserção e **por quê** (que
+  comportamento mudou de propósito). Se não alterou nenhum, diga isso.
+- **qualquer coisa fora do escopo** da change que entrou no diff, e o motivo
+- resultado de `npx tsc -b`, `npx vitest run`, `npx oxlint` (código de saída)
 
 ## Loop de trabalho
 
