@@ -18,5 +18,5 @@
 ## 4. Desligar o auto-deploy nativo + primeiro deploy real
 
 - [x] 4.1 Desligar o auto-deploy da Vercel **por config** (em vez do toggle no dashboard): adicionar ao `vercel.json` `"git": { "deploymentEnabled": { "main": false } }`. Efeito: pushes em `main` não disparam mais deploy automático via Git; deploys explícitos via CLI (`vercel deploy --prebuilt --prod`) seguem funcionando. Verificar: `vercel.json` parseia e contém o bloco.
-- [ ] 4.2 Mergear o PR #1 em `main`. Verificar na aba Actions: `ci` passa, então `deploy` roda `vercel pull` → `vercel build --prod` → `vercel deploy --prebuilt --prod` sem erro, e o log imprime a URL do deployment de produção. (Na aba Deployments da Vercel, esse merge não deve gerar um deployment "via Git" — só o do Actions.)
-- [ ] 4.3 Abrir a URL da demo do cliente e confirmar que reflete o commit recém-mergeado.
+- [x] 4.2 Mergear em `main`. Verificar na aba Actions: `ci` passa, então `deploy` roda `vercel pull` → `vercel build --prod` → `vercel deploy --prebuilt --prod` sem erro, e o log imprime a URL do deployment de produção. — Feito: PR #1 (pipeline) + PR #2 (fix `VERCEL_TOKEN` vazio). Run 33283865042: `ci` success, `deploy` success, `Aliased https://simplecote-front.vercel.app`.
+- [x] 4.3 Abrir a URL da demo do cliente e confirmar que reflete o commit recém-mergeado. — `https://simplecote-front.vercel.app` → HTTP 200, `<title>Sarah Supermercado Cotações</title>`, bundles novos.
