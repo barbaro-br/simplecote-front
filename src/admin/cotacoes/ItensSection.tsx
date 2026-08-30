@@ -7,10 +7,9 @@ import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { PackageX, Trash2, Plus, Minus } from 'lucide-react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
-import type { Produto } from '@/admin/produtos/produtos.schema'
-import { adicionarItemSchema, type ItemCotacao } from './cotacoes.schema'
+import { type ItemCotacao } from './cotacoes.schema'
 import { useQueryClient } from '@tanstack/react-query'
-import { useAdicionarItem, useRemoverItem } from './cotacoes.api'
+import { useRemoverItem } from './cotacoes.api'
 import { useInsightProdutos } from '../analise/analise.api'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
 
@@ -96,7 +95,6 @@ function Stepper({
 
 export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   const { data: produtos } = useProdutos()
-  const adicionar = useAdicionarItem(cotacaoId)
   
   
   const remover = useRemoverItem(cotacaoId)
