@@ -3,7 +3,7 @@ import { Dialog } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
 import { useEmpresas } from '@/admin/empresas/empresas.api'
 import { useRepresentantes } from '@/admin/representantes/representantes.api'
-import { useParticipantes, useReenviarConvite } from './cotacoes.api'
+import { useParticipantes, useReenviarConvite, useConvidarEmpresas } from './cotacoes.api'
 import { Send, Copy, Check, Mail, Phone, Search, X, Info, CheckCircle2, Loader2 } from 'lucide-react'
 import { urlWhatsApp } from './compartilhar-link'
 import { toast } from 'sonner'
@@ -41,10 +41,13 @@ function obterCorPorNome(nome: string) {
 export function RepresentantesModal({ cotacaoId, status, open, onClose, selecionadas, onToggle }: Props) {
   const participantes = useParticipantes(cotacaoId)
   const reenviar = useReenviarConvite(cotacaoId)
+  const convidar = useConvidarEmpresas(cotacaoId)
   const { data: empresas } = useEmpresas()
   const { data: reps } = useRepresentantes()
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [loadingMailId, setLoadingMailId] = useState<string | null>(null)
   const [isEnviando, setIsEnviando] = useState(false)
+  const [mostrarNaoConvidados, setMostrarNaoConvidados] = useState(false)
 
   const [search, setSearch] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
@@ -81,14 +84,19 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   }, [empresas, reps, participantes.data, selecionadas, isAberta])
 
   const filtrados = useMemo(() => {
-    if (!search) return isAberta ? lista.filter(l => l.part) : lista
+    let base = lista
+    if (isAberta && !mostrarNaoConvidados) {
+      base = base.filter(l => l.part)
+    }
+    
+    if (!search) return base
+    
     const s = search.toLowerCase()
-    const todos = lista.filter(e => 
+    return base.filter(e => 
       e.nome.toLowerCase().includes(s) || 
       (e.repNome && e.repNome.toLowerCase().includes(s))
     )
-    return isAberta ? todos.filter(l => l.part) : todos
-  }, [lista, search, isAberta])
+  }, [lista, search, isAberta, mostrarNaoConvidados])
 
   const totalSelecionados = lista.filter(l => l.isChecked).length
   const naoEnviadoCount = lista.filter(l => l.part && l.part.conviteStatus !== 'ENVIADO').length
@@ -116,14 +124,6 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
     } else {
       toast.warning(`${sucesso} convite(s) reenviado(s), mas ${falha} falharam.`, { id: toastId })
     }
-  }
-
-  const copiarLink = (e: any) => {
-    const link = `https://app.simplecote.com/responder/${e.part!.id}`
-    navigator.clipboard.writeText(link)
-    setCopiedId(e.id)
-    toast.success('Link copiado!')
-    setTimeout(() => setCopiedId(null), 2000)
   }
 
   return (
@@ -163,22 +163,29 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
           </Button>
         </div>
 
-        {/* Busca (apenas rascunho) */}
-        {!isAberta && (
-          <div className="px-4 py-3 shrink-0 bg-background/30 backdrop-blur-sm z-10">
-            <div className="relative group">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
-              <input
-                ref={searchRef}
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Buscar empresa ou representante..."
-                className="w-full pl-10 pr-4 py-2 text-[13px] bg-muted/40 border border-transparent rounded-xl outline-none text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary/30 focus:ring-2 focus:ring-primary/20 transition-all"
-              />
-            </div>
+        {/* Busca */}
+        <div className="px-4 py-3 shrink-0 bg-background/30 backdrop-blur-sm z-10 flex gap-2">
+          <div className="relative group flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+            <input
+              ref={searchRef}
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar empresa ou representante..."
+              className="w-full pl-10 pr-4 py-2 text-[13px] bg-muted/40 border border-transparent rounded-xl outline-none text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary/30 focus:ring-2 focus:ring-primary/20 transition-all"
+            />
           </div>
-        )}
+          {isAberta && (
+            <Button
+              variant={mostrarNaoConvidados ? "secondary" : "ghost"}
+              className="h-9 px-3 rounded-xl text-[12px]"
+              onClick={() => setMostrarNaoConvidados(!mostrarNaoConvidados)}
+            >
+              {mostrarNaoConvidados ? 'Ocultar não convidadas' : 'Ver todas'}
+            </Button>
+          )}
+        </div>
 
         {/* Lista de Representantes */}
         <div className="flex-1 overflow-y-auto min-h-0 bg-transparent">
@@ -246,6 +253,30 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                       </span>
                     )}
 
+                    {/* Botão Convidar para Atrasados */}
+                    {isAberta && !e.part && (
+                      <div className="flex items-center ml-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={convidar.isPending}
+                          className="h-8 text-[12px] px-3 rounded-full hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                          onClick={async (ev) => {
+                            ev.stopPropagation()
+                            try {
+                              await convidar.mutateAsync([e.id])
+                              toast.success('Empresa convidada com sucesso!')
+                            } catch (error) {
+                              toast.error('Erro ao convidar empresa')
+                            }
+                          }}
+                        >
+                          Convidar
+                        </Button>
+                      </div>
+                    )}
+
                     {/* Ações Rápidas (Apenas Aberta) */}
                     {isAberta && e.part && (
                       <div className="flex items-center gap-1 ml-2">
@@ -257,7 +288,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                           className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
                           onClick={(ev) => {
                             ev.stopPropagation()
-                            const link = `https://app.simplecote.com/responder/${e.part!.participanteId}`
+                            const link = e.part!.linkMagico
                             const msg = `Olá ${e.part!.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação. Acesse: ${link}`
                             const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
                             window.open(url, '_blank')
@@ -273,10 +304,36 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                           className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
                           onClick={(ev) => {
                             ev.stopPropagation()
-                            copiarLink(e)
+                            const link = e.part!.linkMagico
+                            navigator.clipboard.writeText(link)
+                            setCopiedId(e.id)
+                            toast.success('Link copiado com sucesso!')
+                            setTimeout(() => setCopiedId(null), 2000)
                           }}
                         >
                           {copiedId === e.id ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          title="Reenviar E-mail"
+                          disabled={loadingMailId === e.id}
+                          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
+                          onClick={async (ev) => {
+                            ev.stopPropagation()
+                            setLoadingMailId(e.id)
+                            try {
+                              await reenviar.mutateAsync(e.part!.participanteId)
+                              toast.success(`E-mail reenviado para ${e.nome}`)
+                            } catch (err) {
+                              toast.error(`Falha ao reenviar e-mail para ${e.nome}`)
+                            } finally {
+                              setLoadingMailId(null)
+                            }
+                          }}
+                        >
+                          {loadingMailId === e.id ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
                         </Button>
                       </div>
                     )}
