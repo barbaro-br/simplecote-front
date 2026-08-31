@@ -9,8 +9,9 @@ import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
-import { useCotacoes, useDuplicarCotacao } from './cotacoes.api'
+import { useCotacoes, useDuplicarCotacao, useExcluirCotacao } from './cotacoes.api'
 import { PainelDashboard } from '../analise/PainelDashboard'
+import { ConfirmarDialog } from './ConfirmarDialog'
 
 const STATUS: { valor: StatusCotacao; rotulo: string }[] = [
   { valor: 'RASCUNHO', rotulo: 'Rascunho' },
@@ -38,18 +39,37 @@ export function CotacoesPage() {
 
   const navigate = useNavigate()
   const duplicar = useDuplicarCotacao()
-  const [erroDup, setErroDup] = useState<string | null>(null)
+  const excluir = useExcluirCotacao()
+  const [erroAcao, setErroAcao] = useState<string | null>(null)
+  const [idAExcluir, setIdAExcluir] = useState<string | null>(null)
 
   function aoDuplicar(id: string) {
-    setErroDup(null)
+    setErroAcao(null)
     duplicar.mutate(id, {
       onSuccess: (data) =>
         navigate(`/admin/cotacoes/${data.cotacao.id}`, { state: { omitidos: data.omitidos } }),
       onError: (e) => {
         if (e instanceof SessaoExpiradaError) return
-        setErroDup(
+        setErroAcao(
           e instanceof ApiError ? e.message : 'Não foi possível duplicar. Tente novamente.',
         )
+      },
+    })
+  }
+
+  function aoExcluirConfirmado() {
+    if (!idAExcluir) return
+    setErroAcao(null)
+    excluir.mutate(idAExcluir, {
+      onSuccess: () => {
+        setIdAExcluir(null)
+      },
+      onError: (e) => {
+        if (e instanceof SessaoExpiradaError) return
+        setErroAcao(
+          e instanceof ApiError ? e.message : 'Não foi possível excluir. Tente novamente.',
+        )
+        setIdAExcluir(null)
       },
     })
   }
@@ -119,20 +139,20 @@ export function CotacoesPage() {
         </div>
       </div>
 
-      {erroDup && (
+      {erroAcao && (
         <div role="alert" className="text-sm text-destructive font-medium">
-          {erroDup}
+          {erroAcao}
         </div>
       )}
 
-      <Card className="overflow-hidden">
+      <Card>
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr className="text-left text-muted-foreground">
-              <th className="px-4 py-3 font-medium">Título</th>
+              <th className="px-4 py-3 font-medium rounded-tl-xl">Título</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Prazo</th>
-              <th className="px-4 py-3 font-medium w-12">
+              <th className="px-4 py-3 font-medium w-12 rounded-tr-xl">
                 <span className="sr-only">Ações</span>
               </th>
             </tr>
@@ -204,39 +224,58 @@ export function CotacoesPage() {
                   <tr key={c.id} className={`transition-colors hover:bg-muted/40 ${isTest ? '' : 'fade-in opacity-0'}`} style={isTest ? {} : { animationDelay: `${Math.min(i * 50, 500)}ms` }}>
                     <td className="px-4 py-3">
                       <Link
-                      to={`/admin/cotacoes/${c.id}`}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      {c.titulo}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={c.status} />
-                  </td>
-                  <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                    {c.prazo ? dataHoraBr(c.prazo) : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <MenuAcoes
-                      items={[
-                        {
-                          label:
-                            duplicar.isPending && duplicar.variables === c.id
-                              ? 'Duplicando…'
-                              : 'Duplicar',
-                          onSelect: () => aoDuplicar(c.id),
-                          disabled: duplicar.isPending,
-                        },
-                      ]}
-                    />
-                  </td>
-                </tr>
+                        to={`/admin/cotacoes/${c.id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {c.titulo}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={c.status} />
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                      {c.prazo ? dataHoraBr(c.prazo) : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <MenuAcoes
+                        items={[
+                          {
+                            label: 'Ver detalhes',
+                            onSelect: () => navigate(`/admin/cotacoes/${c.id}`),
+                          },
+                          {
+                            label:
+                              duplicar.isPending && duplicar.variables === c.id
+                                ? 'Duplicando…'
+                                : 'Duplicar',
+                            onSelect: () => aoDuplicar(c.id),
+                            disabled: duplicar.isPending,
+                          },
+                          {
+                            label: 'Excluir',
+                            variant: 'destructive',
+                            onSelect: () => setIdAExcluir(c.id),
+                          }
+                        ]}
+                      />
+                    </td>
+                  </tr>
                 )
               })
             )}
           </tbody>
         </table>
       </Card>
+      {idAExcluir && (
+        <ConfirmarDialog
+          titulo="Excluir Cotação"
+          descricao="Tem certeza que deseja excluir esta cotação? Esta ação não pode ser desfeita e todas as respostas serão perdidas."
+          rotuloConfirmar="Excluir Cotação"
+          pendente={excluir.isPending}
+          onConfirmar={aoExcluirConfirmado}
+          onCancelar={() => setIdAExcluir(null)}
+        />
+      )}
     </div>
   )
 }

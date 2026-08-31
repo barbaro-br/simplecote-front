@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, baixarArquivo } from '@/shared/api/api-client'
 import type {
@@ -48,6 +49,14 @@ export function useDuplicarCotacao() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => api.post<CotacaoDuplicada>(`/api/cotacoes/${id}/duplicar`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: listaKey }),
+  })
+}
+
+export function useExcluirCotacao() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete<void>(`/api/cotacoes/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: listaKey }),
   })
 }
@@ -172,16 +181,40 @@ export function useAoVivo(cotacaoId: string) {
   })
 }
 
-// Grade da tela de acompanhamento, com polling condicional (spec.md §10.1):
-// revalida a cada ~5s enquanto a Cotação está ABERTA e para quando sai de
-// ABERTA. Sem dado ainda → não faz poll. `refetchIntervalInBackground` fica
-// no default `false`, então o poll pausa quando a aba perde o foco.
+// Grade da tela de acompanhamento (agora consumida via SSE se ABERTA)
 export function useGradeAoVivo(cotacaoId: string) {
   return useQuery({
     queryKey: aoVivoKey(cotacaoId),
     queryFn: () => api.get<GridAoVivo>(`/api/cotacoes/${cotacaoId}/ao-vivo`),
-    refetchInterval: (query) => (query.state.data?.status === 'ABERTA' ? 5000 : false),
   })
+}
+
+export function useGradeAoVivoSSE(cotacaoId: string, status?: string) {
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    if (status !== 'ABERTA') {
+      return
+    }
+
+    const eventSource = new EventSource(`/api/cotacoes/${cotacaoId}/ao-vivo/stream`)
+
+    eventSource.addEventListener('LanceAtualizado', () => {
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+    })
+    
+    eventSource.addEventListener('Conectado', () => {
+      // Ignorar
+    })
+
+    eventSource.onerror = () => {
+      // Reconexão é tratada automaticamente pelo EventSource
+    }
+
+    return () => {
+      eventSource.close()
+    }
+  }, [cotacaoId, status, queryClient])
 }
 
 export function useCorrecoes(cotacaoId: string) {
