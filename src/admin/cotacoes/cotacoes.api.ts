@@ -61,6 +61,15 @@ export function useAdicionarItem(cotacaoId: string) {
   })
 }
 
+export function useAtualizarQuantidadeItem(cotacaoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ itemId, quantidade }: { itemId: string; quantidade: number }) =>
+      api.patch<void>(`/api/cotacoes/${cotacaoId}/itens/${itemId}/quantidade`, { quantidade }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: detalheKey(cotacaoId) }),
+  })
+}
+
 export function useRemoverItem(cotacaoId: string) {
   const queryClient = useQueryClient()
   return useMutation({

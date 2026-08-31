@@ -3,8 +3,8 @@ import { Dialog } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
 import { useEmpresas } from '@/admin/empresas/empresas.api'
 import { useRepresentantes } from '@/admin/representantes/representantes.api'
-import { useParticipantes } from './cotacoes.api'
-import { Send, Copy, Check, Mail, Phone, Search, X, Info } from 'lucide-react'
+import { useParticipantes, useReenviarConvite } from './cotacoes.api'
+import { Send, Copy, Check, Mail, Phone, Search, X, Info, CheckCircle2, Loader2 } from 'lucide-react'
 import { urlWhatsApp } from './compartilhar-link'
 import { toast } from 'sonner'
 
@@ -17,296 +17,308 @@ type Props = {
   onToggle: (empresaId: string) => void
 }
 
+const coresAvatar = [
+  'bg-blue-100 text-blue-700',
+  'bg-indigo-100 text-indigo-700',
+  'bg-purple-100 text-purple-700',
+  'bg-pink-100 text-pink-700',
+  'bg-rose-100 text-rose-700',
+  'bg-orange-100 text-orange-700',
+  'bg-amber-100 text-amber-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-cyan-100 text-cyan-700',
+  'bg-sky-100 text-sky-700'
+]
+
+function obterCorPorNome(nome: string) {
+  let soma = 0
+  for (let i = 0; i < nome.length; i++) {
+    soma += nome.charCodeAt(i)
+  }
+  return coresAvatar[soma % coresAvatar.length]
+}
+
 export function RepresentantesModal({ cotacaoId, status, open, onClose, selecionadas, onToggle }: Props) {
   const participantes = useParticipantes(cotacaoId)
+  const reenviar = useReenviarConvite(cotacaoId)
   const { data: empresas } = useEmpresas()
   const { data: reps } = useRepresentantes()
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [isEnviando, setIsEnviando] = useState(false)
 
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<'todos' | 'enviado' | 'nao_enviado'>('todos')
   const searchRef = useRef<HTMLInputElement>(null)
 
   const isAberta = status !== 'RASCUNHO'
 
-  // Reset state on open
+  // Quando o modal abre
   useEffect(() => {
     if (open) {
       setSearch('')
-      setFilter('todos')
-      // setTimeout(() => searchRef.current?.focus(), 60)
+      setTimeout(() => searchRef.current?.focus(), 50)
     }
   }, [open])
 
-  const partsMap = useMemo(() => {
-    const map = new Map()
-    for (const p of participantes.data ?? []) {
-      map.set(p.empresaId, p)
-    }
-    return map
-  }, [participantes.data])
-
   const lista = useMemo(() => {
-    return (empresas ?? []).map(e => {
-      const part = partsMap.get(e.id)
-      const rep = (reps ?? []).find(r => r.empresaId === e.id)
-      const isChecked = part !== undefined || selecionadas.includes(e.id)
+    if (!empresas || !reps) return []
+    return empresas.map(emp => {
+      const rep = reps.find(r => r.empresaId === emp.id)
+      const part = participantes.data?.find(p => p.empresaId === emp.id)
       return {
-        ...e,
-        part,
-        isChecked,
+        id: emp.id,
+        nome: emp.nome,
         repNome: rep?.nome,
         repEmail: rep?.email,
-        repWhatsapp: rep?.whatsapp
+        repWhatsapp: rep?.whatsapp,
+        part,
+        isChecked: isAberta ? !!part : selecionadas.includes(emp.id)
       }
-    })
-  }, [empresas, partsMap, selecionadas, reps])
-
-  const filtrados = useMemo(() => {
-    let result = lista.filter(e => {
-      const s = search.toLowerCase()
-      const matchSearch = e.nome.toLowerCase().includes(s) || 
-                          (e.repNome || '').toLowerCase().includes(s)
-      if (!matchSearch) return false
-
-      if (isAberta && filter !== 'todos') {
-        if (!e.part) return false
-        const isEnviado = e.part.conviteStatus === 'ENVIADO'
-        if (filter === 'enviado') return isEnviado
-        if (filter === 'nao_enviado') return !isEnviado
-      }
-      
-      // Se está aberta, independente de filtro, exibe só os convidados (part !== undefined)
-      // Wait, in Figma, when opened it still shows only those selected/invited.
-      if (isAberta && e.part === undefined) return false
-
-      return true
-    })
-
-    return result.sort((a, b) => {
-      if (!isAberta) {
-        if (a.isChecked && !b.isChecked) return -1
-        if (!a.isChecked && b.isChecked) return 1
-      }
+    }).sort((a, b) => {
+      if (a.isChecked && !b.isChecked) return -1
+      if (!a.isChecked && b.isChecked) return 1
       return a.nome.localeCompare(b.nome)
     })
-  }, [lista, isAberta, search, filter])
+  }, [empresas, reps, participantes.data, selecionadas, isAberta])
 
-  // Contadores para o UI
-  const totalConvidados = participantes.data?.length ?? 0
-  const enviadoCount = participantes.data?.filter(p => p.conviteStatus === 'ENVIADO').length ?? 0
-  const naoEnviadoCount = totalConvidados - enviadoCount
+  const filtrados = useMemo(() => {
+    if (!search) return isAberta ? lista.filter(l => l.part) : lista
+    const s = search.toLowerCase()
+    const todos = lista.filter(e => 
+      e.nome.toLowerCase().includes(s) || 
+      (e.repNome && e.repNome.toLowerCase().includes(s))
+    )
+    return isAberta ? todos.filter(l => l.part) : todos
+  }, [lista, search, isAberta])
 
+  const totalSelecionados = lista.filter(l => l.isChecked).length
+  const naoEnviadoCount = lista.filter(l => l.part && l.part.conviteStatus !== 'ENVIADO').length
+
+  const handleDispararTodosEmail = async () => {
+    const pendentes = lista.filter(l => l.part && l.part.conviteStatus !== 'ENVIADO')
+    if (pendentes.length === 0) return
+
+    setIsEnviando(true)
+    const toastId = toast.loading('Reenviando convites...')
+    
+    const results = await Promise.allSettled(
+      pendentes.map(p => reenviar.mutateAsync(p.part!.participanteId))
+    )
+    
+    setIsEnviando(false)
+    
+    const sucesso = results.filter(r => r.status === 'fulfilled').length
+    const falha = results.filter(r => r.status === 'rejected').length
+    
+    if (falha === 0) {
+      toast.success(`${sucesso} convite(s) reenviado(s) com sucesso!`, { id: toastId })
+    } else if (sucesso === 0) {
+      toast.error(`Falha ao reenviar ${falha} convite(s).`, { id: toastId })
+    } else {
+      toast.warning(`${sucesso} convite(s) reenviado(s), mas ${falha} falharam.`, { id: toastId })
+    }
+  }
 
   const copiarLink = (e: any) => {
-    const link = `https://app.simplecote.com/responder/${e.part!.id}` // mock de link
+    const link = `https://app.simplecote.com/responder/${e.part!.id}`
     navigator.clipboard.writeText(link)
     setCopiedId(e.id)
-    toast.success("Link copiado para a área de transferência")
+    toast.success('Link copiado!')
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const handleDispararTodosEmail = () => {
-    toast.success('Envio de e-mails em lote iniciado (Simulação)')
-  }
-
-  const qtdSelecionadas = selecionadas.length + (participantes.data?.length ?? 0)
-
   return (
-    <Dialog open={open} onClose={onClose} size="lg" ariaLabel="Representantes">
-      <div className="flex flex-col h-[70vh] max-h-[600px]">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 px-6 border-b border-border shrink-0">
-          <div>
-            <div className="text-[15px] font-semibold text-foreground">Representantes</div>
-            <div className="text-xs text-muted-foreground mt-[1px]">
-              {qtdSelecionadas === 0
-                ? 'Nenhum marcado para convite'
-                : `${qtdSelecionadas} marcado${qtdSelecionadas !== 1 ? 's' : ''} para convite`}
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      className="max-w-md max-h-[85vh] p-0 overflow-hidden flex flex-col bg-background/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl"
+    >
+      <div className="flex flex-col h-full overflow-hidden">
+        {/* Header Fixo */}
+        <div className="p-4 px-6 border-b border-border/50 bg-background/50 backdrop-blur-md shrink-0 flex items-center justify-between rounded-t-xl z-20">
+          <div className="space-y-1">
+            <h2 className="text-[16px] font-semibold tracking-tight text-foreground">
+              {isAberta ? 'Representantes Convidados' : 'Convidar Empresas'}
+            </h2>
+            <div className="text-[13px] text-muted-foreground/80 flex items-center gap-1.5 font-medium">
+              {!isAberta ? (
+                <>
+                  <span className="bg-primary/10 text-primary px-2 rounded-sm">{totalSelecionados}</span>
+                  {totalSelecionados === 1 ? 'selecionada' : 'selecionadas'}
+                </>
+              ) : (
+                <>
+                  <span className="bg-muted px-2 rounded-sm text-foreground">{filtrados.length}</span>
+                  {filtrados.length === 1 ? 'empresa' : 'empresas'} na cotação
+                </>
+              )}
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-muted-foreground">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onClose} 
+            className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted"
+          >
             <X className="size-4" />
           </Button>
         </div>
 
-        {/* Filter chips (Apenas se já aberta) */}
-        {isAberta && (
-          <div className="px-6 py-2.5 border-b border-muted flex gap-1.5 shrink-0">
-            {(['todos', 'enviado', 'nao_enviado'] as const).map(f => {
-              const count = f === 'todos' ? totalConvidados : f === 'enviado' ? enviadoCount : naoEnviadoCount
-              const isSel = filter === f
-              const label = f === 'todos' ? 'Todos' : f === 'enviado' ? 'Enviado' : 'Não enviado'
-              return (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors border-[1.5px] ${
-                    isSel 
-                      ? 'border-primary bg-primary/10 text-primary' 
-                      : 'border-transparent bg-muted text-muted-foreground hover:bg-muted/80'
-                  } ${count === 0 ? 'opacity-50' : 'opacity-100'}`}
-                >
-                  {label}
-                  <span className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold text-primary-foreground ${isSel ? 'bg-primary' : 'bg-muted-foreground/40'}`}>
-                    {count}
-                  </span>
-                </button>
-              )
-            })}
+        {/* Busca (apenas rascunho) */}
+        {!isAberta && (
+          <div className="px-4 py-3 shrink-0 bg-background/30 backdrop-blur-sm z-10">
+            <div className="relative group">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Buscar empresa ou representante..."
+                className="w-full pl-10 pr-4 py-2 text-[13px] bg-muted/40 border border-transparent rounded-xl outline-none text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary/30 focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+            </div>
           </div>
         )}
 
-        {/* Search */}
-        <div className="px-6 py-3 border-b border-muted shrink-0">
-          <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 pointer-events-none">
-              <Search className="size-4" />
-            </span>
-            <input
-              ref={searchRef}
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar empresa ou representante..."
-              className="w-full pl-9 pr-3 py-1.5 text-[13px] border border-border rounded-md outline-none text-foreground focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
-            />
-          </div>
-        </div>
-        
-        <div className="flex-1 overflow-y-auto min-h-0 bg-background/50">
-          <ul className="m-0 p-0 list-none">
-            {filtrados.length === 0 ? (
-              <div className="py-10 text-center text-muted-foreground text-[13px]">
-                Nenhuma empresa encontrada.
-              </div>
-            ) : filtrados.map((e, idx) => {
+        {/* Lista de Representantes */}
+        <div className="flex-1 overflow-y-auto min-h-0 bg-transparent">
+          <ul className="m-0 p-2 space-y-1">
+            {filtrados.map((e) => {
               const enviado = e.part?.conviteStatus === 'ENVIADO'
-              
+              const avatarColor = obterCorPorNome(e.nome)
+
               return (
                 <li
                   key={e.id}
-                  className={`flex items-center gap-3 px-5 py-2.5 border-b border-muted transition-colors cursor-pointer ${
-                    e.isChecked ? 'bg-primary/5' : idx % 2 === 0 ? 'bg-background' : 'bg-muted/30'
-                  }`}
                   onClick={() => {
-                    if (e.part === undefined) onToggle(e.id)
+                    if (!isAberta) onToggle(e.id)
                   }}
+                  className={`
+                    group flex items-center gap-4 px-4 py-3 rounded-xl transition-all
+                    ${!isAberta ? 'cursor-pointer hover:bg-muted' : 'bg-transparent'}
+                    ${e.isChecked && !isAberta ? 'bg-primary/10 hover:bg-primary/20 ring-1 ring-primary/20 shadow-sm' : ''}
+                  `}
                 >
-                  {/* Checkbox */}
-                  <input
-                    type="checkbox"
-                    checked={e.isChecked}
-                    disabled={e.part !== undefined}
-                    onChange={() => {
-                      if (e.part === undefined) onToggle(e.id)
-                    }}
-                    onClick={ev => ev.stopPropagation()}
-                    className="w-[15px] h-[15px] shrink-0 cursor-pointer accent-primary"
-                  />
+                  {/* Status Check ou Circle (Apenas Rascunho) */}
+                  {!isAberta && (
+                    <div className="shrink-0 flex items-center justify-center transition-transform">
+                      {e.isChecked ? (
+                        <CheckCircle2 className="size-5 text-primary animate-in zoom-in duration-200" />
+                      ) : (
+                        <div className="size-5 rounded-full border-2 border-muted-foreground/30 group-hover:border-muted-foreground/80 group-hover:bg-background/50 transition-colors" />
+                      )}
+                    </div>
+                  )}
 
-                  {/* Avatar */}
-                  <div className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center text-[11px] font-bold tracking-wide transition-colors ${
-                    e.isChecked ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
-                  }`}>
+                  {/* Avatar Colorido */}
+                  <div className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[12px] font-bold tracking-wide shadow-sm ${e.isChecked ? avatarColor : 'bg-muted text-muted-foreground'}`}>
                     {e.nome.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
                   </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className={`text-[13px] ${e.isChecked ? 'font-semibold' : 'font-medium'} text-foreground truncate`}>
+                    <div className={`text-[14px] ${e.isChecked ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} truncate transition-colors`}>
                       {e.nome}
                     </div>
-                    <div className="flex items-center gap-1.5 mt-[1px]">
-                      <span className="text-[11px] text-muted-foreground truncate">
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[12px] text-muted-foreground truncate">
                         {e.part?.representanteNome || e.repNome || 'Representante'}
                       </span>
                     </div>
                   </div>
 
-                  {/* Icons E-mail / WhatsApp */}
-                  {!isAberta && (e.repEmail || e.repWhatsapp) && (
-                    <div className="flex items-center gap-2 shrink-0 text-muted-foreground/50 mr-2">
-                      {e.repEmail && <span title="Possui E-mail"><Mail className="size-3.5" /></span>}
-                      {e.repWhatsapp && <span title="Possui WhatsApp"><Phone className="size-3.5" /></span>}
-                    </div>
-                  )}
+                  {/* Badges e Ações Direita */}
+                  <div className="shrink-0 flex items-center gap-3">
+                    {/* Ícones de Contato */}
+                    {!isAberta && (e.repEmail || e.repWhatsapp) && (
+                      <div className="flex items-center gap-2 text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors">
+                        {e.repEmail && <span title="Possui E-mail"><Mail className="size-3.5" /></span>}
+                        {e.repWhatsapp && <span title="Possui WhatsApp"><Phone className="size-3.5" /></span>}
+                      </div>
+                    )}
 
-                  {/* Status Badge (apenas se aberta) */}
-                  {isAberta && e.isChecked && (
-                    <span className={`shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                      enviado ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {enviado ? 'Enviado' : 'Não enviado'}
-                    </span>
-                  )}
+                    {/* Status Badge (apenas se aberta) */}
+                    {isAberta && e.isChecked && (
+                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
+                        enviado ? 'bg-green-50 text-green-700 border-green-200' : 'bg-muted text-muted-foreground border-transparent'
+                      }`}>
+                        {enviado ? 'Enviado' : 'Não enviado'}
+                      </span>
+                    )}
 
-                  {/* Ações quando Aberta */}
-                  {isAberta && e.part && (
-                    <div className="flex items-center gap-1 shrink-0 ml-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        title="Enviar por WhatsApp"
-                        className="h-7 w-7 text-muted-foreground hover:bg-muted"
-                        onClick={(ev) => {
-                          ev.stopPropagation()
-                          const link = `https://app.simplecote.com/responder/${e.part!.id}`
-                          const msg = `Olá ${e.part!.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação. Acesse: ${link}`
-                          const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
-                          window.open(url, '_blank')
-                        }}
-                      >
-                        <Send className="size-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        title="Copiar Link"
-                        className="h-7 w-7 text-muted-foreground hover:bg-muted"
-                        onClick={(ev) => {
-                          ev.stopPropagation()
-                          copiarLink(e)
-                        }}
-                      >
-                        {copiedId === e.id ? <Check className="size-3.5 text-green-600" /> : <Copy className="size-3.5" />}
-                      </Button>
-                    </div>
-                  )}
+                    {/* Ações Rápidas (Apenas Aberta) */}
+                    {isAberta && e.part && (
+                      <div className="flex items-center gap-1 ml-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          title="Enviar por WhatsApp"
+                          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
+                          onClick={(ev) => {
+                            ev.stopPropagation()
+                            const link = `https://app.simplecote.com/responder/${e.part!.participanteId}`
+                            const msg = `Olá ${e.part!.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação. Acesse: ${link}`
+                            const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
+                            window.open(url, '_blank')
+                          }}
+                        >
+                          <Send className="size-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          title="Copiar Link"
+                          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
+                          onClick={(ev) => {
+                            ev.stopPropagation()
+                            copiarLink(e)
+                          }}
+                        >
+                          {copiedId === e.id ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </li>
               )
             })}
+            
+            {filtrados.length === 0 && (
+              <div className="py-12 text-center text-[13px] text-muted-foreground">
+                Nenhuma empresa encontrada.
+              </div>
+            )}
           </ul>
         </div>
 
         {/* Footer */}
-        <div className="p-3 px-5 border-t border-border bg-muted/20 shrink-0">
+        <div className="p-4 px-6 border-t border-border/50 bg-background/50 backdrop-blur-md shrink-0 rounded-b-xl z-20">
           {isAberta ? (
             naoEnviadoCount > 0 ? (
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground">
-                  <strong className="text-foreground">{naoEnviadoCount}</strong> {naoEnviadoCount === 1 ? 'convite não enviado' : 'convites não enviados'}
+                <span className="text-[13px] text-muted-foreground">
+                  <strong className="text-foreground">{naoEnviadoCount}</strong> {naoEnviadoCount === 1 ? 'convite pendente' : 'convites pendentes'}
                 </span>
-                <Button onClick={handleDispararTodosEmail} className="h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Send className="size-3.5" />
-                  Enviar para todos
+                <Button disabled={isEnviando} onClick={handleDispararTodosEmail} className="h-9 px-4 text-[13px] rounded-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow transition-all">
+                  {isEnviando ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+                  {isEnviando ? 'Enviando...' : 'Enviar Restantes'}
                 </Button>
               </div>
             ) : (
-              <div className="text-xs text-green-600 font-medium py-1">
-                ✓ Todos os convites foram enviados.
+              <div className="text-[13px] text-emerald-600 font-medium py-1.5 flex items-center gap-2">
+                <CheckCircle2 className="size-4" />
+                Todos os convites foram enviados.
               </div>
             )
           ) : (
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Info className="size-4 text-muted-foreground/60 shrink-0" />
-                <span>Os convites serão disparados automaticamente ao clicar em <strong className="text-foreground">Abrir</strong>.</span>
+              <div className="flex items-center gap-2 text-[12px] text-muted-foreground/80">
+                <Info className="size-4 text-muted-foreground/50 shrink-0" />
+                <span>Os convites serão disparados ao clicar em <strong className="text-foreground/90 font-medium">Abrir Cotação</strong>.</span>
               </div>
-              <Button onClick={onClose} variant="default" className="h-8 text-xs px-4">
+              <Button onClick={onClose} variant="default" className="h-9 px-6 rounded-full text-[13px] font-medium shadow-sm hover:shadow transition-all">
                 Pronto
               </Button>
             </div>

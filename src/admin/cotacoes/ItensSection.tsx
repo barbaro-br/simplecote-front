@@ -8,8 +8,7 @@ import { PackageX, Trash2, Plus, Minus } from 'lucide-react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import { type ItemCotacao } from './cotacoes.schema'
-import { useQueryClient } from '@tanstack/react-query'
-import { useRemoverItem } from './cotacoes.api'
+import { useRemoverItem, useAtualizarQuantidadeItem } from './cotacoes.api'
 import { useInsightProdutos } from '../analise/analise.api'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
 
@@ -98,19 +97,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   
   
   const remover = useRemoverItem(cotacaoId)
-  const queryClient = useQueryClient()
-  const useEdit = {
-    isPending: false,
-    mutate: ({ itemId, quantidade }: { itemId: string, quantidade: number }) => {
-      queryClient.setQueryData(['cotacao', cotacaoId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          itens: old.itens.map((i: any) => i.id === itemId ? { ...i, quantidadeSolicitada: quantidade } : i)
-        }
-      })
-    }
-  }
+  const atualizar = useAtualizarQuantidadeItem(cotacaoId)
 
   const [formAberto, setFormAberto] = useState(false)
   const [cadastroAberto, setCadastroAberto] = useState(false)
@@ -207,8 +194,8 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
                       {editavel ? (
                         <Stepper
                           value={item.quantidadeSolicitada}
-                          onChange={(v) => useEdit.mutate({ itemId: item.id, quantidade: v })}
-                          disabled={useEdit.isPending}
+                          onChange={(v) => atualizar.mutate({ itemId: item.id, quantidade: v })}
+                          disabled={atualizar.isPending}
                         />
                       ) : (
                         item.quantidadeSolicitada

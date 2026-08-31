@@ -8,7 +8,8 @@ type Props = {
   title?: string
   /** Rótulo acessível quando não há `title`. */
   ariaLabel?: string
-  size?: 'md' | 'lg'
+  size?: 'md' | 'lg' | 'xl'
+  className?: string
   children: ReactNode
 }
 
@@ -23,7 +24,7 @@ const pilhaAberta: symbol[] = []
  * scroll-lock do body com cleanup, foco no container ao abrir e devolvido ao gatilho
  * ao fechar, `role="dialog"`/`aria-modal` e um focus-trap simples de Tab.
  */
-export function Dialog({ open, onClose, title, ariaLabel, size = 'md', children }: Props) {
+export function Dialog({ open, onClose, title, ariaLabel, size = 'md', className, children }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const gatilhoRef = useRef<Element | null>(null)
   const onCloseRef = useRef(onClose)
@@ -98,7 +99,7 @@ export function Dialog({ open, onClose, title, ariaLabel, size = 'md', children 
         aria-labelledby={title ? tituloId : undefined}
         aria-label={title ? undefined : (ariaLabel ?? 'Diálogo')}
         tabIndex={-1}
-        className={`w-full ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] overflow-y-auto space-y-4 rounded-lg border bg-card p-6 shadow-lg outline-none animate-in zoom-in-95 duration-200`}
+        className={`w-full ${size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] flex flex-col rounded-xl border bg-card/95 shadow-2xl backdrop-blur-md outline-none animate-in zoom-in-95 duration-200 ${className || 'p-6 space-y-4'}`}
       >
         {title && (
           <div className="flex items-start justify-between">

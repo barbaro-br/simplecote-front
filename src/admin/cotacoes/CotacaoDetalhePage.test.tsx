@@ -208,9 +208,11 @@ test('3.4 — Abrir envia o prazo em ISO', async () => {
   await screen.findByRole('heading', { name: 'Compra semanal' })
 
   await user.click(screen.getByRole('button', { name: 'Abrir' }))
-  const dialog = screen.getByRole('dialog')
-  await user.type(within(dialog).getByLabelText('Prazo para respostas'), '2026-09-01T10:00')
-  await user.click(within(dialog).getByRole('button', { name: 'Abrir' }))
+  const dialog = await screen.findByRole('dialog')
+  
+  // A interface foi atualizada para botões de acesso rápido
+  await user.click(within(dialog).getByRole('button', { name: 'Amanhã 12h' }))
+  await user.click(within(dialog).getByRole('button', { name: 'Abrir Cotação' }))
 
   await waitFor(() => expect(chamadas.abrir).toBe(1))
   const prazo = getPrazoRecebido()
@@ -278,4 +280,34 @@ test('"Duplicar" com erro mostra a mensagem em alerta e não navega', async () =
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível duplicar.')
   expect(screen.getByRole('heading', { name: 'Compra semanal' })).toBeInTheDocument()
+})
+
+test('Caminho Triste: Erro 500 ao carregar a cotação exibe mensagem de erro e não quebra a tela', async () => {
+  server.use(
+    http.get('*/api/cotacoes/c-1', () => HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 }))
+  )
+  
+  const router = createMemoryRouter([{ path: '/admin/cotacoes/:id', element: <CotacaoDetalhePage /> }], { initialEntries: ['/admin/cotacoes/c-1'] })
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><RouterProvider router={router} /></QueryClientProvider>)
+  
+  expect(await screen.findByText(/Erro ao carregar a cotação/i)).toBeInTheDocument()
+})
+
+test('Caminho Triste: Erro 500 ao tentar Abrir a cotação mantém o modal fechado e exibe alerta de erro', async () => {
+  setup('RASCUNHO')
+  server.use(
+    http.post('*/api/cotacoes/c-1/abrir', () => HttpResponse.json({ message: 'Falha no banco de dados' }, { status: 500 }))
+  )
+  
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  // Tenta abrir
+  await user.click(screen.getByRole('button', { name: 'Abrir' }))
+  const dialog = await screen.findByRole('dialog')
+  await user.click(within(dialog).getByRole('button', { name: 'Amanhã 12h' }))
+  await user.click(within(dialog).getByRole('button', { name: 'Abrir Cotação' }))
+
+  // Verifica se o alerta apareceu e a tela não ficou branca
+  expect(await screen.findByRole('alert')).toHaveTextContent('Erro na requisição')
 })
