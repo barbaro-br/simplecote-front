@@ -5,7 +5,7 @@ import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { StatusBadge } from '@/shared/components/StatusBadge'
 import { ItensSection } from './ItensSection'
-import { RespostasSection } from './RespostasSection'
+import { GradeAoVivoTabela } from './GradeAoVivoTabela'
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { AbrirCotacaoDialog } from './AbrirCotacaoDialog'
 import { RepresentantesModal } from './RepresentantesModal'
@@ -18,10 +18,33 @@ import {
   useDuplicarCotacao,
   useEncerrar,
   useReabrir,
-  useConvidarEmpresas
+  useConvidarEmpresas,
+  useGradeAoVivo,
+  useGradeAoVivoSSE
 } from './cotacoes.api'
 
 type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | null
+
+function GradeAoVivoContainer({ id, status }: { id: string; status: string }) {
+  useGradeAoVivoSSE(id, status)
+  const { data: grade, isLoading, error } = useGradeAoVivo(id)
+
+  if (isLoading) return <p className="text-sm text-muted-foreground p-4">Carregando grade ao vivo…</p>
+  if (error) return <p className="text-sm text-destructive p-4">Erro ao carregar grade ao vivo: {error.message}</p>
+  if (!grade) return null
+
+  return (
+    <div className="space-y-4 mt-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold tracking-tight">Grade de Respostas (Ao Vivo)</h2>
+        <span className="text-sm text-muted-foreground font-medium bg-muted px-2.5 py-0.5 rounded-full">
+          {grade.respondidos} / {grade.totalParticipantes} respondidos
+        </span>
+      </div>
+      <GradeAoVivoTabela cotacaoId={id} grade={grade} />
+    </div>
+  )
+}
 
 export function CotacaoDetalhePage() {
   const { id = '' } = useParams()
@@ -143,14 +166,7 @@ export function CotacaoDetalhePage() {
               Ver resultado
             </Link>
           )}
-          {(status === 'ABERTA' || status === 'ENCERRADA') && (
-            <Link
-              to={`/admin/cotacoes/${id}/ao-vivo`}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground"
-            >
-              Acompanhar ao vivo
-            </Link>
-          )}
+
           <Button variant="secondary" onClick={aoDuplicar} disabled={acaoPendente}>
             {duplicar.isPending ? 'Duplicando…' : 'Duplicar'}
           </Button>
@@ -196,9 +212,11 @@ export function CotacaoDetalhePage() {
       )}
 
       <div className="space-y-6">
-        <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={status === 'RASCUNHO'} />
+        {(status === 'RASCUNHO' || status === 'CANCELADA' || status === 'PEDIDOS_GERADOS') && (
+          <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={status === 'RASCUNHO'} />
+        )}
 
-        {(status === 'ABERTA' || status === 'ENCERRADA') && <RespostasSection cotacaoId={id} />}
+        {(status === 'ABERTA' || status === 'ENCERRADA') && <GradeAoVivoContainer id={id} status={status} />}
       </div>
 
       {dialog === 'abrir' && (

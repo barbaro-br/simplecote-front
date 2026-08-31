@@ -42,9 +42,11 @@ function renderPage(mockDashboardError = false) {
 
 test('lista as cotações retornadas pela API', async () => {
   renderPage()
-  expect(await screen.findByRole('link', { name: 'Compra semanal' })).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Hortifruti agosto' })).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Limpeza Q3' })).toBeInTheDocument()
+  // Aguarda os três itens aparecerem antes de checar — evita race condition
+  // quando o componente renderiza a lista de forma assíncrona em microtasks.
+  await screen.findByRole('link', { name: 'Compra semanal' })
+  await screen.findByRole('link', { name: 'Hortifruti agosto' })
+  await screen.findByRole('link', { name: 'Limpeza Q3' })
 })
 
 test('filtrar por status reduz as linhas', async () => {
