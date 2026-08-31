@@ -55,14 +55,15 @@ test('3.2 — o botão sanduíche colapsa a sidebar e persiste em localStorage',
   expect(screen.getByText('Produtos')).toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: 'Recolher menu' }))
+  await user.unhover(screen.getByRole('button', { name: 'Expandir menu' }))
 
-  expect(screen.queryByText('Produtos')).not.toBeInTheDocument()
+  expect(screen.getByText('Produtos')).toHaveClass('opacity-0')
   expect(screen.getByRole('link', { name: 'Produtos' })).toBeInTheDocument()
   expect(localStorage.getItem('simplecote:sidebar')).toBe('1')
 
   unmount()
 
   renderLayout('/admin/produtos')
-  expect(screen.queryByText('Produtos')).not.toBeInTheDocument()
+  expect(screen.getByText('Produtos')).toHaveClass('opacity-0')
   expect(screen.getByRole('button', { name: 'Expandir menu' })).toBeInTheDocument()
 })
