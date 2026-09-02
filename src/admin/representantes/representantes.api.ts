@@ -31,11 +31,3 @@ export function useAtualizarRepresentante() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: chave }),
   })
 }
-
-export function useInativarRepresentante() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) => api.post<void>(`/api/representantes/${id}/inativar`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: chave }),
-  })
-}
