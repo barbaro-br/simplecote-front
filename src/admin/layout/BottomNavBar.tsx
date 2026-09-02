@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   BarChart3,
@@ -25,13 +25,33 @@ const ITENS_MAIS = [
   { to: '/admin/configuracoes', label: 'Configurações', Icon: Settings, end: false },
 ] as const
 
+const TODOS_ITENS = [...ITENS_FIXOS, ...ITENS_MAIS]
+
+function lerTelaLarga(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(min-width: 768px)').matches
+}
+
 export function BottomNavBar({ onLogout }: { onLogout: () => void }) {
   const [maisAberto, setMaisAberto] = useState(false)
+  const [ehLarga, setEhLarga] = useState<boolean>(lerTelaLarga)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    const mql = window.matchMedia('(min-width: 768px)')
+    function aoMudar(e: MediaQueryListEvent) {
+      setEhLarga(e.matches)
+    }
+    mql.addEventListener('change', aoMudar)
+    return () => mql.removeEventListener('change', aoMudar)
+  }, [])
+
+  const itensVisiveis = ehLarga ? TODOS_ITENS : ITENS_FIXOS
 
   return (
     <>
       <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t bg-background">
-        {ITENS_FIXOS.map(({ to, label, Icon, end }) => (
+        {itensVisiveis.map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -50,22 +70,24 @@ export function BottomNavBar({ onLogout }: { onLogout: () => void }) {
           </NavLink>
         ))}
 
-        <button
-          type="button"
-          onClick={() => setMaisAberto((v) => !v)}
-          aria-label="Mais"
-          aria-haspopup="menu"
-          aria-expanded={maisAberto}
-          className={`flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs transition-colors ${
-            maisAberto ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <MoreHorizontal className="size-6 shrink-0" aria-hidden />
-          <span className="whitespace-nowrap">Mais</span>
-        </button>
+        {!ehLarga && (
+          <button
+            type="button"
+            onClick={() => setMaisAberto((v) => !v)}
+            aria-label="Mais"
+            aria-haspopup="menu"
+            aria-expanded={maisAberto}
+            className={`flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs transition-colors ${
+              maisAberto ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <MoreHorizontal className="size-6 shrink-0" aria-hidden />
+            <span className="whitespace-nowrap">Mais</span>
+          </button>
+        )}
       </nav>
 
-      {maisAberto && (
+      {!ehLarga && maisAberto && (
         <>
           <div
             className="fixed inset-0 z-30"
