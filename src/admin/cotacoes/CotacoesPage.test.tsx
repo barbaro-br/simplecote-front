@@ -77,6 +77,22 @@ test('linhas de cotação não dependem de opacity-0 (visíveis sob reduced-moti
   expect(row).not.toHaveClass('opacity-0')
 })
 
+test('linhas que retornam após ampliar a busca não reexibem a animação de entrada', async () => {
+  renderPage()
+  await screen.findByRole('link', { name: 'Compra semanal' })
+  const user = userEvent.setup()
+
+  const busca = screen.getByRole('searchbox', { name: 'Buscar cotação' })
+
+  await user.type(busca, 'hortifruti')
+  expect(screen.queryByRole('link', { name: 'Compra semanal' })).not.toBeInTheDocument()
+
+  await user.clear(busca)
+  const row = (await screen.findByRole('link', { name: 'Compra semanal' })).closest('tr')
+  expect(row).not.toHaveClass('fade-in')
+  expect(row?.getAttribute('style')).toBeNull()
+})
+
 // --- duplicar-cotacao-ui ---
 
 function DetalheMarker() {
