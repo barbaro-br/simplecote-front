@@ -4,6 +4,7 @@ import { Button } from '@/shared/components/ui/button'
 import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { StatusBadge } from '@/shared/components/StatusBadge'
+import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { ItensSection } from './ItensSection'
 import { GradeAoVivoTabela } from './GradeAoVivoTabela'
 import { ConfirmarDialog } from './ConfirmarDialog'
@@ -113,7 +114,7 @@ export function CotacaoDetalhePage() {
     convidar.isPending
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <PageContainer maxWidth="4xl" className="space-y-6">
       <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border shadow-sm mb-6 space-y-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -266,6 +267,6 @@ export function CotacaoDetalhePage() {
         selecionadas={empresasSelecionadas}
         onToggle={(empresaId) => setEmpresasSelecionadas(s => s.includes(empresaId) ? s.filter(x => x !== empresaId) : [...s, empresaId])}
       />
-    </div>
+    </PageContainer>
   )
 }
