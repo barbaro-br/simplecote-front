@@ -1,9 +1,11 @@
 import { api, ApiError } from '@/shared/api/api-client'
 import {
   dashboardSchema,
+  analiseComprasSchema,
   insightProdutosMapSchema,
   insightEmpresaSchema,
   type Dashboard,
+  type AnaliseCompras,
   type InsightProduto,
   type InsightEmpresa,
 } from './analise.schema'
@@ -25,6 +27,11 @@ function parseSchema<T>(schema: { parse: (val: unknown) => T }, data: unknown): 
 export async function buscarDashboard(): Promise<Dashboard> {
   const data = await api.get('/api/analises/dashboard')
   return parseSchema(dashboardSchema, data)
+}
+
+export async function buscarCompras(de: string, ate: string): Promise<AnaliseCompras> {
+  const data = await api.get(`/api/analises/compras?de=${de}&ate=${ate}`)
+  return parseSchema(analiseComprasSchema, data)
 }
 
 export async function buscarInsightProdutos(ids: string[]): Promise<Record<string, InsightProduto>> {
@@ -72,5 +79,13 @@ export function useInsightEmpresa(empresaId: string, options?: { enabled?: boole
     enabled: options?.enabled,
     staleTime: 300_000,
     retry: false,
+  })
+}
+
+export function useCompras(de: string, ate: string) {
+  return useQuery({
+    queryKey: ['analise', 'compras', de, ate],
+    queryFn: () => buscarCompras(de, ate),
+    staleTime: 60_000,
   })
 }

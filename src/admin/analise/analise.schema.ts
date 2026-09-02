@@ -1,36 +1,70 @@
 import { z } from 'zod'
 
 export const dashboardSchema = z.object({
-  porStatus: z.record(z.string(), z.number()),
-  contadores: z.object({
-    encerradasSemApurar: z.number(),
-    apuradasSemPedido: z.number(),
+  porStatus: z.object({
+    rascunho: z.number(),
+    aberta: z.number(),
+    encerrada: z.number(),
+    apurada: z.number(),
+    cancelada: z.number(),
   }),
+  encerradasSemApurar: z.number(),
+  apuradasSemPedidoEnviado: z.number(),
   proximosPrazos: z.array(
     z.object({
-      id: z.string().uuid(),
+      cotacaoId: z.string().uuid(),
       titulo: z.string(),
       fechaEm: z.string(),
     })
   ),
-  gastos: z.object({
-    mesAtual: z.string(),
-    mesAnterior: z.string(),
-    variacaoPct: z.string().nullable(),
-    economia90d: z.string(),
-  }),
+  gastoMes: z.number(),
+  gastoMesAnterior: z.number(),
+  economiaEstimada90d: z.number(),
   topProdutos: z.array(
     z.object({
       nome: z.string(),
-      valor: z.string(),
+      valor: z.number(),
     })
-  ).max(5),
+  ),
   topEmpresas: z.array(
     z.object({
       nome: z.string(),
-      valor: z.string(),
+      valor: z.number(),
     })
-  ).max(5),
+  ),
+})
+
+export const analiseComprasSchema = z.object({
+  periodo: z.object({
+    de: z.string(),
+    ate: z.string(),
+  }),
+  totais: z.array(
+    z.object({
+      empresa: z.string(),
+      total: z.number(),
+    })
+  ),
+  itemMaisComprado: z
+    .object({
+      nome: z.string(),
+      quantidade: z.number(),
+    })
+    .nullable(),
+  itemMenosComprado: z
+    .object({
+      nome: z.string(),
+      quantidade: z.number(),
+    })
+    .nullable(),
+  ultimosPrecos: z.array(
+    z.object({
+      produto: z.string(),
+      precoUnitario: z.number(),
+      empresa: z.string(),
+      data: z.string(),
+    })
+  ),
 })
 
 export const insightProdutoSchema = z.object({
@@ -76,5 +110,6 @@ export const insightEmpresaSchema = z.object({
 })
 
 export type Dashboard = z.infer<typeof dashboardSchema>
+export type AnaliseCompras = z.infer<typeof analiseComprasSchema>
 export type InsightProduto = z.infer<typeof insightProdutoSchema>
 export type InsightEmpresa = z.infer<typeof insightEmpresaSchema>

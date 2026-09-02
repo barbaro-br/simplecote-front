@@ -4,13 +4,14 @@ import { AuthGuard } from './shared/auth/AuthGuard'
 
 import { ProdutosPage } from './admin/produtos/ProdutosPage'
 import { EmpresasPage } from './admin/empresas/EmpresasPage'
-import { RepresentantesPage } from './admin/representantes/RepresentantesPage'
 import { UsuariosPage } from './admin/usuarios/UsuariosPage'
 import { LoginPage } from './admin/login/LoginPage'
 import { CotacoesPage } from './admin/cotacoes/CotacoesPage'
 import { NovaCotacaoPage } from './admin/cotacoes/NovaCotacaoPage'
 import { CotacaoDetalhePage } from './admin/cotacoes/CotacaoDetalhePage'
 import { ResultadoPage } from './admin/cotacoes/ResultadoPage'
+import { AnalisesPage } from './admin/analise/AnalisesPage'
+import { DashboardPage } from './admin/analise/DashboardPage'
 import { TemaClaro } from './representante/TemaClaro'
 import { CotacaoPorTokenPage } from './representante/cotacao/CotacaoPorTokenPage'
 import { PedidoPorTokenPage } from './representante/pedido/PedidoPorTokenPage'
@@ -33,6 +34,10 @@ export const routes = createBrowserRouter([
         children: [
           {
             path: '',
+            element: <DashboardPage />,
+          },
+          {
+            path: 'cotacoes',
             element: <CotacoesPage />,
           },
           {
@@ -56,12 +61,12 @@ export const routes = createBrowserRouter([
             element: <EmpresasPage />,
           },
           {
-            path: 'representantes',
-            element: <RepresentantesPage />,
-          },
-          {
             path: 'usuarios',
             element: <UsuariosPage />,
+          },
+          {
+            path: 'analises',
+            element: <AnalisesPage />,
           },
         ],
       },

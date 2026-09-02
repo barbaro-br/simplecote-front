@@ -13,15 +13,13 @@ describe('analise.api', () => {
     server.use(
       http.get('*/api/analises/dashboard', () => {
         return HttpResponse.json({
-          porStatus: { ABERTA: 1 },
-          contadores: { encerradasSemApurar: 0, apuradasSemPedido: 1 },
+          porStatus: { rascunho: 0, aberta: 1, encerrada: 0, apurada: 0, cancelada: 0 },
+          encerradasSemApurar: 0,
+          apuradasSemPedidoEnviado: 1,
           proximosPrazos: [],
-          gastos: {
-            mesAtual: '100.00',
-            mesAnterior: '50.00',
-            variacaoPct: '100.0',
-            economia90d: '10.00',
-          },
+          gastoMes: 100,
+          gastoMesAnterior: 50,
+          economiaEstimada90d: 10,
           topProdutos: [],
           topEmpresas: [],
         })
@@ -29,7 +27,7 @@ describe('analise.api', () => {
     )
 
     const res = await buscarDashboard()
-    expect(res.porStatus.ABERTA).toBe(1)
+    expect(res.porStatus.aberta).toBe(1)
   })
 
   it('buscarDashboard: rejeita com ApiError se o schema for inválido', async () => {

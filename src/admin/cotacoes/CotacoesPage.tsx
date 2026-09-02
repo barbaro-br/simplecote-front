@@ -1,16 +1,16 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { FileText, Plus, RefreshCw, Search, ServerCrash } from 'lucide-react'
 import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 import { StatusBadge } from '@/shared/components/StatusBadge'
-import { Button } from '@/shared/components/ui/button'
+import { Button, buttonClasses } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
+import { Input } from '@/shared/components/ui/input'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
 import { useCotacoes, useDuplicarCotacao, useExcluirCotacao } from './cotacoes.api'
-import { PainelDashboard } from '../analise/PainelDashboard'
 import { ConfirmarDialog } from './ConfirmarDialog'
 
 const STATUS: { valor: StatusCotacao; rotulo: string }[] = [
@@ -34,8 +34,23 @@ const FILTROS: { valor: Filtro; rotulo: string }[] = [
 
 export function CotacoesPage() {
   const { data: cotacoes, isLoading, error, refetch, isFetching } = useCotacoes()
-  const [filtro, setFiltro] = useState<Filtro>('TODOS')
+  const [searchParams, setSearchParams] = useSearchParams()
   const [busca, setBusca] = useState('')
+
+  const statusParam = searchParams.get('status')
+  const filtro: Filtro = STATUS.some((s) => s.valor === statusParam)
+    ? (statusParam as StatusCotacao)
+    : 'TODOS'
+
+  function setFiltro(f: Filtro) {
+    const next = new URLSearchParams(searchParams)
+    if (f === 'TODOS') {
+      next.delete('status')
+    } else {
+      next.set('status', f)
+    }
+    setSearchParams(next, { replace: true })
+  }
 
   const navigate = useNavigate()
   const duplicar = useDuplicarCotacao()
@@ -83,7 +98,6 @@ export function CotacoesPage() {
 
   return (
     <div className="space-y-5 max-w-5xl">
-      <PainelDashboard onStatusClick={setFiltro} />
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Cotações</h1>
@@ -95,7 +109,7 @@ export function CotacoesPage() {
         </div>
         <Link
           to="/admin/cotacoes/nova"
-          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
+          className={buttonClasses()}
         >
           <Plus className="size-4" aria-hidden />
           Nova cotação
@@ -108,13 +122,13 @@ export function CotacoesPage() {
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden
           />
-          <input
+          <Input
             type="search"
             aria-label="Buscar cotação"
             placeholder="Buscar cotação…"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="h-9 w-full rounded-md border border-input bg-transparent pl-9 pr-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="pl-9 pr-3"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">

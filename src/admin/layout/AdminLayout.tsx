@@ -1,27 +1,29 @@
 import { useEffect, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, ScrollRestoration, useNavigate } from 'react-router-dom'
 import { RouteTransition } from '@/shared/components/ui/route-transition'
 import {
+  BarChart3,
   Building2,
   FileText,
+  LayoutDashboard,
   LogOut,
   Package,
   PanelLeftClose,
   PanelLeftOpen,
   ShoppingBag,
   UserCog,
-  Users,
 } from 'lucide-react'
 import { useAuth } from '@/shared/auth/AuthContext'
 
 const SIDEBAR_KEY = 'simplecote:sidebar'
 
 const ITENS = [
-  { to: '/admin', label: 'Cotações', Icon: FileText, end: true },
+  { to: '/admin', label: 'Dashboard', Icon: LayoutDashboard, end: true },
+  { to: '/admin/cotacoes', label: 'Cotações', Icon: FileText, end: false },
   { to: '/admin/produtos', label: 'Produtos', Icon: Package, end: false },
   { to: '/admin/empresas', label: 'Empresas', Icon: Building2, end: false },
-  { to: '/admin/representantes', label: 'Representantes', Icon: Users, end: false },
   { to: '/admin/usuarios', label: 'Usuários', Icon: UserCog, end: false },
+  { to: '/admin/analises', label: 'Análises', Icon: BarChart3, end: false },
 ] as const
 
 function lerColapsada(): boolean {
@@ -55,6 +57,7 @@ export function AdminLayout() {
 
   return (
     <div className="flex min-h-screen bg-card text-foreground">
+      <ScrollRestoration />
       <aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -138,8 +141,10 @@ export function AdminLayout() {
           </span>
         </button>
       </aside>
-      <main className="flex-1 p-8 overflow-hidden">
-        <RouteTransition />
+      <main className="flex-1 overflow-hidden">
+        <div className="mx-auto w-full max-w-7xl p-8">
+          <RouteTransition />
+        </div>
       </main>
     </div>
   )

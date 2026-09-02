@@ -67,3 +67,15 @@ test('3.2 — o botão sanduíche colapsa a sidebar e persiste em localStorage',
   expect(screen.getByText('Produtos')).toHaveClass('opacity-0')
   expect(screen.getByRole('button', { name: 'Expandir menu' })).toBeInTheDocument()
 })
+
+test('3.3 — o menu tem Dashboard (raiz) e Cotações apontando para /admin/cotacoes', () => {
+  renderLayout('/admin')
+  expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/admin')
+  expect(screen.getByRole('link', { name: 'Cotações' })).toHaveAttribute('href', '/admin/cotacoes')
+})
+
+test('3.4 — o conteúdo fica dentro de um wrapper centralizado (max-w-7xl / mx-auto)', () => {
+  const { container } = renderLayout('/admin/produtos')
+  const wrapper = container.querySelector('main > div.mx-auto.max-w-7xl')
+  expect(wrapper).not.toBeNull()
+})
