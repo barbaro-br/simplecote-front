@@ -56,14 +56,14 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-card text-foreground">
+    <div className="flex h-screen overflow-hidden bg-card text-foreground">
       <ScrollRestoration />
       <aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className={`${
           isExpanded ? 'w-64' : 'w-20'
-        } border-r bg-background p-4 flex flex-col transition-all duration-300 ease-in-out relative z-20`}
+        } sticky top-0 h-screen border-r bg-background p-4 flex flex-col transition-all duration-300 ease-in-out relative z-20`}
       >
         <div className={`flex items-center mb-8 h-10 ${isExpanded ? 'justify-between' : 'justify-center'}`}>
           <div
@@ -141,7 +141,7 @@ export function AdminLayout() {
           </span>
         </button>
       </aside>
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 h-screen overflow-y-auto">
         <div className="mx-auto w-full max-w-7xl p-8">
           <RouteTransition />
         </div>
