@@ -75,7 +75,10 @@ export function useAtualizarQuantidadeItem(cotacaoId: string) {
   return useMutation({
     mutationFn: ({ itemId, quantidade }: { itemId: string; quantidade: number }) =>
       api.patch<void>(`/api/cotacoes/${cotacaoId}/itens/${itemId}/quantidade`, { quantidade }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: detalheKey(cotacaoId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: detalheKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+    },
   })
 }
 
