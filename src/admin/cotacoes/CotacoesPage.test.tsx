@@ -70,6 +70,13 @@ test('atalho "Nova cotação" aponta para o formulário de criação', async () 
   )
 })
 
+test('linhas de cotação não dependem de opacity-0 (visíveis sob reduced-motion)', async () => {
+  renderPage()
+  const link = await screen.findByRole('link', { name: 'Compra semanal' })
+  const row = link.closest('tr')
+  expect(row).not.toHaveClass('opacity-0')
+})
+
 // --- duplicar-cotacao-ui ---
 
 function DetalheMarker() {
