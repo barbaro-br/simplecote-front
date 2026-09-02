@@ -41,6 +41,20 @@
     --color-background: var(--background);
     --color-success: var(--success);
     --color-warning: var(--warning);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-avatar-1: var(--avatar-1);
+    --color-avatar-2: var(--avatar-2);
+    --color-avatar-3: var(--avatar-3);
+    --color-avatar-4: var(--avatar-4);
+    --color-avatar-5: var(--avatar-5);
+    --color-avatar-6: var(--avatar-6);
+    --color-avatar-7: var(--avatar-7);
+    --color-avatar-8: var(--avatar-8);
+    --color-avatar-9: var(--avatar-9);
+    --color-avatar-10: var(--avatar-10);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -71,12 +85,32 @@
     --ring: oklch(0.708 0 0);
     --success: oklch(0.65 0.15 150);
     --warning: oklch(0.75 0.15 70);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --success-foreground: oklch(0.5 0.15 150);
+    --warning-foreground: oklch(0.5 0.15 70);
+    --info: oklch(0.55 0.16 250);
+    --info-foreground: oklch(0.5 0.16 250);
+    --avatar-1: oklch(0.5 0.16 250);
+    --avatar-2: oklch(0.5 0.16 280);
+    --avatar-3: oklch(0.5 0.16 300);
+    --avatar-4: oklch(0.55 0.18 340);
+    --avatar-5: oklch(0.55 0.18 20);
+    --avatar-6: oklch(0.55 0.16 45);
+    --avatar-7: oklch(0.5 0.14 70);
+    --avatar-8: oklch(0.5 0.14 150);
+    --avatar-9: oklch(0.5 0.14 200);
+    --avatar-10: oklch(0.5 0.14 225);
+    --chart-1: oklch(0.55 0.15 155);
+    --chart-2: oklch(0.55 0.15 250);
+    --chart-3: oklch(0.6 0.16 60);
+    --chart-4: oklch(0.55 0.18 350);
+    --chart-5: oklch(0.55 0.14 290);
     --radius: 0.625rem;
+    --duration-fast: 150ms;
+    --duration-base: 200ms;
+    --duration-slow: 300ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --shadow-top: 0 -4px 24px oklch(0.145 0 0 / 0.12);
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
@@ -108,11 +142,26 @@
     --ring: oklch(0.556 0 0);
     --success: oklch(0.65 0.15 150);
     --warning: oklch(0.75 0.15 70);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --success-foreground: oklch(0.72 0.14 150);
+    --warning-foreground: oklch(0.78 0.14 70);
+    --info: oklch(0.7 0.13 250);
+    --info-foreground: oklch(0.8 0.1 250);
+    --avatar-1: oklch(0.75 0.12 250);
+    --avatar-2: oklch(0.75 0.12 280);
+    --avatar-3: oklch(0.75 0.12 300);
+    --avatar-4: oklch(0.75 0.12 340);
+    --avatar-5: oklch(0.75 0.12 20);
+    --avatar-6: oklch(0.75 0.12 45);
+    --avatar-7: oklch(0.75 0.12 70);
+    --avatar-8: oklch(0.75 0.12 150);
+    --avatar-9: oklch(0.75 0.12 200);
+    --avatar-10: oklch(0.75 0.12 225);
+    --chart-1: oklch(0.55 0.15 155);
+    --chart-2: oklch(0.55 0.15 250);
+    --chart-3: oklch(0.6 0.16 60);
+    --chart-4: oklch(0.55 0.18 350);
+    --chart-5: oklch(0.55 0.14 290);
+    --shadow-top: 0 -4px 24px oklch(0 0 0 / 0.55);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -162,6 +211,9 @@
     --ring: oklch(0.708 0 0);
     --success: oklch(0.65 0.15 150);
     --warning: oklch(0.75 0.15 70);
+    --success-foreground: oklch(0.5 0.15 150);
+    --warning-foreground: oklch(0.5 0.15 70);
+    --shadow-top: 0 -4px 24px oklch(0.145 0 0 / 0.12);
 }
 
 /*
@@ -211,4 +263,39 @@
     color-mix(in srgb, var(--muted) 80%, transparent) 75%
   );
   background-size: 200% 100%;
+}
+
+/*
+ * Elevação do rodapé fixo (mobile do representante): sombra projetada para cima,
+ * tema-consciente via token (não rgba fixa).
+ */
+@utility shadow-top {
+  box-shadow: var(--shadow-top);
+}
+
+/*
+ * Acessibilidade: respeita quem prefere menos movimento. Neutraliza as
+ * microanimações decorativas e reduz transições, mas preserva o spinner de
+ * sincronização (animate-spin), que sinaliza progresso real.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .flash-green,
+  .pop,
+  .success-pop,
+  .fade-in,
+  .animate-shimmer,
+  [class*="animate-in"],
+  [class*="zoom-in"],
+  [class*="zoom-out"],
+  [class*="slide-in"],
+  [class*="fade-out"] {
+    animation: none !important;
+  }
+
+  .transition-all,
+  .transition-colors,
+  .transition-opacity,
+  .transition-transform {
+    transition-duration: 0.01ms !important;
+  }
 }
