@@ -57,6 +57,7 @@ export function ResultadoPage() {
       precoEmbalagem: item.precoEmbalagem,
       precoUnitario: item.precoUnitario,
       subtotal: item.subtotal,
+      decididoPorDesempate: item.decididoPorDesempate,
     })),
   )
 
@@ -177,7 +178,17 @@ export function ResultadoPage() {
                   <td className="px-4 py-3 font-medium">{v.produto}</td>
                   <td className="px-4 py-3 text-muted-foreground">{v.empresa}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{moeda(v.precoEmbalagem)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{moeda(v.precoUnitario)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                    {moeda(v.precoUnitario)}
+                    {v.decididoPorDesempate && (
+                      <span
+                        title="Empate de preço — decidido por ordem de resposta"
+                        className="ml-2 inline-flex items-center rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning"
+                      >
+                        Empate
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right tabular-nums text-foreground font-medium">{moeda(v.subtotal)}</td>
                 </tr>
               ))}
