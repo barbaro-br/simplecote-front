@@ -4,21 +4,21 @@
 
 ## 1. Menu e rota
 
-- [ ] 1.1 Adicionar item "Configurações" (ícone de engrenagem, ex. `Settings` do lucide-react) ao array `ITENS` em `AdminLayout.tsx`, apontando para `/admin/configuracoes`; verificar que aparece na sidebar e navega corretamente.
-- [ ] 1.2 Registrar a rota `/admin/configuracoes` em `routes.tsx` dentro do grupo autenticado do admin.
+- [x] 1.1 Adicionar item "Configurações" (ícone de engrenagem, ex. `Settings` do lucide-react) ao array `ITENS` em `AdminLayout.tsx`, apontando para `/admin/configuracoes`; verificar que aparece na sidebar e navega corretamente.
+- [x] 1.2 Registrar a rota `/admin/configuracoes` em `routes.tsx` dentro do grupo autenticado do admin.
 
 ## 2. Tela de Configurações
 
-- [ ] 2.1 Criar `src/admin/configuracoes/ConfiguracoesPage.tsx` com formulário (nome, cor, telefone, layout de e-mail) usando `react-hook-form` + `zod`, seguindo o padrão dos outros formulários admin (ex.: `EmpresaForm.tsx`).
-- [ ] 2.2 Implementar estados de carregamento, erro de salvamento (mensagem do backend) e indicação de "salvando…", conforme os cenários do requirement "Editar dados da loja".
-- [ ] 2.3 Teste do formulário: salvar com sucesso atualiza os valores exibidos; falha do backend exibe a mensagem e mantém os valores anteriores.
+- [x] 2.1 Criar `src/admin/configuracoes/ConfiguracoesPage.tsx` com formulário (nome, cor, telefone, layout de e-mail) usando `react-hook-form` + `zod`, seguindo o padrão dos outros formulários admin (ex.: `EmpresaForm.tsx`).
+- [x] 2.2 Implementar estados de carregamento, erro de salvamento (mensagem do backend) e indicação de "salvando…", conforme os cenários do requirement "Editar dados da loja".
+- [x] 2.3 Teste do formulário: salvar com sucesso atualiza os valores exibidos; falha do backend exibe a mensagem e mantém os valores anteriores.
 
 ## 3. Aplicar nome e cor na interface
 
-- [ ] 3.1 Criar hook/contexto compartilhado (ex. `useConfiguracaoLoja()`) que expõe a configuração atual carregada.
-- [ ] 3.2 `LoginPage.tsx`: trocar o literal `"SimpleCote"` (linha 53) pelo nome vindo do hook; implementar o estado de carregamento (skeleton) do cenário "Configuração ainda carregando".
-- [ ] 3.3 `AdminLayout.tsx`: trocar o literal `"SimpleCote"` (linha 77) pelo nome vindo do hook.
-- [ ] 3.4 Aplicar `corPrimaria` como `--primary` via `document.documentElement.style.setProperty` num ponto único de bootstrap do app (antes de renderizar as rotas); verificar visualmente que botões/foco/destaques em todo o app refletem a nova cor.
+- [x] 3.1 Criar hook/contexto compartilhado (ex. `useConfiguracaoLoja()`) que expõe a configuração atual carregada.
+- [x] 3.2 `LoginPage.tsx`: trocar o literal `"SimpleCote"` (linha 53) pelo nome vindo do hook; implementar o estado de carregamento (skeleton) do cenário "Configuração ainda carregando".
+- [x] 3.3 `AdminLayout.tsx`: trocar o literal `"SimpleCote"` (linha 77) pelo nome vindo do hook.
+- [x] 3.4 Aplicar `corPrimaria` como `--primary` via `document.documentElement.style.setProperty` num ponto único de bootstrap do app (antes de renderizar as rotas); verificar visualmente que botões/foco/destaques em todo o app refletem a nova cor.
 
 ## 4. Integração real com o backend (depende da task 0)
 
@@ -27,4 +27,4 @@
 
 ## 5. Seed desta loja
 
-- [ ] 5.1 Definir o valor inicial da configuração (via seed do backend ou primeira edição manual pela tela) como nome = "Sara Supermercado"; verificar que login e sidebar exibem esse nome.
+- [x] 5.1 Definir o valor inicial da configuração (via seed do backend ou primeira edição manual pela tela) como nome = "Sara Supermercado"; verificar que login e sidebar exibem esse nome.

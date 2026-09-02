@@ -10,10 +10,12 @@ import {
   Package,
   PanelLeftClose,
   PanelLeftOpen,
+  Settings,
   ShoppingBag,
   UserCog,
 } from 'lucide-react'
 import { useAuth } from '@/shared/auth/AuthContext'
+import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
 
 const SIDEBAR_KEY = 'simplecote:sidebar'
 
@@ -24,6 +26,7 @@ const ITENS = [
   { to: '/admin/empresas', label: 'Empresas', Icon: Building2, end: false },
   { to: '/admin/usuarios', label: 'Usuários', Icon: UserCog, end: false },
   { to: '/admin/analises', label: 'Análises', Icon: BarChart3, end: false },
+  { to: '/admin/configuracoes', label: 'Configurações', Icon: Settings, end: false },
 ] as const
 
 function lerColapsada(): boolean {
@@ -41,6 +44,7 @@ function lerTelaEstreita(): boolean {
 
 export function AdminLayout() {
   const { logout } = useAuth()
+  const { data: configuracao } = useConfiguracaoLoja()
   const navigate = useNavigate()
   const [colapsada, setColapsada] = useState<boolean>(lerColapsada)
   const [isHovered, setIsHovered] = useState(false)
@@ -92,7 +96,7 @@ export function AdminLayout() {
             <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <ShoppingBag className="size-6" aria-hidden />
             </div>
-            <span className="truncate text-xl font-bold tracking-tight">SimpleCote</span>
+            <span className="truncate text-xl font-bold tracking-tight">{configuracao?.nome ?? ''}</span>
           </div>
 
           {!ehEstreita && (

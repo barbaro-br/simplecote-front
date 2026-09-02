@@ -5,9 +5,11 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/shared/auth/AuthContext'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
+import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
 import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { AlertTriangle } from 'lucide-react'
 
 const loginSchema = z.object({
@@ -19,6 +21,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export function LoginPage() {
   const { login } = useAuth()
+  const { data: configuracao, isLoading: carregandoConfiguracao } = useConfiguracaoLoja()
   const navigate = useNavigate()
   const [erroServidor, setErroServidor] = useState<string | null>(null)
 
@@ -50,7 +53,11 @@ export function LoginPage() {
       <div className="w-full max-w-sm space-y-8 px-4">
         {/* Logo / título */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-primary">SimpleCote</h1>
+          {carregandoConfiguracao ? (
+            <Skeleton className="mx-auto h-9 w-48" />
+          ) : (
+            <h1 className="text-3xl font-bold tracking-tight text-primary">{configuracao?.nome ?? ''}</h1>
+          )}
           <p className="text-sm text-muted-foreground">Painel administrativo</p>
         </div>
 

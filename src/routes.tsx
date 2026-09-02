@@ -12,6 +12,7 @@ import { CotacaoDetalhePage } from './admin/cotacoes/CotacaoDetalhePage'
 import { ResultadoPage } from './admin/cotacoes/ResultadoPage'
 import { AnalisesPage } from './admin/analise/AnalisesPage'
 import { DashboardPage } from './admin/analise/DashboardPage'
+import { ConfiguracoesPage } from './admin/configuracoes/ConfiguracoesPage'
 import { TemaClaro } from './representante/TemaClaro'
 import { CotacaoPorTokenPage } from './representante/cotacao/CotacaoPorTokenPage'
 import { PedidoPorTokenPage } from './representante/pedido/PedidoPorTokenPage'
@@ -67,6 +68,10 @@ export const routes = createBrowserRouter([
           {
             path: 'analises',
             element: <AnalisesPage />,
+          },
+          {
+            path: 'configuracoes',
+            element: <ConfiguracoesPage />,
           },
         ],
       },
