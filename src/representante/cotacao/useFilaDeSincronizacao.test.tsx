@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw'
 import type { ReactNode } from 'react'
 import { server } from '@/setupTests'
 import { useFilaDeSincronizacao } from './useFilaDeSincronizacao'
+import { cotacaoKey } from './cotacao-token.api'
 
 const TOKEN = 'tok-fila'
 
@@ -94,4 +95,45 @@ test('evento online força retry imediato', async () => {
   window.dispatchEvent(new Event('online'))
   await vi.waitFor(() => expect(result.current.pendencias).toBe(0))
   expect(tentativa).toBe(2)
+})
+
+test('sucesso do PUT atualiza o cache com o precoUnitario devolvido', async () => {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const w = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+  )
+  const resposta = {
+    cotacaoId: 'c-1',
+    titulo: 'Cotação',
+    status: 'ABERTA',
+    prazo: null,
+    podeEditar: true,
+    participanteStatus: 'PENDENTE',
+    representanteNome: 'Ana',
+    empresaNome: 'Empresa X',
+    compradorNome: 'Supermercado',
+    itens: [
+      {
+        itemCotacaoId: 'i-1',
+        nome: 'Arroz',
+        codigoBarras: null,
+        unidade: 'Fardo',
+        quantidadeSolicitada: 10,
+        quantidadePorEmbalagemSnapshot: 20,
+        preco: 10,
+        precoUnitario: 0.5,
+        statusLance: 'COTADO',
+      },
+    ],
+  }
+  server.use(
+    http.put(`*/public/cotacoes/${TOKEN}/lances`, () => HttpResponse.json(resposta)),
+  )
+  semear({ 'i-1': { preco: 10, tentativas: 0, ultimaTentativaEm: 1 } })
+
+  renderHook(() => useFilaDeSincronizacao(TOKEN), { wrapper: w })
+
+  await vi.waitFor(() => {
+    expect(qc.getQueryData(cotacaoKey(TOKEN))).toEqual(resposta)
+  })
 })
