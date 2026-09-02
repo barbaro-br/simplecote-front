@@ -99,7 +99,7 @@ export function AbrirCotacaoDialog({ pendente, onAbrir, onCancelar }: Props) {
                 <Rocket className="size-7" />
               </div>
               <h2 className="text-xl font-semibold tracking-tight text-foreground">Lançar Cotação</h2>
-              <p className="text-[14px] text-muted-foreground mt-2 max-w-sm">
+              <p className="text-sm text-muted-foreground mt-2 max-w-sm">
                 Os representantes convidados serão notificados imediatamente e poderão responder até o prazo que você definir.
               </p>
             </div>

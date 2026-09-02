@@ -36,7 +36,7 @@ export function UltimaCompraPopover({ item, insight }: { item?: ItemGrid; insigh
     <HoverCard
       trigger={
         <>
-          <span className="font-medium">{item?.nome ?? 'Produto'}</span>
+          <span className="font-normal">{item?.nome ?? 'Produto'}</span>
           <Info className="size-3.5 text-muted-foreground/50" />
         </>
       }
