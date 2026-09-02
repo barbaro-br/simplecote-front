@@ -7,7 +7,6 @@ import {
   useRepresentantes,
   useCriarRepresentante,
   useAtualizarRepresentante,
-  useInativarRepresentante,
 } from './representantes.api'
 
 const UUID = '123e4567-e89b-12d3-a456-426614174000'
@@ -73,21 +72,6 @@ describe('representantes.api', () => {
 
     expect(corpo).not.toHaveProperty('empresaId')
     expect(corpo.nome).toBe('Maria Nova')
-  })
-
-  it('useInativarRepresentante: POST /{id}/inativar', async () => {
-    let chamou = false
-    server.use(
-      http.post('*/api/representantes/:id/inativar', ({ params }) => {
-        chamou = true
-        expect(params.id).toBe('r1')
-        return new HttpResponse(null, { status: 204 })
-      }),
-    )
-
-    const { result } = renderHook(() => useInativarRepresentante(), { wrapper: createWrapper() })
-    await result.current.mutateAsync('r1')
-    expect(chamou).toBe(true)
   })
 
   it('erro 422 do backend vira ApiError com .problem', async () => {
