@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { routes } from './routes'
 import { AuthProvider } from './shared/auth/AuthContext'
 import { SessaoExpiradaBridge } from './shared/auth/SessaoExpiradaBridge'
+import { ConfiguracaoLojaProvider } from './admin/configuracoes/ConfiguracaoLojaProvider'
 import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient({
@@ -18,7 +19,9 @@ export function App() {
     <AuthProvider>
       <SessaoExpiradaBridge />
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={routes} />
+        <ConfiguracaoLojaProvider>
+          <RouterProvider router={routes} />
+        </ConfiguracaoLojaProvider>
         <Toaster richColors position="bottom-right" />
       </QueryClientProvider>
     </AuthProvider>

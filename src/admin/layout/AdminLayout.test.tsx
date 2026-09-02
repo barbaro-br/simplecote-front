@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/shared/auth/AuthContext'
+import { resetarMock } from '../configuracoes/configuracoes.api'
 import { AdminLayout } from './AdminLayout'
 
 function renderLayout(initial = '/admin/produtos') {
@@ -19,14 +21,18 @@ function renderLayout(initial = '/admin/produtos') {
     ],
     { initialEntries: [initial] },
   )
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>,
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </QueryClientProvider>,
   )
 }
 
 beforeEach(() => {
+  resetarMock()
   if (!window.localStorage) {
     let store: Record<string, string> = {}
     Object.defineProperty(window, 'localStorage', {
@@ -101,4 +107,11 @@ test('4.1 — a sidebar permanece fixa (sticky top-0 h-screen) durante o scroll'
   expect(aside).toHaveClass('sticky')
   expect(aside).toHaveClass('top-0')
   expect(aside).toHaveClass('h-screen')
+})
+
+test('exibe o nome da loja configurado no cabeçalho e o item Configurações na sidebar', async () => {
+  renderLayout('/admin/produtos')
+
+  expect(await screen.findByText('Sara Supermercado')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Configurações' })).toHaveAttribute('href', '/admin/configuracoes')
 })
