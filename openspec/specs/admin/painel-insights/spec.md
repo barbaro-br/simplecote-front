@@ -5,39 +5,28 @@ Widgets de leitura no painel do admin que trazem para a tela os dados da API de 
 
 ## Requirements
 
-### Requirement: Cabeçalho de insights no painel
+### Requirement: Dashboard como página inicial
 
-A tela inicial do admin (`/admin`) SHALL exibir, acima da lista de cotações, uma faixa de cartões com o resumo de `GET /api/analises/dashboard`. A faixa SHALL mostrar um estado de carregamento (esqueleto) enquanto o dado não chegou e SHALL desaparecer por completo — sem mensagem de erro e sem bloquear a lista de cotações — se a chamada falhar ou o usuário estiver offline.
+A página inicial do admin (`/admin`) SHALL ser o dashboard de monitor, lendo `GET /api/analises/dashboard`. O dashboard SHALL mostrar um estado de carregamento (esqueleto) enquanto o dado não chega, e SHALL exibir um estado vazio orientando a criar a primeira cotação quando o Comprador não tem nenhuma.
 
-Quando o dado chega, a faixa SHALL apresentar:
-- a **contagem de cotações por status** (rascunho, aberta, encerrada, apurada, cancelada);
-- um bloco **"precisa de ação"** com o número de cotações encerradas sem apurar e o de apuradas sem nenhum pedido enviado; cada número SHALL ser acionável e levar à lista de cotações já filtrada por aquele status;
-- a lista de **próximos prazos** (`proximosPrazos`), cada item mostrando o título e o prazo em linguagem relativa ("vence em 2 dias", "venceu ontem" com destaque de atraso) e levando à cotação correspondente ao ser acionado;
-- o **gasto do mês corrente** e o do **mês anterior**, com a variação entre eles;
-- a **economia estimada** dos últimos 90 dias;
-- o **top 5 de produtos** e o **top 5 de empresas** por gasto, cada entrada com nome e valor.
+Quando o dado chega, o dashboard SHALL apresentar: o hero de economia (`economiaEstimada90d`), o bloco "precisa de ação" (`encerradasSemApurar` e `apuradasSemPedidoEnviado`), a lista de próximos prazos (`proximosPrazos`), os gastos dos dois meses (`gastoMes`/`gastoMesAnterior`), o pipeline de status (`porStatus`) e os top 5 de produtos e empresas em barras. Os itens de "precisa de ação" e os segmentos do pipeline SHALL ser acionáveis e SHALL navegar para a lista de cotações já filtrada (`/admin/cotacoes?status=<STATUS>`).
 
-Valores monetários e datas SHALL ser formatados em pt-BR.
+Valores monetários SHALL ser formatados em pt-BR e algarismos tabulares.
 
-#### Scenario: Painel com atividade
+#### Scenario: Dashboard como landing
 
-- **WHEN** o admin abre `/admin` e `GET /api/analises/dashboard` responde com cotações em vários status, itens em "precisa de ação", prazos próximos e gastos
-- **THEN** a faixa de cartões aparece acima da lista com a contagem por status, os números de "precisa de ação", a lista de próximos prazos, o gasto mês a mês com a variação, a economia estimada e os dois top 5
+- **WHEN** o admin abre `/admin`
+- **THEN** a página mostra o dashboard de monitor (hero de economia, ação, prazos, gastos, pipeline e top 5), sem a lista de cotações na mesma tela
 
-#### Scenario: Comprador sem histórico
+#### Scenario: Atalho do dashboard leva à lista filtrada
 
-- **WHEN** `GET /api/analises/dashboard` responde com todas as contagens em zero e as listas vazias
-- **THEN** a faixa aparece em estado vazio (zeros e "nada por aqui" nas listas), sem quebrar, e a lista de cotações é exibida normalmente
+- **WHEN** o admin aciona "encerradas sem apurar" (ou um segmento do pipeline) no dashboard
+- **THEN** o sistema navega para `/admin/cotacoes?status=<STATUS>` e a lista aparece filtrada por aquele status
 
-#### Scenario: Análise indisponível não derruba o painel
+#### Scenario: Dashboard falha ou vazio
 
-- **WHEN** `GET /api/analises/dashboard` responde com erro (por exemplo 500) ou a rede está indisponível
-- **THEN** a faixa de cartões não é renderizada, nenhuma mensagem de erro toma a tela, e a lista de cotações continua funcionando
-
-#### Scenario: Atalho de "precisa de ação" filtra a lista
-
-- **WHEN** o admin aciona o número de "encerradas sem apurar" no cabeçalho
-- **THEN** a lista de cotações passa a exibir apenas as cotações naquele status
+- **WHEN** `GET /api/analises/dashboard` responde com erro, ou o Comprador não tem cotações
+- **THEN** a página mostra o estado vazio (ou nada, em caso de erro), sem quebrar a navegação
 
 ### Requirement: Insight de compra ao passar sobre um produto
 

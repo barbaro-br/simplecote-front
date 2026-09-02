@@ -1,101 +1,109 @@
-# SimpleCote Front — Roadmap de apply
+# SimpleCote Front — Roadmap
 
-> Linha do tempo de execução das changes OpenSpec até o front ficar demo-ready.
-> Fonte da verdade do **o quê**: `spec.md` (§7 fases). Este arquivo é só a **ordem**.
-> Última revisão: 2026-08-28.
+> Estado atual do front-end e próximos passos.
+> Fonte da verdade do **o quê**: `spec.md` (§7 fases). Este arquivo é a **ordem e o estado**.
+> Última revisão: 2026-09-01.
 
-## Estado das changes
+## Estado das changes OpenSpec
 
-| Change | Situação | Specs no archive |
-|---|---|---|
-| `setup-inicial-projeto` | código feito, tasks 0/9, **não arquivada** | `core/setup` (já sincronizado) |
-| `melhoria-setup-inicial` | código feito, tasks 0/6, **não arquivada** | `core/domain-types`, `core/test-infra` (já sincronizados) |
-| `feature-produtos` | ✓ completa, **não arquivada** | `admin/produtos` (3 reqs base, já sincronizados) |
-| `feature-empresa-representante-e-edicao` | ✓ completa, **não arquivada** | `admin/empresas`, `admin/produtos` (já sincronizados) |
-| `corrigir-build-e-tipos` | ✓ implementada (`tsc -b` → 0), **não arquivada** | `skip_specs` |
-| `alinhar-contrato-api` | ✓ implementada (401 + enums), **não arquivada** | `core/setup`, `core/domain-types` (já sincronizados) |
-| `limpar-scaffold-shadcn` | ✓ implementada (`./@/` removida), **não arquivada** | `skip_specs` |
-| `auth-com-teste` | 0/5 — **a fazer** | `skip_specs` |
-| `ligar-front-ao-backend` | 0/12 — **a fazer** | `skip_specs` |
-| `admin-cotacoes` | 0/14 — **a fazer** | `admin/cotacoes` (nova capability) |
-| `representante-cotacao-token` | 0/14 — **a fazer** | `representante/cotacao` (nova capability) |
+### Ativas
 
-## Linha do tempo
+| Change | Tasks | Status | Descrição |
+|---|---|---|---|
+| `preparar-deploy-2026-08-31` | 0/15 | in-progress | Housekeeping: commits já feitos, falta arquivar e push |
+| `saas-multi-tenant-transformation` | 0/12 | in-progress | Transformação SaaS multi-tenant (~8 tasks backend) |
 
-```
-  ETAPA 0 — higiene (fora do OpenSpec, AGORA)
-  ------------------------------------------------------------------
-  [ ] commit inicial de verdade do front + push
-        hoje só spec.md está versionado; src/, package.json, configs
-        e openspec/ estão untracked. Ponto de retorno antes das telas.
+### Arquivadas (2026-09-01)
 
-  ETAPA 1 — fechar o que já está pronto
-  ------------------------------------------------------------------
-  [ ] /opsx:archive corrigir-build-e-tipos          (skip_specs)
-  [ ] /opsx:archive alinhar-contrato-api            (sync core/setup + core/domain-types)
-  [ ] /opsx:archive limpar-scaffold-shadcn          (skip_specs)
-  [ ] /opsx:archive feature-produtos                (sync admin/produtos)
-  [ ] /opsx:archive feature-empresa-representante-e-edicao
-  [ ] /opsx:archive setup-inicial-projeto           (arquiva com aviso de tasks 0/9)
-  [ ] /opsx:archive melhoria-setup-inicial          (arquiva com aviso de tasks 0/6)
+| Change | Specs sincronizadas |
+|---|---|
+| `convidar-apos-abertura` | — |
+| `reenviar-convites-falhos` | `--skip-specs` (cenários já na spec principal) |
+| `redesign-abrir-cotacao-modal` | `--skip-specs` (cenários já na spec principal) |
+| `enhance-modal-product-info` | `--skip-specs` |
+| `bulk-add-items-modal` | `cotacoes/bulk-add-items-modal` (criada) |
+| `redesign-adicionar-itens-modal` | `cotacoes/redesign-adicionar-itens-modal` (criada) |
 
-  ETAPA 2 — infra restante (as duas em paralelo, sem dependência entre si)
-  ------------------------------------------------------------------
-  [ ] /opsx:apply auth-com-teste           dep: nada. Rápido, fecha a Regra 4.
-  [ ] /opsx:apply ligar-front-ao-backend   dep: build verde (ok).
-        entrega: .env, roadmap no spec.md §7, verificação e2e
-        login -> Produtos -> Empresas contra o backend vivo.
-        >>> destrava a ETAPA 3 <<<
+### Arquivadas anteriormente
 
-  ETAPA 3 — telas (o grosso)
-  ------------------------------------------------------------------
-  [ ] resolver Open Questions no Swagger do backend rodando:
-        - shape de CotacaoResponse / ResultadoDTO / PedidoDTO
-        - a grade de respostas vem no GET /api/cotacoes/{id} ou só no /ao-vivo?
-        - GET /public/cotacoes/{token} continua acessível após o prazo?
-  [ ] /opsx:apply admin-cotacoes           dep: alinhar-contrato-api + ligar-front-ao-backend
-  [ ] /opsx:apply representante-cotacao-token   dep: ligar-front-ao-backend
-        (independente de admin-cotacoes no código; teste manual precisa
-         de uma cotação ABERTA — do painel ou do seed)
+| Change | Specs sincronizadas |
+|---|---|
+| `setup-inicial-projeto` | `core/setup` |
+| `melhoria-setup-inicial` | `core/domain-types`, `core/test-infra` |
+| `feature-produtos` | `admin/produtos` |
+| `feature-empresa-representante-e-edicao` | `admin/empresas`, `admin/produtos` |
+| `corrigir-build-e-tipos` | `skip_specs` |
+| `alinhar-contrato-api` | `core/setup`, `core/domain-types` |
+| `limpar-scaffold-shadcn` | `skip_specs` |
+| `auth-com-teste` | `skip_specs` |
+| `ligar-front-ao-backend` | `skip_specs` |
+| `admin-cotacoes` | `admin/cotacoes` |
+| `representante-cotacao-token` | `representante/cotacao` |
+| `fix-admin-layout-test` | — |
+| `alterar-favicon` | — |
+| `melhorias-modal-representantes` | — |
+| `investigar-erro-email` | — |
+| `reactive-live-grid` | `admin/cotacoes-live-stream` |
 
-  ETAPA 4 — fechamento
-  ------------------------------------------------------------------
-  [ ] /opsx:archive auth-com-teste                (skip_specs)
-  [ ] /opsx:archive ligar-front-ao-backend        (skip_specs)
-  [ ] /opsx:archive admin-cotacoes                (sync admin/cotacoes)
-  [ ] /opsx:archive representante-cotacao-token   (sync representante/cotacao)
-  [ ] commit + push -> front demo-ready
-```
-
-## Caminho crítico até "mostrar pro cliente"
-
-```
-  commit inicial ──▶ ligar-front-ao-backend ──┬──▶ admin-cotacoes ─────────┐
-                                              └──▶ representante-token ─────┴──▶ DEMO
-       auth-com-teste roda em paralelo, não bloqueia nada
-```
+---
 
 ## Gap vs `spec.md` §7
 
 | Fase / item | Estado |
 |---|---|
 | F1.1 Setup (rotas, `api-client`, tipos base) | ✅ feito |
-| F1.2 Produtos CRUD | ✅ criar/listar/inativar · 🟡 editar e lookup GTIN (spec, não código) |
+| F1.2 Produtos CRUD (criar/editar/inativar/lookup GTIN) | ✅ feito |
 | F1.2 Empresas CRUD (+ representante inline) | ✅ feito |
-| F1.2 Representantes — tela dedicada `/admin/representantes` | ❌ pendente (follow-up) |
-| F1.3 Cotações: criar, itens, convidar, abrir | ⏳ `admin-cotacoes` |
-| F1.4 `/cotacao/:token` (autosave + fila) | ⏳ `representante-cotacao-token` |
-| F1.5 Encerrar, apurar, resultado, pedidos, `/pedido/:token` | ⏳ `admin-cotacoes` + `representante-cotacao-token` |
-| F2 Grade ao vivo (polling) | ❌ follow-up |
-| F3 Análises, importação, scanner, duplicar | ❌ follow-up |
-| "Por último" Login + guard + JWT | ✅ feito (adiantado) |
-| Infra: build, 401, scaffold, `.env`, CI | ✅ build/401/scaffold · ⏳ `.env` em `ligar-front-ao-backend` · ❌ CI (follow-up) |
+| F1.2 Representantes — tela dedicada `/admin/representantes` | ✅ feito |
+| F1.3 Cotações: criar, itens, convidar empresas, abrir | ✅ feito |
+| F1.3 Encerrar/Reabrir/Cancelar cotação | ✅ feito |
+| F1.3 Convidar após abertura + reenviar convite + link mágico | ✅ feito |
+| F1.4 `/cotacao/:token` (autosave + fila de sincronização) | ✅ feito |
+| F1.4 Tutorial onboarding do representante | ✅ feito |
+| F1.5 Apurar, resultado, pedidos | ✅ feito |
+| F1.5 `/pedido/:token` (visualizar + confirmar) | ✅ feito |
+| F2 Grade ao vivo | ✅ feito (**SSE**, evoluiu do polling previsto na spec) |
+| F3 Análises/Dashboard (Sparklines, insights por produto/empresa) | ✅ feito |
+| F3 Importação de catálogo (upload) | ❌ follow-up |
+| F3 Scanner GTIN (`@zxing/browser`) | ❌ follow-up |
+| F3 Duplicar cotação | ✅ feito |
+| "Por último" Login + guard + JWT + 401 | ✅ feito |
+| Infra: build, `.env`, proxy heroku | ✅ feito |
+| Infra: CI (GitHub Actions) | ❌ follow-up |
+| Usuários CRUD + troca de senha | ✅ feito |
 
-## Follow-ups explícitos (fora do MVP demo)
+---
 
-- `/admin/representantes` como tela dedicada (hoje só via cadastro inline de Empresa).
-- Grade ao vivo com polling (`GET /api/cotacoes/{id}/ao-vivo`, `spec.md` §10.1 / Fase 2).
-- Fase 3: análises (Recharts), importação de catálogo, scanner GTIN (`@zxing/browser`), duplicar cotação.
-- CI: workflow com `tsc` + `vitest` + `oxlint` + `build`.
-- Corrigir texto defasado de `spec.md` §1/§2 ("sem login até o JWT existir" — o JWT já existe).
-- `admin/empresas` › requisito "Listagem do Catálogo de Fornecedores" ainda cita CNPJ/Razão Social (backend não tem).
+## Saúde do projeto (2026-09-01)
+
+| Métrica | Resultado |
+|---|---|
+| `tsc -b` | ✅ 0 erros |
+| `vite build` | ✅ (requer `VITE_API_BASE_URL` em produção) |
+| `vitest run` | ✅ 44 arquivos, 207 testes, 0 falhas |
+| Working tree | 🟢 Limpo |
+
+---
+
+## Próximos passos
+
+### Curto prazo — housekeeping
+
+1. Fechar a change `preparar-deploy-2026-08-31` (commits já feitos, falta push + archive).
+2. Atualizar `spec.md` §Estado atual — texto defasado (ex.: "sem login" quando o JWT já existe; cotações/representante listados como pendentes).
+
+### Médio prazo — proteção
+
+3. CI pipeline: GitHub Actions com `tsc -b` + `vitest` + `oxlint` + `vite build`.
+
+### Estratégico — evolução
+
+4. **SaaS multi-tenant** (`saas-multi-tenant-transformation`): change planejada com 12 tasks. Maioria é backend (tabela tenant, Hibernate @Filter, JWT com `tenantId`, ROLE_MASTER_ADMIN, seed demo). No front: AuthContext com `tenantId`, novas telas `/saas/admin/clientes`, ajuste de mocks.
+
+### Follow-ups explícitos (fora do escopo atual)
+
+- Importação de catálogo (upload de arquivo).
+- Scanner GTIN (`@zxing/browser`).
+- Testes e2e (Playwright/Cypress) — depende de CI existir.
+- PWA / Service Worker.
+- Tema customizável por tenant (cor da marca do Comprador).
