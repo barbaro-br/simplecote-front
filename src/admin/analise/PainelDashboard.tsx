@@ -45,10 +45,12 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
 
   if (isPending) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5" data-testid="dashboard-skeleton">
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
+      <div className="@container">
+        <div className="grid grid-cols-1 @md:grid-cols-3 gap-4 mb-5" data-testid="dashboard-skeleton">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+        </div>
       </div>
     )
   }
@@ -88,8 +90,8 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
   const maxEmpresa = Math.max(0, ...data.topEmpresas.map((e) => e.valor))
 
   return (
-    <div className="space-y-4 mb-5">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="space-y-4 mb-5 @container">
+      <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">
         {/* Hero: economia */}
         <Card className="p-4 md:col-span-1">
           <h2 className="text-sm font-medium text-muted-foreground">Economia estimada (90 dias)</h2>
@@ -204,7 +206,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
       </Card>
 
       {/* Top 5 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 @md:grid-cols-2 gap-4">
         <Card className="p-4">
           <h2 className="text-sm font-medium text-muted-foreground mb-3">Top 5 Produtos</h2>
           {data.topProdutos.length === 0 ? (
