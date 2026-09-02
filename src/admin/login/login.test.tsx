@@ -14,6 +14,7 @@ function renderLogin() {
     [
       { path: '/login', element: <LoginPage /> },
       { path: '/admin', element: <div>dashboard</div> },
+      { path: '/esqueci-senha', element: <div>esqueci senha view</div> },
     ],
     { initialEntries: ['/login'] }
   )
@@ -77,4 +78,14 @@ test('erro de API: 401 exibe a mensagem do servidor e permanece em /login', asyn
   const alerta = await screen.findByRole('alert')
   expect(alerta).toHaveTextContent('Credenciais inválidas.')
   expect(screen.queryByText('dashboard')).not.toBeInTheDocument()
+})
+
+test('link "Esqueci minha senha" navega para /esqueci-senha', async () => {
+  const user = userEvent.setup()
+
+  renderLogin()
+
+  await user.click(screen.getByRole('link', { name: 'Esqueci minha senha' }))
+
+  expect(await screen.findByText('esqueci senha view')).toBeInTheDocument()
 })

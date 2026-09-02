@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/shared/auth/AuthContext'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
@@ -121,6 +121,14 @@ export function LoginPage() {
               {isSubmitting ? 'Entrando…' : 'Entrar'}
             </Button>
           </form>
+
+          {/* Recuperação de senha */}
+          <Link
+            to="/esqueci-senha"
+            className="block text-center text-sm text-muted-foreground hover:text-foreground hover:underline"
+          >
+            Esqueci minha senha
+          </Link>
         </Card>
       </div>
     </div>
