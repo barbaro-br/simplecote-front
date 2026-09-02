@@ -1,11 +1,12 @@
 import { memo, useState } from 'react'
+import { Minus, Plus } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { CelulaGrid, GridAoVivo, ItemGrid } from './cotacoes.schema'
-import { useCorrigirLance } from './cotacoes.api'
+import { useCorrigirLance, useAtualizarQuantidadeItem } from './cotacoes.api'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
 
 type Coluna = { participanteId: string; empresa: string }
@@ -34,14 +35,62 @@ type LinhaProps = {
   item: ItemGrid
   colunas: Coluna[]
   aoCorrigir: (item: ItemGrid, celula: CelulaGrid) => void
+  quantidadeEditavel: boolean
+  quantidadePendente: boolean
+  aoAtualizarQuantidade: (itemId: string, quantidade: number) => void
 }
 
 // `memo` por linha (spec.md §14): o poll não deve re-renderizar linhas iguais.
-const LinhaItem = memo(function LinhaItem({ item, colunas, aoCorrigir }: LinhaProps) {
+const LinhaItem = memo(function LinhaItem({
+  item,
+  colunas,
+  aoCorrigir,
+  quantidadeEditavel,
+  quantidadePendente,
+  aoAtualizarQuantidade,
+}: LinhaProps) {
   return (
     <tr className="group transition-colors hover:bg-muted/40">
-      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-3 whitespace-nowrap border-r shadow-[1px_0_0_0_var(--border)]">
-        <UltimaCompraPopover item={item} />
+      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-3 border-r shadow-[1px_0_0_0_var(--border)]">
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <UltimaCompraPopover item={item} />
+            <div className="text-[11px] text-muted-foreground">
+              {item.unidade} · {item.quantidadePorEmbalagem} un
+            </div>
+          </div>
+          {quantidadeEditavel ? (
+            <div className="flex shrink-0 items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label={`Diminuir quantidade de ${item.nome}`}
+                className="size-6 h-6 w-6"
+                onClick={() => aoAtualizarQuantidade(item.itemCotacaoId, item.quantidadeSolicitada - 1)}
+                disabled={quantidadePendente || item.quantidadeSolicitada <= 1}
+              >
+                <Minus className="size-3" />
+              </Button>
+              <span className="min-w-6 text-center text-xs font-medium tabular-nums">
+                {item.quantidadeSolicitada}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label={`Aumentar quantidade de ${item.nome}`}
+                className="size-6 h-6 w-6"
+                onClick={() => aoAtualizarQuantidade(item.itemCotacaoId, item.quantidadeSolicitada + 1)}
+                disabled={quantidadePendente}
+              >
+                <Plus className="size-3" />
+              </Button>
+            </div>
+          ) : (
+            <span className="shrink-0 text-xs text-muted-foreground">qtd {item.quantidadeSolicitada}</span>
+          )}
+        </div>
       </td>
       {colunas.map((col) => {
         const celula = item.precos.find((c) => c.participanteId === col.participanteId)
@@ -63,18 +112,22 @@ const LinhaItem = memo(function LinhaItem({ item, colunas, aoCorrigir }: LinhaPr
               type="button"
               onClick={() => aoCorrigir(item, celula)}
               aria-label={`Corrigir lance de ${col.empresa} para ${item.nome}`}
-              className={`w-full h-full min-h-[3rem] rounded-md px-3 py-2 text-left transition-colors border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+              className={`w-full h-full min-h-[3rem] rounded-md px-3 py-2 text-right transition-colors border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
                 ehMenor 
                   ? 'bg-success/5 border-success/20 ring-1 ring-success/20' 
-                  : 'bg-transparent border-transparent hover:bg-muted/50'
+                  : 'bg-card border-border hover:bg-muted/50'
               }`}
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className={`text-[11px] font-medium uppercase tracking-wider ${
-                  celula.status === 'COTADO' ? 'text-primary' : 'text-muted-foreground'
-                }`}>
-                  {rotuloStatus(celula.status)}
-                </span>
+              <div className="flex items-center justify-end gap-1.5 mb-1">
+                {celula.status === 'COTADO' ? (
+                  <span className="text-[11px] font-medium uppercase tracking-wider text-primary">
+                    {rotuloStatus(celula.status)}
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-muted text-muted-foreground text-[10px] font-medium uppercase tracking-wider px-2 py-0.5">
+                    {rotuloStatus(celula.status)}
+                  </span>
+                )}
                 {ehMenor && <span className="text-[10px] font-bold bg-success text-success-foreground px-1.5 py-0.5 rounded-sm uppercase tracking-wider">Menor</span>}
               </div>
               
@@ -104,10 +157,29 @@ type Alvo = { item: ItemGrid; celula: CelulaGrid }
 
 export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; grade: GridAoVivo }) {
   const corrigir = useCorrigirLance(cotacaoId)
+  const atualizarQuantidade = useAtualizarQuantidadeItem(cotacaoId)
   const [alvo, setAlvo] = useState<Alvo | null>(null)
   const [preco, setPreco] = useState('')
   const [naoCotado, setNaoCotado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [erroQuantidade, setErroQuantidade] = useState<string | null>(null)
+
+  const quantidadeEditavel = grade.status === 'ABERTA' || grade.status === 'ENCERRADA'
+
+  function aoAtualizarQuantidade(itemId: string, quantidade: number) {
+    setErroQuantidade(null)
+    atualizarQuantidade.mutate(
+      { itemId, quantidade },
+      {
+        onError: (e) => {
+          if (e instanceof SessaoExpiradaError) return
+          setErroQuantidade(
+            e instanceof ApiError ? e.message : 'Não foi possível alterar a quantidade.',
+          )
+        },
+      },
+    )
+  }
 
   const colunas = colunasDe(grade)
 
@@ -140,16 +212,24 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
 
   return (
     <>
+      {erroQuantidade && (
+        <p role="alert" className="mb-3 text-sm text-destructive font-medium">
+          {erroQuantidade}
+        </p>
+      )}
       <div className="rounded-md border bg-card text-card-foreground shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 border-b">
+            <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="sticky left-0 z-20 bg-muted/50 px-4 py-3 font-medium border-r shadow-[1px_0_0_0_var(--border)] backdrop-blur-sm">
+                <th className="sticky top-0 left-0 z-30 bg-muted px-4 py-3 font-medium border-b border-r shadow-[1px_0_0_0_var(--border)]">
                   Item
                 </th>
                 {colunas.map((c) => (
-                  <th key={c.participanteId} className="px-4 py-3 font-medium min-w-[140px]">
+                  <th
+                    key={c.participanteId}
+                    className="sticky top-0 z-20 bg-muted px-4 py-3 font-medium min-w-[140px] border-b text-right"
+                  >
                     {c.empresa}
                   </th>
                 ))}
@@ -162,6 +242,9 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
                   item={item}
                   colunas={colunas}
                   aoCorrigir={abrirCorrecao}
+                  quantidadeEditavel={quantidadeEditavel}
+                  quantidadePendente={atualizarQuantidade.isPending}
+                  aoAtualizarQuantidade={aoAtualizarQuantidade}
                 />
               ))}
             </tbody>
