@@ -13,6 +13,8 @@ import { ResultadoPage } from './admin/cotacoes/ResultadoPage'
 import { AnalisesPage } from './admin/analise/AnalisesPage'
 import { DashboardPage } from './admin/analise/DashboardPage'
 import { ConfiguracoesPage } from './admin/configuracoes/ConfiguracoesPage'
+import { EsqueciSenhaPage } from './admin/recuperar-senha/EsqueciSenhaPage'
+import { RedefinirSenhaPage } from './admin/recuperar-senha/RedefinirSenhaPage'
 import { TemaClaro } from './representante/TemaClaro'
 import { CotacaoPorTokenPage } from './representante/cotacao/CotacaoPorTokenPage'
 import { PedidoPorTokenPage } from './representante/pedido/PedidoPorTokenPage'
@@ -25,6 +27,14 @@ export const routes = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/esqueci-senha',
+    element: <EsqueciSenhaPage />,
+  },
+  {
+    path: '/redefinir-senha/:token',
+    element: <RedefinirSenhaPage />,
   },
   {
     path: '/admin',
