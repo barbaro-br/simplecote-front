@@ -79,3 +79,26 @@ test('3.4 — o conteúdo fica dentro de um wrapper centralizado (max-w-7xl / mx
   const wrapper = container.querySelector('main > div.mx-auto.max-w-7xl')
   expect(wrapper).not.toBeNull()
 })
+
+test('4.1 — o shell não rola como documento: root em h-screen e <main> é o container de scroll', () => {
+  const { container } = renderLayout('/admin/produtos')
+
+  const main = container.querySelector('main')
+  expect(main).not.toBeNull()
+  expect(main!.parentElement).toHaveClass('h-screen')
+  expect(main!.parentElement).toHaveClass('overflow-hidden')
+
+  expect(main).toHaveClass('flex-1')
+  expect(main).toHaveClass('h-screen')
+  expect(main).toHaveClass('overflow-y-auto')
+})
+
+test('4.1 — a sidebar permanece fixa (sticky top-0 h-screen) durante o scroll', () => {
+  const { container } = renderLayout('/admin/produtos')
+
+  const aside = container.querySelector('aside')
+  expect(aside).not.toBeNull()
+  expect(aside).toHaveClass('sticky')
+  expect(aside).toHaveClass('top-0')
+  expect(aside).toHaveClass('h-screen')
+})
