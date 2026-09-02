@@ -55,6 +55,8 @@ export type ItemPedido = {
   precoEmbalagem: number
   precoUnitario: number
   subtotal: number
+  /** Indica que o item venceu por empate de preço (back `sinalizar-desempate-na-apuracao`). */
+  decididoPorDesempate?: boolean
 }
 
 export type Pedido = {

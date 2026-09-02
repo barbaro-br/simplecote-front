@@ -21,7 +21,7 @@ afterAll(() => {
   clickSpy.mockRestore()
 })
 
-function pedido(status: string) {
+function pedido(status: string, decididoPorDesempate?: boolean) {
   return {
     id: 'p1',
     cotacaoId: 'c-1',
@@ -45,19 +45,25 @@ function pedido(status: string) {
         precoEmbalagem: 10,
         precoUnitario: 2,
         subtotal: 100,
+        ...(decididoPorDesempate === undefined ? {} : { decididoPorDesempate }),
       },
     ],
   }
 }
 
-function setup() {
+function setup(decididoPorDesempate?: boolean) {
   const state = { status: 'GERADO' }
   let xlsxChamado = false
   server.use(
     http.get('*/api/cotacoes/c-1/resultado', () =>
-      HttpResponse.json({ pedidos: [pedido(state.status)], itensSemVencedor: [] }),
+      HttpResponse.json({
+        pedidos: [pedido(state.status, decididoPorDesempate)],
+        itensSemVencedor: [],
+      }),
     ),
-    http.get('*/api/cotacoes/c-1/pedidos', () => HttpResponse.json([pedido(state.status)])),
+    http.get('*/api/cotacoes/c-1/pedidos', () =>
+      HttpResponse.json([pedido(state.status, decididoPorDesempate)]),
+    ),
     http.post('*/api/pedidos/p1/enviar', () => {
       state.status = 'ENVIADO'
       return HttpResponse.json(pedido('ENVIADO'))
@@ -86,6 +92,23 @@ test('renderiza o vencedor por item pelo nome da Empresa', async () => {
   setup()
   const linha = (await screen.findByRole('cell', { name: 'Arroz Tipo 1 5kg' })).closest('tr')!
   expect(within(linha).getByText('Atacadão Central')).toBeInTheDocument()
+})
+
+test('item com decididoPorDesempate true renderiza o badge Empate', async () => {
+  setup(true)
+  expect(await screen.findByText('Empate')).toBeInTheDocument()
+})
+
+test('item com decididoPorDesempate false não renderiza o badge Empate', async () => {
+  setup(false)
+  await screen.findByRole('cell', { name: 'Arroz Tipo 1 5kg' })
+  expect(screen.queryByText('Empate')).not.toBeInTheDocument()
+})
+
+test('item sem decididoPorDesempate não renderiza o badge Empate', async () => {
+  setup()
+  await screen.findByRole('cell', { name: 'Arroz Tipo 1 5kg' })
+  expect(screen.queryByText('Empate')).not.toBeInTheDocument()
 })
 
 test('"Enviar" atualiza o status do pedido', async () => {
