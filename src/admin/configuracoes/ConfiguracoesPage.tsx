@@ -76,6 +76,21 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
       </div>
 
       <div className="space-y-2">
+        <span className="text-sm font-medium">Estilo de navegação</span>
+        <div className="flex gap-6">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" value="LATERAL" {...form.register('estiloNavegacao')} />
+            Lateral
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" value="INFERIOR" {...form.register('estiloNavegacao')} />
+            Inferior
+          </label>
+        </div>
+        <p className="text-xs text-muted-foreground">Como a navegação do painel é exibida (sidebar lateral ou barra inferior).</p>
+      </div>
+
+      <div className="space-y-2">
         <label htmlFor="layoutEmail" className="text-sm font-medium">
           Layout de e-mail
         </label>
