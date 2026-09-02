@@ -3,19 +3,25 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/shared/auth/AuthContext'
-import { resetarMock } from '../configuracoes/configuracoes.api'
+import { resetarMock, definirConfiguracaoMock } from '../configuracoes/configuracoes.api'
 import { AdminLayout } from './AdminLayout'
 
-function renderLayout(initial = '/admin/produtos') {
+function renderLayout(initial = '/admin/produtos', estilo: 'LATERAL' | 'INFERIOR' = 'LATERAL') {
+  definirConfiguracaoMock({ estiloNavegacao: estilo })
   const router = createMemoryRouter(
     [
+      { path: '/login', element: <div>login view</div> },
       {
         path: '/admin',
         element: <AdminLayout />,
         children: [
-          { index: true, element: <div>Cotações view</div> },
+          { index: true, element: <div>Dashboard view</div> },
+          { path: 'cotacoes', element: <div>Cotações view</div> },
           { path: 'produtos', element: <div>Produtos view</div> },
           { path: 'empresas', element: <div>Empresas view</div> },
+          { path: 'usuarios', element: <div>Usuários view</div> },
+          { path: 'analises', element: <div>Análises view</div> },
+          { path: 'configuracoes', element: <div>Configurações view</div> },
         ],
       },
     ],
@@ -114,4 +120,74 @@ test('exibe o nome da loja configurado no cabeçalho e o item Configurações na
 
   expect(await screen.findByText('Sara Supermercado')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Configurações' })).toHaveAttribute('href', '/admin/configuracoes')
+})
+
+test('logout na sidebar navega para /login', async () => {
+  const user = userEvent.setup()
+  renderLayout('/admin/produtos')
+
+  await user.click(await screen.findByRole('button', { name: 'Sair' }))
+
+  expect(await screen.findByText('login view')).toBeInTheDocument()
+})
+
+describe('estilo Inferior (BottomNavBar)', () => {
+  test('renderiza barra inferior fixa com 4 itens (3 fixos + Mais), sem sidebar', async () => {
+    const { container } = renderLayout('/admin/produtos', 'INFERIOR')
+
+    expect(await screen.findByRole('button', { name: 'Mais' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/admin')
+    expect(screen.getByRole('link', { name: 'Cotações' })).toHaveAttribute('href', '/admin/cotacoes')
+    expect(screen.getByRole('link', { name: 'Produtos' })).toHaveAttribute('href', '/admin/produtos')
+    expect(container.querySelector('aside')).toBeNull()
+
+    const nav = container.querySelector('nav')
+    expect(nav).toHaveClass('fixed')
+    expect(nav).toHaveClass('bottom-0')
+  })
+
+  test('destaca o item ativo na barra inferior', async () => {
+    renderLayout('/admin/produtos', 'INFERIOR')
+
+    expect(await screen.findByRole('button', { name: 'Mais' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Produtos' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
+  })
+
+  test('botão Mais abre o menu com os itens restantes e navega ao clicar', async () => {
+    const user = userEvent.setup()
+    renderLayout('/admin', 'INFERIOR')
+
+    await user.click(await screen.findByRole('button', { name: 'Mais' }))
+
+    expect(screen.getByRole('menuitem', { name: 'Empresas' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Usuários' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Análises' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Configurações' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('menuitem', { name: 'Empresas' }))
+
+    expect(await screen.findByText('Empresas view')).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Empresas' })).not.toBeInTheDocument()
+  })
+
+  test('logout acessível pelo menu Mais navega para /login', async () => {
+    const user = userEvent.setup()
+    renderLayout('/admin', 'INFERIOR')
+
+    await user.click(await screen.findByRole('button', { name: 'Mais' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Sair' }))
+
+    expect(await screen.findByText('login view')).toBeInTheDocument()
+  })
+
+  test('mantém o conteúdo centralizado e o <main> como container de scroll', async () => {
+    const { container } = renderLayout('/admin/produtos', 'INFERIOR')
+
+    await screen.findByRole('button', { name: 'Mais' })
+    const main = container.querySelector('main')
+    expect(main).not.toBeNull()
+    expect(main).toHaveClass('overflow-y-auto')
+    expect(container.querySelector('main > div.mx-auto.max-w-7xl')).not.toBeNull()
+  })
 })
