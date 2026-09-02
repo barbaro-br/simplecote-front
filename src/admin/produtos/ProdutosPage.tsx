@@ -4,6 +4,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
+import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { useProdutos, useInativarProduto, useAtivarProduto } from './produtos.api'
 import { ProdutoForm } from './ProdutoForm'
 import type { Produto } from './produtos.schema'
@@ -34,7 +35,7 @@ export function ProdutosPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <PageContainer maxWidth="5xl" className="space-y-6">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Catálogo de produtos</h1>
@@ -120,6 +121,6 @@ export function ProdutosPage() {
           </table>
         </div>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

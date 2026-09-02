@@ -5,6 +5,7 @@ import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 import { StatusBadge } from '@/shared/components/StatusBadge'
+import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { Button, buttonClasses } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
@@ -97,7 +98,7 @@ export function CotacoesPage() {
     )
 
   return (
-    <div className="space-y-5 max-w-5xl">
+    <PageContainer maxWidth="5xl" className="space-y-5">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Cotações</h1>
@@ -289,6 +290,6 @@ export function CotacoesPage() {
           onCancelar={() => setIdAExcluir(null)}
         />
       )}
-    </div>
+    </PageContainer>
   )
 }
