@@ -132,4 +132,18 @@ describe('ItemLanceCard', () => {
 
     expect((campo() as HTMLInputElement).value).toBe('10')
   })
+
+  it('mostra o preço unitário quando o item já tem precoUnitario', () => {
+    renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
+    expect(screen.getByText(/unit\. R\$\s0,50/)).toBeInTheDocument()
+  })
+
+  it('mostra "calculando…" durante o envio quando ainda não há unitário', async () => {
+    const user = userEvent.setup()
+    renderCard({ status: 'enviando' })
+
+    await user.type(campo(), '9')
+
+    expect(screen.getByText('calculando…')).toBeInTheDocument()
+  })
 })

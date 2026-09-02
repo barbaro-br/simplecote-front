@@ -120,7 +120,12 @@ export function ItemLanceCard({
 
   const swipeRevelado = swipeOffset < -LIMIAR_SWIPE / 2
   const temPreco = precoTexto.trim() !== ''
-  const unitario = item.precoUnitario != null ? `unit. ${moeda(item.precoUnitario)}` : '—'
+  const unitario =
+    item.precoUnitario != null
+      ? `unit. ${moeda(item.precoUnitario)}`
+      : status === 'enviando' && temPreco
+        ? 'calculando…'
+        : '—'
 
   const unitAbbr = UNIT_ABBR[item.unidade] ?? item.unidade
   const unitText =
@@ -209,10 +214,10 @@ export function ItemLanceCard({
               disabled={!podeEditar}
               onChange={(e) => alterarPreco(e.target.value)}
               placeholder="0,00"
-              className="w-14 bg-transparent text-[12px] font-semibold outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+              className="w-14 bg-transparent text-[12px] font-semibold tabular-nums outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
             />
           </div>
-          <span className="flex-1 text-[11px] text-muted-foreground md:w-16 md:flex-none">
+          <span className={`flex-1 whitespace-nowrap tabular-nums text-right md:w-24 md:flex-none ${item.precoUnitario != null ? 'text-sm font-semibold text-foreground' : 'text-[11px] text-muted-foreground'}`}>
             {unitario}
           </span>
           <VistoStatus filled={temPreco} />

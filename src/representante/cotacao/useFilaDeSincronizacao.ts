@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { CotacaoPorToken } from './cotacao-token.schema'
+import { cotacaoKey } from './cotacao-token.api'
 import {
   gravarEntrada,
   lerFila,
@@ -23,6 +25,7 @@ function patchDaEntrada(entrada: Fila[string]): PatchItem {
 const INTERVALO_RETRY_MS = 10_000
 
 export function useFilaDeSincronizacao(token: string) {
+  const queryClient = useQueryClient()
   const [fila, setFila] = useState<Fila>(() => lerFila(token))
   const [statusPorItem, setStatusPorItem] = useState<Record<string, StatusCelula>>({})
   const [errosPorItem, setErrosPorItem] = useState<Record<string, string>>({})
@@ -35,10 +38,11 @@ export function useFilaDeSincronizacao(token: string) {
       const versao = versaoRef.current[itemCotacaoId] ?? 0
       setStatusPorItem((s) => ({ ...s, [itemCotacaoId]: 'enviando' }))
       try {
-        await api.put<CotacaoPorToken>(`/public/cotacoes/${token}/lances`, {
+        const data = await api.put<CotacaoPorToken>(`/public/cotacoes/${token}/lances`, {
           lances: [{ itemCotacaoId, ...patch }],
         })
         if (versao !== (versaoRef.current[itemCotacaoId] ?? 0)) return // resultado obsoleto
+        queryClient.setQueryData(cotacaoKey(token), data)
         setFila(removerEntrada(token, itemCotacaoId))
         setStatusPorItem((s) => ({ ...s, [itemCotacaoId]: 'sincronizado' }))
         setErrosPorItem((e) => {
@@ -61,7 +65,7 @@ export function useFilaDeSincronizacao(token: string) {
         }
       }
     },
-    [token],
+    [token, queryClient],
   )
 
   const retryAgora = useCallback(() => {
