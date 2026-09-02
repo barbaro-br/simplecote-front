@@ -11,7 +11,7 @@
 
 ## 3. Commitar e verificar o fechamento do ciclo
 
-- [ ] 3.1 `git add openspec/changes` e commitar (`chore(opsx): arquivar changes concluídas`); verificar com `git diff --stat HEAD~1` que só arquivos sob `openspec/changes/` mudaram (nenhum arquivo em `src/`).
-- [ ] 3.2 `git push origin main`; verificar com `git rev-list --left-right --count origin/main...HEAD` que o resultado é `0 0`.
-- [ ] 3.3 Rodar `openspec list --json` e verificar que `changes` retorna vazio (nenhuma change ativa).
-- [ ] 3.4 Rodar `git status` e verificar working tree limpo.
+- [x] 3.1 `git add openspec/changes` e commitar (`chore(opsx): arquivar changes concluídas`); verificar com `git diff --stat HEAD~1` que só arquivos sob `openspec/changes/` mudaram (nenhum arquivo em `src/`).
+- [x] 3.2 `git push origin main`; verificar com `git rev-list --left-right --count origin/main...HEAD` que o resultado é `0 0`.
+- [x] 3.3 Rodar `openspec list --json` e verificar que `changes` retorna vazio (nenhuma change ativa).
+- [x] 3.4 Rodar `git status` e verificar working tree limpo.
