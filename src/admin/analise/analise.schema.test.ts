@@ -10,38 +10,34 @@ describe('analise.schema', () => {
   describe('dashboardSchema', () => {
     it('aceita payload completo', () => {
       const data = {
-        porStatus: { ABERTA: 2, RASCUNHO: 1 },
-        contadores: { encerradasSemApurar: 0, apuradasSemPedido: 3 },
+        porStatus: { rascunho: 1, aberta: 2, encerrada: 0, apurada: 3, cancelada: 0 },
+        encerradasSemApurar: 0,
+        apuradasSemPedidoEnviado: 3,
         proximosPrazos: [
           {
-            id: '123e4567-e89b-12d3-a456-426614174000',
+            cotacaoId: '123e4567-e89b-12d3-a456-426614174000',
             titulo: 'Cotação XPTO',
             fechaEm: '2023-12-01T10:00:00Z',
           },
         ],
-        gastos: {
-          mesAtual: '1500.00',
-          mesAnterior: '1200.00',
-          variacaoPct: '25.0',
-          economia90d: '300.00',
-        },
-        topProdutos: [{ nome: 'Caneta', valor: '100.00' }],
-        topEmpresas: [{ nome: 'Kalunga', valor: '500.00' }],
+        gastoMes: 1500,
+        gastoMesAnterior: 1200,
+        economiaEstimada90d: 300,
+        topProdutos: [{ nome: 'Caneta', valor: 100 }],
+        topEmpresas: [{ nome: 'Kalunga', valor: 500 }],
       }
       expect(() => dashboardSchema.parse(data)).not.toThrow()
     })
 
-    it('aceita listas vazias e mapa {}', () => {
+    it('aceita listas vazias e contagens zeradas', () => {
       const data = {
-        porStatus: {},
-        contadores: { encerradasSemApurar: 0, apuradasSemPedido: 0 },
+        porStatus: { rascunho: 0, aberta: 0, encerrada: 0, apurada: 0, cancelada: 0 },
+        encerradasSemApurar: 0,
+        apuradasSemPedidoEnviado: 0,
         proximosPrazos: [],
-        gastos: {
-          mesAtual: '0.00',
-          mesAnterior: '0.00',
-          variacaoPct: null,
-          economia90d: '0.00',
-        },
+        gastoMes: 0,
+        gastoMesAnterior: 0,
+        economiaEstimada90d: 0,
         topProdutos: [],
         topEmpresas: [],
       }
