@@ -132,7 +132,7 @@ export function TutorialOnboarding({ aoConcluir }: { aoConcluir: () => void }) {
                   />
                 </svg>
               </div>
-              <p className="text-center text-[14px] leading-relaxed text-muted-foreground">
+              <p className="text-center text-sm leading-relaxed text-muted-foreground">
                 {PASSOS[passo].desc}
               </p>
             </div>
