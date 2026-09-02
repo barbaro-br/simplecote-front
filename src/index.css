@@ -245,7 +245,7 @@
     from { opacity: 0; }
     to   { opacity: 1; }
 }
-.fade-in { animation: fadeIn 0.3s ease forwards; }
+.fade-in { animation: fadeIn 0.3s ease both; }
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
