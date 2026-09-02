@@ -51,7 +51,7 @@ const LinhaItem = memo(function LinhaItem({
 }: LinhaProps) {
   return (
     <tr className="group transition-colors hover:bg-muted/40">
-      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-3 border-r shadow-[1px_0_0_0_var(--border)]">
+      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-2 border-r shadow-[1px_0_0_0_var(--border)]">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <UltimaCompraPopover item={item} />
@@ -107,18 +107,18 @@ const LinhaItem = memo(function LinhaItem({
           item.menorPrecoUnitario != null &&
           celula.precoUnitario === item.menorPrecoUnitario
         return (
-          <td key={col.participanteId} className="px-2 py-2 min-w-[140px]">
+          <td key={col.participanteId} className="px-2 py-1 min-w-[140px]">
             <button
               type="button"
               onClick={() => aoCorrigir(item, celula)}
               aria-label={`Corrigir lance de ${col.empresa} para ${item.nome}`}
-              className={`w-full h-full min-h-[3rem] rounded-md px-3 py-2 text-right transition-colors border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+              className={`w-full h-full min-h-[2.5rem] rounded-md px-2 py-1 text-right transition-colors border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
                 ehMenor 
                   ? 'bg-success/5 border-success/20 ring-1 ring-success/20' 
                   : 'bg-card border-border hover:bg-muted/50'
               }`}
             >
-              <div className="flex items-center justify-end gap-1.5 mb-1">
+              <div className="flex items-center justify-end gap-1.5 mb-0.5">
                 {celula.status === 'COTADO' ? (
                   <span className="text-[11px] font-medium uppercase tracking-wider text-primary">
                     {rotuloStatus(celula.status)}
@@ -222,13 +222,13 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="sticky top-0 left-0 z-30 bg-muted px-4 py-3 font-medium border-b border-r shadow-[1px_0_0_0_var(--border)]">
+                <th className="sticky top-0 left-0 z-30 bg-muted px-4 py-2 font-medium border-b border-r shadow-[1px_0_0_0_var(--border)]">
                   Item
                 </th>
                 {colunas.map((c) => (
                   <th
                     key={c.participanteId}
-                    className="sticky top-0 z-20 bg-muted px-4 py-3 font-medium min-w-[140px] border-b text-right"
+                    className="sticky top-0 z-20 bg-muted px-4 py-2 font-medium min-w-[140px] border-b text-right"
                   >
                     {c.empresa}
                   </th>
