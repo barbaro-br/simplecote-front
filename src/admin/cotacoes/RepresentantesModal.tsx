@@ -18,16 +18,16 @@ type Props = {
 }
 
 const coresAvatar = [
-  'bg-blue-100 text-blue-700',
-  'bg-indigo-100 text-indigo-700',
-  'bg-purple-100 text-purple-700',
-  'bg-pink-100 text-pink-700',
-  'bg-rose-100 text-rose-700',
-  'bg-orange-100 text-orange-700',
-  'bg-amber-100 text-amber-700',
-  'bg-emerald-100 text-emerald-700',
-  'bg-cyan-100 text-cyan-700',
-  'bg-sky-100 text-sky-700'
+  'text-avatar-1 bg-avatar-1/10',
+  'text-avatar-2 bg-avatar-2/10',
+  'text-avatar-3 bg-avatar-3/10',
+  'text-avatar-4 bg-avatar-4/10',
+  'text-avatar-5 bg-avatar-5/10',
+  'text-avatar-6 bg-avatar-6/10',
+  'text-avatar-7 bg-avatar-7/10',
+  'text-avatar-8 bg-avatar-8/10',
+  'text-avatar-9 bg-avatar-9/10',
+  'text-avatar-10 bg-avatar-10/10'
 ]
 
 function obterCorPorNome(nome: string) {
@@ -136,7 +136,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
         {/* Header Fixo */}
         <div className="p-4 px-6 border-b border-border/50 bg-background/50 backdrop-blur-md shrink-0 flex items-center justify-between rounded-t-xl z-20">
           <div className="space-y-1">
-            <h2 className="text-[16px] font-semibold tracking-tight text-foreground">
+            <h2 className="text-base font-semibold tracking-tight text-foreground">
               {isAberta ? 'Representantes Convidados' : 'Convidar Empresas'}
             </h2>
             <div className="text-[13px] text-muted-foreground/80 flex items-center gap-1.5 font-medium">
@@ -224,7 +224,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className={`text-[14px] ${e.isChecked ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} truncate transition-colors`}>
+                    <div className={`text-sm ${e.isChecked ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} truncate transition-colors`}>
                       {e.nome}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
@@ -247,7 +247,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                     {/* Status Badge (apenas se aberta) */}
                     {isAberta && e.isChecked && (
                       <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                        enviado ? 'bg-green-50 text-green-700 border-green-200' : 'bg-muted text-muted-foreground border-transparent'
+                        enviado ? 'bg-success/10 text-success-foreground border-success/30' : 'bg-muted text-muted-foreground border-transparent'
                       }`}>
                         {enviado ? 'Enviado' : 'Não enviado'}
                       </span>
@@ -311,7 +311,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                             setTimeout(() => setCopiedId(null), 2000)
                           }}
                         >
-                          {copiedId === e.id ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
+                          {copiedId === e.id ? <Check className="size-4 text-success-foreground" /> : <Copy className="size-4" />}
                         </Button>
                         <Button
                           type="button"
@@ -364,7 +364,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                 </Button>
               </div>
             ) : (
-              <div className="text-[13px] text-emerald-600 font-medium py-1.5 flex items-center gap-2">
+              <div className="text-[13px] text-success-foreground font-medium py-1.5 flex items-center gap-2">
                 <CheckCircle2 className="size-4" />
                 Todos os convites foram enviados.
               </div>
