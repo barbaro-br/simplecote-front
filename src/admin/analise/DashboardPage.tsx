@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { PainelDashboard } from './PainelDashboard'
+import { PageContainer } from '@/shared/components/layout/PageContainer'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 
 export function DashboardPage() {
@@ -10,7 +11,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="space-y-5 max-w-5xl">
+    <PageContainer maxWidth="5xl" className="space-y-5">
       <div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
@@ -18,6 +19,6 @@ export function DashboardPage() {
         </p>
       </div>
       <PainelDashboard onStatusClick={irParaStatus} />
-    </div>
+    </PageContainer>
   )
 }

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { FileDown, Send } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import {
@@ -62,7 +63,7 @@ export function ResultadoPage() {
   const listaPedidos = pedidos.data ?? resultado.data.pedidos
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <PageContainer maxWidth="5xl" className="space-y-8">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Resultado da apuração</h1>
@@ -207,6 +208,6 @@ export function ResultadoPage() {
           </div>
         )}
       </Card>
-    </div>
+    </PageContainer>
   )
 }

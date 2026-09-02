@@ -6,6 +6,7 @@ import { Copy, PlusCircle } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { criarCotacaoSchema, type CriarCotacaoValues } from './cotacoes.schema'
 import { useCotacoes, useCriarCotacao, useDuplicarCotacao } from './cotacoes.api'
@@ -52,7 +53,7 @@ export function NovaCotacaoPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-lg">
+    <PageContainer maxWidth="lg" className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Nova cotação</h1>
         <Link to="/admin/cotacoes" className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors">
@@ -136,6 +137,6 @@ export function NovaCotacaoPage() {
           </div>
         </div>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

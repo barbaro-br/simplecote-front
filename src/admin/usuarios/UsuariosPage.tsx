@@ -4,6 +4,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
+import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { UsuarioForm } from './UsuarioForm'
 import { RedefinirSenhaForm } from './RedefinirSenhaForm'
 import { useInativarUsuario, useUsuarios } from './usuarios.api'
@@ -27,7 +28,7 @@ export function UsuariosPage() {
   const lista = usuarios ?? []
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <PageContainer maxWidth="5xl" className="space-y-6">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Usuários</h1>
@@ -140,6 +141,6 @@ export function UsuariosPage() {
           </table>
         </div>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

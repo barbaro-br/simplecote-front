@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
+import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { moeda, dataBr } from '@/shared/format/formatters'
 import { useCompras } from './analise.api'
 
@@ -39,7 +40,7 @@ export function AnalisesPage() {
   const maxTotal = data ? Math.max(0, ...data.totais.map((t) => t.total)) : 0
 
   return (
-    <div className="space-y-5 max-w-5xl">
+    <PageContainer maxWidth="5xl" className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Análises</h1>
@@ -166,6 +167,6 @@ export function AnalisesPage() {
           </Card>
         </>
       )}
-    </div>
+    </PageContainer>
   )
 }
