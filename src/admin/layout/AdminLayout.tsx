@@ -34,13 +34,19 @@ function lerColapsada(): boolean {
   }
 }
 
+function lerTelaEstreita(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(max-width: 767px)').matches
+}
+
 export function AdminLayout() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const [colapsada, setColapsada] = useState<boolean>(lerColapsada)
   const [isHovered, setIsHovered] = useState(false)
+  const [ehEstreita, setEhEstreita] = useState<boolean>(lerTelaEstreita)
 
-  const isExpanded = !colapsada || isHovered
+  const isExpanded = !ehEstreita && (!colapsada || isHovered)
 
   useEffect(() => {
     try {
@@ -49,6 +55,16 @@ export function AdminLayout() {
       // localStorage indisponível — o estado fica só em memória nesta sessão
     }
   }, [colapsada])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    const mql = window.matchMedia('(max-width: 767px)')
+    function aoMudar(e: MediaQueryListEvent) {
+      setEhEstreita(e.matches)
+    }
+    mql.addEventListener('change', aoMudar)
+    return () => mql.removeEventListener('change', aoMudar)
+  }, [])
 
   function handleLogout() {
     logout()
@@ -59,7 +75,9 @@ export function AdminLayout() {
     <div className="flex h-screen overflow-hidden bg-card text-foreground">
       <ScrollRestoration />
       <aside
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={() => {
+          if (!ehEstreita) setIsHovered(true)
+        }}
         onMouseLeave={() => setIsHovered(false)}
         className={`${
           isExpanded ? 'w-64' : 'w-20'
@@ -77,21 +95,23 @@ export function AdminLayout() {
             <span className="truncate text-xl font-bold tracking-tight">SimpleCote</span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setColapsada((v) => !v)}
-            aria-label={colapsada ? 'Expandir menu' : 'Recolher menu'}
-            aria-expanded={!colapsada}
-            className={`inline-flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ${
-              !isExpanded && 'absolute'
-            }`}
-          >
-            {colapsada ? (
-              <PanelLeftOpen className="size-5" aria-hidden />
-            ) : (
-              <PanelLeftClose className="size-5" aria-hidden />
-            )}
-          </button>
+          {!ehEstreita && (
+            <button
+              type="button"
+              onClick={() => setColapsada((v) => !v)}
+              aria-label={colapsada ? 'Expandir menu' : 'Recolher menu'}
+              aria-expanded={!colapsada}
+              className={`inline-flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ${
+                !isExpanded && 'absolute'
+              }`}
+            >
+              {colapsada ? (
+                <PanelLeftOpen className="size-5" aria-hidden />
+              ) : (
+                <PanelLeftClose className="size-5" aria-hidden />
+              )}
+            </button>
+          )}
         </div>
 
         <nav className="space-y-2 flex flex-col flex-1 mt-4">
