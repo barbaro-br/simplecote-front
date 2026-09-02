@@ -39,3 +39,14 @@ Todo consumo de APIs REST MUST ocorrer através de um utilitário centralizado (
 #### Scenario: 404 fora de um lookup
 - **WHEN** uma chamada comum (não-lookup) responde `404`
 - **THEN** o `api-client` lança `ApiError` (com o `ProblemDetail` quando houver, ou uma mensagem genérica quando o corpo estiver vazio)
+
+### Requirement: Reset de scroll na navegação
+A aplicação SHALL resetar a posição de scroll para o topo ao navegar entre rotas do painel (`/admin/**`), sem que o conteúdo da nova tela apareça deslocado para baixo ou "salte". Ao usar o back/forward (POP) do navegador, a posição de scroll anterior SHALL ser restaurada.
+
+#### Scenario: Navegação entre telas do painel
+- **WHEN** o usuário navega de uma tela do painel para outra (ex.: `/usuarios` → `/cotacoes`)
+- **THEN** a nova tela abre com o scroll no topo, sem deslocamento ou salto visível
+
+#### Scenario: Voltar restaura a posição
+- **WHEN** o usuário usa o botão voltar (back) do navegador
+- **THEN** a tela anterior reaparece na posição de scroll em que estava

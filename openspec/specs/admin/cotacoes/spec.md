@@ -7,13 +7,26 @@ Interface administrativa do ciclo de vida da Cotação: montar, convidar, abrir,
 ## Requirements
 
 ### Requirement: Lista de cotações por status
-O sistema SHALL exibir, no painel, a lista de Cotações do Comprador (`GET /api/cotacoes`) com título, status e prazo, permitindo filtrar por status, e um atalho para criar uma nova Cotação.
+
+O sistema SHALL exibir, em `/admin/cotacoes`, a lista de Cotações do Comprador (`GET /api/cotacoes`) com título, status e prazo, e um atalho para criar uma nova Cotação. O filtro por status SHALL ser refletido na URL como parâmetro `status` (`/admin/cotacoes?status=ENCERRADA`), de modo que a lista possa ser acessada já filtrada a partir de um link (ex.: os atalhos do dashboard). Um `status` ausente ou inválido SHALL exibir todas as cotações. A busca por título SHALL permanecer local (estado da página, sem ir para a URL).
 
 #### Scenario: Painel lista as cotações
-- **WHEN** o Comprador acessa o painel
+
+- **WHEN** o admin acessa `/admin/cotacoes`
 - **THEN** as cotações retornadas pela API aparecem com seu status, e o usuário pode filtrar a lista por um status específico
 
+#### Scenario: Filtro refletido na URL
+
+- **WHEN** o admin seleciona o filtro "Encerrada" (ou chega por um link com `?status=ENCERRADA`)
+- **THEN** a URL passa a conter `?status=ENCERRADA` e a lista exibe apenas as cotações encerradas
+
+#### Scenario: Status ausente ou inválido
+
+- **WHEN** a URL não traz `status`, ou traz um valor que não corresponde a um `StatusCotacao`
+- **THEN** a lista exibe todas as cotações (comportamento de "Todos")
+
 #### Scenario: Atalho para nova cotação
+
 - **WHEN** o Comprador aciona "Nova cotação"
 - **THEN** o sistema abre o formulário de criação
 
@@ -191,6 +204,8 @@ Enquanto a Cotação está `ABERTA`, a grade SHALL escutar atualizações em tem
 
 Cada célula SHALL permitir ao Comprador corrigir aquele lance a partir da grade (usando o `participanteId` que a célula carrega), abrindo o fluxo de correção de lance sem sair da tela.
 
+Para suportar alto volume de dados, a grade SHALL manter o **cabeçalho fixo no topo** (nomes das Empresas) e a **coluna do item fixa à esquerda**, ambos com fundo opaco e uma hierarquia de z-index (células base abaixo, coluna do item acima, cabeçalho acima, canto de interseção no topo). A coluna "Item" SHALL usar peso de fonte reduzido (`font-normal`/`font-medium`), de modo que o foco visual recaia sobre os preços e status.
+
 #### Scenario: Grade renderiza o estado das células
 - **WHEN** o Comprador abre o detalhe de uma Cotação `ABERTA` com itens e Empresas convidadas
 - **THEN** a grade é exibida diretamente, e cada célula mostra o status do lance daquela Empresa para aquele item, o preço quando `COTADO`, e o menor preço unitário do item aparece destacado; o cabeçalho mostra "respondidos / total"
@@ -207,6 +222,24 @@ Cada célula SHALL permitir ao Comprador corrigir aquele lance a partir da grade
 - **WHEN** o Comprador aciona uma célula da grade no detalhe
 - **THEN** o fluxo de correção de lance abre para aquele `participanteId` e item, e ao confirmar a grade reflete o novo valor
 
+#### Scenario: Cabeçalho e item permanecem visíveis ao rolar
+- **WHEN** o Comprador rola verticalmente uma grade com 200+ itens, ou horizontalmente com 10+ Empresas
+- **THEN** o cabeçalho com os nomes das Empresas permanece visível no topo e a coluna do nome do item permanece visível à esquerda, sem sobreposição
+
+### Requirement: Ajuste de quantidade na grade
+
+Enquanto a Cotação está `ABERTA` ou `ENCERRADA`, a grade SHALL exibir a `quantidadeSolicitada` de cada item e permitir ao Comprador alterá-la inline, chamando `PATCH /api/cotacoes/{id}/itens/{itemId}/quantidade`. Em `PEDIDOS_GERADOS` e `CANCELADA` a quantidade SHALL ficar somente leitura (não editável). Após salvar, a grade SHALL refletir a nova quantidade sem recarregar a página.
+
+#### Scenario: Alterar quantidade na grade
+
+- **WHEN** a Cotação está `ABERTA` (ou `ENCERRADA`) e o Comprador altera a quantidade de um item na grade e confirma
+- **THEN** o `PATCH` é chamado e a grade passa a exibir a nova quantidade, sem recarregamento manual
+
+#### Scenario: Quantidade somente leitura após apurar
+
+- **WHEN** a Cotação está `PEDIDOS_GERADOS` ou `CANCELADA`
+- **THEN** a quantidade dos itens não é editável na grade
+
 ### Requirement: Referência de última compra no hover
 O sistema SHALL exibir, ao passar o mouse sobre um item da grade ao vivo, um popover com a **referência de última compra** daquele produto (campos `ultimoPrecoUnitario`, `ultimaCompraEmpresa`, `ultimaCompraEm` da resposta): o preço unitário, a Empresa que venceu e a data (formatada pt-BR / America/Sao_Paulo). Quando o produto nunca foi comprado, o popover SHALL indicar "sem compra anterior". O popover PODE indicar visualmente se o menor preço atual do item está acima ou abaixo dessa referência.
 
@@ -217,3 +250,27 @@ O sistema SHALL exibir, ao passar o mouse sobre um item da grade ao vivo, um pop
 #### Scenario: Item sem compra anterior
 - **WHEN** o Comprador passa o mouse sobre um item cujo produto nunca foi comprado
 - **THEN** o popover indica "sem compra anterior", sem preço nem empresa
+
+### Requirement: Apresentação visual refinada da grade ao vivo
+
+A grade ao vivo SHALL apresentar os valores financeiros alinhados à direita, os estados vazios como badges e os preços cotados num formato de cartão consistente, sem alterar os dados ou regras que exibe.
+
+#### Scenario: Colunas financeiras alinhadas à direita
+
+- **WHEN** o Comprador abre a grade com Empresas convidadas
+- **THEN** o cabeçalho de cada Empresa e os valores de preço/status nas células ficam alinhados à direita, facilitando a comparação dos centavos
+
+#### Scenario: Estado vazio exibido como badge
+
+- **WHEN** uma célula está `PENDENTE` ou `NAO_COTADO`
+- **THEN** o rótulo aparece como uma pílula sutil (fundo claro, texto menor e mais opaco), em vez de texto solto
+
+#### Scenario: Seletor de quantidade visualmente secundário
+
+- **WHEN** a coluna do item exibe o seletor de quantidade `[-]`/`[+]`
+- **THEN** os botões têm tamanho, borda e padding reduzidos, ficando visualmente secundários em relação ao nome do item
+
+#### Scenario: Preço cotado padrão em formato de cartão
+
+- **WHEN** uma célula está `COTADO` sem ser o menor preço do item
+- **THEN** o preço aparece num bloco com borda fina e fundo branco (`rounded-md`), no mesmo formato de cartão do bloco do menor preço
