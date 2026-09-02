@@ -20,5 +20,5 @@
 
 ## 3. Push e verificação
 
-- [ ] 3.1 No back: `git push origin main`; verificar o build/CI do back.
-- [ ] 3.2 No front: `git push origin main`; verificar o build na Vercel.
+- [x] 3.1 No back: `git push origin main`; verificar o build/CI do back.
+- [x] 3.2 No front: `git push origin main`; verificar o build na Vercel.
