@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { FileText, Plus, RefreshCw, Search, ServerCrash } from 'lucide-react'
 import { dataHoraBr } from '@/shared/format/formatters'
@@ -37,6 +37,14 @@ export function CotacoesPage() {
   const { data: cotacoes, isLoading, error, refetch, isFetching } = useCotacoes()
   const [searchParams, setSearchParams] = useSearchParams()
   const [busca, setBusca] = useState('')
+
+  const primeiraCargaRef = useRef(true)
+
+  useEffect(() => {
+    if (!isLoading) {
+      primeiraCargaRef.current = false
+    }
+  }, [isLoading])
 
   const statusParam = searchParams.get('status')
   const filtro: Filtro = STATUS.some((s) => s.valor === statusParam)
@@ -235,7 +243,17 @@ export function CotacoesPage() {
             ) : (
               lista.map((c, i) => {
                 return (
-                  <tr key={c.id} className="transition-colors hover:bg-muted/40 fade-in" style={{ animationDelay: `${Math.min(i * 50, 500)}ms` }}>
+                  <tr
+                    key={c.id}
+                    className={`transition-colors hover:bg-muted/40${
+                      primeiraCargaRef.current ? ' fade-in' : ''
+                    }`}
+                    style={
+                      primeiraCargaRef.current
+                        ? { animationDelay: `${Math.min(i * 50, 500)}ms` }
+                        : undefined
+                    }
+                  >
                     <td className="px-4 py-3">
                       <Link
                         to={`/admin/cotacoes/${c.id}`}
