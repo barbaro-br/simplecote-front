@@ -9,6 +9,7 @@ export const CONFIGURACAO_SEED: Configuracao = {
   corPrimaria: '#0f766e',
   telefone: '(11) 4002-8922',
   layoutEmail: 'Olá {representante},\n\nSegue o convite para a cotação. Acesse o link para enviar seus preços.',
+  estiloNavegacao: 'LATERAL',
 }
 
 // ---- MOCK local (substituir pelas chamadas reais a GET/PUT /api/configuracoes na task 4.1) ----
@@ -17,6 +18,10 @@ let falhaAoSalvar: string | null = null
 
 export function definirFalhaAoSalvar(mensagem: string | null): void {
   falhaAoSalvar = mensagem
+}
+
+export function definirConfiguracaoMock(parcial: Partial<Configuracao>): void {
+  valorEmMemoria = { ...valorEmMemoria, ...parcial }
 }
 
 export function resetarMock(): void {
