@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom'
+import { configure } from '@testing-library/react'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll } from 'vitest'
+
+configure({ asyncUtilTimeout: 3000 })
 
 export const server = setupServer()
 
