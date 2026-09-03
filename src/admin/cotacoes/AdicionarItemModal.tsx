@@ -2,9 +2,10 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
 import { useProdutos } from '@/admin/produtos/produtos.api'
-import { Search, X, PackageOpen, Loader2, Plus, Minus } from 'lucide-react'
+import { Search, X, PackageOpen, Loader2, Plus, Minus, Pencil } from 'lucide-react'
 import { useAdicionarItem, useRemoverItem, useAtualizarQuantidadeItem } from './cotacoes.api'
 import type { ItemCotacao } from './cotacoes.schema'
+import type { Produto } from '@/admin/produtos/produtos.schema'
 
 type Props = {
   cotacaoId: string
@@ -12,9 +13,10 @@ type Props = {
   open: boolean
   onClose: () => void
   aoCadastrarProduto: () => void
+  aoEditarProduto: (produto: Produto) => void
 }
 
-export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastrarProduto }: Props) {
+export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastrarProduto, aoEditarProduto }: Props) {
   const { data: produtos } = useProdutos()
   const adicionar = useAdicionarItem(cotacaoId)
   const remover = useRemoverItem(cotacaoId)
@@ -237,7 +239,24 @@ export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastra
                         {p.unidade === 'Unidade' && p.quantidadePorEmbalagem === 1 ? 'Unidade' : `${p.unidade} com ${p.quantidadePorEmbalagem}`}
                       </div>
                     </div>
-                    
+
+                    {/* Editar produto (sem sair da montagem) */}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Editar ${p.nome}`}
+                      disabled={isSubmitting}
+                      onClick={(ev) => {
+                        ev.stopPropagation()
+                        onClose()
+                        aoEditarProduto(p)
+                      }}
+                      className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+
                     {/* Quantity Stepper (only visible if checked) */}
                     {isChecked && (
                       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
