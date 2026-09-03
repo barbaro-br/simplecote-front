@@ -37,10 +37,16 @@ nasce em `RASCUNHO`) e SHALL permitir duplicar uma Cotação existente
 (`POST /api/cotacoes/{id}/duplicar`, retorna a nova Cotação e a lista de itens
 omitidos).
 
-A ação **"Duplicar"** SHALL estar disponível a partir de **dois pontos**: a lista de
-Cotações (por linha) e a tela de detalhe de uma Cotação. Ao ser acionada, o sistema
-SHALL chamar `POST /api/cotacoes/{id}/duplicar` e, no sucesso, navegar para o detalhe
-da Cotação recém-criada (que nasce em `RASCUNHO`).
+A ação **"Duplicar"** SHALL estar disponível **só** a partir do formulário de Nova
+Cotação (modo "Duplicar existente") — não na lista de Cotações nem na tela de
+detalhe de uma Cotação. O formulário de Nova Cotação SHALL apresentar os dois modos
+("Em branco" e "Duplicar existente") como uma escolha única dentro de um só
+formulário — não dois cards separados por um divisor — mostrando apenas o campo
+relevante ao modo selecionado (Título para "Em branco"; seleção de cotação de
+origem para "Duplicar existente"), com um único controle de submit cujo rótulo e
+ação acompanham o modo escolhido. Ao ser acionada, o sistema SHALL chamar
+`POST /api/cotacoes/{id}/duplicar` e, no sucesso, navegar para o detalhe da Cotação
+recém-criada (que nasce em `RASCUNHO`).
 
 Enquanto a chamada de duplicação está em andamento, o controle acionado SHALL indicar
 o progresso ("Duplicando…") e ficar desabilitado, impedindo disparo duplicado.
@@ -63,9 +69,15 @@ SHALL ser exibido. Quando a duplicação falha, o sistema SHALL exibir a mensage
 - **WHEN** o Comprador escolhe duplicar uma Cotação existente
 - **THEN** uma nova Cotação em `RASCUNHO` é criada a partir dela e o sistema abre seu detalhe
 
+#### Scenario: Formulário de Nova Cotação alterna entre os dois modos num único card
+
+- **WHEN** o Comprador abre "Nova Cotação" e alterna entre "Em branco" e "Duplicar existente"
+- **THEN** o campo relevante ao modo muda (Título, ou a seleção de cotação de origem), dentro do mesmo card, sem navegar pra outra tela nem exibir os dois formulários simultaneamente
+
 #### Scenario: Duplicar a partir da lista e do detalhe
-- **WHEN** o Comprador aciona "Duplicar" numa linha da lista de Cotações OU na tela de detalhe de uma Cotação
-- **THEN** em ambos os casos a duplicação é disparada e, no sucesso, o sistema abre o detalhe da Cotação nova
+
+- **WHEN** o Comprador vê uma linha da lista de Cotações, ou está na tela de detalhe de uma Cotação
+- **THEN** nenhum controle de "Duplicar" é exibido em nenhum dos dois lugares — a única forma de duplicar é pelo formulário de Nova Cotação (isso substitui o comportamento anterior, em que "Duplicar" também estava disponível nesses dois pontos)
 
 #### Scenario: Itens omitidos são avisados sem bloquear
 - **WHEN** a duplicação retorna com sucesso e a lista `omitidos` tem um ou mais itens
@@ -84,7 +96,7 @@ SHALL ser exibido. Quando a duplicação falha, o sistema SHALL exibir a mensage
 - **THEN** o controle mostra "Duplicando…" e fica desabilitado até a resposta
 
 ### Requirement: Montar itens da Cotação
-O sistema SHALL permitir, enquanto a Cotação está em `RASCUNHO`, adicionar itens escolhendo um Produto do catálogo (`POST /api/cotacoes/{id}/itens`), ajustar a quantidade solicitada diretamente na listagem de itens e remover itens (`DELETE /api/cotacoes/{id}/itens/{itemId}`). A listagem de itens SHALL exibir claramente a embalagem do produto juntamente com a sua quantidade por embalagem (ex.: Caixa (12x)). Fora de `RASCUNHO` a edição e remoção de itens SHALL ficar indisponível. Quando o Produto desejado ainda não existe no catálogo, o sistema SHALL permitir cadastrá-lo **sem sair da tela de montagem da Cotação** e usá-lo imediatamente no item.
+O sistema SHALL permitir, enquanto a Cotação está em `RASCUNHO`, adicionar itens escolhendo um Produto do catálogo (`POST /api/cotacoes/{id}/itens`), ajustar a quantidade solicitada diretamente na listagem de itens e remover itens (`DELETE /api/cotacoes/{id}/itens/{itemId}`). A listagem de itens SHALL exibir claramente a embalagem do produto juntamente com a sua quantidade por embalagem (ex.: Caixa (12x)). Fora de `RASCUNHO` a edição de quantidade e a remoção de itens SHALL ficar indisponível. Quando o Produto desejado ainda não existe no catálogo, o sistema SHALL permitir cadastrá-lo **sem sair da tela de montagem da Cotação** e usá-lo imediatamente no item. Enquanto a Cotação está `ABERTA`, o sistema SHALL também permitir adicionar um novo item — a partir da tela de acompanhamento da grade ao vivo, não da listagem de montagem — reaproveitando o mesmo formulário de escolha de Produto. O sistema SHALL, do mesmo jeito, permitir **editar** um Produto já existente diretamente da lista de escolha de produtos, sem sair da tela de montagem.
 
 #### Scenario: Adicionar e remover item em rascunho
 - **WHEN** a Cotação está em `RASCUNHO` e o Comprador adiciona um Produto e depois remove um item
@@ -99,12 +111,22 @@ O sistema SHALL permitir, enquanto a Cotação está em `RASCUNHO`, adicionar it
 - **THEN** a coluna de embalagem exibe o formato combinado da unidade e sua quantidade interna (ex: "Fardo (24x)")
 
 #### Scenario: Edição de itens travada fora de rascunho
-- **WHEN** a Cotação está `ABERTA`, `ENCERRADA`, `PEDIDOS_GERADOS` ou `CANCELADA`
+- **WHEN** a Cotação está `ENCERRADA`, `PEDIDOS_GERADOS` ou `CANCELADA`
 - **THEN** os controles de adicionar, editar quantidade e remover item não são exibidos ou ficam desabilitados
 
 #### Scenario: Cadastrar Produto novo sem sair da montagem
 - **WHEN** ao adicionar um item o Comprador percebe que o Produto não está no catálogo e aciona "Cadastrar novo produto"
 - **THEN** o formulário de Produto abre sobre a mesma tela (modal), e ao salvar com sucesso o novo Produto passa a existir no catálogo e fica pré-selecionado para o item, sem que o Comprador tenha navegado para fora do detalhe da Cotação
+
+#### Scenario: Adicionar item com a Cotação ABERTA
+
+- **WHEN** o Comprador aciona "Adicionar item" na tela de acompanhamento de uma Cotação `ABERTA`
+- **THEN** o mesmo formulário de escolha de Produto e quantidade abre, e ao confirmar o item passa a aparecer na grade ao vivo
+
+#### Scenario: Editar Produto existente sem sair da montagem
+
+- **WHEN** o Comprador, ao escolher um Produto pra adicionar à Cotação, aciona editar num Produto já existente na lista
+- **THEN** o mesmo formulário de Produto abre sobre a tela em modo edição, pré-preenchido com os dados atuais, e ao salvar as mudanças ficam refletidas na lista sem que o Comprador tenha saído da tela de montagem
 
 ### Requirement: Convidar Empresas
 O sistema SHALL permitir acessar a lista de convidados através de uma ação principal no cabeçalho fixo (sticky) da tela de detalhes. O formulário para selecionar uma ou mais Empresas ativas do Comprador e convidá-las para a Cotação (`POST /api/cotacoes/{id}/participantes` com `empresaIds`) SHALL ser exibido em um modal sobreposto, garantindo que o Comprador não perca o contexto da lista de itens, independentemente de quão longa ela seja. O sistema SHALL listar os participantes com seu status de convite (a partir de `GET /api/cotacoes/{id}/participantes`), reenviar o convite de um participante (`POST /api/participantes/{participanteId}/reenviar-convite`) e compartilhar o link mágico do participante.
@@ -150,7 +172,7 @@ Ações de compartilhamento SHALL estar disponíveis para qualquer participante 
 - **THEN** o `linkMagico` é escrito na área de transferência e o item mostra retorno visual temporário de confirmação
 
 ### Requirement: Transições de estado com confirmação
-O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação que nomeie a consequência antes de `cancelar` e `apurar` (operações irreversíveis, regra 8 do `spec.md`). O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação.
+O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação que nomeie a consequência antes de `cancelar` e `apurar` (operações irreversíveis, regra 8 do `spec.md`). O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação. "Cancelar" SHALL ser acionado a partir de um menu overflow ("⋯"), separado dos botões de transição primária (Abrir/Encerrar/Reabrir/Apurar) — nunca um botão de primeiro nível na mesma fileira.
 
 #### Scenario: Abrir a Cotação
 - **WHEN** o Comprador informa um `prazo` e confirma "Abrir"
@@ -161,7 +183,7 @@ O sistema SHALL disparar as transições de estado da Cotação — abrir com `p
 - **THEN** um diálogo descreve a consequência (a apuração não pode ser desfeita; itens sem lance ficam sem vencedor) e só após a confirmação a API é chamada
 
 #### Scenario: Cancelar pede confirmação explícita
-- **WHEN** o Comprador aciona "Cancelar"
+- **WHEN** o Comprador abre o menu overflow ("⋯") e aciona "Cancelar"
 - **THEN** um diálogo nomeia a consequência antes de a API ser chamada
 
 #### Scenario: Transição inválida mostra o erro do backend
@@ -171,6 +193,11 @@ O sistema SHALL disparar as transições de estado da Cotação — abrir com `p
 #### Scenario: Apurar avisa sobre participantes não finalizados
 - **WHEN** o Comprador aciona "Apurar" e há um ou mais participantes em `VISUALIZOU`
 - **THEN** o diálogo de confirmação lista os nomes desses participantes como aviso, além da descrição padrão da consequência
+
+#### Scenario: Cancelar fica no menu overflow, não em botão visível
+
+- **WHEN** o Comprador abre o detalhe de uma Cotação em qualquer status onde "Cancelar" é aplicável
+- **THEN** "Cancelar" aparece dentro do menu "⋯", não como botão de primeiro nível ao lado das transições de estado
 
 ### Requirement: Correção de lance e reabertura de resposta pelo admin
 
@@ -226,7 +253,7 @@ Enquanto a Cotação está `ABERTA`, a grade SHALL escutar atualizações em tem
 
 Cada célula SHALL permitir ao Comprador corrigir aquele lance a partir da grade (usando o `participanteId` que a célula carrega), abrindo o fluxo de correção de lance sem sair da tela.
 
-Para suportar alto volume de dados, a grade SHALL manter o **cabeçalho fixo no topo** (nomes das Empresas) e a **coluna do item fixa à esquerda**, ambos com fundo opaco e uma hierarquia de z-index (células base abaixo, coluna do item acima, cabeçalho acima, canto de interseção no topo). A coluna "Item" SHALL usar peso de fonte reduzido (`font-normal`/`font-medium`), de modo que o foco visual recaia sobre os preços e status.
+Para suportar alto volume de dados, a grade SHALL ter seu **próprio contêiner de rolagem vertical** (altura limitada, `overflow-y` próprio — não depender do scroll da página inteira), dentro do qual o **cabeçalho fica fixo no topo** (nomes das Empresas) e a **coluna do item fica fixa à esquerda**, ambos com fundo opaco e uma hierarquia de z-index (células base abaixo, coluna do item acima, cabeçalho acima, canto de interseção no topo). A coluna "Item" SHALL usar peso de fonte reduzido (`font-normal`/`font-medium`), de modo que o foco visual recaia sobre os preços e status.
 
 #### Scenario: Grade renderiza o estado das células
 - **WHEN** o Comprador abre o detalhe de uma Cotação `ABERTA` com itens e Empresas convidadas
@@ -245,8 +272,8 @@ Para suportar alto volume de dados, a grade SHALL manter o **cabeçalho fixo no 
 - **THEN** o fluxo de correção de lance abre para aquele `participanteId` e item, e ao confirmar a grade reflete o novo valor
 
 #### Scenario: Cabeçalho e item permanecem visíveis ao rolar
-- **WHEN** o Comprador rola verticalmente uma grade com 200+ itens, ou horizontalmente com 10+ Empresas
-- **THEN** o cabeçalho com os nomes das Empresas permanece visível no topo e a coluna do nome do item permanece visível à esquerda, sem sobreposição
+- **WHEN** o Comprador rola verticalmente uma grade com 70+ itens (dentro do contêiner de rolagem da própria grade), ou horizontalmente com 10+ Empresas
+- **THEN** o cabeçalho com os nomes das Empresas permanece visível no topo da grade e a coluna do nome do item permanece visível à esquerda, sem sobreposição com o cabeçalho fixo da página nem com o corpo da tabela
 
 ### Requirement: Ajuste de quantidade na grade
 
@@ -313,7 +340,7 @@ A animação de entrada escalonada das linhas da lista de Cotações SHALL ocorr
 
 ### Requirement: Navegação entre as telas de Cotações via breadcrumb
 
-O sistema SHALL exibir, na tela de detalhe da Cotação e na tela de Resultado da apuração, uma trilha de navegação (breadcrumb) numa linha própria acima do título, nunca dividindo espaço com botões de ação. A trilha SHALL refletir a hierarquia `Cotações › {título da Cotação}` (detalhe) ou `Cotações › {título da Cotação} › Resultado` (resultado); todo segmento exceto o atual SHALL ser um link navegável.
+O sistema SHALL exibir, na tela de detalhe da Cotação e na tela de Resultado da apuração, uma trilha de navegação (breadcrumb) numa linha própria acima do título, nunca dividindo espaço com botões de ação. A trilha SHALL refletir a hierarquia `Cotações › {título da Cotação}` (detalhe) ou `Cotações › {título da Cotação} › Resultado` (resultado); todo segmento exceto o atual SHALL ser um link navegável. O segmento "Cotações" SHALL levar à lista de Cotações (`/admin/cotacoes`), não ao Dashboard.
 
 #### Scenario: Breadcrumb na tela de detalhe
 
@@ -329,3 +356,8 @@ O sistema SHALL exibir, na tela de detalhe da Cotação e na tela de Resultado d
 
 - **WHEN** a tela de resultado exibe o botão "Baixar XLSX" (ou a tela de detalhe exibe seus botões de transição de estado)
 - **THEN** o breadcrumb permanece em sua própria linha, sem quebrar ou se sobrepor a esses botões em nenhuma largura de tela
+
+#### Scenario: "Cotações" leva à lista, não ao Dashboard
+
+- **WHEN** o Comprador clica em "Cotações" no breadcrumb, seja na tela de detalhe ou na tela de resultado
+- **THEN** o sistema navega para `/admin/cotacoes` (a lista de Cotações), não para o Dashboard (`/admin`)
