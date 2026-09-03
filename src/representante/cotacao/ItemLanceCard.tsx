@@ -130,7 +130,7 @@ export function ItemLanceCard({
   const temPreco = precoTexto.trim() !== ''
   const unitario =
     item.precoUnitario != null
-      ? `unit. ${moeda(item.precoUnitario)}`
+      ? moeda(item.precoUnitario)
       : status === 'enviando' && temPreco
         ? 'calculando…'
         : '—'
@@ -208,31 +208,49 @@ export function ItemLanceCard({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor={`preco-${item.itemCotacaoId}`} className="sr-only">
-            Preço da embalagem
-          </label>
-          <div className="flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 transition-colors focus-within:border-muted-foreground">
-            <span className="text-[11px] font-medium text-muted-foreground">R$</span>
-            <input
-              id={`preco-${item.itemCotacaoId}`}
-              type="text"
-              inputMode="decimal"
-              pattern="[0-9.,]*"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              autoFocus={autoFocus}
-              value={precoTexto}
-              disabled={!podeEditar}
-              onChange={(e) => alterarPreco(e.target.value)}
-              placeholder="0,00"
-              className="w-14 bg-transparent text-[12px] font-semibold tabular-nums outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
-            />
+        <div className="flex items-end gap-3">
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-[9px] font-medium uppercase text-muted-foreground">
+              P.CX
+            </span>
+            <label htmlFor={`preco-${item.itemCotacaoId}`} className="sr-only">
+              Preço da embalagem
+            </label>
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 transition-colors focus-within:border-muted-foreground">
+              <span className="text-[11px] font-medium text-muted-foreground">R$</span>
+              <input
+                id={`preco-${item.itemCotacaoId}`}
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9.,]*"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                autoFocus={autoFocus}
+                value={precoTexto}
+                disabled={!podeEditar}
+                onChange={(e) => alterarPreco(e.target.value)}
+                placeholder="0,00"
+                className="w-14 bg-transparent text-[12px] font-semibold tabular-nums outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+              />
+            </div>
           </div>
-          <span className={`flex-1 whitespace-nowrap tabular-nums text-right md:w-24 md:flex-none ${item.precoUnitario != null ? 'text-sm font-semibold text-foreground' : 'text-[11px] text-muted-foreground'}`}>
-            {unitario}
-          </span>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-[9px] font-medium uppercase text-muted-foreground">
+              P.UN
+            </span>
+            <div className="rounded-lg border border-border bg-card px-2 py-1">
+              <span
+                className={`whitespace-nowrap tabular-nums ${
+                  item.precoUnitario != null
+                    ? 'text-sm font-semibold text-foreground'
+                    : 'text-[11px] text-muted-foreground'
+                }`}
+              >
+                {unitario}
+              </span>
+            </div>
+          </div>
           <VistoStatus filled={temPreco} />
         </div>
       </div>

@@ -113,6 +113,10 @@ export function TutorialOnboarding({ aoConcluir }: { aoConcluir: () => void }) {
                   <p className="mt-1 text-[11px] text-muted-foreground">Código de barras</p>
                 </div>
               </div>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                P.CX = preço da caixa/embalagem · P.UN = preço por unidade (calculado
+                automaticamente)
+              </p>
             </div>
           )}
 
