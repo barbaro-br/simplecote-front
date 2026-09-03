@@ -73,6 +73,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const searchRef = useRef<HTMLInputElement>(null)
 
   const isAberta = status !== 'RASCUNHO'
+  const podeGerenciarResposta = status === 'ABERTA' || status === 'ENCERRADA'
 
   // Quando o modal abre
   useEffect(() => {
@@ -211,7 +212,13 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
         <div className="flex-1 overflow-y-auto min-h-0 bg-transparent">
           <ul className="m-0 p-2 space-y-1">
             {filtrados.map((e) => {
-              const enviado = e.part?.conviteStatus === 'ENVIADO'
+              const conviteStatus = e.part?.conviteStatus
+              const rotuloConvite = conviteStatus === 'ENVIADO' ? 'Enviado' : conviteStatus === 'FALHOU' ? 'Falha no envio' : 'Não enviado'
+              const classeConvite = conviteStatus === 'ENVIADO'
+                ? 'bg-success/10 text-success-foreground border-success/30'
+                : conviteStatus === 'FALHOU'
+                  ? 'bg-destructive/10 text-destructive border-destructive/30'
+                  : 'bg-muted text-muted-foreground border-transparent'
               const avatarColor = obterCorPorNome(e.nome)
 
               return (
@@ -266,10 +273,8 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
 
                     {/* Status Badge (apenas se aberta) */}
                     {isAberta && e.isChecked && (
-                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                        enviado ? 'bg-success/10 text-success-foreground border-success/30' : 'bg-muted text-muted-foreground border-transparent'
-                      }`}>
-                        {enviado ? 'Enviado' : 'Não enviado'}
+                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${classeConvite}`}>
+                        {rotuloConvite}
                       </span>
                     )}
 
@@ -363,7 +368,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                           {loadingMailId === e.id ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
                         </Button>
 
-                        {e.part.participanteStatus === 'VISUALIZOU' && (
+                        {podeGerenciarResposta && e.part.participanteStatus === 'VISUALIZOU' && (
                           <Button
                             type="button"
                             variant="outline"
@@ -383,7 +388,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                             Finalizar
                           </Button>
                         )}
-                        {e.part.participanteStatus === 'RESPONDIDO' && (
+                        {podeGerenciarResposta && e.part.participanteStatus === 'RESPONDIDO' && (
                           <Button
                             type="button"
                             variant="outline"

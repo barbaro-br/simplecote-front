@@ -27,6 +27,7 @@ export function PedidoPorTokenPage() {
 
   const p = pedido.data
   const confirmado = p.status === 'CONFIRMADO' || p.confirmadoEm != null
+  const aguardandoEnvio = p.status === 'GERADO'
 
   async function aoConfirmar() {
     setErro(null)
@@ -100,7 +101,13 @@ export function PedidoPorTokenPage() {
           </div>
         )}
         
-        {!confirmado && (
+        {aguardandoEnvio && (
+          <div className="rounded-md border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            Aguardando envio pelo comprador.
+          </div>
+        )}
+
+        {!aguardandoEnvio && !confirmado && (
           <div className="space-y-2 mb-3">
             <label htmlFor="obs" className="text-sm font-medium text-foreground">
               Observação <span className="text-muted-foreground font-normal">(opcional)</span>
@@ -130,7 +137,7 @@ export function PedidoPorTokenPage() {
             Baixar PDF
           </Button>
 
-          {!confirmado && (
+          {!aguardandoEnvio && !confirmado && (
             <Button
               className="flex-[2] h-12 text-base"
               disabled={confirmar.isPending}

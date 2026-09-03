@@ -5,6 +5,8 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
 import { CotacaoPorTokenPage } from './CotacaoPorTokenPage'
+import type { ItemLance } from './cotacao-token.schema'
+import type { LanceStatus } from '@/shared/domain/tipos-base'
 
 const TOKEN = 'tok-page'
 const CHAVE_FILA = `simplecote:fila:${TOKEN}`
@@ -36,11 +38,15 @@ function base() {
         precoUnitario: null,
         statusLance: 'PENDENTE',
       },
-    ],
+    ] as ItemLance[],
   }
 }
 function cotacao(over: Partial<ReturnType<typeof base>> = {}) {
   return { ...base(), ...over }
+}
+
+function itemDe(id: string, nome: string, statusLance: LanceStatus = 'PENDENTE'): ItemLance {
+  return { ...base().itens[0], itemCotacaoId: id, nome, statusLance }
 }
 
 function renderPage() {
@@ -327,4 +333,141 @@ test('primeira visita: mostra o tutorial; concluir grava a chave e não repete',
   renderPage()
   expect(await screen.findByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
   expect(screen.queryByText('Conheça o card de produto')).not.toBeInTheDocument()
+})
+
+test('preencher um item não marca os demais (presentes desde o início) como "Novo"', async () => {
+  const inicial = cotacao({
+    itens: [itemDe('i-1', 'Arroz Tipo 1 5kg'), itemDe('i-2', 'Feijão Preto 1kg')],
+  })
+  const atualizado = cotacao({
+    itens: [
+      { ...itemDe('i-1', 'Arroz Tipo 1 5kg'), preco: 12.5, statusLance: 'COTADO' },
+      itemDe('i-2', 'Feijão Preto 1kg'),
+    ],
+  })
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(inicial)),
+    http.put(`*/public/cotacoes/${TOKEN}/lances`, () => HttpResponse.json(atualizado)),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  expect(await screen.findByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
+  expect(screen.getByText('Feijão Preto 1kg')).toBeInTheDocument()
+  expect(screen.queryByText('Novo')).not.toBeInTheDocument()
+
+  const campos = screen.getAllByLabelText(/preço da embalagem/i)
+  await user.type(campos[0], '12.5')
+  await sleep(APOS_DEBOUNCE)
+
+  // i-1 agora COTADO; i-2 (presente desde o início) NÃO deve ganhar "Novo".
+  expect(screen.queryByText('Novo')).not.toBeInTheDocument()
+})
+
+test('primeiro carregamento não marca nada como "Novo" mesmo com statusLance misto', async () => {
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () =>
+      HttpResponse.json(
+        cotacao({
+          itens: [
+            itemDe('i-1', 'Arroz Tipo 1 5kg', 'COTADO'),
+            itemDe('i-2', 'Feijão Preto 1kg', 'PENDENTE'),
+          ],
+        }),
+      ),
+    ),
+  )
+  renderPage()
+
+  expect(await screen.findByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
+  expect(screen.getByText('Feijão Preto 1kg')).toBeInTheDocument()
+  expect(screen.queryByText('Novo')).not.toBeInTheDocument()
+})
+
+test('refetch com snapshot obsoleto não reverte a contagem de item já precificado localmente', async () => {
+  const inicial = cotacao({ itens: [itemDe('i-1', 'Arroz Tipo 1 5kg')] })
+  const obsoleto = cotacao({ itens: [itemDe('i-1', 'Arroz Tipo 1 5kg')] })
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(inicial)),
+    http.put(`*/public/cotacoes/${TOKEN}/lances`, () => HttpResponse.json(obsoleto)),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  expect(await screen.findByRole('status', { name: /0 de 1 itens com preço/i })).toBeInTheDocument()
+  await user.type(campoPreco(), '12.5')
+  expect(screen.getByRole('status', { name: /1 de 1 itens com preço/i })).toBeInTheDocument()
+
+  // A resposta do PUT traz um snapshot obsoleto (item ainda com preco null).
+  // A contagem local não pode retroceder para um item que o representante já precificou.
+  await sleep(APOS_DEBOUNCE)
+  expect(screen.getByRole('status', { name: /1 de 1 itens com preço/i })).toBeInTheDocument()
+})
+
+test('item novo trazido por uma atualização entra na contagem como "sem preço"', async () => {
+  const inicial = cotacao({ itens: [itemDe('i-1', 'Arroz Tipo 1 5kg')] })
+  const atualizado = cotacao({
+    itens: [
+      { ...itemDe('i-1', 'Arroz Tipo 1 5kg'), preco: 12.5, statusLance: 'COTADO' },
+      itemDe('i-2', 'Feijão Preto 1kg'),
+    ],
+  })
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(inicial)),
+    http.put(`*/public/cotacoes/${TOKEN}/lances`, () => HttpResponse.json(atualizado)),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  expect(await screen.findByRole('status', { name: /0 de 1 itens com preço/i })).toBeInTheDocument()
+  await user.type(campoPreco(), '12.5')
+  await sleep(APOS_DEBOUNCE)
+
+  expect(await screen.findByText('Feijão Preto 1kg')).toBeInTheDocument()
+  expect(screen.getByRole('status', { name: /1 de 2 itens com preço/i })).toBeInTheDocument()
+})
+
+test('primeiro carregamento semeia a contagem a partir de d.itens (mistura de com/sem preço)', async () => {
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () =>
+      HttpResponse.json(
+        cotacao({
+          itens: [
+            { ...itemDe('i-1', 'Arroz Tipo 1 5kg'), preco: 12.5, statusLance: 'COTADO' },
+            itemDe('i-2', 'Feijão Preto 1kg'),
+            itemDe('i-3', 'Óleo de Soja 900ml'),
+          ],
+        }),
+      ),
+    ),
+  )
+  renderPage()
+
+  expect(await screen.findByRole('status', { name: /1 de 3 itens com preço/i })).toBeInTheDocument()
+})
+
+test('item que chega numa atualização depois do primeiro load é marcado "Novo"', async () => {
+  const inicial = cotacao({ itens: [itemDe('i-1', 'Arroz Tipo 1 5kg')] })
+  const atualizado = cotacao({
+    itens: [
+      { ...itemDe('i-1', 'Arroz Tipo 1 5kg'), preco: 10, statusLance: 'COTADO' },
+      itemDe('i-2', 'Feijão Preto 1kg'),
+    ],
+  })
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(inicial)),
+    http.put(`*/public/cotacoes/${TOKEN}/lances`, () => HttpResponse.json(atualizado)),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  expect(await screen.findByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
+  expect(screen.queryByText('Feijão Preto 1kg')).not.toBeInTheDocument()
+  expect(screen.queryByText('Novo')).not.toBeInTheDocument()
+
+  await user.type(await screen.findByLabelText(/preço da embalagem/i), '10')
+  await sleep(APOS_DEBOUNCE)
+
+  expect(await screen.findByText('Feijão Preto 1kg')).toBeInTheDocument()
+  expect(screen.getByText('Novo')).toBeInTheDocument()
 })

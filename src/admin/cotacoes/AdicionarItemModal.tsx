@@ -152,7 +152,16 @@ export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastra
     }
   }
 
-  const qtdSelecionados = itens.length
+  const qtdSelecionados = (() => {
+    let count = 0
+    for (const produtoId of itensMap.keys()) {
+      if (drafts.get(produtoId) !== 0) count++
+    }
+    for (const [produtoId, qty] of drafts) {
+      if (!itensMap.has(produtoId) && qty > 0) count++
+    }
+    return count
+  })()
 
   return (
     <Dialog open={open} onClose={handleClose} size="xl" ariaLabel="Adicionar Itens">

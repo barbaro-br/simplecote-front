@@ -37,10 +37,21 @@ function calcularPrazoIso(tipo: TipoPrazo, customDate: Date | undefined, hour: s
   return agora.toISOString()
 }
 
+function presetExpirado(tipo: TipoPrazo): boolean {
+  const iso = calcularPrazoIso(tipo, undefined, '18', '00')
+  if (!iso) return false
+  return new Date(iso).getTime() < Date.now()
+}
+
+function primeiroPresetValido(): TipoPrazo {
+  const ordem: TipoPrazo[] = ['hoje_18', 'amanha_12', 'amanha_18']
+  return ordem.find((t) => !presetExpirado(t)) ?? 'amanha_18'
+}
+
 export function AbrirCotacaoDialog({ pendente, onAbrir, onCancelar }: Props) {
   const [view, setView] = useState<ViewMode>('presets')
   
-  const [tipoPrazo, setTipoPrazo] = useState<TipoPrazo>('hoje_18')
+  const [tipoPrazo, setTipoPrazo] = useState<TipoPrazo>(primeiroPresetValido)
   
   const [customDate, setCustomDate] = useState<Date | undefined>(new Date())
   const [customHour, setCustomHour] = useState('18')
@@ -109,9 +120,11 @@ export function AbrirCotacaoDialog({ pendente, onAbrir, onCancelar }: Props) {
                 {presets.map(p => {
                   const Icon = p.icon
                   const isSelected = tipoPrazo === p.id
+                  const vencido = p.id !== 'custom' && presetExpirado(p.id)
                   return (
                     <button
                       key={p.id}
+                      disabled={vencido}
                       onClick={() => {
                         if (p.id === 'custom') {
                           setView('calendar')
@@ -122,9 +135,11 @@ export function AbrirCotacaoDialog({ pendente, onAbrir, onCancelar }: Props) {
                       }}
                       className={cn(
                         "flex flex-col items-center justify-center py-3 px-2 rounded-xl border text-[13px] transition-all gap-1.5",
-                        isSelected 
-                          ? "bg-primary/10 border-primary/30 text-primary shadow-sm ring-1 ring-primary/20" 
-                          : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                        vencido
+                          ? "bg-muted/20 border-transparent text-muted-foreground/50 cursor-not-allowed opacity-60"
+                          : isSelected 
+                            ? "bg-primary/10 border-primary/30 text-primary shadow-sm ring-1 ring-primary/20" 
+                            : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
                       <Icon className="size-4" />

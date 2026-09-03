@@ -48,30 +48,26 @@ describe('cotacao-token.derivados', () => {
     const item = (id: string, statusLance: LanceStatus): ItemLance =>
       ({ itemCotacaoId: id, statusLance } as ItemLance)
 
-    it('true: item PENDENTE com outro item COTADO', () => {
-      const itens = [item('a', 'PENDENTE'), item('b', 'COTADO')]
-      expect(itemEhNovo(itens[0], itens)).toBe(true)
+    it('false: id presente no conjunto conhecido, mesmo PENDENTE com irmãos respondidos', () => {
+      const conhecidos = new Set(['a', 'b'])
+      expect(itemEhNovo(item('a', 'PENDENTE'), conhecidos)).toBe(false)
+      expect(itemEhNovo(item('b', 'COTADO'), conhecidos)).toBe(false)
     })
 
-    it('true: item PENDENTE com outro item NAO_COTADO', () => {
-      const itens = [item('a', 'PENDENTE'), item('b', 'NAO_COTADO')]
-      expect(itemEhNovo(itens[0], itens)).toBe(true)
+    it('true: id ausente do conjunto conhecido (adicionado depois)', () => {
+      const conhecidos = new Set(['a', 'b'])
+      expect(itemEhNovo(item('c', 'PENDENTE'), conhecidos)).toBe(true)
     })
 
-    it('false: tudo PENDENTE (primeiro acesso)', () => {
-      const itens = [item('a', 'PENDENTE'), item('b', 'PENDENTE')]
-      expect(itemEhNovo(itens[0], itens)).toBe(false)
-      expect(itemEhNovo(itens[1], itens)).toBe(false)
+    it('statusLance não influencia: id desconhecido é novo mesmo COTADO/NAO_COTADO', () => {
+      const conhecidos = new Set(['a'])
+      expect(itemEhNovo(item('b', 'COTADO'), conhecidos)).toBe(true)
+      expect(itemEhNovo(item('b', 'NAO_COTADO'), conhecidos)).toBe(true)
     })
 
-    it('false: o próprio item não está PENDENTE', () => {
-      const itens = [item('a', 'COTADO'), item('b', 'PENDENTE')]
-      expect(itemEhNovo(itens[0], itens)).toBe(false)
-    })
-
-    it('false: item PENDENTE sozinho, sem nenhum outro item', () => {
-      const itens = [item('a', 'PENDENTE')]
-      expect(itemEhNovo(itens[0], itens)).toBe(false)
+    it('statusLance não influencia: id conhecido não é novo mesmo PENDENTE', () => {
+      const conhecidos = new Set(['a', 'b'])
+      expect(itemEhNovo(item('b', 'PENDENTE'), conhecidos)).toBe(false)
     })
   })
 })

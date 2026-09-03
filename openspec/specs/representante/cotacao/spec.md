@@ -136,7 +136,7 @@ O sistema SHALL manter o botão "Finalizar" (`POST /public/cotacoes/:token/final
 - **THEN** a bolha aparece com o destaque de cor de "completo" (fundo `primary`)
 
 ### Requirement: Gesto de deslizar para limpar o preço
-Em telas de toque, o sistema SHALL permitir arrastar um card de item para a esquerda; ao passar de um limiar (~70px), ao soltar o card o sistema SHALL apagar o preço daquele item. Durante o arrasto, um fundo de "limpar" (com ícone) SHALL aparecer atrás do card. O gesto SHALL ficar disponível apenas quando `podeEditar` é verdadeiro. Apagar o preço por esse gesto tem o mesmo efeito de apagá-lo pelo teclado: o indicador volta para a marca (✗) vermelha e o item é sincronizado como não cotado. Em qualquer um dos dois casos (deslizar ou apagar pelo teclado), quando o campo tinha um preço antes de ser esvaziado, o sistema SHALL exibir um toast "Preço removido" com ação "Desfazer" por alguns segundos; acionar "Desfazer" SHALL restaurar o preço anterior no campo.
+Em telas de toque, o sistema SHALL permitir arrastar um card de item para a esquerda; ao passar de um limiar (~70px), ao soltar o card o sistema SHALL apagar o preço daquele item. Durante o arrasto, um fundo de "limpar" (com ícone) SHALL aparecer atrás do card. O gesto SHALL ficar disponível apenas quando `podeEditar` é verdadeiro. Apagar o preço por esse gesto tem o mesmo efeito de apagá-lo pelo teclado: o indicador volta para a marca (✗) vermelha e o item é sincronizado como não cotado. Em qualquer um dos dois casos (deslizar ou apagar pelo teclado), quando o campo tinha um preço antes de ser esvaziado, o sistema SHALL exibir um toast "Preço removido" com ação "Desfazer" por alguns segundos (duração fixa, não indefinida); acionar "Desfazer" SHALL restaurar o preço anterior no campo. O toast SHALL usar um identificador único por item, de modo que limpar o preço do mesmo item mais de uma vez em sequência substitua o toast anterior em vez de empilhar vários.
 
 #### Scenario: Deslizar além do limiar limpa o preço
 - **WHEN** o representante arrasta um card com preço para a esquerda além do limiar e solta
@@ -154,8 +154,18 @@ Em telas de toque, o sistema SHALL permitir arrastar um card de item para a esqu
 - **WHEN** o representante aciona "Desfazer" no toast exibido logo após limpar um preço (por deslizar ou pelo teclado)
 - **THEN** o campo volta a mostrar o preço anterior e o item volta a ser sincronizado com esse preço
 
+#### Scenario: Toast de "Preço removido" some sozinho num tempo curto
+
+- **WHEN** o representante limpa o preço de um item e não interage com o toast
+- **THEN** o toast desaparece sozinho após uma duração curta e fixa (poucos segundos), sem persistir indefinidamente nem sobreviver a uma navegação de tela
+
+#### Scenario: Limpar o mesmo item duas vezes não empilha toasts
+
+- **WHEN** o representante limpa o preço de um item, digita um novo preço, e limpa de novo antes do primeiro toast sumir
+- **THEN** apenas um toast "Preço removido" fica visível para aquele item, não dois sobrepostos
+
 ### Requirement: Confirmação antes de enviar a resposta
-Ao acionar "Finalizar", o sistema SHALL abrir um modal "Enviar cotação?" antes de chamar a API. Quando houver itens sem preço, o modal SHALL exibir um aviso destacado com a contagem de itens que serão **enviados sem preço / em branco** (com concordância singular/plural). Quando todos os itens tiverem preço, o modal SHALL informar que todos os itens estão preenchidos. O modal SHALL ter ações "Cancelar" (fecha sem enviar) e "Confirmar" (dispara o `POST /public/cotacoes/:token/finalizar`). O modal SHALL usar o componente de diálogo compartilhado do projeto.
+Ao acionar "Finalizar", o sistema SHALL abrir um modal "Enviar cotação?" antes de chamar a API. Quando houver itens sem preço, o modal SHALL exibir um aviso destacado com a contagem de itens que serão **enviados sem preço / em branco** (com concordância singular/plural). Quando todos os itens tiverem preço, o modal SHALL informar que todos os itens estão preenchidos. O modal SHALL ter ações "Cancelar" (fecha sem enviar) e "Confirmar" (dispara o `POST /public/cotacoes/:token/finalizar`). O modal SHALL usar o componente de diálogo compartilhado do projeto. A contagem de itens sem preço SHALL refletir as edições que o representante já fez nesta visita mesmo que uma atualização de dados em segundo plano (ex.: refoco da aba) chegue enquanto uma edição ainda está sendo salva — uma resposta da API SHALL só preencher a contagem local para itens que o representante ainda não tocou, nunca sobrescrever o estado de um item já editado nesta visita.
 
 #### Scenario: Aviso de itens em branco
 - **WHEN** o representante aciona "Finalizar" com 3 itens sem preço
@@ -172,6 +182,11 @@ Ao acionar "Finalizar", o sistema SHALL abrir um modal "Enviar cotação?" antes
 #### Scenario: Todos os itens preenchidos
 - **WHEN** o representante aciona "Finalizar" com todos os itens com preço
 - **THEN** o modal informa que todos os itens estão preenchidos, sem aviso de itens em branco
+
+#### Scenario: Contagem não retrocede após atualização em segundo plano
+
+- **WHEN** o representante preenche o preço de um item e, antes ou depois do autosave desse item completar, uma atualização de dados em segundo plano traz um snapshot da API (ex.: a aba reganha foco e o React Query refaz o fetch)
+- **THEN** esse item continua contando como "com preço" na tela e no modal de confirmação — a atualização em segundo plano não reverte a contagem local para um item que o representante já editou
 
 ### Requirement: Tela de sucesso após finalizar
 Quando o `POST /public/cotacoes/:token/finalizar` retornar 204, o sistema SHALL exibir uma tela de sucesso em tela cheia (visto grande + mensagem "Cotação enviada!" com o primeiro nome do representante). A tela de sucesso SHALL se dispensar sozinha após cerca de 3 segundos e SHALL oferecer um botão "Fechar" para dispensá-la na hora. Ao ser dispensada, a tela SHALL refletir o estado `RESPONDIDO` (somente leitura), sem a barra de ação fixa.
@@ -209,7 +224,7 @@ Na primeira vez que o dispositivo abre `/cotacao/:token`, o sistema SHALL exibir
 - **THEN** o passo explica o que "P.CX" e "P.UN" significam
 
 ### Requirement: Visualização e confirmação do pedido por token
-O sistema SHALL, em `/pedido/:token`, carregar `GET /public/pedidos/:token`, permitir baixar o PDF (`GET /public/pedidos/:token.pdf`) e confirmar o pedido (`POST /public/pedidos/:token/confirmar`). A tela SHALL ser mobile-first e sem a navegação do painel.
+O sistema SHALL, em `/pedido/:token`, carregar `GET /public/pedidos/:token`, permitir baixar o PDF (`GET /public/pedidos/:token.pdf`) e confirmar o pedido (`POST /public/pedidos/:token/confirmar`). A tela SHALL ser mobile-first e sem a navegação do painel. Quando o `status` do pedido for `GERADO` (o Comprador ainda não enviou), o botão "Confirmar" NÃO SHALL ser exibido — em seu lugar, a tela SHALL mostrar uma mensagem indicando que o pedido ainda está aguardando envio. "Baixar PDF" continua disponível independente do `status`.
 
 #### Scenario: Ver e baixar o pedido
 - **WHEN** o representante acessa `/pedido/:token` com token válido
@@ -219,13 +234,23 @@ O sistema SHALL, em `/pedido/:token`, carregar `GET /public/pedidos/:token`, per
 - **WHEN** o representante aciona "Confirmar"
 - **THEN** o sistema chama a API de confirmação e a tela reflete o pedido confirmado; um erro `ProblemDetail` é exibido se a API recusar
 
+#### Scenario: Pedido ainda não enviado não oferece confirmação
+
+- **WHEN** o representante acessa `/pedido/:token` de um pedido com `status` `GERADO`
+- **THEN** o botão "Confirmar" não aparece; a tela mostra uma mensagem informando que o pedido está aguardando envio pelo comprador, e "Baixar PDF" continua disponível
+
 ### Requirement: Indicador de item novo
 
-Quando um item da Cotação tem `statusLance` `PENDENTE` enquanto pelo menos outro item da mesma Cotação já tem `statusLance` diferente de `PENDENTE` (`COTADO` ou `NAO_COTADO`), o card desse item SHALL exibir um indicador visual de "Novo" — sinalizando que ele foi adicionado depois que o representante já havia começado a responder. O indicador SHALL ser inferido só a partir dos dados já retornados por `GET /public/cotacoes/:token`, sem exigir nenhum campo adicional.
+Um item da Cotação SHALL exibir um indicador visual de "Novo" no card quando o `itemCotacaoId` dele não estava presente no primeiro carregamento bem-sucedido da cotação nesta visita do representante — sinalizando que ele foi adicionado pelo comprador depois que o representante já havia começado a ver a cotação. O indicador SHALL ser inferido só a partir dos dados já retornados por `GET /public/cotacoes/:token` (o conjunto de ids do primeiro carregamento), sem exigir nenhum campo adicional do backend. O status de outros itens da mesma cotação (`statusLance`) NÃO SHALL influenciar se um item é marcado como novo.
 
 #### Scenario: Item pendente entre itens já respondidos é marcado como novo
 
-- **WHEN** o representante abre a cotação e um item está `PENDENTE` enquanto outros já estão `COTADO`/`NAO_COTADO`
+- **WHEN** um item está `PENDENTE` enquanto outros itens da mesma cotação já estão `COTADO`/`NAO_COTADO`, **e** esse item já estava presente no primeiro carregamento da tela (não foi adicionado depois)
+- **THEN** o card desse item NÃO exibe o indicador "Novo" — o status dos outros itens não tem nenhuma influência na marcação; só importa se o próprio item estava ou não presente no primeiro carregamento
+
+#### Scenario: Item adicionado após o primeiro carregamento é marcado como novo
+
+- **WHEN** o comprador adiciona um item à cotação depois que o representante já carregou a tela pela primeira vez, e a tela recebe esse item numa atualização seguinte (polling/refetch)
 - **THEN** o card desse item exibe o indicador "Novo"
 
 #### Scenario: Primeiro acesso não marca nada como novo

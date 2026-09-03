@@ -54,6 +54,8 @@ describe('PainelDashboard', () => {
     // Pipeline de status (rótulos pt-BR)
     expect(screen.getByText('Rascunho')).toBeInTheDocument()
     expect(screen.getByText('Aberta')).toBeInTheDocument()
+    expect(screen.getByText('Pedidos gerados')).toBeInTheDocument()
+    expect(screen.queryByText('Apurada')).not.toBeInTheDocument()
 
     // Próximo prazo
     expect(screen.getByText('Material Expediente')).toBeInTheDocument()

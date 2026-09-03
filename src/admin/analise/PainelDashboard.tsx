@@ -31,7 +31,7 @@ const STATUS_PIPELINE = [
   { chave: 'rascunho', rotulo: 'Rascunho', status: 'RASCUNHO', cor: 'bg-muted-foreground/40' },
   { chave: 'aberta', rotulo: 'Aberta', status: 'ABERTA', cor: 'bg-primary' },
   { chave: 'encerrada', rotulo: 'Encerrada', status: 'ENCERRADA', cor: 'bg-warning' },
-  { chave: 'apurada', rotulo: 'Apurada', status: 'PEDIDOS_GERADOS', cor: 'bg-success' },
+  { chave: 'apurada', rotulo: 'Pedidos gerados', status: 'PEDIDOS_GERADOS', cor: 'bg-success' },
   { chave: 'cancelada', rotulo: 'Cancelada', status: 'CANCELADA', cor: 'bg-destructive' },
 ] as const
 

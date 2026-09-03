@@ -98,6 +98,8 @@ SHALL ser exibido. Quando a duplicação falha, o sistema SHALL exibir a mensage
 ### Requirement: Montar itens da Cotação
 O sistema SHALL permitir, enquanto a Cotação está em `RASCUNHO`, adicionar itens escolhendo um Produto do catálogo (`POST /api/cotacoes/{id}/itens`), ajustar a quantidade solicitada diretamente na listagem de itens e remover itens (`DELETE /api/cotacoes/{id}/itens/{itemId}`). A listagem de itens SHALL exibir claramente a embalagem do produto juntamente com a sua quantidade por embalagem (ex.: Caixa (12x)). Fora de `RASCUNHO` a edição de quantidade e a remoção de itens SHALL ficar indisponível. Quando o Produto desejado ainda não existe no catálogo, o sistema SHALL permitir cadastrá-lo **sem sair da tela de montagem da Cotação** e usá-lo imediatamente no item. Enquanto a Cotação está `ABERTA`, o sistema SHALL também permitir adicionar um novo item — a partir da tela de acompanhamento da grade ao vivo, não da listagem de montagem — reaproveitando o mesmo formulário de escolha de Produto. O sistema SHALL, do mesmo jeito, permitir **editar** um Produto já existente diretamente da lista de escolha de produtos, sem sair da tela de montagem.
 
+No modal "Adicionar Produtos", o subtítulo do cabeçalho (contagem de produtos) SHALL refletir a seleção em andamento nesta sessão do modal — produtos já na Cotação combinados com o que foi marcado/desmarcado desde que o modal abriu — e não só a contagem de itens já persistidos antes de abrir o modal.
+
 #### Scenario: Adicionar e remover item em rascunho
 - **WHEN** a Cotação está em `RASCUNHO` e o Comprador adiciona um Produto e depois remove um item
 - **THEN** a lista de itens reflete cada operação após a resposta da API
@@ -128,6 +130,11 @@ O sistema SHALL permitir, enquanto a Cotação está em `RASCUNHO`, adicionar it
 - **WHEN** o Comprador, ao escolher um Produto pra adicionar à Cotação, aciona editar num Produto já existente na lista
 - **THEN** o mesmo formulário de Produto abre sobre a tela em modo edição, pré-preenchido com os dados atuais, e ao salvar as mudanças ficam refletidas na lista sem que o Comprador tenha saído da tela de montagem
 
+#### Scenario: Subtítulo do modal acompanha a seleção em andamento
+
+- **WHEN** o Comprador marca ou desmarca produtos no modal "Adicionar Produtos", antes de clicar "Concluído"
+- **THEN** o subtítulo do cabeçalho do modal atualiza a contagem imediatamente a cada marcação/desmarcação, sem esperar o clique em "Concluído"
+
 ### Requirement: Convidar Empresas
 O sistema SHALL permitir acessar a lista de convidados através de uma ação principal no cabeçalho fixo (sticky) da tela de detalhes. O formulário para selecionar uma ou mais Empresas ativas do Comprador e convidá-las para a Cotação (`POST /api/cotacoes/{id}/participantes` com `empresaIds`) SHALL ser exibido em um modal sobreposto, garantindo que o Comprador não perca o contexto da lista de itens, independentemente de quão longa ela seja. O sistema SHALL listar os participantes com seu status de convite (a partir de `GET /api/cotacoes/{id}/participantes`), reenviar o convite de um participante (`POST /api/participantes/{participanteId}/reenviar-convite`) e compartilhar o link mágico do participante.
 
@@ -138,6 +145,8 @@ O compartilhamento do link mágico SHALL oferecer três formas, com o link e uma
 - **Copiar link** SHALL deixar de ser ação primária e passar a ser uma ação secundária, junto com **Reenviar convite** e **Remover empresa**, dentro de um menu suspenso ("Mais ações") por participante. Copiar SHALL escrever `linkMagico` na área de transferência e dar retorno visual temporário ("Copiado!").
 
 Ações de compartilhamento SHALL estar disponíveis para qualquer participante já listado, independentemente do estado da Cotação (diferente de "Convidar", que só vale em `RASCUNHO`).
+
+O status de convite (`conviteStatus`) SHALL ser exibido distinguindo três casos: `ENVIADO` (rótulo neutro/positivo), `FALHOU` (rótulo com destaque visual de erro, indicando que o sistema tentou enviar e não conseguiu — nunca o mesmo rótulo usado para "ainda não enviado"), e qualquer outro valor SHALL cair no rótulo neutro atual de "Não enviado".
 
 #### Scenario: Convite de empresas via modal
 - **WHEN** o Comprador aciona o botão de "Representantes" no cabeçalho fixo
@@ -171,8 +180,13 @@ Ações de compartilhamento SHALL estar disponíveis para qualquer participante 
 - **WHEN** o Comprador abre o menu "Mais ações" de um participante e aciona "Copiar link"
 - **THEN** o `linkMagico` é escrito na área de transferência e o item mostra retorno visual temporário de confirmação
 
+#### Scenario: Falha real de envio é distinguida de "ainda não enviado"
+
+- **WHEN** o `conviteStatus` de um participante é `FALHOU` (o sistema tentou enviar o e-mail e não conseguiu)
+- **THEN** o participante exibe um rótulo com destaque visual de erro, diferente do rótulo neutro usado quando o convite simplesmente ainda não foi enviado
+
 ### Requirement: Transições de estado com confirmação
-O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação que nomeie a consequência antes de `cancelar` e `apurar` (operações irreversíveis, regra 8 do `spec.md`). O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação. "Cancelar" SHALL ser acionado a partir de um menu overflow ("⋯"), separado dos botões de transição primária (Abrir/Encerrar/Reabrir/Apurar) — nunca um botão de primeiro nível na mesma fileira.
+O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação antes de `encerrar`, `cancelar` e `apurar`, nomeando a consequência de cada uma. O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação. "Cancelar" SHALL ser acionado a partir de um menu overflow ("⋯"), separado dos botões de transição primária (Abrir/Encerrar/Reabrir/Apurar) — nunca um botão de primeiro nível na mesma fileira.
 
 #### Scenario: Abrir a Cotação
 - **WHEN** o Comprador informa um `prazo` e confirma "Abrir"
@@ -199,9 +213,14 @@ O sistema SHALL disparar as transições de estado da Cotação — abrir com `p
 - **WHEN** o Comprador abre o detalhe de uma Cotação em qualquer status onde "Cancelar" é aplicável
 - **THEN** "Cancelar" aparece dentro do menu "⋯", não como botão de primeiro nível ao lado das transições de estado
 
+#### Scenario: Encerrar pede confirmação explícita
+
+- **WHEN** o Comprador aciona "Encerrar" numa Cotação `ABERTA`
+- **THEN** um diálogo descreve a consequência (a Cotação para de aceitar novas respostas dos representantes; pode ser reaberta depois) e só após a confirmação a API é chamada
+
 ### Requirement: Correção de lance e reabertura de resposta pelo admin
 
-O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`), reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`) e finalizar em nome de um participante `VISUALIZOU` (`POST /api/participantes/{participanteId}/finalizar`), a partir da tela de detalhe da Cotação. A grade de respostas é lida de `GET /api/cotacoes/{id}/ao-vivo` sem polling (o polling é Fase 2). O modal de participantes (`RepresentantesModal`, acionado pelo botão "Representantes") SHALL, quando a Cotação está `ABERTA` ou `ENCERRADA`, mostrar em cada linha também o status da resposta (`Convidado`/`Visualizou`/`Respondido`) e a ação de finalizar/reabrir aplicável, ao lado do status de convite já exibido ali.
+O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`), reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`) e finalizar em nome de um participante `VISUALIZOU` (`POST /api/participantes/{participanteId}/finalizar`), a partir da tela de detalhe da Cotação. A grade de respostas é lida de `GET /api/cotacoes/{id}/ao-vivo` sem polling (o polling é Fase 2). O modal de participantes (`RepresentantesModal`, acionado pelo botão "Representantes") SHALL, quando a Cotação está `ABERTA` ou `ENCERRADA`, mostrar em cada linha também o status da resposta (`Convidado`/`Visualizou`/`Respondido`) e a ação de finalizar/reabrir aplicável, ao lado do status de convite já exibido ali. Quando a Cotação não está `ABERTA` nem `ENCERRADA` (ex.: `PEDIDOS_GERADOS`, `CANCELADA`), os botões "Finalizar" e "Reabrir resposta" NÃO SHALL ser exibidos, mesmo que o participante esteja em `VISUALIZOU`/`RESPONDIDO` — essas ações não têm efeito útil fora desse intervalo.
 
 #### Scenario: Admin corrige um lance
 
@@ -222,6 +241,11 @@ O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um partici
 
 - **WHEN** o Comprador abre o modal "Representantes" de uma Cotação `ABERTA` ou `ENCERRADA` com participantes em status de resposta diferentes
 - **THEN** cada participante aparece com seu status de resposta atual e só o botão de ação aplicável àquele status (`Finalizar` para `Visualizou`, `Reabrir resposta` para `Respondido`, nenhum para `Convidado`), ao lado das informações de convite já existentes
+
+#### Scenario: Ações de finalizar/reabrir somem fora de ABERTA/ENCERRADA
+
+- **WHEN** o Comprador abre o modal "Representantes" de uma Cotação em `PEDIDOS_GERADOS` ou `CANCELADA`
+- **THEN** nenhuma linha exibe os botões "Finalizar" ou "Reabrir resposta", independentemente do status de resposta de cada participante
 
 ### Requirement: Resultado da apuração e pedidos
 O sistema SHALL exibir o resultado de uma Cotação apurada (`GET /api/cotacoes/{id}/resultado`): vencedor por item identificado pelo **nome da Empresa** (não do representante), preço da embalagem e preço unitário derivado que já vêm prontos da API. SHALL listar os pedidos gerados (`GET /api/cotacoes/{id}/pedidos`), permitir enviar um pedido (`POST /api/pedidos/{id}/enviar`), baixar o resultado em XLSX (`GET /api/cotacoes/{id}/resultado.xlsx`) e baixar o PDF de um pedido (`GET /api/pedidos/{id}.pdf`). Quando a API indicar que um item foi `decididoPorDesempate`, a tela SHALL exibir um indicador visual junto ao preço desse item, sem recalcular ou inferir o empate.

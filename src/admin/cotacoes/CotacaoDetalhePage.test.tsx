@@ -286,6 +286,21 @@ test('3.4 — Apurar só chama a API após confirmação no diálogo', async () 
   await waitFor(() => expect(chamadas.apurar).toBe(1))
 })
 
+test('4.3 — Encerrar abre diálogo de confirmação e só chama a API após confirmar', async () => {
+  const { chamadas } = setup('ABERTA')
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Encerrar' }))
+
+  const dialog = screen.getByRole('dialog')
+  expect(dialog).toHaveTextContent('deixará de aceitar novas respostas')
+  expect(chamadas.encerrar ?? 0).toBe(0)
+
+  await user.click(within(dialog).getByRole('button', { name: 'Encerrar' }))
+  await waitFor(() => expect(chamadas.encerrar).toBe(1))
+})
+
 test('3.4 — Abrir envia o prazo em ISO', async () => {
   const { chamadas, getPrazoRecebido } = setup('RASCUNHO')
   const user = userEvent.setup()
