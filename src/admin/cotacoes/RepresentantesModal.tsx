@@ -272,7 +272,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                     )}
 
                     {/* Status Badge (apenas se aberta) */}
-                    {isAberta && e.isChecked && (
+                    {isAberta && e.isChecked && e.part?.participanteStatus === 'CONVIDADO' && (
                       <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${classeConvite}`}>
                         {rotuloConvite}
                       </span>
