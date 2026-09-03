@@ -51,11 +51,28 @@ export function CotacaoPorTokenPage() {
   // quando uma entrada muda), sem efeito e sem flicker de "0 de N".
   const [temPrecoLocal, setTemPrecoLocal] = useState<Record<string, boolean> | null>(null)
   const [fonteSemeada, setFonteSemeada] = useState<CotacaoPorToken | null>(null)
+  // Ids presentes no primeiro carregamento bem-sucedido — base do indicador
+  // "Novo" (item cujo id não estava aqui foi adicionado depois).
+  const idsConhecidosRef = useRef<Set<string> | null>(null)
   if (cotacao.data && cotacao.data !== fonteSemeada) {
-    setFonteSemeada(cotacao.data)
-    setTemPrecoLocal(
-      Object.fromEntries(cotacao.data.itens.map((i) => [i.itemCotacaoId, i.preco != null])),
-    )
+    const data = cotacao.data
+    setFonteSemeada(data)
+    // Mescla, não substitui: uma nova resposta só adiciona entradas para itens
+    // ainda sem entrada local (ex.: item novo num refetch). Nunca sobrescreve
+    // uma entrada que o representante já tocou nesta sessão — evita que um
+    // snapshot desatualizado do servidor reverta a contagem de itens precificados.
+    setTemPrecoLocal((prev) => {
+      const base = prev ?? {}
+      const novos = Object.fromEntries(
+        data.itens
+          .filter((i) => !(i.itemCotacaoId in base))
+          .map((i) => [i.itemCotacaoId, i.preco != null]),
+      )
+      return { ...base, ...novos }
+    })
+    if (idsConhecidosRef.current === null) {
+      idsConhecidosRef.current = new Set(data.itens.map((i) => i.itemCotacaoId))
+    }
   }
 
   const onPrecoChange = useCallback((id: string, temPreco: boolean) => {
@@ -175,7 +192,7 @@ export function CotacaoPorTokenPage() {
               autoFocus={item.itemCotacaoId === primeiroSemPreco}
               status={fila.statusPorItem[item.itemCotacaoId]}
               erro={fila.errosPorItem[item.itemCotacaoId]}
-              novo={itemEhNovo(item, d.itens)}
+              novo={itemEhNovo(item, idsConhecidosRef.current ?? new Set())}
               aoAssentar={(patch) => fila.gravarEEnviar(item.itemCotacaoId, patch)}
               onPrecoChange={onPrecoChange}
             />

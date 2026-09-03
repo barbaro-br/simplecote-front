@@ -30,7 +30,7 @@ import {
   useParticipantes
 } from './cotacoes.api'
 
-type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | null
+type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | 'encerrar' | null
 
 function GradeAoVivoContainer({ id, status, itens }: { id: string; status: string; itens: ItemCotacao[] }) {
   useGradeAoVivoSSE(id, status)
@@ -183,7 +183,7 @@ export function CotacaoDetalhePage() {
           )}
           {status === 'ABERTA' && (
             <>
-              <Button onClick={() => executar(() => encerrar.mutateAsync())} disabled={acaoPendente}>
+              <Button onClick={() => setDialog('encerrar')} disabled={acaoPendente}>
                 Encerrar
               </Button>
             </>
@@ -278,6 +278,21 @@ export function CotacaoDetalhePage() {
           onCancelar={() => setDialog(null)}
           onConfirmar={() => executar(() => cancelar.mutateAsync())}
         />
+      )}
+      {dialog === 'encerrar' && (
+        <Dialog open onClose={() => setDialog(null)} title="Encerrar cotação">
+          <p className="text-sm text-muted-foreground">
+            A cotação deixará de aceitar novas respostas dos representantes. Você pode reabri-la depois.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDialog(null)} disabled={encerrar.isPending}>
+              Voltar
+            </Button>
+            <Button onClick={() => executar(() => encerrar.mutateAsync())} disabled={encerrar.isPending} autoFocus>
+              {encerrar.isPending ? 'Processando…' : 'Encerrar'}
+            </Button>
+          </div>
+        </Dialog>
       )}
 
       <RepresentantesModal

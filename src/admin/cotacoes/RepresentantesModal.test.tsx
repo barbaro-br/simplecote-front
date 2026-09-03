@@ -10,6 +10,7 @@ function participante(
   empresaId: string,
   empresaNome: string,
   participanteStatus: ParticipanteDaCotacao['participanteStatus'],
+  conviteStatus: ParticipanteDaCotacao['conviteStatus'] = 'ENVIADO',
 ): ParticipanteDaCotacao {
   return {
     participanteId: `part-${empresaId}`,
@@ -18,13 +19,13 @@ function participante(
     representanteNome: `Rep de ${empresaNome}`,
     whatsappRepresentante: null,
     emailRepresentante: null,
-    conviteStatus: 'ENVIADO',
+    conviteStatus,
     participanteStatus,
     linkMagico: 'https://exemplo.com/token',
   }
 }
 
-function setup(status: 'ABERTA' | 'ENCERRADA', iniciais: ParticipanteDaCotacao[]) {
+function setup(status: string, iniciais: ParticipanteDaCotacao[]) {
   let lista = [...iniciais]
   const empresas = iniciais.map((p) => ({ id: p.empresaId, nome: p.empresaNome, ativo: true }))
 
@@ -92,4 +93,43 @@ test('Finalizar chama a mutation e a linha passa a refletir Respondido', async (
   })
   expect(await screen.findByText('Respondido')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Reabrir resposta' })).toBeInTheDocument()
+})
+
+test('em PEDIDOS_GERADOS, participante RESPONDIDO não mostra o botão "Reabrir resposta"', async () => {
+  setup('PEDIDOS_GERADOS', [participante('e1', 'Mercado A', 'RESPONDIDO')])
+
+  expect(await screen.findByText('Respondido')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Reabrir resposta' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
+})
+
+test('em CANCELADA, participante VISUALIZOU não mostra o botão "Finalizar"', async () => {
+  setup('CANCELADA', [participante('e1', 'Mercado A', 'VISUALIZOU')])
+
+  expect(await screen.findByText('Visualizou')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Reabrir resposta' })).not.toBeInTheDocument()
+})
+
+test('em ENCERRADA, os botões Finalizar/Reabrir continuam sendo exibidos (sem regressão)', async () => {
+  setup('ENCERRADA', [
+    participante('e1', 'Mercado A', 'VISUALIZOU'),
+    participante('e2', 'Mercado B', 'RESPONDIDO'),
+  ])
+
+  await screen.findByRole('button', { name: 'Finalizar' })
+
+  expect(screen.getAllByRole('button', { name: 'Finalizar' })).toHaveLength(1)
+  expect(screen.getAllByRole('button', { name: 'Reabrir resposta' })).toHaveLength(1)
+})
+
+test('participante com conviteStatus FALHOU exibe rótulo de erro, distinto do "Não enviado"', async () => {
+  setup('ABERTA', [
+    participante('e1', 'Mercado A', 'CONVIDADO', 'FALHOU'),
+    participante('e2', 'Mercado B', 'CONVIDADO', null),
+  ])
+
+  expect(await screen.findByText('Falha no envio')).toBeInTheDocument()
+  expect(screen.getByText('Não enviado')).toBeInTheDocument()
+  expect(screen.queryByText('Enviado')).not.toBeInTheDocument()
 })

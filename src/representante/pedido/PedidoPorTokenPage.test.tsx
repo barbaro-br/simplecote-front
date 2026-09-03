@@ -96,6 +96,41 @@ test('erro ProblemDetail na confirmação é exibido', async () => {
   )
 })
 
+test('pedido GERADO não mostra "Confirmar" nem observação, e mostra mensagem de aguardando envio', async () => {
+  server.use(
+    http.get(`*/public/pedidos/${TOKEN}`, () =>
+      HttpResponse.json(pedido({ status: 'GERADO', enviadoEm: null })),
+    ),
+  )
+  renderPage()
+
+  expect(await screen.findByRole('heading', { name: /pedido/i })).toBeInTheDocument()
+  expect(screen.getByText(/aguardando envio pelo comprador/i)).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /confirmar/i })).not.toBeInTheDocument()
+  expect(screen.queryByLabelText(/observação/i)).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /baixar pdf/i })).toBeInTheDocument()
+})
+
+test('pedido ENVIADO continua mostrando "Confirmar" normalmente', async () => {
+  server.use(http.get(`*/public/pedidos/${TOKEN}`, () => HttpResponse.json(pedido())))
+  renderPage()
+
+  expect(await screen.findByRole('button', { name: /confirmar/i })).toBeInTheDocument()
+  expect(screen.queryByText(/aguardando envio pelo comprador/i)).not.toBeInTheDocument()
+})
+
+test('pedido CONFIRMADO continua mostrando a tela de sucesso normalmente', async () => {
+  server.use(
+    http.get(`*/public/pedidos/${TOKEN}`, () =>
+      HttpResponse.json(pedido({ status: 'CONFIRMADO', confirmadoEm: '2026-08-28T14:00:00Z' })),
+    ),
+  )
+  renderPage()
+
+  expect(await screen.findByText(/pedido confirmado/i)).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /confirmar/i })).not.toBeInTheDocument()
+})
+
 test('token inválido: estado de link inválido', async () => {
   server.use(
     http.get(`*/public/pedidos/${TOKEN}`, () =>
