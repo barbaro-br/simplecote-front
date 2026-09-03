@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
 
@@ -8,6 +9,7 @@ type Props = {
   pendente?: boolean
   onConfirmar: () => void
   onCancelar: () => void
+  children?: ReactNode
 }
 
 /**
@@ -21,10 +23,12 @@ export function ConfirmarDialog({
   pendente,
   onConfirmar,
   onCancelar,
+  children,
 }: Props) {
   return (
     <Dialog open onClose={onCancelar} title={titulo}>
       <p className="text-sm text-muted-foreground">{descricao}</p>
+      {children}
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancelar} disabled={pendente}>
           Voltar

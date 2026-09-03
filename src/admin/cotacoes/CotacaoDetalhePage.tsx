@@ -5,6 +5,7 @@ import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { StatusBadge } from '@/shared/components/StatusBadge'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { Breadcrumb } from '@/shared/components/ui/breadcrumb'
 import { ItensSection } from './ItensSection'
 import { GradeAoVivoTabela } from './GradeAoVivoTabela'
 import { ConfirmarDialog } from './ConfirmarDialog'
@@ -21,7 +22,8 @@ import {
   useReabrir,
   useConvidarEmpresas,
   useGradeAoVivo,
-  useGradeAoVivoSSE
+  useGradeAoVivoSSE,
+  useParticipantes
 } from './cotacoes.api'
 
 type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | null
@@ -60,6 +62,7 @@ export function CotacaoDetalhePage() {
   const apurar = useApurar(id)
   const duplicar = useDuplicarCotacao()
   const convidar = useConvidarEmpresas(id)
+  const participantes = useParticipantes(id)
 
   const [dialog, setDialog] = useState<DialogAberto>(null)
   const [erroAcao, setErroAcao] = useState<string | null>(null)
@@ -113,20 +116,25 @@ export function CotacaoDetalhePage() {
     duplicar.isPending ||
     convidar.isPending
 
+  const pendentesVisualizou = (participantes.data ?? []).filter(
+    (p) => p.participanteStatus === 'VISUALIZOU',
+  )
+
   return (
     <PageContainer maxWidth="4xl" className="space-y-6">
       <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border shadow-sm mb-6 space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">{cotacao.titulo}</h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <StatusBadge status={status} />
-              {cotacao.prazo && <span>· Prazo: {dataHoraBr(cotacao.prazo)}</span>}
-            </p>
-          </div>
-          <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors">
-            ← Cotações
-          </Link>
+        <Breadcrumb
+          items={[
+            { label: 'Cotações', to: '/admin' },
+            { label: cotacao.titulo },
+          ]}
+        />
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{cotacao.titulo}</h1>
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <StatusBadge status={status} />
+            {cotacao.prazo && <span>· Prazo: {dataHoraBr(cotacao.prazo)}</span>}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -247,7 +255,18 @@ export function CotacaoDetalhePage() {
           pendente={apurar.isPending}
           onCancelar={() => setDialog(null)}
           onConfirmar={() => executar(() => apurar.mutateAsync())}
-        />
+        >
+          {pendentesVisualizou.length > 0 && (
+            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
+              <p className="font-medium text-warning">Participantes que não finalizaram a resposta:</p>
+              <ul className="mt-1 list-disc pl-5 text-muted-foreground">
+                {pendentesVisualizou.map((p) => (
+                  <li key={p.participanteId}>{p.empresaNome}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </ConfirmarDialog>
       )}
       {dialog === 'cancelar' && (
         <ConfirmarDialog

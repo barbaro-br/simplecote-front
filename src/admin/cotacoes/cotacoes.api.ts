@@ -257,3 +257,15 @@ export function useReabrirParticipante(cotacaoId: string) {
     },
   })
 }
+
+export function useFinalizarParticipante(cotacaoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (participanteId: string) =>
+      api.post<void>(`/api/participantes/${participanteId}/finalizar`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: participantesKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+    },
+  })
+}
