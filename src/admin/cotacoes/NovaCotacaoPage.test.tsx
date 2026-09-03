@@ -6,8 +6,8 @@ import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
 import { NovaCotacaoPage } from './NovaCotacaoPage'
 
-function renderPage() {
-  server.use(http.get('*/api/cotacoes', () => HttpResponse.json([])))
+function renderPage(cotacoes: unknown[] = []) {
+  server.use(http.get('*/api/cotacoes', () => HttpResponse.json(cotacoes)))
   const router = createMemoryRouter(
     [
       { path: '/admin/cotacoes/nova', element: <NovaCotacaoPage /> },
@@ -50,4 +50,56 @@ test('título vazio bloqueia o envio', async () => {
 
   expect(await screen.findByText('Informe o título da cotação')).toBeInTheDocument()
   expect(screen.queryByText('detalhe')).not.toBeInTheDocument()
+})
+
+test('alternar entre "Em branco" e "Duplicar existente" troca o campo exibido', async () => {
+  const user = userEvent.setup()
+  renderPage()
+
+  expect(screen.getByLabelText('Título')).toBeInTheDocument()
+  expect(screen.queryByLabelText('Cotação de origem')).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('tab', { name: 'Duplicar existente' }))
+  expect(screen.queryByLabelText('Título')).not.toBeInTheDocument()
+  expect(screen.getByLabelText('Cotação de origem')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('tab', { name: 'Em branco' }))
+  expect(screen.getByLabelText('Título')).toBeInTheDocument()
+  expect(screen.queryByLabelText('Cotação de origem')).not.toBeInTheDocument()
+})
+
+test('duplicar no modo "Duplicar existente" chama a mutation e navega para a cópia', async () => {
+  server.use(
+    http.post('*/api/cotacoes/c-9/duplicar', () =>
+      HttpResponse.json({
+        cotacao: {
+          id: 'nova-9',
+          titulo: 'Compra anterior (cópia)',
+          status: 'RASCUNHO',
+          prazo: null,
+          criadaEm: '2026-08-28T12:00:00Z',
+          encerradaEm: null,
+          itens: [],
+        },
+        omitidos: [],
+      }),
+    ),
+  )
+  const user = userEvent.setup()
+  renderPage([
+    {
+      id: 'c-9',
+      titulo: 'Compra anterior',
+      status: 'ENCERRADA',
+      prazo: null,
+      criadaEm: '2026-08-28T12:00:00Z',
+      encerradaEm: null,
+    },
+  ])
+
+  await user.click(screen.getByRole('tab', { name: 'Duplicar existente' }))
+  await user.selectOptions(screen.getByLabelText('Cotação de origem'), 'c-9')
+  await user.click(screen.getByRole('button', { name: /duplicar cotação/i }))
+
+  expect(await screen.findByText('detalhe')).toBeInTheDocument()
 })

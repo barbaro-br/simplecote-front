@@ -70,7 +70,7 @@ export function ResultadoPage() {
     <PageContainer maxWidth="5xl" className="space-y-8">
       <Breadcrumb
         items={[
-          { label: 'Cotações', to: '/admin' },
+          { label: 'Cotações', to: '/admin/cotacoes' },
           { label: cotacao.data?.titulo ?? '', to: `/admin/cotacoes/${id}` },
           { label: 'Resultado' },
         ]}

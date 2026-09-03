@@ -66,7 +66,10 @@ export function useAdicionarItem(cotacaoId: string) {
   return useMutation({
     mutationFn: (valores: AdicionarItemValues) =>
       api.post<CotacaoDetalhe>(`/api/cotacoes/${cotacaoId}/itens`, valores),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: detalheKey(cotacaoId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: detalheKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+    },
   })
 }
 
