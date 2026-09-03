@@ -141,6 +141,26 @@ describe('ItemLanceCard', () => {
     expect(screen.getByText(/R\$\s0,50/)).toBeInTheDocument()
   })
 
+  const caixaDoPun = (conteudo: string | RegExp) =>
+    screen.getByText(conteudo).closest('div.rounded-lg') as HTMLElement
+
+  it('a caixa do P.UN tem largura mínima no estado vazio ("—")', () => {
+    renderCard()
+    expect(caixaDoPun('—').className).toContain('min-w-[72px]')
+  })
+
+  it('a caixa do P.UN tem largura mínima no estado "calculando…"', async () => {
+    const user = userEvent.setup()
+    renderCard({ status: 'enviando' })
+    await user.type(campo(), '9')
+    expect(caixaDoPun('calculando…').className).toContain('min-w-[72px]')
+  })
+
+  it('a caixa do P.UN tem largura mínima com valor formatado', () => {
+    renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
+    expect(caixaDoPun(/R\$\s0,50/).className).toContain('min-w-[72px]')
+  })
+
   it('renderiza os rótulos "P.CX" e "P.UN" acima dos valores', () => {
     renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
     expect(screen.getByText('P.CX')).toBeInTheDocument()

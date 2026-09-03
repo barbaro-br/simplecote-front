@@ -241,7 +241,7 @@ export function ItemLanceCard({
             <span className="text-[9px] font-medium uppercase text-muted-foreground">
               P.UN
             </span>
-            <div className="rounded-lg border border-border bg-card px-2 py-1">
+            <div className="min-w-[72px] rounded-lg border border-border bg-card px-2 py-1 text-center">
               <span
                 className={`whitespace-nowrap tabular-nums ${
                   item.precoUnitario != null
