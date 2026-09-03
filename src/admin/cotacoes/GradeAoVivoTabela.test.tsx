@@ -88,3 +88,13 @@ test('cabeçalho das Empresas e preço padrão alinhados à direita com cartão'
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
   expect(celula).toHaveClass('bg-card', 'border-border', 'text-right')
 })
+
+test('a grade tem contêiner de rolagem próprio com altura limitada', () => {
+  renderGrade(gradeBase)
+
+  const table = screen.getByRole('table')
+  const container = table.parentElement
+
+  expect(container).toHaveClass('overflow-x-auto', 'overflow-y-auto')
+  expect(container?.className).toMatch(/max-h-\[65vh\]/)
+})

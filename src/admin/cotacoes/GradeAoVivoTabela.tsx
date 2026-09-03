@@ -218,7 +218,7 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
         </p>
       )}
       <div className="rounded-md border bg-card text-card-foreground shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[65vh]">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted-foreground">
