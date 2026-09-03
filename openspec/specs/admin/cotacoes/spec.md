@@ -150,7 +150,7 @@ Ações de compartilhamento SHALL estar disponíveis para qualquer participante 
 - **THEN** o `linkMagico` é escrito na área de transferência e o item mostra retorno visual temporário de confirmação
 
 ### Requirement: Transições de estado com confirmação
-O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação que nomeie a consequência antes de `cancelar` e `apurar` (operações irreversíveis, regra 8 do `spec.md`). O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida.
+O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação que nomeie a consequência antes de `cancelar` e `apurar` (operações irreversíveis, regra 8 do `spec.md`). O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação.
 
 #### Scenario: Abrir a Cotação
 - **WHEN** o Comprador informa um `prazo` e confirma "Abrir"
@@ -168,9 +168,13 @@ O sistema SHALL disparar as transições de estado da Cotação — abrir com `p
 - **WHEN** a API rejeita uma transição (ex.: apurar uma cotação ainda `ABERTA` com pendências que o backend não permite)
 - **THEN** a mensagem `ProblemDetail` é exibida e o status na tela não muda
 
+#### Scenario: Apurar avisa sobre participantes não finalizados
+- **WHEN** o Comprador aciona "Apurar" e há um ou mais participantes em `VISUALIZOU`
+- **THEN** o diálogo de confirmação lista os nomes desses participantes como aviso, além da descrição padrão da consequência
+
 ### Requirement: Correção de lance e reabertura de resposta pelo admin
 
-O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`) e reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`), a partir da tela de detalhe da Cotação. A grade de respostas é lida de `GET /api/cotacoes/{id}/ao-vivo` sem polling (o polling é Fase 2).
+O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`), reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`) e finalizar em nome de um participante `VISUALIZOU` (`POST /api/participantes/{participanteId}/finalizar`), a partir da tela de detalhe da Cotação. A grade de respostas é lida de `GET /api/cotacoes/{id}/ao-vivo` sem polling (o polling é Fase 2). O modal de participantes (`RepresentantesModal`, acionado pelo botão "Representantes") SHALL, quando a Cotação está `ABERTA` ou `ENCERRADA`, mostrar em cada linha também o status da resposta (`Convidado`/`Visualizou`/`Respondido`) e a ação de finalizar/reabrir aplicável, ao lado do status de convite já exibido ali.
 
 #### Scenario: Admin corrige um lance
 
@@ -181,6 +185,16 @@ O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um partici
 
 - **WHEN** o Comprador aciona "Reabrir resposta" num participante `RESPONDIDO`
 - **THEN** o sistema chama a API e o participante volta a aparecer como editável pelo representante
+
+#### Scenario: Admin finaliza a resposta de um participante que não finalizou
+
+- **WHEN** o Comprador aciona "Finalizar em nome do participante" num participante `VISUALIZOU` dentro do modal "Representantes"
+- **THEN** o sistema chama `POST /api/participantes/{participanteId}/finalizar` e a linha desse participante passa a mostrar `Respondido`
+
+#### Scenario: Modal "Representantes" reflete o status de resposta de cada um
+
+- **WHEN** o Comprador abre o modal "Representantes" de uma Cotação `ABERTA` ou `ENCERRADA` com participantes em status de resposta diferentes
+- **THEN** cada participante aparece com seu status de resposta atual e só o botão de ação aplicável àquele status (`Finalizar` para `Visualizou`, `Reabrir resposta` para `Respondido`, nenhum para `Convidado`), ao lado das informações de convite já existentes
 
 ### Requirement: Resultado da apuração e pedidos
 O sistema SHALL exibir o resultado de uma Cotação apurada (`GET /api/cotacoes/{id}/resultado`): vencedor por item identificado pelo **nome da Empresa** (não do representante), preço da embalagem e preço unitário derivado que já vêm prontos da API. SHALL listar os pedidos gerados (`GET /api/cotacoes/{id}/pedidos`), permitir enviar um pedido (`POST /api/pedidos/{id}/enviar`), baixar o resultado em XLSX (`GET /api/cotacoes/{id}/resultado.xlsx`) e baixar o PDF de um pedido (`GET /api/pedidos/{id}.pdf`). Quando a API indicar que um item foi `decididoPorDesempate`, a tela SHALL exibir um indicador visual junto ao preço desse item, sem recalcular ou inferir o empate.
@@ -296,3 +310,22 @@ A animação de entrada escalonada das linhas da lista de Cotações SHALL ocorr
 
 - **WHEN** o admin troca o filtro de status
 - **THEN** a lista atualizada aparece sem o efeito de fade-in escalonado que só deve ocorrer na carga inicial da página
+
+### Requirement: Navegação entre as telas de Cotações via breadcrumb
+
+O sistema SHALL exibir, na tela de detalhe da Cotação e na tela de Resultado da apuração, uma trilha de navegação (breadcrumb) numa linha própria acima do título, nunca dividindo espaço com botões de ação. A trilha SHALL refletir a hierarquia `Cotações › {título da Cotação}` (detalhe) ou `Cotações › {título da Cotação} › Resultado` (resultado); todo segmento exceto o atual SHALL ser um link navegável.
+
+#### Scenario: Breadcrumb na tela de detalhe
+
+- **WHEN** o Comprador abre o detalhe de uma Cotação
+- **THEN** a trilha mostra "Cotações › {título da Cotação}", com "Cotações" navegável para a lista e o título da Cotação como segmento atual (não clicável)
+
+#### Scenario: Breadcrumb na tela de resultado
+
+- **WHEN** o Comprador abre o resultado de uma Cotação apurada
+- **THEN** a trilha mostra "Cotações › {título da Cotação} › Resultado", com "Cotações" e o título da Cotação navegáveis (o título leva de volta ao detalhe) e "Resultado" como segmento atual
+
+#### Scenario: Breadcrumb não compete por espaço com ações da tela
+
+- **WHEN** a tela de resultado exibe o botão "Baixar XLSX" (ou a tela de detalhe exibe seus botões de transição de estado)
+- **THEN** o breadcrumb permanece em sua própria linha, sem quebrar ou se sobrepor a esses botões em nenhuma largura de tela
