@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { PackageX, Trash2, Plus, Minus } from 'lucide-react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
+import { type Produto } from '@/admin/produtos/produtos.schema'
 import { type ItemCotacao } from './cotacoes.schema'
 import { useRemoverItem, useAtualizarQuantidadeItem } from './cotacoes.api'
 import { useInsightProdutos } from '../analise/analise.api'
@@ -101,6 +102,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
 
   const [formAberto, setFormAberto] = useState(false)
   const [cadastroAberto, setCadastroAberto] = useState(false)
+  const [produtoParaEditar, setProdutoParaEditar] = useState<Produto | undefined>(undefined)
   
   const ids = itens.map(i => i.produtoId)
   const query = useInsightProdutos(ids)
@@ -114,9 +116,16 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
     setCadastroAberto(true) // Open the product creation modal
   }
 
+  function abrirEdicao(produto: Produto) {
+    setFormAberto(false) // Close the items list modal
+    setProdutoParaEditar(produto)
+    setCadastroAberto(true) // Open the product form (edit mode)
+  }
+
   function aoCadastrarProduto() {
     setCadastroAberto(false)
-    setFormAberto(true) // Re-open the items list modal after creating
+    setProdutoParaEditar(undefined)
+    setFormAberto(true) // Re-open the items list modal after creating/editing
   }
 
   return (
@@ -136,16 +145,17 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
         open={editavel && formAberto}
         onClose={fecharForm}
         aoCadastrarProduto={abrirCadastro}
+        aoEditarProduto={abrirEdicao}
       />
 
-      {/* 2º modal: cadastro de Produto sem sair da montagem da Cotação. */}
+      {/* 2º modal: cadastro/edição de Produto sem sair da montagem da Cotação. */}
       <Dialog
         open={editavel && cadastroAberto}
         onClose={() => setCadastroAberto(false)}
         size="lg"
         ariaLabel="Cadastrar novo produto"
       >
-        <ProdutoForm aoSalvar={aoCadastrarProduto} />
+        <ProdutoForm aoSalvar={aoCadastrarProduto} produtoParaEditar={produtoParaEditar} />
       </Dialog>
 
       <div className="overflow-x-auto">
