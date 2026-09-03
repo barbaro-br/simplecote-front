@@ -246,6 +246,12 @@
     to   { opacity: 1; }
 }
 .fade-in { animation: fadeIn 0.3s ease both; }
+@keyframes swipeDemo {
+  0%, 20%   { transform: translateX(0); }
+  45%, 70%  { transform: translateX(-56px); }
+  100%      { transform: translateX(0); }
+}
+.swipe-demo { animation: swipeDemo 2.8s ease-in-out infinite; }
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -283,6 +289,7 @@
   .pop,
   .success-pop,
   .fade-in,
+  .swipe-demo,
   .animate-shimmer,
   [class*="animate-in"],
   [class*="zoom-in"],

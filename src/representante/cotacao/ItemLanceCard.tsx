@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { moeda } from '@/shared/format/formatters'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 import { precoSchema, type ItemLance } from './cotacao-token.schema'
@@ -25,6 +26,7 @@ type Props = {
   autoFocus?: boolean
   status: StatusCelula | undefined
   erro: string | undefined
+  novo?: boolean
   aoAssentar: (patch: { preco?: number; naoCotado?: boolean }) => void
   /** Avisa a página, a cada tecla/gesto, se o campo tem valor — alimenta a bolha de progresso. */
   onPrecoChange?: (itemCotacaoId: string, temPreco: boolean) => void
@@ -37,6 +39,7 @@ export function ItemLanceCard({
   autoFocus,
   status,
   erro,
+  novo,
   aoAssentar,
   onPrecoChange,
 }: Props) {
@@ -54,9 +57,14 @@ export function ItemLanceCard({
     if (valorDebounced === '') {
       // Campo esvaziado: só sincroniza "não cotado" se antes havia um preço enviado.
       if (jaEnviadoRef.current !== '') {
+        const valorAnterior = jaEnviadoRef.current
         jaEnviadoRef.current = ''
         setErroLocal(null)
         aoAssentar({ naoCotado: true })
+        toast('Preço removido', {
+          position: 'top-center',
+          action: { label: 'Desfazer', onClick: () => setPrecoTexto(valorAnterior) },
+        })
       }
       return
     }
@@ -183,6 +191,11 @@ export function ItemLanceCard({
               </span>
             )}
             <span className="truncate text-[13px] font-semibold capitalize">{item.nome}</span>
+            {novo && (
+              <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary">
+                Novo
+              </span>
+            )}
             <span className="flex-1" />
             {item.codigoBarras && (
               <span className="shrink-0 font-mono text-[10px] tracking-wide text-muted-foreground">
