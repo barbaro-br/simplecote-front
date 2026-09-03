@@ -11,7 +11,7 @@ O sistema SHALL, em `/cotacao/:token`, carregar `GET /public/cotacoes/:token` e 
 
 O contexto da cotação — título, saudação pelo `representanteNome`, linha de Empresa/Comprador e a linha de **Prazo** — SHALL ficar na **barra de ação fixa na base da viewport** (`sticky bottom`, junto do botão "Finalizar" e da bolha de progresso; ver requisito "Finalização com trava e limpeza da fila"), não mais num cabeçalho fixo no topo. A lista de itens SHALL ocupar a área rolável a partir do topo da tela. A linha de Prazo SHALL exibir a data/hora formatada e SHALL ganhar realce visual de alerta (ex.: texto vermelho) quando faltar menos de 2 horas para o `prazo` ou o prazo já tiver vencido (neste caso exibindo "Prazo expirado"); com prazo folgado ou ausente, a linha SHALL usar um tom neutro. O cálculo de "faltam menos de 2h" SHALL usar o horário atual do dispositivo comparado ao `prazo` da API.
 
-Cada item SHALL ser apresentado num card com hierarquia visual clara: o **nome do produto** em destaque, o **código de barras** (quando houver) alinhado à direita numa fonte discreta, uma linha compacta com a unidade/embalagem e a quantidade a comprar (ex.: "fd com 20un · comprar 10"), e o **campo de preço da embalagem** com prefixo "R$" e área de toque ampliada. O card SHALL exibir um **indicador de status automático**, derivado apenas de haver ou não valor no campo de preço: **visto (✓) verde** quando há preço, **marca (✗) vermelha** quando o campo está vazio. NÃO SHALL existir toggle, checkbox ou qualquer outro controle explícito para "não cotar" um item: a ausência de preço no campo é, por si, a marcação de "não cotado". Quando o campo de um item passa de vazio para preenchido, a borda do card SHALL dar um flash verde breve. O comportamento de autosave por item permanece o mesmo.
+Cada item SHALL ser apresentado num card com hierarquia visual clara: o **nome do produto** em destaque, o **código de barras** (quando houver) alinhado à direita numa fonte discreta, uma linha compacta com a unidade/embalagem e a quantidade a comprar (ex.: "fd com 20un · comprar 10"), e o **campo de preço da embalagem** com prefixo "R$" e área de toque ampliada, com o rótulo **"P.CX"** exibido acima do campo. O **preço unitário derivado** SHALL ser exibido como texto simples (nunca como input), com o rótulo **"P.UN"** acima do valor — ambos os rótulos ("P.CX"/"P.UN") SHALL ficar sempre na mesma posição relativa (acima do respectivo valor) em todo item, nunca ao lado. O card SHALL exibir um **indicador de status automático**, derivado apenas de haver ou não valor no campo de preço: **visto (✓) verde** quando há preço, **marca (✗) vermelha** quando o campo está vazio. NÃO SHALL existir toggle, checkbox ou qualquer outro controle explícito para "não cotar" um item: a ausência de preço no campo é, por si, a marcação de "não cotado". Quando o campo de um item passa de vazio para preenchido, a borda do card SHALL dar um flash verde breve. O comportamento de autosave por item permanece o mesmo.
 
 As cores da tela SHALL usar os tokens de tema do projeto (`primary`, `success`, `destructive`, `background`, subárvore `.tema-claro`); não SHALL haver cores fixas de marca embutidas no componente.
 
@@ -56,6 +56,16 @@ As cores da tela SHALL usar os tokens de tema do projeto (`primary`, `success`, 
 #### Scenario: Flash verde ao preencher um preço
 - **WHEN** o preço de um item passa de vazio para preenchido
 - **THEN** a borda do card pisca em verde por um instante e depois volta ao normal
+
+#### Scenario: Rótulos de preço ficam acima dos valores, não ao lado
+
+- **WHEN** o representante visualiza um item da lista
+- **THEN** o rótulo "P.CX" aparece acima do campo de preço da embalagem, e o rótulo "P.UN" aparece acima do preço unitário calculado, sem que o texto de nenhum dos dois transborde seu espaço nem sobreponha o ícone de status ao lado
+
+#### Scenario: Preço unitário continua sendo só leitura
+
+- **WHEN** o representante visualiza o preço unitário de um item
+- **THEN** ele aparece como texto simples (não um campo editável), com peso visual menor que o preço da embalagem
 
 ### Requirement: Autosave por item com máquina de estados de sincronização
 O sistema SHALL, para cada item independentemente, aplicar o fluxo `digitando → (debounce de 800ms sem nova tecla) → enviando → sincronizado | falhou`. Ao entrar em `enviando`, o sistema SHALL gravar uma entrada na fila local e disparar `PUT /public/cotacoes/:token/lances` contendo **apenas aquele item**: `{ itemCotacaoId, preco }` quando há preço no campo, ou `{ itemCotacaoId, naoCotado: true }` quando um campo antes preenchido passou a vazio. Um campo que nunca teve preço não dispara requisição. Cada célula SHALL ter indicador visual distinto para `sincronizado` e `falhou`; o representante nunca precisa entender fila ou retry. No sucesso da requisição, o sistema SHALL aplicar a resposta ao estado local da cotação (incluindo o `precoUnitario` recalculado pelo backend), para que o valor unitário do item reflita imediatamente, sem exigir refresh manual. Enquanto a célula está em `enviando` e ainda não há `precoUnitario` vindo do servidor, o campo de preço unitário SHALL exibir o estado "calculando…" em vez de "—".
@@ -175,7 +185,7 @@ Quando o `POST /public/cotacoes/:token/finalizar` retornar 204, o sistema SHALL 
 - **THEN** a tela passa a mostrar os itens em modo somente leitura, sem a barra de ação fixa
 
 ### Requirement: Tutorial de primeira visita
-Na primeira vez que o dispositivo abre `/cotacao/:token`, o sistema SHALL exibir um tutorial de onboarding em 3 passos: (1) anatomia do card de produto, (2) os estados do indicador (visto verde com preço / X vermelho sem preço) e que ele é automático, (3) tela final "pronto para começar", com uma **demonstração visual animada** do gesto de deslizar (o mini-card de exemplo desliza para a esquerda e revela o ícone de limpar), não só uma descrição em texto. O tutorial SHALL ter indicador de progresso (pontos), botão "Próximo" / "Entendi, vamos lá!" no último passo, e "Pular tutorial" nos passos anteriores ao último. Depois de concluído ou pulado, o sistema SHALL registrar isso em `localStorage` e não exibir o tutorial de novo naquele dispositivo. O tutorial NÃO SHALL bloquear o carregamento dos dados por trás dele.
+Na primeira vez que o dispositivo abre `/cotacao/:token`, o sistema SHALL exibir um tutorial de onboarding em 3 passos: (1) anatomia do card de produto — incluindo o que os rótulos **"P.CX"** (preço da embalagem) e **"P.UN"** (preço unitário calculado) significam, (2) os estados do indicador (visto verde com preço / X vermelho sem preço) e que ele é automático, (3) tela final "pronto para começar", com uma **demonstração visual animada** do gesto de deslizar (o mini-card de exemplo desliza para a esquerda e revela o ícone de limpar), não só uma descrição em texto. O tutorial SHALL ter indicador de progresso (pontos), botão "Próximo" / "Entendi, vamos lá!" no último passo, e "Pular tutorial" nos passos anteriores ao último. Depois de concluído ou pulado, o sistema SHALL registrar isso em `localStorage` e não exibir o tutorial de novo naquele dispositivo. O tutorial NÃO SHALL bloquear o carregamento dos dados por trás dele.
 
 #### Scenario: Primeira visita mostra o tutorial
 - **WHEN** o dispositivo abre `/cotacao/:token` e não há registro de tutorial concluído no `localStorage`
@@ -192,6 +202,11 @@ Na primeira vez que o dispositivo abre `/cotacao/:token`, o sistema SHALL exibir
 #### Scenario: Último passo demonstra o gesto de deslizar
 - **WHEN** o representante chega no último passo do tutorial
 - **THEN** o mini-card de exemplo anima um deslize para a esquerda, revelando o ícone de limpar, demonstrando o gesto (não só descrevendo em texto)
+
+#### Scenario: Primeiro passo explica as abreviações de preço
+
+- **WHEN** o representante vê o primeiro passo do tutorial (anatomia do card)
+- **THEN** o passo explica o que "P.CX" e "P.UN" significam
 
 ### Requirement: Visualização e confirmação do pedido por token
 O sistema SHALL, em `/pedido/:token`, carregar `GET /public/pedidos/:token`, permitir baixar o PDF (`GET /public/pedidos/:token.pdf`) e confirmar o pedido (`POST /public/pedidos/:token/confirmar`). A tela SHALL ser mobile-first e sem a navegação do painel.
