@@ -11,7 +11,7 @@ import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
-import { useCotacoes, useDuplicarCotacao, useExcluirCotacao } from './cotacoes.api'
+import { useCotacoes, useExcluirCotacao } from './cotacoes.api'
 import { ConfirmarDialog } from './ConfirmarDialog'
 
 const STATUS: { valor: StatusCotacao; rotulo: string }[] = [
@@ -62,24 +62,9 @@ export function CotacoesPage() {
   }
 
   const navigate = useNavigate()
-  const duplicar = useDuplicarCotacao()
   const excluir = useExcluirCotacao()
   const [erroAcao, setErroAcao] = useState<string | null>(null)
   const [idAExcluir, setIdAExcluir] = useState<string | null>(null)
-
-  function aoDuplicar(id: string) {
-    setErroAcao(null)
-    duplicar.mutate(id, {
-      onSuccess: (data) =>
-        navigate(`/admin/cotacoes/${data.cotacao.id}`, { state: { omitidos: data.omitidos } }),
-      onError: (e) => {
-        if (e instanceof SessaoExpiradaError) return
-        setErroAcao(
-          e instanceof ApiError ? e.message : 'Não foi possível duplicar. Tente novamente.',
-        )
-      },
-    })
-  }
 
   function aoExcluirConfirmado() {
     if (!idAExcluir) return
@@ -274,14 +259,6 @@ export function CotacoesPage() {
                           {
                             label: 'Ver detalhes',
                             onSelect: () => navigate(`/admin/cotacoes/${c.id}`),
-                          },
-                          {
-                            label:
-                              duplicar.isPending && duplicar.variables === c.id
-                                ? 'Duplicando…'
-                                : 'Duplicar',
-                            onSelect: () => aoDuplicar(c.id),
-                            disabled: duplicar.isPending,
                           },
                           {
                             label: 'Excluir',

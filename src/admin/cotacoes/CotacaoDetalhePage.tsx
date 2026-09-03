@@ -1,23 +1,27 @@
 import { useState } from 'react'
-import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
+import { Dialog } from '@/shared/components/ui/dialog'
 import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { StatusBadge } from '@/shared/components/StatusBadge'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { Breadcrumb } from '@/shared/components/ui/breadcrumb'
+import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
 import { ItensSection } from './ItensSection'
 import { GradeAoVivoTabela } from './GradeAoVivoTabela'
+import { AdicionarItemModal } from './AdicionarItemModal'
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { AbrirCotacaoDialog } from './AbrirCotacaoDialog'
 import { RepresentantesModal } from './RepresentantesModal'
-import type { ItemOmitido } from './cotacoes.schema'
+import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
+import type { Produto } from '@/admin/produtos/produtos.schema'
+import type { ItemCotacao } from './cotacoes.schema'
 import {
   useAbrir,
   useApurar,
   useCancelar,
   useCotacao,
-  useDuplicarCotacao,
   useEncerrar,
   useReabrir,
   useConvidarEmpresas,
@@ -28,9 +32,30 @@ import {
 
 type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | null
 
-function GradeAoVivoContainer({ id, status }: { id: string; status: string }) {
+function GradeAoVivoContainer({ id, status, itens }: { id: string; status: string; itens: ItemCotacao[] }) {
   useGradeAoVivoSSE(id, status)
   const { data: grade, isLoading, error } = useGradeAoVivo(id)
+
+  const [adicionarItemAberto, setAdicionarItemAberto] = useState(false)
+  const [cadastroAberto, setCadastroAberto] = useState(false)
+  const [produtoParaEditar, setProdutoParaEditar] = useState<Produto | undefined>(undefined)
+
+  function abrirCadastro() {
+    setAdicionarItemAberto(false)
+    setCadastroAberto(true)
+  }
+
+  function abrirEdicao(produto: Produto) {
+    setAdicionarItemAberto(false)
+    setProdutoParaEditar(produto)
+    setCadastroAberto(true)
+  }
+
+  function aoCadastrarProduto() {
+    setCadastroAberto(false)
+    setProdutoParaEditar(undefined)
+    setAdicionarItemAberto(true)
+  }
 
   if (isLoading) return <p className="text-sm text-muted-foreground p-4">Carregando grade ao vivo…</p>
   if (error) return <p className="text-sm text-destructive p-4">Erro ao carregar grade ao vivo: {error.message}</p>
@@ -40,19 +65,42 @@ function GradeAoVivoContainer({ id, status }: { id: string; status: string }) {
     <div className="space-y-4 mt-8">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold tracking-tight">Grade de Respostas (Ao Vivo)</h2>
-        <span className="text-sm text-muted-foreground font-medium bg-muted px-2.5 py-0.5 rounded-full">
-          {grade.respondidos} / {grade.totalParticipantes} respondidos
-        </span>
+        <div className="flex items-center gap-2">
+          {status === 'ABERTA' && (
+            <Button size="sm" onClick={() => setAdicionarItemAberto(true)}>
+              Adicionar item
+            </Button>
+          )}
+          <span className="text-sm text-muted-foreground font-medium bg-muted px-2.5 py-0.5 rounded-full">
+            {grade.respondidos} / {grade.totalParticipantes} respondidos
+          </span>
+        </div>
       </div>
       <GradeAoVivoTabela cotacaoId={id} grade={grade} />
+
+      <AdicionarItemModal
+        cotacaoId={id}
+        itens={itens}
+        open={adicionarItemAberto}
+        onClose={() => setAdicionarItemAberto(false)}
+        aoCadastrarProduto={abrirCadastro}
+        aoEditarProduto={abrirEdicao}
+      />
+
+      <Dialog
+        open={cadastroAberto}
+        onClose={() => setCadastroAberto(false)}
+        size="lg"
+        ariaLabel="Cadastrar novo produto"
+      >
+        <ProdutoForm aoSalvar={aoCadastrarProduto} produtoParaEditar={produtoParaEditar} />
+      </Dialog>
     </div>
   )
 }
 
 export function CotacaoDetalhePage() {
   const { id = '' } = useParams()
-  const location = useLocation()
-  const navigate = useNavigate()
   const { data: cotacao, isLoading, error } = useCotacao(id)
 
   const abrir = useAbrir(id)
@@ -60,7 +108,6 @@ export function CotacaoDetalhePage() {
   const reabrir = useReabrir(id)
   const cancelar = useCancelar(id)
   const apurar = useApurar(id)
-  const duplicar = useDuplicarCotacao()
   const convidar = useConvidarEmpresas(id)
   const participantes = useParticipantes(id)
 
@@ -68,24 +115,6 @@ export function CotacaoDetalhePage() {
   const [erroAcao, setErroAcao] = useState<string | null>(null)
   const [modalConviteAberto, setModalConviteAberto] = useState(false)
   const [empresasSelecionadas, setEmpresasSelecionadas] = useState<string[]>([])
-
-  // Itens que a duplicação não conseguiu copiar chegam via `state` da navegação.
-  // Deriva no render (a rota `/admin/cotacoes/:id` não remonta ao trocar de id) e
-  // guarda só a `key` da navegação dispensada, pra o aviso voltar numa duplicação nova.
-  const [dispensadoKey, setDispensadoKey] = useState<string | null>(null)
-  const omitidos: ItemOmitido[] =
-    dispensadoKey === location.key
-      ? []
-      : ((location.state as { omitidos?: ItemOmitido[] } | null)?.omitidos ?? [])
-
-  function aoDuplicar() {
-    setErroAcao(null)
-    duplicar.mutate(id, {
-      onSuccess: (data) =>
-        navigate(`/admin/cotacoes/${data.cotacao.id}`, { state: { omitidos: data.omitidos } }),
-      onError: tratarErro,
-    })
-  }
 
   function tratarErro(e: unknown) {
     if (e instanceof SessaoExpiradaError) return
@@ -113,19 +142,28 @@ export function CotacaoDetalhePage() {
     reabrir.isPending ||
     cancelar.isPending ||
     apurar.isPending ||
-    duplicar.isPending ||
     convidar.isPending
 
   const pendentesVisualizou = (participantes.data ?? []).filter(
     (p) => p.participanteStatus === 'VISUALIZOU',
   )
 
+  const acoesMenu: {
+    label: string
+    onSelect: () => void
+    disabled?: boolean
+    variant?: 'default' | 'destructive'
+  }[] = []
+  if (status !== 'CANCELADA' && status !== 'PEDIDOS_GERADOS') {
+    acoesMenu.push({ label: 'Cancelar', onSelect: () => setDialog('cancelar'), variant: 'destructive' })
+  }
+
   return (
     <PageContainer maxWidth="4xl" className="space-y-6">
       <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border shadow-sm mb-6 space-y-4">
         <Breadcrumb
           items={[
-            { label: 'Cotações', to: '/admin' },
+            { label: 'Cotações', to: '/admin/cotacoes' },
             { label: cotacao.titulo },
           ]}
         />
@@ -141,18 +179,12 @@ export function CotacaoDetalhePage() {
           {status === 'RASCUNHO' && (
             <>
               <Button onClick={() => setDialog('abrir')}>Abrir</Button>
-              <Button variant="destructive" onClick={() => setDialog('cancelar')}>
-                Cancelar
-              </Button>
             </>
           )}
           {status === 'ABERTA' && (
             <>
               <Button onClick={() => executar(() => encerrar.mutateAsync())} disabled={acaoPendente}>
                 Encerrar
-              </Button>
-              <Button variant="destructive" onClick={() => setDialog('cancelar')}>
-                Cancelar
               </Button>
             </>
           )}
@@ -162,9 +194,6 @@ export function CotacaoDetalhePage() {
                 Reabrir
               </Button>
               <Button onClick={() => setDialog('apurar')}>Apurar</Button>
-              <Button variant="destructive" onClick={() => setDialog('cancelar')}>
-                Cancelar
-              </Button>
             </>
           )}
           {status === 'PEDIDOS_GERADOS' && (
@@ -176,9 +205,7 @@ export function CotacaoDetalhePage() {
             </Link>
           )}
 
-          <Button variant="secondary" onClick={aoDuplicar} disabled={acaoPendente}>
-            {duplicar.isPending ? 'Duplicando…' : 'Duplicar'}
-          </Button>
+          {acoesMenu.length > 0 && <MenuAcoes items={acoesMenu} />}
 
           {status !== 'CANCELADA' && (
             <Button variant="outline" onClick={() => setModalConviteAberto(true)}>
@@ -187,32 +214,6 @@ export function CotacaoDetalhePage() {
           )}
         </div>
       </div>
-
-      {omitidos.length > 0 && (
-        <div
-          role="status"
-          className="flex items-start justify-between gap-3 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm"
-        >
-          <div>
-            <p className="font-medium">Itens não copiados nesta duplicação:</p>
-            <ul className="mt-1 list-disc pl-5 text-muted-foreground">
-              {omitidos.map((o) => (
-                <li key={o.produtoId}>
-                  {o.nome} — {o.motivo}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <button
-            type="button"
-            onClick={() => setDispensadoKey(location.key)}
-            className="text-muted-foreground hover:text-foreground"
-            aria-label="Dispensar aviso"
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {erroAcao && (
         <div role="alert" className="text-sm text-destructive font-medium">
@@ -225,7 +226,7 @@ export function CotacaoDetalhePage() {
           <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={status === 'RASCUNHO'} />
         )}
 
-        {(status === 'ABERTA' || status === 'ENCERRADA') && <GradeAoVivoContainer id={id} status={status} />}
+        {(status === 'ABERTA' || status === 'ENCERRADA') && <GradeAoVivoContainer id={id} status={status} itens={cotacao.itens} />}
       </div>
 
       {dialog === 'abrir' && (

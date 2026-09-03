@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Copy, PlusCircle } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
-import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { Card } from '@/shared/components/ui/card'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { criarCotacaoSchema, type CriarCotacaoValues } from './cotacoes.schema'
@@ -18,6 +18,7 @@ export function NovaCotacaoPage() {
   const { data: cotacoes } = useCotacoes()
   const [erroServidor, setErroServidor] = useState<string | null>(null)
   const [origemId, setOrigemId] = useState('')
+  const [modo, setModo] = useState<'branco' | 'duplicar'>('branco')
 
   const {
     register,
@@ -68,73 +69,92 @@ export function NovaCotacaoPage() {
       )}
 
       <Card>
-        <CardHeader className="pb-4 items-start flex-col gap-1">
-          <CardTitle>Criar em branco</CardTitle>
-          <p className="text-sm text-muted-foreground font-normal">Inicie uma cotação vazia e adicione os itens depois.</p>
-        </CardHeader>
-        <div className="px-6 pb-6">
-          <form onSubmit={handleSubmit(aoCriar)} noValidate className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="titulo" className="text-sm font-medium">
-                Título
-              </label>
-              <Input 
-                id="titulo" 
-                {...register('titulo')} 
-                placeholder="Ex: Compra semanal — hortifruti" 
-                className={errors.titulo ? "border-destructive focus-visible:ring-destructive" : ""}
-              />
-              {errors.titulo && (
-                <p className="text-[13px] text-destructive font-medium">{errors.titulo.message}</p>
-              )}
+        <div
+          role="tablist"
+          aria-label="Modo de criação"
+          className="grid grid-cols-2 gap-1 rounded-t-xl bg-muted p-1"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={modo === 'branco'}
+            onClick={() => setModo('branco')}
+            className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              modo === 'branco'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Em branco
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={modo === 'duplicar'}
+            onClick={() => setModo('duplicar')}
+            className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              modo === 'duplicar'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Duplicar existente
+          </button>
+        </div>
+
+        <div className="p-6">
+          {modo === 'branco' ? (
+            <form onSubmit={handleSubmit(aoCriar)} noValidate className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="titulo" className="text-sm font-medium">
+                  Título
+                </label>
+                <Input 
+                  id="titulo" 
+                  {...register('titulo')} 
+                  placeholder="Ex: Compra semanal — hortifruti" 
+                  className={errors.titulo ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                {errors.titulo && (
+                  <p className="text-[13px] text-destructive font-medium">{errors.titulo.message}</p>
+                )}
+              </div>
+              <Button type="submit" disabled={isSubmitting || criar.isPending} className="w-full">
+                <PlusCircle className="mr-2 size-4" />
+                {criar.isPending ? 'Criando…' : 'Criar cotação'}
+              </Button>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="origem" className="text-sm font-medium">
+                  Cotação de origem
+                </label>
+                <select
+                  id="origem"
+                  value={origemId}
+                  onChange={(e) => setOrigemId(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">Selecione uma cotação…</option>
+                  {(cotacoes ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.titulo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                type="button"
+                onClick={aoDuplicar}
+                disabled={!origemId || duplicar.isPending}
+                className="w-full"
+              >
+                <Copy className="mr-2 size-4" />
+                {duplicar.isPending ? 'Duplicando…' : 'Duplicar cotação'}
+              </Button>
             </div>
-            <Button type="submit" disabled={isSubmitting || criar.isPending} className="w-full">
-              <PlusCircle className="mr-2 size-4" />
-              {criar.isPending ? 'Criando…' : 'Criar cotação'}
-            </Button>
-          </form>
-        </div>
-      </Card>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground font-medium">Ou</span>
-        </div>
-      </div>
-
-      <Card className="bg-muted/30 border-muted">
-        <CardHeader className="pb-4 items-start flex-col gap-1">
-          <CardTitle className="text-lg">Duplicar existente</CardTitle>
-          <p className="text-sm text-muted-foreground font-normal">Crie uma cópia exata de uma cotação anterior (mesmos itens e convidados).</p>
-        </CardHeader>
-        <div className="px-6 pb-6 space-y-4">
-          <div className="flex gap-3">
-            <select
-              aria-label="Cotação de origem"
-              value={origemId}
-              onChange={(e) => setOrigemId(e.target.value)}
-              className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="">Selecione uma cotação…</option>
-              {(cotacoes ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.titulo}
-                </option>
-              ))}
-            </select>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={aoDuplicar}
-              disabled={!origemId || duplicar.isPending}
-            >
-              <Copy className="mr-2 size-4 text-muted-foreground" />
-              {duplicar.isPending ? 'Duplicando…' : 'Duplicar'}
-            </Button>
-          </div>
+          )}
         </div>
       </Card>
     </PageContainer>
