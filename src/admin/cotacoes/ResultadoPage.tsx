@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { FileDown, Send } from 'lucide-react'
+import { ChevronRight, FileDown, Send } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
@@ -39,6 +39,19 @@ export function ResultadoPage() {
   const cotacao = useCotacao(id)
   const enviar = useEnviarPedido(id)
   const [erro, setErro] = useState<string | null>(null)
+  const [expandidos, setExpandidos] = useState<Set<string>>(new Set())
+
+  function alternarExpansao(pedidoId: string) {
+    setExpandidos((prev) => {
+      const novo = new Set(prev)
+      if (novo.has(pedidoId)) {
+        novo.delete(pedidoId)
+      } else {
+        novo.add(pedidoId)
+      }
+      return novo
+    })
+  }
 
   function tratarErro(e: unknown) {
     if (e instanceof SessaoExpiradaError) return
@@ -49,20 +62,6 @@ export function ResultadoPage() {
   if (resultado.error)
     return <p className="p-6 text-destructive">Erro ao carregar o resultado: {resultado.error.message}</p>
   if (!resultado.data) return null
-
-  // "Vencedor por item" derivado dos pedidos — um pedido por Empresa vencedora,
-  // cada um com seus itens e preços já calculados pelo backend.
-  const vencedores = resultado.data.pedidos.flatMap((pedido) =>
-    pedido.itens.map((item) => ({
-      chave: `${pedido.id}-${item.id}`,
-      produto: item.nomeSnapshot,
-      empresa: pedido.empresaNome,
-      precoEmbalagem: item.precoEmbalagem,
-      precoUnitario: item.precoUnitario,
-      subtotal: item.subtotal,
-      decididoPorDesempate: item.decididoPorDesempate,
-    })),
-  )
 
   const listaPedidos = pedidos.data ?? resultado.data.pedidos
 
@@ -115,94 +114,101 @@ export function ResultadoPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {listaPedidos.map((pedido) => (
-                <tr key={pedido.id} className="hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-3 font-medium">{pedido.empresaNome}</td>
-                  <td className="px-4 py-3">
-                    <PedidoStatusBadge status={pedido.status} />
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-foreground">{moeda(pedido.total)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setErro(null)
-                          baixarPedidoPdf(pedido.id).catch(tratarErro)
-                        }}
-                      >
-                        <FileDown className="mr-2 size-4 text-muted-foreground" />
-                        PDF
-                      </Button>
-                      {pedido.status === 'GERADO' && (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setErro(null)
-                            enviar.mutateAsync(pedido.id).catch(tratarErro)
-                          }}
-                          disabled={enviar.isPending}
-                        >
-                          <Send className="mr-2 size-3.5" />
-                          Enviar
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {listaPedidos.map((pedido) => {
+                const expandido = expandidos.has(pedido.id)
+                return (
+                  <Fragment key={pedido.id}>
+                    <tr className="hover:bg-muted/50 transition-colors">
+                      <td className="px-4 py-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => alternarExpansao(pedido.id)}
+                            aria-expanded={expandido}
+                            aria-label={`${expandido ? 'Recolher' : 'Expandir'} itens de ${pedido.empresaNome}`}
+                            className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          >
+                            <ChevronRight className={`size-4 transition-transform ${expandido ? 'rotate-90' : ''}`} />
+                          </button>
+                          {pedido.empresaNome}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <PedidoStatusBadge status={pedido.status} />
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums text-foreground">{moeda(pedido.total)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setErro(null)
+                              baixarPedidoPdf(pedido.id).catch(tratarErro)
+                            }}
+                          >
+                            <FileDown className="mr-2 size-4 text-muted-foreground" />
+                            PDF
+                          </Button>
+                          {pedido.status === 'GERADO' && (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setErro(null)
+                                enviar.mutateAsync(pedido.id).catch(tratarErro)
+                              }}
+                              disabled={enviar.isPending}
+                            >
+                              <Send className="mr-2 size-3.5" />
+                              Enviar
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {expandido && (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-3 bg-muted/20">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="text-left text-muted-foreground">
+                                <th className="py-1.5 font-medium">Produto</th>
+                                <th className="py-1.5 font-medium text-right">Preço embalagem</th>
+                                <th className="py-1.5 font-medium text-right">Preço unitário</th>
+                                <th className="py-1.5 font-medium text-right">Subtotal</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                              {pedido.itens.map((item) => (
+                                <tr key={item.id}>
+                                  <td className="py-2 font-medium">{item.nomeSnapshot}</td>
+                                  <td className="py-2 text-right tabular-nums text-muted-foreground">{moeda(item.precoEmbalagem)}</td>
+                                  <td className="py-2 text-right tabular-nums text-muted-foreground">
+                                    {moeda(item.precoUnitario)}
+                                    {item.decididoPorDesempate && (
+                                      <span
+                                        title="Empate de preço — decidido por ordem de resposta"
+                                        className="ml-2 inline-flex items-center rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning"
+                                      >
+                                        Empate
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-2 text-right tabular-nums text-foreground font-medium">{moeda(item.subtotal)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                )
+              })}
               {listaPedidos.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
                     Nenhum pedido foi gerado nesta apuração.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle>Vencedor por item</CardTitle>
-        </CardHeader>
-        <div className="overflow-x-auto border-t">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr className="text-left text-muted-foreground">
-                <th className="px-4 py-3 font-medium">Produto</th>
-                <th className="px-4 py-3 font-medium">Empresa vencedora</th>
-                <th className="px-4 py-3 font-medium text-right">Preço embalagem</th>
-                <th className="px-4 py-3 font-medium text-right">Preço unitário</th>
-                <th className="px-4 py-3 font-medium text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {vencedores.map((v) => (
-                <tr key={v.chave} className="hover:bg-muted/50 transition-colors">
-                  <td className="px-4 py-3 font-medium">{v.produto}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{v.empresa}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{moeda(v.precoEmbalagem)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                    {moeda(v.precoUnitario)}
-                    {v.decididoPorDesempate && (
-                      <span
-                        title="Empate de preço — decidido por ordem de resposta"
-                        className="ml-2 inline-flex items-center rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning"
-                      >
-                        Empate
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-foreground font-medium">{moeda(v.subtotal)}</td>
-                </tr>
-              ))}
-              {vencedores.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhum vencedor.
                   </td>
                 </tr>
               )}

@@ -140,11 +140,15 @@ O sistema SHALL permitir acessar a lista de convidados através de uma ação pr
 
 O compartilhamento do link mágico SHALL oferecer três formas, com o link e uma mensagem amigável já montados pelo front:
 
-- **WhatsApp** como ação primária: SHALL abrir `https://wa.me/` numa nova aba com o parâmetro `text` contendo uma mensagem no formato `Olá {representanteNome}, aqui está o link da cotação {titulo} da {empresaNome}. O prazo é até {prazo}. Acesse: {linkMagico}`, com todo o texto URL-encodado. Quando o telefone do representante estiver disponível na resposta da API, a URL SHALL ser `https://wa.me/{telefone-somente-digitos}?text=...`; quando não estiver, SHALL ser `https://wa.me/?text=...` (o Comprador escolhe o contato). Se o `prazo` for nulo, a frase do prazo SHALL ser omitida.
-- **E-mail** como ação primária: SHALL abrir um link `mailto:` com `subject` (ex.: `Cotação {titulo}`) e `body` iguais à mensagem do WhatsApp, ambos URL-encodados. Quando o e-mail do representante estiver disponível na resposta da API, ele SHALL ser o destinatário (`mailto:{email}?subject=...&body=...`); quando não estiver, SHALL abrir sem destinatário.
-- **Copiar link** SHALL deixar de ser ação primária e passar a ser uma ação secundária, junto com **Reenviar convite** e **Remover empresa**, dentro de um menu suspenso ("Mais ações") por participante. Copiar SHALL escrever `linkMagico` na área de transferência e dar retorno visual temporário ("Copiado!").
+- **WhatsApp**: SHALL abrir `https://wa.me/` numa nova aba com o parâmetro `text` contendo uma mensagem no formato `Olá {representanteNome}, aqui está o link da cotação {titulo} da {empresaNome}. O prazo é até {prazo}. Acesse: {linkMagico}`, com todo o texto URL-encodado. Quando o telefone do representante estiver disponível na resposta da API, a URL SHALL ser `https://wa.me/{telefone-somente-digitos}?text=...`; quando não estiver, SHALL ser `https://wa.me/?text=...` (o Comprador escolhe o contato). Se o `prazo` for nulo, a frase do prazo SHALL ser omitida.
+- **E-mail**: SHALL abrir um link `mailto:` com `subject` (ex.: `Cotação {titulo}`) e `body` iguais à mensagem do WhatsApp, ambos URL-encodados. Quando o e-mail do representante estiver disponível na resposta da API, ele SHALL ser o destinatário (`mailto:{email}?subject=...&body=...`); quando não estiver, SHALL abrir sem destinatário.
+- **Copiar link**: SHALL escrever `linkMagico` na área de transferência e dar retorno visual temporário ("Copiado!").
 
 Ações de compartilhamento SHALL estar disponíveis para qualquer participante já listado, independentemente do estado da Cotação (diferente de "Convidar", que só vale em `RASCUNHO`).
+
+Para um participante já convidado, todas as ações da linha (as três de compartilhamento acima, Reenviar convite, e — quando aplicável — Finalizar/Reabrir resposta, ver requirement "Correção de lance e reabertura de resposta pelo admin") SHALL ficar agrupadas num único menu overflow ("⋯", componente `MenuAcoes` já usado em outras telas do produto), não como ícones ou botões soltos na linha. "Convidar" SHALL continuar como botão visível de primeiro nível, já que só existe para uma empresa ainda não convidada (linha sem badge de status nem outras ações concorrendo por espaço).
+
+A coluna de nome da empresa e do representante SHALL ter largura mínima garantida na linha, de modo a não ser a primeira a ceder espaço quando outros elementos (badge de status, menu de ações) estão presentes na mesma linha — nomes de tamanho comum NÃO SHALL truncar para um único caractere.
 
 O status de convite (`conviteStatus`) SHALL ser exibido, **enquanto o participante ainda está em `CONVIDADO`**, distinguindo três casos: `ENVIADO` (rótulo neutro/positivo), `FALHOU` (rótulo com destaque visual de erro, indicando que o sistema tentou enviar e não conseguiu — nunca o mesmo rótulo usado para "ainda não enviado"), e qualquer outro valor SHALL cair no rótulo neutro atual de "Não enviado". A partir do momento em que o `participanteStatus` deixa de ser `CONVIDADO` (`VISUALIZOU` ou `RESPONDIDO`), o badge de status de convite NÃO SHALL ser exibido — o participante comprovadamente teve acesso à cotação por algum caminho, então o estado de entrega do e-mail automático deixa de ser informação relevante ali.
 
@@ -157,7 +161,7 @@ O status de convite (`conviteStatus`) SHALL ser exibido, **enquanto o participan
 - **THEN** o cabeçalho com o título da cotação, status, e botões principais de ação (incluindo o acesso aos Representantes) permanece visível no topo da tela
 
 #### Scenario: Reenviar convite
-- **WHEN** o Comprador abre o menu "Mais ações" de um participante e aciona "Reenviar"
+- **WHEN** o Comprador abre o menu "⋯" de um participante e aciona "Reenviar convite"
 - **THEN** o sistema chama a API de reenvio e reflete o novo status/instante do convite
 
 #### Scenario: Erro de convite é exibido
@@ -169,7 +173,7 @@ O status de convite (`conviteStatus`) SHALL ser exibido, **enquanto o participan
 - **THEN** a lista de participantes e seus status de convite são carregados de `GET /api/cotacoes/{id}/participantes`
 
 #### Scenario: Enviar link por WhatsApp com mensagem pronta
-- **WHEN** o Comprador aciona "Enviar por WhatsApp" num participante
+- **WHEN** o Comprador abre o menu "⋯" de um participante e aciona "Enviar por WhatsApp"
 - **THEN** abre-se uma nova aba em `https://wa.me/...?text=...` com a mensagem contendo o nome do representante, o título da cotação, a empresa, o prazo (quando houver) e o link mágico, todo o texto URL-encodado; o número do representante é usado no caminho quando a API o fornece
 
 #### Scenario: Enviar link por e-mail com mensagem pronta
@@ -177,7 +181,7 @@ O status de convite (`conviteStatus`) SHALL ser exibido, **enquanto o participan
 - **THEN** abre-se um rascunho `mailto:` com assunto e corpo pré-preenchidos com a mesma mensagem; o e-mail do representante é usado como destinatário quando a API o fornece, senão o rascunho abre sem destinatário
 
 #### Scenario: Copiar link continua disponível como ação secundária
-- **WHEN** o Comprador abre o menu "Mais ações" de um participante e aciona "Copiar link"
+- **WHEN** o Comprador abre o menu "⋯" de um participante e aciona "Copiar link"
 - **THEN** o `linkMagico` é escrito na área de transferência e o item mostra retorno visual temporário de confirmação
 
 #### Scenario: Falha real de envio é distinguida de "ainda não enviado"
@@ -190,8 +194,18 @@ O status de convite (`conviteStatus`) SHALL ser exibido, **enquanto o participan
 - **WHEN** um participante com `conviteStatus: FALHOU` passa a `VISUALIZOU` ou `RESPONDIDO`
 - **THEN** o badge de "Falha no envio" deixa de aparecer para esse participante, mesmo que `conviteStatus` continue `FALHOU` — só o badge de status de resposta (`Visualizou`/`Respondido`) é exibido
 
+#### Scenario: Ações de um participante ficam agrupadas num único menu
+
+- **WHEN** o Comprador vê a linha de um participante já convidado (independentemente do `participanteStatus`)
+- **THEN** as ações implementadas e aplicáveis àquela linha (Enviar por WhatsApp, Copiar link, Reenviar convite, e Finalizar/Reabrir resposta quando aplicável) ficam dentro do menu "⋯", sem ícones ou botões de ação soltos na linha
+
+#### Scenario: Nome não trunca para um único caractere
+
+- **WHEN** a linha de um participante exibe simultaneamente um badge de status de resposta e o menu "⋯" de ações
+- **THEN** o nome da empresa e o nome do representante continuam legíveis (não truncam para um único caractere) para nomes de tamanho comum
+
 ### Requirement: Transições de estado com confirmação
-O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação antes de `encerrar`, `cancelar` e `apurar`, nomeando a consequência de cada uma. O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação. "Cancelar" SHALL ser acionado a partir de um menu overflow ("⋯"), separado dos botões de transição primária (Abrir/Encerrar/Reabrir/Apurar) — nunca um botão de primeiro nível na mesma fileira.
+O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação antes de `encerrar`, `cancelar` e `apurar`, nomeando a consequência de cada uma. O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação. "Cancelar" SHALL ser exibido como um botão visível (não dentro de um menu overflow), com estilo visual de alerta (ex.: contorno/texto na cor de destrutivo, sem ser um botão preenchido do mesmo peso das transições primárias) e separado espacialmente dos botões de transição primária (Abrir/Encerrar/Reabrir/Apurar) na fileira de ações, para reduzir o risco de clique acidental mesmo estando visível. "Cancelar" SHALL só ser exibido quando `status` é `RASCUNHO` ou `ABERTA` — a única combinação que o backend (`Cotacao.cancelar()`) de fato aceita; em qualquer outro status (`ENCERRADA`, `PEDIDOS_GERADOS`, `CANCELADA`) o botão NÃO SHALL ser exibido.
 
 #### Scenario: Abrir a Cotação
 - **WHEN** o Comprador informa um `prazo` e confirma "Abrir"
@@ -202,7 +216,7 @@ O sistema SHALL disparar as transições de estado da Cotação — abrir com `p
 - **THEN** um diálogo descreve a consequência (a apuração não pode ser desfeita; itens sem lance ficam sem vencedor) e só após a confirmação a API é chamada
 
 #### Scenario: Cancelar pede confirmação explícita
-- **WHEN** o Comprador abre o menu overflow ("⋯") e aciona "Cancelar"
+- **WHEN** o Comprador aciona "Cancelar"
 - **THEN** um diálogo nomeia a consequência antes de a API ser chamada
 
 #### Scenario: Transição inválida mostra o erro do backend
@@ -215,17 +229,36 @@ O sistema SHALL disparar as transições de estado da Cotação — abrir com `p
 
 #### Scenario: Cancelar fica no menu overflow, não em botão visível
 
-- **WHEN** o Comprador abre o detalhe de uma Cotação em qualquer status onde "Cancelar" é aplicável
-- **THEN** "Cancelar" aparece dentro do menu "⋯", não como botão de primeiro nível ao lado das transições de estado
+- **WHEN** o Comprador abre o detalhe de uma Cotação `RASCUNHO` ou `ABERTA` (status onde "Cancelar" é aplicável)
+- **THEN** "Cancelar" aparece como botão visível de estilo de alerta, separado espacialmente do grupo de botões de transição primária — não dentro de um menu overflow
 
 #### Scenario: Encerrar pede confirmação explícita
 
 - **WHEN** o Comprador aciona "Encerrar" numa Cotação `ABERTA`
 - **THEN** um diálogo descreve a consequência (a Cotação para de aceitar novas respostas dos representantes; pode ser reaberta depois) e só após a confirmação a API é chamada
 
+#### Scenario: Cancelar não aparece em ENCERRADA
+
+- **WHEN** o Comprador abre o detalhe de uma Cotação `ENCERRADA`
+- **THEN** o botão "Cancelar" não é exibido — o backend só aceita cancelar a partir de `RASCUNHO` ou `ABERTA`
+
+#### Scenario: Cancelar não aparece em PEDIDOS_GERADOS ou CANCELADA
+
+- **WHEN** o Comprador abre o detalhe de uma Cotação `PEDIDOS_GERADOS` ou já `CANCELADA`
+- **THEN** o botão "Cancelar" não é exibido
+
+### Requirement: Cabeçalho fixo da tela de detalhe sem elevação de cartão
+
+O cabeçalho sticky da tela de detalhe da Cotação (título, status, prazo e botões de ação) SHALL usar uma borda inferior sutil para se separar visualmente do conteúdo rolável, mas NÃO SHALL usar sombra de elevação — o cabeçalho não deve parecer um cartão/caixa flutuante sobreposto à página.
+
+#### Scenario: Cabeçalho sem sombra elevada
+
+- **WHEN** o Comprador visualiza a tela de detalhe de uma Cotação, com ou sem rolagem da lista de itens
+- **THEN** o cabeçalho fixo é separado do conteúdo por uma borda inferior, sem sombra projetada
+
 ### Requirement: Correção de lance e reabertura de resposta pelo admin
 
-O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`), reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`) e finalizar em nome de um participante `VISUALIZOU` (`POST /api/participantes/{participanteId}/finalizar`), a partir da tela de detalhe da Cotação. A grade de respostas é lida de `GET /api/cotacoes/{id}/ao-vivo` sem polling (o polling é Fase 2). O modal de participantes (`RepresentantesModal`, acionado pelo botão "Representantes") SHALL, quando a Cotação está `ABERTA` ou `ENCERRADA`, mostrar em cada linha também o status da resposta (`Convidado`/`Visualizou`/`Respondido`) e a ação de finalizar/reabrir aplicável, ao lado do status de convite já exibido ali. Quando a Cotação não está `ABERTA` nem `ENCERRADA` (ex.: `PEDIDOS_GERADOS`, `CANCELADA`), os botões "Finalizar" e "Reabrir resposta" NÃO SHALL ser exibidos, mesmo que o participante esteja em `VISUALIZOU`/`RESPONDIDO` — essas ações não têm efeito útil fora desse intervalo.
+O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`), reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`) e finalizar em nome de um participante `VISUALIZOU` (`POST /api/participantes/{participanteId}/finalizar`), a partir da tela de detalhe da Cotação. A grade de respostas é lida de `GET /api/cotacoes/{id}/ao-vivo` sem polling (o polling é Fase 2). O modal de participantes (`RepresentantesModal`, acionado pelo botão "Representantes") SHALL, quando a Cotação está `ABERTA` ou `ENCERRADA`, mostrar em cada linha também o status da resposta (`Convidado`/`Visualizou`/`Respondido`) e, dentro do menu "⋯" daquela linha, o item de finalizar/reabrir aplicável, junto das demais ações do participante (ver requirement "Convidar Empresas"). Quando a Cotação não está `ABERTA` nem `ENCERRADA` (ex.: `PEDIDOS_GERADOS`, `CANCELADA`), o menu "⋯" NÃO SHALL oferecer "Finalizar" nem "Reabrir resposta", mesmo que o participante esteja em `VISUALIZOU`/`RESPONDIDO` — essas ações não têm efeito útil fora desse intervalo.
 
 #### Scenario: Admin corrige um lance
 
@@ -234,26 +267,28 @@ O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um partici
 
 #### Scenario: Admin reabre a resposta de um participante
 
-- **WHEN** o Comprador aciona "Reabrir resposta" num participante `RESPONDIDO`
+- **WHEN** o Comprador abre o menu "⋯" de um participante `RESPONDIDO` e aciona "Reabrir resposta"
 - **THEN** o sistema chama a API e o participante volta a aparecer como editável pelo representante
 
 #### Scenario: Admin finaliza a resposta de um participante que não finalizou
 
-- **WHEN** o Comprador aciona "Finalizar em nome do participante" num participante `VISUALIZOU` dentro do modal "Representantes"
+- **WHEN** o Comprador abre o menu "⋯" de um participante `VISUALIZOU` e aciona "Finalizar"
 - **THEN** o sistema chama `POST /api/participantes/{participanteId}/finalizar` e a linha desse participante passa a mostrar `Respondido`
 
 #### Scenario: Modal "Representantes" reflete o status de resposta de cada um
 
 - **WHEN** o Comprador abre o modal "Representantes" de uma Cotação `ABERTA` ou `ENCERRADA` com participantes em status de resposta diferentes
-- **THEN** cada participante aparece com seu status de resposta atual e só o botão de ação aplicável àquele status (`Finalizar` para `Visualizou`, `Reabrir resposta` para `Respondido`, nenhum para `Convidado`), ao lado das informações de convite já existentes
+- **THEN** cada participante aparece com seu status de resposta atual (badge) e, dentro do seu menu "⋯", só o item de ação aplicável àquele status (`Finalizar` para `Visualizou`, `Reabrir resposta` para `Respondido`, nenhum dos dois para `Convidado`), junto das demais ações do participante
 
 #### Scenario: Ações de finalizar/reabrir somem fora de ABERTA/ENCERRADA
 
 - **WHEN** o Comprador abre o modal "Representantes" de uma Cotação em `PEDIDOS_GERADOS` ou `CANCELADA`
-- **THEN** nenhuma linha exibe os botões "Finalizar" ou "Reabrir resposta", independentemente do status de resposta de cada participante
+- **THEN** nenhum menu "⋯" oferece os itens "Finalizar" ou "Reabrir resposta", independentemente do status de resposta de cada participante
 
 ### Requirement: Resultado da apuração e pedidos
 O sistema SHALL exibir o resultado de uma Cotação apurada (`GET /api/cotacoes/{id}/resultado`): vencedor por item identificado pelo **nome da Empresa** (não do representante), preço da embalagem e preço unitário derivado que já vêm prontos da API. SHALL listar os pedidos gerados (`GET /api/cotacoes/{id}/pedidos`), permitir enviar um pedido (`POST /api/pedidos/{id}/enviar`), baixar o resultado em XLSX (`GET /api/cotacoes/{id}/resultado.xlsx`) e baixar o PDF de um pedido (`GET /api/pedidos/{id}.pdf`). Quando a API indicar que um item foi `decididoPorDesempate`, a tela SHALL exibir um indicador visual junto ao preço desse item, sem recalcular ou inferir o empate.
+
+A lista de pedidos e o vencedor por item SHALL ser apresentados numa única lista de pedidos (não duas tabelas separadas). Cada linha de pedido (Empresa, status, total, ações) SHALL ter um controle de expandir/recolher; ao expandir, os itens vencidos daquele pedido (produto, preço da embalagem, preço unitário — com o indicador de empate quando aplicável — e subtotal) SHALL aparecer inline, abaixo da linha do pedido, sem navegar para outra tela. Itens sem vencedor (sem lance algum, portanto sem pedido associado) SHALL continuar sendo listados à parte, abaixo da lista de pedidos.
 
 #### Scenario: Ver resultado com vencedores por empresa
 - **WHEN** o Comprador abre o resultado de uma Cotação `PEDIDOS_GERADOS`
@@ -275,6 +310,21 @@ O sistema SHALL exibir o resultado de uma Cotação apurada (`GET /api/cotacoes/
 - **WHEN** um item do resultado vem com `decididoPorDesempate: false` (ou o campo ausente)
 - **THEN** nenhum indicador de empate é exibido para esse item
 
+#### Scenario: Expandir um pedido mostra seus itens vencidos
+
+- **WHEN** o Comprador aciona o controle de expandir na linha de um pedido
+- **THEN** os itens vencidos daquele pedido aparecem inline, abaixo da linha, com produto, preço da embalagem, preço unitário (com indicador de empate quando aplicável) e subtotal — sem navegar para outra tela
+
+#### Scenario: Recolher volta a esconder os itens
+
+- **WHEN** o Comprador aciona o controle de recolher numa linha de pedido já expandida
+- **THEN** os itens daquele pedido deixam de ser exibidos, voltando ao estado compacto
+
+#### Scenario: Itens sem vencedor continuam visíveis fora da lista de pedidos
+
+- **WHEN** a apuração tem um ou mais itens sem nenhum lance vencedor
+- **THEN** esses itens aparecem listados abaixo da lista de pedidos, independente de qualquer pedido estar expandido ou não
+
 ### Requirement: Grade ao vivo da Cotação
 O sistema SHALL oferecer a grade de acompanhamento da Cotação **diretamente na tela de detalhe da Cotação**, substituindo as seções estáticas de Itens e Respostas. A grade: linhas = itens, colunas = Empresas convidadas, cada célula com o status do lance (`COTADO`/`NAO_COTADO`/`PENDENTE`), o preço da embalagem e o preço unitário derivado que vêm prontos de `GET /api/cotacoes/{id}/ao-vivo`; o menor preço unitário do item SHALL ser destacado. A tela SHALL mostrar a contagem de participantes `RESPONDIDO` sobre o total. O front NÃO SHALL recalcular preço, vencedor ou menor preço — tudo vem da API.
 
@@ -284,9 +334,11 @@ Cada célula SHALL permitir ao Comprador corrigir aquele lance a partir da grade
 
 Para suportar alto volume de dados, a grade SHALL ter seu **próprio contêiner de rolagem vertical** (altura limitada, `overflow-y` próprio — não depender do scroll da página inteira), dentro do qual o **cabeçalho fica fixo no topo** (nomes das Empresas) e a **coluna do item fica fixa à esquerda**, ambos com fundo opaco e uma hierarquia de z-index (células base abaixo, coluna do item acima, cabeçalho acima, canto de interseção no topo). A coluna "Item" SHALL usar peso de fonte reduzido (`font-normal`/`font-medium`), de modo que o foco visual recaia sobre os preços e status.
 
+Cada célula SHALL exibir seu conteúdo numa única linha visual: uma célula `COTADO` SHALL mostrar o preço da embalagem e o preço unitário derivado juntos numa linha (ex.: "R$ 12,50 · R$ 0,50/un"), sem rótulo de texto "COTADO" nem "MENOR" — o destaque do menor preço unitário do item SHALL ser transmitido só por cor de fundo/borda, não por texto adicional. Uma célula `PENDENTE`/`NAO_COTADO` SHALL mostrar só a pílula de status, sem linha adicional de traço/preenchimento vazio.
+
 #### Scenario: Grade renderiza o estado das células
 - **WHEN** o Comprador abre o detalhe de uma Cotação `ABERTA` com itens e Empresas convidadas
-- **THEN** a grade é exibida diretamente, e cada célula mostra o status do lance daquela Empresa para aquele item, o preço quando `COTADO`, e o menor preço unitário do item aparece destacado; o cabeçalho mostra "respondidos / total"
+- **THEN** a grade é exibida diretamente, e cada célula mostra o status do lance daquela Empresa para aquele item, o preço quando `COTADO`, e o menor preço unitário do item aparece destacado por cor; o cabeçalho mostra "respondidos / total"
 
 #### Scenario: Polling liga em ABERTA e desliga fora
 - **WHEN** a Cotação está `ABERTA`
@@ -303,6 +355,16 @@ Para suportar alto volume de dados, a grade SHALL ter seu **próprio contêiner 
 #### Scenario: Cabeçalho e item permanecem visíveis ao rolar
 - **WHEN** o Comprador rola verticalmente uma grade com 70+ itens (dentro do contêiner de rolagem da própria grade), ou horizontalmente com 10+ Empresas
 - **THEN** o cabeçalho com os nomes das Empresas permanece visível no topo da grade e a coluna do nome do item permanece visível à esquerda, sem sobreposição com o cabeçalho fixo da página nem com o corpo da tabela
+
+#### Scenario: Célula cotada numa linha só, sem rótulo "COTADO"/"MENOR"
+
+- **WHEN** o Comprador vê uma célula `COTADO` na grade
+- **THEN** o preço da embalagem e o preço unitário aparecem juntos numa única linha, sem os textos "COTADO" ou "MENOR" — quando é o menor preço do item, isso é indicado só por cor de fundo/borda
+
+#### Scenario: Célula vazia numa linha só
+
+- **WHEN** o Comprador vê uma célula `PENDENTE` ou `NAO_COTADO` na grade
+- **THEN** aparece só a pílula de status, sem linha adicional de traço abaixo dela
 
 ### Requirement: Ajuste de quantidade na grade
 
@@ -351,7 +413,7 @@ A grade ao vivo SHALL apresentar os valores financeiros alinhados à direita, os
 #### Scenario: Preço cotado padrão em formato de cartão
 
 - **WHEN** uma célula está `COTADO` sem ser o menor preço do item
-- **THEN** o preço aparece num bloco com borda fina e fundo branco (`rounded-md`), no mesmo formato de cartão do bloco do menor preço
+- **THEN** o preço e o preço unitário aparecem juntos numa única linha, num bloco com borda fina e fundo padrão (`rounded-md`), no mesmo formato de cartão do bloco do menor preço (que se distingue só pela cor)
 
 ### Requirement: Animação de entrada só na carga inicial
 
