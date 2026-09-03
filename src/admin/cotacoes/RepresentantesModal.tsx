@@ -3,7 +3,13 @@ import { Dialog } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
 import { useEmpresas } from '@/admin/empresas/empresas.api'
 import { useRepresentantes } from '@/admin/representantes/representantes.api'
-import { useParticipantes, useReenviarConvite, useConvidarEmpresas } from './cotacoes.api'
+import {
+  useParticipantes,
+  useReenviarConvite,
+  useConvidarEmpresas,
+  useFinalizarParticipante,
+  useReabrirParticipante,
+} from './cotacoes.api'
 import { Send, Copy, Check, Mail, Phone, Search, X, Info, CheckCircle2, Loader2 } from 'lucide-react'
 import { urlWhatsApp } from './compartilhar-link'
 import { toast } from 'sonner'
@@ -38,10 +44,24 @@ function obterCorPorNome(nome: string) {
   return coresAvatar[soma % coresAvatar.length]
 }
 
+const ROTULO_STATUS_RESPOSTA: Record<'CONVIDADO' | 'VISUALIZOU' | 'RESPONDIDO', string> = {
+  CONVIDADO: 'Convidado',
+  VISUALIZOU: 'Visualizou',
+  RESPONDIDO: 'Respondido',
+}
+
+const CLASSE_STATUS_RESPOSTA: Record<'CONVIDADO' | 'VISUALIZOU' | 'RESPONDIDO', string> = {
+  CONVIDADO: 'bg-muted text-muted-foreground border-transparent',
+  VISUALIZOU: 'bg-warning/10 text-warning border-warning/30',
+  RESPONDIDO: 'bg-success/10 text-success-foreground border-success/30',
+}
+
 export function RepresentantesModal({ cotacaoId, status, open, onClose, selecionadas, onToggle }: Props) {
   const participantes = useParticipantes(cotacaoId)
   const reenviar = useReenviarConvite(cotacaoId)
   const convidar = useConvidarEmpresas(cotacaoId)
+  const finalizar = useFinalizarParticipante(cotacaoId)
+  const reabrir = useReabrirParticipante(cotacaoId)
   const { data: empresas } = useEmpresas()
   const { data: reps } = useRepresentantes()
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -253,6 +273,13 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                       </span>
                     )}
 
+                    {/* Status da resposta (apenas se aberta) */}
+                    {isAberta && e.part && (
+                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${CLASSE_STATUS_RESPOSTA[e.part.participanteStatus]}`}>
+                        {ROTULO_STATUS_RESPOSTA[e.part.participanteStatus]}
+                      </span>
+                    )}
+
                     {/* Botão Convidar para Atrasados */}
                     {isAberta && !e.part && (
                       <div className="flex items-center ml-2">
@@ -335,6 +362,47 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                         >
                           {loadingMailId === e.id ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
                         </Button>
+
+                        {e.part.participanteStatus === 'VISUALIZOU' && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={finalizar.isPending}
+                            className="h-8 text-[12px] px-3 rounded-full"
+                            onClick={async (ev) => {
+                              ev.stopPropagation()
+                              try {
+                                await finalizar.mutateAsync(e.part!.participanteId)
+                                toast.success('Resposta finalizada em nome do participante.')
+                              } catch (error) {
+                                toast.error('Erro ao finalizar participante')
+                              }
+                            }}
+                          >
+                            Finalizar
+                          </Button>
+                        )}
+                        {e.part.participanteStatus === 'RESPONDIDO' && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={reabrir.isPending}
+                            className="h-8 text-[12px] px-3 rounded-full"
+                            onClick={async (ev) => {
+                              ev.stopPropagation()
+                              try {
+                                await reabrir.mutateAsync(e.part!.participanteId)
+                                toast.success('Resposta reaberta.')
+                              } catch (error) {
+                                toast.error('Erro ao reabrir participante')
+                              }
+                            }}
+                          >
+                            Reabrir resposta
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>

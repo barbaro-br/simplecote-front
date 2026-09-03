@@ -29,6 +29,24 @@ function novoItem(produtoId: string, quantidade: number, nomeSnapshot = 'Arroz T
   }
 }
 
+function participante(
+  participanteId: string,
+  empresaNome: string,
+  participanteStatus: 'CONVIDADO' | 'VISUALIZOU' | 'RESPONDIDO',
+) {
+  return {
+    participanteId,
+    empresaId: `emp-${participanteId}`,
+    empresaNome,
+    representanteNome: `Rep de ${empresaNome}`,
+    whatsappRepresentante: null,
+    emailRepresentante: null,
+    conviteStatus: 'ENVIADO',
+    participanteStatus,
+    linkMagico: 'https://exemplo.com/token',
+  }
+}
+
 function setup(status: StatusCotacao, itensIniciais: Item[] = []) {
   const state = {
     id: 'c-1',
@@ -116,6 +134,13 @@ test('3.1 — RASCUNHO mostra só Abrir e Cancelar', async () => {
   expect(screen.queryByRole('button', { name: 'Encerrar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Apurar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Reabrir' })).not.toBeInTheDocument()
+})
+
+test('breadcrumb mostra Cotações apontando para /admin e o título como segmento atual', async () => {
+  setup('ABERTA')
+  expect(await screen.findByRole('link', { name: 'Cotações' })).toHaveAttribute('href', '/admin')
+  expect(screen.queryByRole('link', { name: 'Compra semanal' })).not.toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Compra semanal' })).toBeInTheDocument()
 })
 
 test('3.1 — ABERTA mostra Encerrar e Cancelar, não Abrir', async () => {
@@ -310,4 +335,36 @@ test('Caminho Triste: Erro 500 ao tentar Abrir a cotação mantém o modal fecha
 
   // Verifica se o alerta apareceu e a tela não ficou branca
   expect(await screen.findByRole('alert')).toHaveTextContent('Erro na requisição')
+})
+
+test('diálogo de Apurar lista participantes não finalizados (VISUALIZOU)', async () => {
+  setup('ENCERRADA')
+  server.use(
+    http.get('*/api/cotacoes/c-1/participantes', () =>
+      HttpResponse.json([
+        participante('p1', 'Mercado A', 'VISUALIZOU'),
+        participante('p2', 'Mercado B', 'RESPONDIDO'),
+      ]),
+    ),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Apurar' }))
+
+  const dialog = screen.getByRole('dialog')
+  expect(dialog).toHaveTextContent('Participantes que não finalizaram a resposta')
+  expect(within(dialog).getByText('Mercado A')).toBeInTheDocument()
+  expect(within(dialog).queryByText('Mercado B')).not.toBeInTheDocument()
+})
+
+test('diálogo de Apurar sem participantes não finalizados não lista nada', async () => {
+  setup('ENCERRADA')
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Apurar' }))
+
+  const dialog = screen.getByRole('dialog')
+  expect(dialog).not.toHaveTextContent('Participantes que não finalizaram a resposta')
 })
