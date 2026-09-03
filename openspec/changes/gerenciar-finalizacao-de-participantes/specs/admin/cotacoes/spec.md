@@ -25,7 +25,7 @@ O sistema SHALL disparar as transições de estado da Cotação — abrir com `p
 
 ### Requirement: Correção de lance e reabertura de resposta pelo admin
 
-O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`), reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`) e finalizar em nome de um participante `VISUALIZOU` (`POST /api/participantes/{participanteId}/finalizar`), a partir da tela de detalhe da Cotação. A grade de respostas é lida de `GET /api/cotacoes/{id}/ao-vivo` sem polling (o polling é Fase 2). Uma seção de participantes SHALL listar cada participante com seu status (`Convidado`/`Visualizou`/`Respondido`) e as ações de finalizar/reabrir aplicáveis a cada status.
+O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`), reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`) e finalizar em nome de um participante `VISUALIZOU` (`POST /api/participantes/{participanteId}/finalizar`), a partir da tela de detalhe da Cotação. A grade de respostas é lida de `GET /api/cotacoes/{id}/ao-vivo` sem polling (o polling é Fase 2). O modal de participantes (`RepresentantesModal`, acionado pelo botão "Representantes") SHALL, quando a Cotação está `ABERTA` ou `ENCERRADA`, mostrar em cada linha também o status da resposta (`Convidado`/`Visualizou`/`Respondido`) e a ação de finalizar/reabrir aplicável, ao lado do status de convite já exibido ali.
 
 #### Scenario: Admin corrige um lance
 
@@ -39,10 +39,10 @@ O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um partici
 
 #### Scenario: Admin finaliza a resposta de um participante que não finalizou
 
-- **WHEN** o Comprador aciona "Finalizar em nome do participante" num participante `VISUALIZOU`
-- **THEN** o sistema chama `POST /api/participantes/{participanteId}/finalizar` e a seção de participantes passa a mostrar esse participante como `Respondido`
+- **WHEN** o Comprador aciona "Finalizar em nome do participante" num participante `VISUALIZOU` dentro do modal "Representantes"
+- **THEN** o sistema chama `POST /api/participantes/{participanteId}/finalizar` e a linha desse participante passa a mostrar `Respondido`
 
-#### Scenario: Seção de participantes reflete o status de cada um
+#### Scenario: Modal "Representantes" reflete o status de resposta de cada um
 
-- **WHEN** o Comprador abre o detalhe de uma Cotação `ABERTA` ou `ENCERRADA` com participantes em status diferentes
-- **THEN** cada participante aparece com seu status atual e só o botão de ação aplicável àquele status (`Finalizar` para `Visualizou`, `Reabrir resposta` para `Respondido`, nenhum para `Convidado`)
+- **WHEN** o Comprador abre o modal "Representantes" de uma Cotação `ABERTA` ou `ENCERRADA` com participantes em status de resposta diferentes
+- **THEN** cada participante aparece com seu status de resposta atual e só o botão de ação aplicável àquele status (`Finalizar` para `Visualizou`, `Reabrir resposta` para `Respondido`, nenhum para `Convidado`), ao lado das informações de convite já existentes

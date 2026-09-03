@@ -6,9 +6,10 @@ Nota lateral: a spec já descreve "Admin reabre a resposta de um participante" c
 
 ## What Changes
 
-- Nova seção "Participantes" na tela de detalhe da Cotação (visível em `ABERTA`/`ENCERRADA`, ao lado da grade ao vivo): lista cada participante com nome da Empresa/representante e status (`Convidado`/`Visualizou`/`Respondido`).
+- O modal "Representantes" (`RepresentantesModal.tsx`), que já muda de "Convidar Empresas" pra "Representantes Convidados" quando a Cotação está `ABERTA`/`ENCERRADA` e já mostra o status do convite por linha, passa a mostrar também o status da resposta (`Convidado`/`Visualizou`/`Respondido`) e a ação aplicável:
   - Participante `VISUALIZOU`: botão "Finalizar em nome do participante" (novo endpoint do back).
   - Participante `RESPONDIDO`: botão "Reabrir resposta" (endpoint já existente, hook já existente, só faltava a UI).
+  - Decisão explícita: **não** um botão/modal novo — é a mesma lista de participantes vista de dois ângulos (convite e resposta); um segundo modal duplicaria a lista e confundiria o Comprador sobre onde olhar.
 - Diálogo de confirmação de "Apurar" passa a avisar quando existem participantes `VISUALIZOU` (engajaram mas não finalizaram) antes de o Comprador confirmar.
 
 ## Capabilities
@@ -19,12 +20,12 @@ _Nenhuma._
 
 ### Modified Capabilities
 
-- `admin/cotacoes`: o requirement de correção/reabertura de lance pelo admin ganha a ação de finalizar em nome do participante e uma seção de participantes visível na tela; o requirement de transições de estado ganha o aviso de participantes pendentes no diálogo de Apurar.
+- `admin/cotacoes`: o requirement de correção/reabertura de lance pelo admin ganha a ação de finalizar em nome do participante, exibida junto ao status da resposta no modal "Representantes" já existente; o requirement de transições de estado ganha o aviso de participantes pendentes no diálogo de Apurar.
 
 ## Impact
 
 - `src/admin/cotacoes/cotacoes.api.ts` — novo hook `useFinalizarParticipante`, espelhando `useReabrirParticipante`.
-- `src/admin/cotacoes/CotacaoDetalhePage.tsx` — nova seção de participantes; aviso no diálogo de Apurar.
-- Novo componente (ex.: `ParticipantesPainel.tsx`) — lista de participantes com status e ações.
+- `src/admin/cotacoes/RepresentantesModal.tsx` — cada linha (quando `isAberta`) passa a mostrar também o status da resposta e o botão de ação aplicável (`Finalizar`/`Reabrir resposta`), ao lado do que já existe para o convite.
+- `src/admin/cotacoes/CotacaoDetalhePage.tsx` — aviso no diálogo de Apurar (nenhuma seção/modal novo).
 - `src/admin/cotacoes/ConfirmarDialog.tsx` — aceitar conteúdo adicional (`children`) abaixo da descrição, pra caber a lista de pendentes no diálogo de Apurar sem duplicar o componente.
-- **Depende do backend** (`permitir-finalizar-participante-pelo-admin`, `simplecote-back`) para o botão "Finalizar" funcionar; a seção de participantes e o aviso no Apurar (que só leem `GET /api/cotacoes/{id}/participantes`, já existente) funcionam independentemente disso.
+- **Depende do backend** (`permitir-finalizar-participante-pelo-admin`, `simplecote-back`) para o botão "Finalizar" funcionar; o resto (status da resposta no modal e o aviso no Apurar, que só leem `GET /api/cotacoes/{id}/participantes`, já existente) funciona independentemente disso.
