@@ -62,6 +62,8 @@ export function ItemLanceCard({
         setErroLocal(null)
         aoAssentar({ naoCotado: true })
         toast('Preço removido', {
+          id: `preco-removido-${item.itemCotacaoId}`,
+          duration: 4000,
           position: 'top-center',
           action: { label: 'Desfazer', onClick: () => setPrecoTexto(valorAnterior) },
         })

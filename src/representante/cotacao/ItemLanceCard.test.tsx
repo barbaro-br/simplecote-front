@@ -228,6 +228,37 @@ describe('ItemLanceCard', () => {
     await waitFor(() => expect(aoAssentar).toHaveBeenCalledWith({ preco: 10 }))
   })
 
+  it('limpar o mesmo item duas vezes em sequência não empilha toasts', async () => {
+    const user = userEvent.setup()
+    const aoAssentar = vi.fn()
+    render(
+      <>
+        <Toaster />
+        <ItemLanceCard
+          item={{ ...baseItem, preco: 10 }}
+          podeEditar
+          status={undefined}
+          erro={undefined}
+          aoAssentar={aoAssentar}
+        />
+      </>,
+    )
+
+    await user.clear(campo())
+    await sleep(APOS_DEBOUNCE)
+    expect(await screen.findByText('Preço removido')).toBeInTheDocument()
+
+    await user.type(campo(), '20')
+    await sleep(APOS_DEBOUNCE)
+    await waitFor(() => expect(aoAssentar).toHaveBeenCalledWith({ preco: 20 }))
+
+    await user.clear(campo())
+    await sleep(APOS_DEBOUNCE)
+    await waitFor(() => expect(aoAssentar).toHaveBeenCalledWith({ naoCotado: true }))
+
+    expect(screen.getAllByText('Preço removido')).toHaveLength(1)
+  })
+
   it('esvaziar um campo que já estava vazio NÃO dispara o toast', async () => {
     render(
       <>

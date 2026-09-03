@@ -16,13 +16,12 @@ export function contarComPreco(itens: ItemLance[]): number {
   return itens.filter((i) => i.preco != null).length
 }
 
-// Heurística "item novo": o item ainda está PENDENTE enquanto pelo menos um
-// outro item da mesma cotação já foi respondido (COTADO/NAO_COTADO) — sinal de
-// que ele apareceu depois que o representante começou a responder. Inferido só
-// dos status de lance já retornados, sem campo novo do backend.
-export function itemEhNovo(item: ItemLance, todosItens: ItemLance[]): boolean {
-  if (item.statusLance !== 'PENDENTE') return false
-  return todosItens.some(
-    (i) => i.itemCotacaoId !== item.itemCotacaoId && i.statusLance !== 'PENDENTE',
-  )
+// Heurística "item novo": o id do item não estava no conjunto de ids presentes
+// no primeiro carregamento bem-sucedido da cotação nesta visita — sinal de que
+// ele foi adicionado pelo comprador depois que o representante já estava vendo
+// a cotação. Inferido só dos dados já retornados pela API (o conjunto de ids do
+// primeiro load), sem campo novo do backend e sem olhar o statusLance de outros
+// itens.
+export function itemEhNovo(item: ItemLance, idsConhecidos: Set<string>): boolean {
+  return !idsConhecidos.has(item.itemCotacaoId)
 }

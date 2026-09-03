@@ -81,13 +81,13 @@ function Sidebar({ nome, onLogout }: { nome: string; onLogout: () => void }) {
       <div className={`flex items-center mb-8 h-10 ${isExpanded ? 'justify-between' : 'justify-center'}`}>
         <div
           className={`flex items-center gap-2.5 overflow-hidden transition-all duration-300 ${
-            isExpanded ? 'w-full opacity-100' : 'w-0 opacity-0'
+            isExpanded ? 'flex-1 min-w-0 opacity-100' : 'w-0 opacity-0'
           }`}
         >
           <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <ShoppingBag className="size-6" aria-hidden />
           </div>
-          <span className="truncate text-xl font-bold tracking-tight">{nome}</span>
+          <span title={nome} className="min-w-0 flex-1 truncate text-lg font-bold tracking-tight">{nome}</span>
         </div>
 
         {!ehEstreita && (

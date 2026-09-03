@@ -122,6 +122,15 @@ test('exibe o nome da loja configurado no cabeçalho e o item Configurações na
   expect(screen.getByRole('link', { name: 'Configurações' })).toHaveAttribute('href', '/admin/configuracoes')
 })
 
+test('5.2 — o nome da loja ocupa o espaço flexível (flex-1 min-w-0) e usa truncate para só cortar quando necessário', async () => {
+  renderLayout('/admin/produtos')
+
+  const nome = await screen.findByText('Sara Supermercado')
+  expect(nome).toHaveClass('flex-1')
+  expect(nome).toHaveClass('min-w-0')
+  expect(nome).toHaveClass('truncate')
+})
+
 test('logout na sidebar navega para /login', async () => {
   const user = userEvent.setup()
   renderLayout('/admin/produtos')
