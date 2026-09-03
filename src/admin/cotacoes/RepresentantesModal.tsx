@@ -10,7 +10,8 @@ import {
   useFinalizarParticipante,
   useReabrirParticipante,
 } from './cotacoes.api'
-import { Send, Copy, Check, Mail, Phone, Search, X, Info, CheckCircle2, Loader2 } from 'lucide-react'
+import { Send, Mail, Phone, Search, X, Info, CheckCircle2, Loader2 } from 'lucide-react'
+import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
 import { urlWhatsApp } from './compartilhar-link'
 import { toast } from 'sonner'
 
@@ -64,7 +65,6 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const reabrir = useReabrirParticipante(cotacaoId)
   const { data: empresas } = useEmpresas()
   const { data: reps } = useRepresentantes()
-  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [loadingMailId, setLoadingMailId] = useState<string | null>(null)
   const [isEnviando, setIsEnviando] = useState(false)
   const [mostrarNaoConvidados, setMostrarNaoConvidados] = useState(false)
@@ -250,7 +250,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-[8rem]">
                     <div className={`text-sm ${e.isChecked ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} truncate transition-colors`}>
                       {e.nome}
                     </div>
@@ -309,105 +309,76 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                       </div>
                     )}
 
-                    {/* Ações Rápidas (Apenas Aberta) */}
+                    {/* Menu de Ações (Apenas Aberta) */}
                     {isAberta && e.part && (
-                      <div className="flex items-center gap-1 ml-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          title="Enviar por WhatsApp"
-                          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
-                          onClick={(ev) => {
-                            ev.stopPropagation()
-                            const link = e.part!.linkMagico
-                            const msg = `Olá ${e.part!.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação. Acesse: ${link}`
-                            const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
-                            window.open(url, '_blank')
-                          }}
-                        >
-                          <Send className="size-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          title="Copiar Link"
-                          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
-                          onClick={(ev) => {
-                            ev.stopPropagation()
-                            const link = e.part!.linkMagico
-                            navigator.clipboard.writeText(link)
-                            setCopiedId(e.id)
-                            toast.success('Link copiado com sucesso!')
-                            setTimeout(() => setCopiedId(null), 2000)
-                          }}
-                        >
-                          {copiedId === e.id ? <Check className="size-4 text-success-foreground" /> : <Copy className="size-4" />}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          title="Reenviar E-mail"
-                          disabled={loadingMailId === e.id}
-                          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
-                          onClick={async (ev) => {
-                            ev.stopPropagation()
-                            setLoadingMailId(e.id)
-                            try {
-                              await reenviar.mutateAsync(e.part!.participanteId)
-                              toast.success(`E-mail reenviado para ${e.nome}`)
-                            } catch (err) {
-                              toast.error(`Falha ao reenviar e-mail para ${e.nome}`)
-                            } finally {
-                              setLoadingMailId(null)
-                            }
-                          }}
-                        >
-                          {loadingMailId === e.id ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
-                        </Button>
-
-                        {podeGerenciarResposta && e.part.participanteStatus === 'VISUALIZOU' && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={finalizar.isPending}
-                            className="h-8 text-[12px] px-3 rounded-full"
-                            onClick={async (ev) => {
-                              ev.stopPropagation()
-                              try {
-                                await finalizar.mutateAsync(e.part!.participanteId)
-                                toast.success('Resposta finalizada em nome do participante.')
-                              } catch (error) {
-                                toast.error('Erro ao finalizar participante')
-                              }
-                            }}
-                          >
-                            Finalizar
-                          </Button>
-                        )}
-                        {podeGerenciarResposta && e.part.participanteStatus === 'RESPONDIDO' && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={reabrir.isPending}
-                            className="h-8 text-[12px] px-3 rounded-full"
-                            onClick={async (ev) => {
-                              ev.stopPropagation()
-                              try {
-                                await reabrir.mutateAsync(e.part!.participanteId)
-                                toast.success('Resposta reaberta.')
-                              } catch (error) {
-                                toast.error('Erro ao reabrir participante')
-                              }
-                            }}
-                          >
-                            Reabrir resposta
-                          </Button>
-                        )}
+                      <div className="flex items-center ml-2">
+                        <MenuAcoes
+                          items={[
+                            {
+                              label: 'Enviar por WhatsApp',
+                              onSelect: () => {
+                                const link = e.part!.linkMagico
+                                const msg = `Olá ${e.part!.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação. Acesse: ${link}`
+                                const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
+                                window.open(url, '_blank')
+                              },
+                            },
+                            {
+                              label: 'Copiar link',
+                              onSelect: () => {
+                                navigator.clipboard.writeText(e.part!.linkMagico)
+                                toast.success('Link copiado com sucesso!')
+                              },
+                            },
+                            {
+                              label: 'Reenviar convite',
+                              disabled: loadingMailId === e.id,
+                              onSelect: async () => {
+                                setLoadingMailId(e.id)
+                                try {
+                                  await reenviar.mutateAsync(e.part!.participanteId)
+                                  toast.success(`E-mail reenviado para ${e.nome}`)
+                                } catch (err) {
+                                  toast.error(`Falha ao reenviar e-mail para ${e.nome}`)
+                                } finally {
+                                  setLoadingMailId(null)
+                                }
+                              },
+                            },
+                            ...(podeGerenciarResposta && e.part.participanteStatus === 'VISUALIZOU'
+                              ? [
+                                  {
+                                    label: 'Finalizar',
+                                    disabled: finalizar.isPending,
+                                    onSelect: async () => {
+                                      try {
+                                        await finalizar.mutateAsync(e.part!.participanteId)
+                                        toast.success('Resposta finalizada em nome do participante.')
+                                      } catch (error) {
+                                        toast.error('Erro ao finalizar participante')
+                                      }
+                                    },
+                                  },
+                                ]
+                              : []),
+                            ...(podeGerenciarResposta && e.part.participanteStatus === 'RESPONDIDO'
+                              ? [
+                                  {
+                                    label: 'Reabrir resposta',
+                                    disabled: reabrir.isPending,
+                                    onSelect: async () => {
+                                      try {
+                                        await reabrir.mutateAsync(e.part!.participanteId)
+                                        toast.success('Resposta reaberta.')
+                                      } catch (error) {
+                                        toast.error('Erro ao reabrir participante')
+                                      }
+                                    },
+                                  },
+                                ]
+                              : []),
+                          ]}
+                        />
                       </div>
                     )}
                   </div>

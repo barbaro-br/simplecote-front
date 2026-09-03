@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
@@ -68,59 +68,97 @@ function setup(status: string, iniciais: ParticipanteDaCotacao[]) {
   )
 }
 
+async function abrirMenu(user: ReturnType<typeof userEvent.setup>, nomeEmpresa: string) {
+  const linha = (await screen.findByText(nomeEmpresa)).closest('li')
+  if (!linha) throw new Error(`Linha da empresa "${nomeEmpresa}" não encontrada`)
+  await user.click(within(linha).getByTitle('Mais opções'))
+}
+
 test('VISUALIZOU mostra Finalizar (não Reabrir) e RESPONDIDO mostra Reabrir (não Finalizar)', async () => {
   setup('ABERTA', [
     participante('e1', 'Mercado A', 'VISUALIZOU'),
     participante('e2', 'Mercado B', 'RESPONDIDO'),
   ])
+  const user = userEvent.setup()
 
-  await screen.findByRole('button', { name: 'Finalizar' })
+  await screen.findByText('Visualizou')
+  await screen.findByText('Respondido')
 
-  expect(screen.getAllByRole('button', { name: 'Finalizar' })).toHaveLength(1)
-  expect(screen.getAllByRole('button', { name: 'Reabrir resposta' })).toHaveLength(1)
-  expect(screen.getByText('Visualizou')).toBeInTheDocument()
-  expect(screen.getByText('Respondido')).toBeInTheDocument()
+  await abrirMenu(user, 'Mercado A')
+  expect(screen.getByRole('menuitem', { name: 'Finalizar' })).toBeInTheDocument()
+  expect(screen.queryByRole('menuitem', { name: 'Reabrir resposta' })).not.toBeInTheDocument()
+  await user.keyboard('{Escape}')
+
+  await abrirMenu(user, 'Mercado B')
+  expect(screen.getByRole('menuitem', { name: 'Reabrir resposta' })).toBeInTheDocument()
+  expect(screen.queryByRole('menuitem', { name: 'Finalizar' })).not.toBeInTheDocument()
 })
 
 test('Finalizar chama a mutation e a linha passa a refletir Respondido', async () => {
   setup('ABERTA', [participante('e1', 'Mercado A', 'VISUALIZOU')])
   const user = userEvent.setup()
 
-  await user.click(await screen.findByRole('button', { name: 'Finalizar' }))
+  await abrirMenu(user, 'Mercado A')
+  await user.click(screen.getByRole('menuitem', { name: 'Finalizar' }))
 
-  await waitFor(() => {
-    expect(screen.queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
-  })
   expect(await screen.findByText('Respondido')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Reabrir resposta' })).toBeInTheDocument()
+
+  await abrirMenu(user, 'Mercado A')
+  expect(screen.getByRole('menuitem', { name: 'Reabrir resposta' })).toBeInTheDocument()
+  expect(screen.queryByRole('menuitem', { name: 'Finalizar' })).not.toBeInTheDocument()
 })
 
-test('em PEDIDOS_GERADOS, participante RESPONDIDO não mostra o botão "Reabrir resposta"', async () => {
+test('em PEDIDOS_GERADOS, participante RESPONDIDO não mostra "Reabrir resposta" no menu', async () => {
   setup('PEDIDOS_GERADOS', [participante('e1', 'Mercado A', 'RESPONDIDO')])
+  const user = userEvent.setup()
 
   expect(await screen.findByText('Respondido')).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Reabrir resposta' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
+
+  await abrirMenu(user, 'Mercado A')
+  expect(screen.queryByRole('menuitem', { name: 'Reabrir resposta' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('menuitem', { name: 'Finalizar' })).not.toBeInTheDocument()
 })
 
-test('em CANCELADA, participante VISUALIZOU não mostra o botão "Finalizar"', async () => {
+test('em CANCELADA, participante VISUALIZOU não mostra "Finalizar" no menu', async () => {
   setup('CANCELADA', [participante('e1', 'Mercado A', 'VISUALIZOU')])
+  const user = userEvent.setup()
 
   expect(await screen.findByText('Visualizou')).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Reabrir resposta' })).not.toBeInTheDocument()
+
+  await abrirMenu(user, 'Mercado A')
+  expect(screen.queryByRole('menuitem', { name: 'Finalizar' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('menuitem', { name: 'Reabrir resposta' })).not.toBeInTheDocument()
 })
 
-test('em ENCERRADA, os botões Finalizar/Reabrir continuam sendo exibidos (sem regressão)', async () => {
+test('em ENCERRADA, os itens Finalizar/Reabrir continuam sendo exibidos (sem regressão)', async () => {
   setup('ENCERRADA', [
     participante('e1', 'Mercado A', 'VISUALIZOU'),
     participante('e2', 'Mercado B', 'RESPONDIDO'),
   ])
+  const user = userEvent.setup()
 
-  await screen.findByRole('button', { name: 'Finalizar' })
+  await screen.findByText('Visualizou')
+  await screen.findByText('Respondido')
 
-  expect(screen.getAllByRole('button', { name: 'Finalizar' })).toHaveLength(1)
-  expect(screen.getAllByRole('button', { name: 'Reabrir resposta' })).toHaveLength(1)
+  await abrirMenu(user, 'Mercado A')
+  expect(screen.getByRole('menuitem', { name: 'Finalizar' })).toBeInTheDocument()
+  expect(screen.queryByRole('menuitem', { name: 'Reabrir resposta' })).not.toBeInTheDocument()
+  await user.keyboard('{Escape}')
+
+  await abrirMenu(user, 'Mercado B')
+  expect(screen.getByRole('menuitem', { name: 'Reabrir resposta' })).toBeInTheDocument()
+  expect(screen.queryByRole('menuitem', { name: 'Finalizar' })).not.toBeInTheDocument()
+})
+
+test('participante convidado não exibe ações soltas na linha, apenas o menu "⋯"', async () => {
+  setup('ABERTA', [participante('e1', 'Mercado A', 'VISUALIZOU')])
+
+  await screen.findByText('Mercado A')
+
+  expect(screen.queryByTitle('Enviar por WhatsApp')).not.toBeInTheDocument()
+  expect(screen.queryByTitle('Copiar Link')).not.toBeInTheDocument()
+  expect(screen.queryByTitle('Reenviar E-mail')).not.toBeInTheDocument()
+  expect(screen.getByTitle('Mais opções')).toBeInTheDocument()
 })
 
 test('participante com conviteStatus FALHOU exibe rótulo de erro, distinto do "Não enviado"', async () => {

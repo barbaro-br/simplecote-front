@@ -80,6 +80,54 @@ test('célula NAO_COTADO renderiza o estado vazio como badge', () => {
   expect(badge).toHaveClass('rounded-full', 'bg-muted')
 })
 
+test('célula COTADO mostra preço e unitário na mesma linha, sem "COTADO" nem "MENOR"', () => {
+  renderGrade(gradeBase)
+
+  const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
+  expect(celula).toHaveTextContent(/100,00/)
+  expect(celula).toHaveTextContent(/5,00/)
+  expect(screen.queryByText(/COTADO/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/MENOR/i)).not.toBeInTheDocument()
+})
+
+test('célula PENDENTE não renderiza o traço "—" além da pílula', () => {
+  const gradePendente: GridAoVivo = {
+    ...gradeBase,
+    itens: [
+      {
+        ...gradeBase.itens[0],
+        precos: [
+          { participanteId: 'p1', empresaId: 'e1', empresa: 'Atacadão', preco: null, precoUnitario: null, status: 'PENDENTE' },
+        ],
+      },
+    ],
+  }
+
+  renderGrade(gradePendente)
+
+  const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
+  expect(celula).toHaveTextContent('Pendente')
+  expect(celula).not.toHaveTextContent('—')
+})
+
+test('célula COTADO menor preço mantém destaque verde sem o texto "MENOR"', () => {
+  const gradeMenor: GridAoVivo = {
+    ...gradeBase,
+    itens: [
+      {
+        ...gradeBase.itens[0],
+        menorPrecoUnitario: 5,
+      },
+    ],
+  }
+
+  renderGrade(gradeMenor)
+
+  const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
+  expect(celula).toHaveClass('bg-success/5')
+  expect(screen.queryByText(/MENOR/i)).not.toBeInTheDocument()
+})
+
 test('cabeçalho das Empresas e preço padrão alinhados à direita com cartão', () => {
   renderGrade(gradeBase)
 
