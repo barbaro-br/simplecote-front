@@ -138,7 +138,19 @@ describe('ItemLanceCard', () => {
 
   it('mostra o preço unitário quando o item já tem precoUnitario', () => {
     renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
-    expect(screen.getByText(/unit\. R\$\s0,50/)).toBeInTheDocument()
+    expect(screen.getByText(/R\$\s0,50/)).toBeInTheDocument()
+  })
+
+  it('renderiza os rótulos "P.CX" e "P.UN" acima dos valores', () => {
+    renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
+    expect(screen.getByText('P.CX')).toBeInTheDocument()
+    expect(screen.getByText('P.UN')).toBeInTheDocument()
+  })
+
+  it('o preço unitário é texto simples, não um input', () => {
+    renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
+    expect(screen.getByText(/R\$\s0,50/).tagName).toBe('SPAN')
+    expect(screen.getByText(/R\$\s0,50/)).not.toHaveAttribute('type')
   })
 
   it('mostra "calculando…" durante o envio quando ainda não há unitário', async () => {
