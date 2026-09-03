@@ -7,7 +7,6 @@ import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { StatusBadge } from '@/shared/components/StatusBadge'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { Breadcrumb } from '@/shared/components/ui/breadcrumb'
-import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
 import { ItensSection } from './ItensSection'
 import { GradeAoVivoTabela } from './GradeAoVivoTabela'
 import { AdicionarItemModal } from './AdicionarItemModal'
@@ -148,19 +147,9 @@ export function CotacaoDetalhePage() {
     (p) => p.participanteStatus === 'VISUALIZOU',
   )
 
-  const acoesMenu: {
-    label: string
-    onSelect: () => void
-    disabled?: boolean
-    variant?: 'default' | 'destructive'
-  }[] = []
-  if (status !== 'CANCELADA' && status !== 'PEDIDOS_GERADOS') {
-    acoesMenu.push({ label: 'Cancelar', onSelect: () => setDialog('cancelar'), variant: 'destructive' })
-  }
-
   return (
     <PageContainer maxWidth="4xl" className="space-y-6">
-      <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border shadow-sm mb-6 space-y-4">
+      <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border mb-6 space-y-4">
         <Breadcrumb
           items={[
             { label: 'Cotações', to: '/admin/cotacoes' },
@@ -205,13 +194,23 @@ export function CotacaoDetalhePage() {
             </Link>
           )}
 
-          {acoesMenu.length > 0 && <MenuAcoes items={acoesMenu} />}
+          <div className="ml-auto flex items-center gap-2">
+            {(status === 'RASCUNHO' || status === 'ABERTA') && (
+              <Button
+                variant="outline"
+                className="text-destructive border-destructive/40 hover:bg-destructive/10"
+                onClick={() => setDialog('cancelar')}
+              >
+                Cancelar
+              </Button>
+            )}
 
-          {status !== 'CANCELADA' && (
-            <Button variant="outline" onClick={() => setModalConviteAberto(true)}>
-              Representantes
-            </Button>
-          )}
+            {status !== 'CANCELADA' && (
+              <Button variant="outline" onClick={() => setModalConviteAberto(true)}>
+                Representantes
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

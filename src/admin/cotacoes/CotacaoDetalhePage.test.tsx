@@ -126,19 +126,16 @@ function setup(status: StatusCotacao, itensIniciais: Item[] = []) {
   }
 }
 
-test('3.1 — RASCUNHO mostra Abrir e, no menu "⋯", só Cancelar (sem Duplicar nem botões de primeiro nível)', async () => {
+test('3.1 — RASCUNHO mostra Abrir e Cancelar visível (sem menu, sem Duplicar nem outros botões de primeiro nível)', async () => {
   setup('RASCUNHO')
   expect(await screen.findByRole('heading', { name: 'Compra semanal' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Abrir' })).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Duplicar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Encerrar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Apurar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Reabrir' })).not.toBeInTheDocument()
-
-  await userEvent.setup().click(screen.getByRole('button', { name: /mais opções/i }))
-  expect(screen.queryByRole('menuitem', { name: 'Duplicar' })).not.toBeInTheDocument()
-  expect(screen.getByRole('menuitem', { name: 'Cancelar' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /mais opções/i })).not.toBeInTheDocument()
 })
 
 test('breadcrumb mostra Cotações apontando para /admin/cotacoes e o título como segmento atual', async () => {
@@ -148,23 +145,40 @@ test('breadcrumb mostra Cotações apontando para /admin/cotacoes e o título co
   expect(screen.getByRole('heading', { name: 'Compra semanal' })).toBeInTheDocument()
 })
 
-test('3.1 — ABERTA mostra Encerrar, não Abrir; Cancelar fica no menu', async () => {
+test('3.2 — ABERTA mostra Encerrar e Cancelar visível, não Abrir', async () => {
   setup('ABERTA')
   expect(await screen.findByRole('button', { name: 'Encerrar' })).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Abrir' })).not.toBeInTheDocument()
 })
 
-test('Cancelar pelo menu "⋯" abre o diálogo de confirmação existente', async () => {
+test('3.5 — Cancelar visível abre o diálogo de confirmação existente', async () => {
   setup('ABERTA')
   const user = userEvent.setup()
   await screen.findByRole('heading', { name: 'Compra semanal' })
 
-  await user.click(screen.getByRole('button', { name: /mais opções/i }))
-  await user.click(screen.getByRole('menuitem', { name: 'Cancelar' }))
+  await user.click(screen.getByRole('button', { name: 'Cancelar' }))
 
   const dialog = screen.getByRole('dialog')
   expect(dialog).toHaveTextContent('Cancelar a cotação é irreversível')
+})
+
+test('3.3 — em ENCERRADA o botão "Cancelar" não aparece', async () => {
+  setup('ENCERRADA')
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
+})
+
+test('3.4 — em PEDIDOS_GERADOS o botão "Cancelar" não aparece', async () => {
+  setup('PEDIDOS_GERADOS')
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
+})
+
+test('3.4 — em CANCELADA o botão "Cancelar" não aparece', async () => {
+  setup('CANCELADA')
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
 })
 
 test('3.2 — em RASCUNHO adiciona e remove item', async () => {

@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -51,14 +51,14 @@ function pedido(status: string, decididoPorDesempate?: boolean) {
   }
 }
 
-function setup(decididoPorDesempate?: boolean) {
+function setup(decididoPorDesempate?: boolean, itensSemVencedor: Array<{ id: string; nomeSnapshot: string }> = []) {
   const state = { status: 'GERADO' }
   let xlsxChamado = false
   server.use(
     http.get('*/api/cotacoes/c-1/resultado', () =>
       HttpResponse.json({
         pedidos: [pedido(state.status, decididoPorDesempate)],
-        itensSemVencedor: [],
+        itensSemVencedor,
       }),
     ),
     http.get('*/api/cotacoes/c-1', () =>
@@ -99,10 +99,27 @@ function setup(decididoPorDesempate?: boolean) {
   return { getXlsxChamado: () => xlsxChamado }
 }
 
-test('renderiza o vencedor por item pelo nome da Empresa', async () => {
+test('renderiza um só card de pedidos, sem "Vencedor por item" separado', async () => {
   setup()
-  const linha = (await screen.findByRole('cell', { name: 'Arroz Tipo 1 5kg' })).closest('tr')!
-  expect(within(linha).getByText('Atacadão Central')).toBeInTheDocument()
+  expect(await screen.findByText('Pedidos Gerados')).toBeInTheDocument()
+  expect(screen.getByText('Atacadão Central')).toBeInTheDocument()
+  expect(screen.queryByText('Vencedor por item')).not.toBeInTheDocument()
+})
+
+test('expandir um pedido mostra seus itens e recolher esconde de novo', async () => {
+  setup()
+  const user = userEvent.setup()
+
+  await screen.findByText('Atacadão Central')
+  expect(screen.queryByText('Arroz Tipo 1 5kg')).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
+  expect(await screen.findByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Recolher itens de Atacadão Central' }))
+  await waitFor(() => {
+    expect(screen.queryByText('Arroz Tipo 1 5kg')).not.toBeInTheDocument()
+  })
 })
 
 test('breadcrumb mostra Cotações › título › Resultado, com Cotações apontando para /admin/cotacoes', async () => {
@@ -116,21 +133,46 @@ test('breadcrumb mostra Cotações › título › Resultado, com Cotações apo
   expect(screen.queryByRole('link', { name: 'Resultado' })).not.toBeInTheDocument()
 })
 
-test('item com decididoPorDesempate true renderiza o badge Empate', async () => {
+test('item com decididoPorDesempate true renderiza o badge Empate na linha expandida', async () => {
   setup(true)
+  const user = userEvent.setup()
+
+  await screen.findByText('Atacadão Central')
+  expect(screen.queryByText('Empate')).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
   expect(await screen.findByText('Empate')).toBeInTheDocument()
 })
 
 test('item com decididoPorDesempate false não renderiza o badge Empate', async () => {
   setup(false)
-  await screen.findByRole('cell', { name: 'Arroz Tipo 1 5kg' })
+  const user = userEvent.setup()
+
+  await screen.findByText('Atacadão Central')
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
+  expect(await screen.findByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
   expect(screen.queryByText('Empate')).not.toBeInTheDocument()
 })
 
 test('item sem decididoPorDesempate não renderiza o badge Empate', async () => {
   setup()
-  await screen.findByRole('cell', { name: 'Arroz Tipo 1 5kg' })
+  const user = userEvent.setup()
+
+  await screen.findByText('Atacadão Central')
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
+  expect(await screen.findByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
   expect(screen.queryByText('Empate')).not.toBeInTheDocument()
+})
+
+test('"Itens sem vencedor" aparece independente da expansão dos pedidos', async () => {
+  setup(undefined, [{ id: 'isv1', nomeSnapshot: 'Feijão Carioca 1kg' }])
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Itens sem vencedor:')).toBeInTheDocument()
+  expect(screen.getByText('Feijão Carioca 1kg')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
+  expect(screen.getByText('Feijão Carioca 1kg')).toBeInTheDocument()
 })
 
 test('"Enviar" atualiza o status do pedido', async () => {

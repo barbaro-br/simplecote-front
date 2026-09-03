@@ -112,38 +112,25 @@ const LinhaItem = memo(function LinhaItem({
               type="button"
               onClick={() => aoCorrigir(item, celula)}
               aria-label={`Corrigir lance de ${col.empresa} para ${item.nome}`}
-              className={`w-full h-full min-h-[2.5rem] rounded-md px-2 py-1 text-right transition-colors border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+              className={`w-full h-full min-h-[2rem] rounded-md px-2 py-1 text-right transition-colors border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
                 ehMenor 
                   ? 'bg-success/5 border-success/20 ring-1 ring-success/20' 
                   : 'bg-card border-border hover:bg-muted/50'
               }`}
             >
-              <div className="flex items-center justify-end gap-1.5 mb-0.5">
-                {celula.status === 'COTADO' ? (
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-primary">
-                    {rotuloStatus(celula.status)}
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-muted text-muted-foreground text-[10px] font-medium uppercase tracking-wider px-2 py-0.5">
-                    {rotuloStatus(celula.status)}
-                  </span>
-                )}
-                {ehMenor && <span className="text-[10px] font-bold bg-success text-success-foreground px-1.5 py-0.5 rounded-sm uppercase tracking-wider">Menor</span>}
-              </div>
-              
               {celula.status === 'COTADO' && celula.preco != null ? (
-                <div className="flex flex-col">
-                  <span className={`tabular-nums font-semibold ${ehMenor ? 'text-success' : 'text-foreground'}`}>
+                <span className="tabular-nums">
+                  <span className={`font-semibold ${ehMenor ? 'text-success' : 'text-foreground'}`}>
                     {moeda(celula.preco)}
                   </span>
                   {celula.precoUnitario != null && (
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {moeda(celula.precoUnitario)} / un
-                    </span>
+                    <span className="text-xs text-muted-foreground"> · {moeda(celula.precoUnitario)} / un</span>
                   )}
-                </div>
+                </span>
               ) : (
-                <span className="block text-muted-foreground/50 text-sm">—</span>
+                <span className="rounded-full bg-muted text-muted-foreground text-[10px] font-medium uppercase tracking-wider px-2 py-0.5">
+                  {rotuloStatus(celula.status)}
+                </span>
               )}
             </button>
           </td>
