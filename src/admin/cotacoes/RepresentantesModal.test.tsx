@@ -133,3 +133,25 @@ test('participante com conviteStatus FALHOU exibe rótulo de erro, distinto do "
   expect(screen.getByText('Não enviado')).toBeInTheDocument()
   expect(screen.queryByText('Enviado')).not.toBeInTheDocument()
 })
+
+test('participante VISUALIZOU com conviteStatus FALHOU não mostra badge de convite', async () => {
+  setup('ABERTA', [
+    participante('e1', 'Mercado A', 'VISUALIZOU', 'FALHOU'),
+  ])
+
+  expect(await screen.findByText('Visualizou')).toBeInTheDocument()
+  expect(screen.queryByText('Falha no envio')).not.toBeInTheDocument()
+  expect(screen.queryByText('Enviado')).not.toBeInTheDocument()
+  expect(screen.queryByText('Não enviado')).not.toBeInTheDocument()
+})
+
+test('participante RESPONDIDO com conviteStatus FALHOU não mostra badge de convite', async () => {
+  setup('ABERTA', [
+    participante('e1', 'Mercado A', 'RESPONDIDO', 'FALHOU'),
+  ])
+
+  expect(await screen.findByText('Respondido')).toBeInTheDocument()
+  expect(screen.queryByText('Falha no envio')).not.toBeInTheDocument()
+  expect(screen.queryByText('Enviado')).not.toBeInTheDocument()
+  expect(screen.queryByText('Não enviado')).not.toBeInTheDocument()
+})
