@@ -221,7 +221,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                     if (!isAberta) onToggle(e.id)
                   }}
                   className={`
-                    group flex items-center gap-4 px-4 py-3 rounded-xl transition-all
+                    group flex flex-wrap items-center gap-4 px-4 py-3 rounded-xl transition-all
                     ${!isAberta ? 'cursor-pointer hover:bg-muted' : 'bg-transparent'}
                     ${e.isChecked && !isAberta ? 'bg-primary/10 hover:bg-primary/20 ring-1 ring-primary/20 shadow-sm' : ''}
                   `}
@@ -255,7 +255,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                   </div>
 
                   {/* Badges e Ações Direita */}
-                  <div className="shrink-0 flex items-center gap-3">
+                  <div className="shrink-0 flex flex-wrap items-center gap-3">
                     {/* Ícones de Contato */}
                     {!isAberta && (e.repEmail || e.repWhatsapp) && (
                       <div className="flex items-center gap-2 text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors">

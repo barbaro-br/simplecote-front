@@ -105,9 +105,9 @@ test('renderiza o vencedor por item pelo nome da Empresa', async () => {
   expect(within(linha).getByText('Atacadão Central')).toBeInTheDocument()
 })
 
-test('breadcrumb mostra Cotações › título › Resultado, com Cotações apontando para /admin', async () => {
+test('breadcrumb mostra Cotações › título › Resultado, com Cotações apontando para /admin/cotacoes', async () => {
   setup()
-  expect(await screen.findByRole('link', { name: 'Cotações' })).toHaveAttribute('href', '/admin')
+  expect(await screen.findByRole('link', { name: 'Cotações' })).toHaveAttribute('href', '/admin/cotacoes')
   expect(screen.getByRole('link', { name: 'Compra semanal' })).toHaveAttribute(
     'href',
     '/admin/cotacoes/c-1',

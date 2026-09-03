@@ -126,28 +126,45 @@ function setup(status: StatusCotacao, itensIniciais: Item[] = []) {
   }
 }
 
-test('3.1 — RASCUNHO mostra só Abrir e Cancelar', async () => {
+test('3.1 — RASCUNHO mostra Abrir e, no menu "⋯", só Cancelar (sem Duplicar nem botões de primeiro nível)', async () => {
   setup('RASCUNHO')
   expect(await screen.findByRole('heading', { name: 'Compra semanal' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Abrir' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Duplicar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Encerrar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Apurar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Reabrir' })).not.toBeInTheDocument()
+
+  await userEvent.setup().click(screen.getByRole('button', { name: /mais opções/i }))
+  expect(screen.queryByRole('menuitem', { name: 'Duplicar' })).not.toBeInTheDocument()
+  expect(screen.getByRole('menuitem', { name: 'Cancelar' })).toBeInTheDocument()
 })
 
-test('breadcrumb mostra Cotações apontando para /admin e o título como segmento atual', async () => {
+test('breadcrumb mostra Cotações apontando para /admin/cotacoes e o título como segmento atual', async () => {
   setup('ABERTA')
-  expect(await screen.findByRole('link', { name: 'Cotações' })).toHaveAttribute('href', '/admin')
+  expect(await screen.findByRole('link', { name: 'Cotações' })).toHaveAttribute('href', '/admin/cotacoes')
   expect(screen.queryByRole('link', { name: 'Compra semanal' })).not.toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Compra semanal' })).toBeInTheDocument()
 })
 
-test('3.1 — ABERTA mostra Encerrar e Cancelar, não Abrir', async () => {
+test('3.1 — ABERTA mostra Encerrar, não Abrir; Cancelar fica no menu', async () => {
   setup('ABERTA')
   expect(await screen.findByRole('button', { name: 'Encerrar' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Abrir' })).not.toBeInTheDocument()
+})
+
+test('Cancelar pelo menu "⋯" abre o diálogo de confirmação existente', async () => {
+  setup('ABERTA')
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: /mais opções/i }))
+  await user.click(screen.getByRole('menuitem', { name: 'Cancelar' }))
+
+  const dialog = screen.getByRole('dialog')
+  expect(dialog).toHaveTextContent('Cancelar a cotação é irreversível')
 })
 
 test('3.2 — em RASCUNHO adiciona e remove item', async () => {
@@ -205,11 +222,53 @@ test('3.5 — cadastra Produto novo no modal aninhado, volta pré-selecionado e 
   expect(await screen.findByRole('cell', { name: 'Feijão Carioca 1kg' })).toBeInTheDocument()
 })
 
-test('3.2 — em ABERTA os controles de item não aparecem', async () => {
+test('editar produto existente no modal de adicionar abre o form pré-preenchido e salva sem sair da tela', async () => {
+  const produtosEditaveis = [
+    { id: 'p-1', nome: 'Arroz Tipo 1 5kg', codigoBarras: null, unidade: 'Fardo', quantidadePorEmbalagem: 1, ativo: true },
+  ]
+  setup('RASCUNHO')
+  server.use(
+    http.get('*/api/produtos', () => HttpResponse.json(produtosEditaveis)),
+    http.put('*/api/produtos/:id', async ({ params, request }) => {
+      const valores = (await request.json()) as { nome: string }
+      const p = produtosEditaveis.find((x) => x.id === params.id)
+      if (p) p.nome = valores.nome
+      return HttpResponse.json(p ?? {})
+    }),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  const lista = screen.getByRole('dialog', { name: 'Adicionar Itens' })
+  await within(lista).findByText('Arroz Tipo 1 5kg')
+
+  await user.click(within(lista).getByRole('button', { name: 'Editar Arroz Tipo 1 5kg' }))
+
+  const form = await screen.findByRole('dialog', { name: 'Cadastrar novo produto' })
+  expect(form).toHaveTextContent('Editar Produto')
+  const nome = within(form).getByLabelText('Nome do produto')
+  expect((nome as HTMLInputElement).value).toBe('Arroz Tipo 1 5kg')
+
+  await user.clear(nome)
+  await user.type(nome, 'Arroz Integral 5kg')
+  await user.click(within(form).getByRole('button', { name: /salvar/i }))
+
+  const listaReaberta = await screen.findByRole('dialog', { name: 'Adicionar Itens' })
+  expect(await within(listaReaberta).findByText('Arroz Integral 5kg')).toBeInTheDocument()
+})
+
+test('3.2 — em ABERTA o botão "Adicionar item" aparece junto à grade (mas não "Remover")', async () => {
   setup('ABERTA', [novoItem('p-1', 5)])
   await screen.findByRole('heading', { name: 'Compra semanal' })
-  expect(screen.queryByRole('button', { name: 'Adicionar item' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Adicionar item' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Remover' })).not.toBeInTheDocument()
+})
+
+test('3.2 — em ENCERRADA a grade não mostra "Adicionar item"', async () => {
+  setup('ENCERRADA', [novoItem('p-1', 5)])
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(screen.queryByRole('button', { name: 'Adicionar item' })).not.toBeInTheDocument()
 })
 
 test('3.4 — Apurar só chama a API após confirmação no diálogo', async () => {
@@ -246,66 +305,7 @@ test('3.4 — Abrir envia o prazo em ISO', async () => {
   expect(new Date(prazo as string).toISOString()).toBe(prazo)
 })
 
-// --- duplicar-cotacao-ui ---
-
-const COPIA = {
-  id: 'c-2',
-  titulo: 'Compra semanal (cópia)',
-  status: 'RASCUNHO' as StatusCotacao,
-  prazo: null,
-  criadaEm: '2026-08-10T12:00:00Z',
-  encerradaEm: null as string | null,
-  itens: [] as Item[],
-}
-
-test('sem itens omitidos no state, nenhum aviso de duplicação aparece', async () => {
-  setup('RASCUNHO')
-  await screen.findByRole('heading', { name: 'Compra semanal' })
-  expect(screen.queryByText(/não copiados nesta duplicação/i)).not.toBeInTheDocument()
-})
-
-test('"Duplicar" no sucesso navega para a cópia e mostra o aviso de itens omitidos', async () => {
-  setup('RASCUNHO')
-  server.use(
-    http.get('*/api/analises/produtos/insight', () => HttpResponse.json({})),
-    http.post('*/api/cotacoes/c-1/duplicar', () =>
-      HttpResponse.json({
-        cotacao: COPIA,
-        omitidos: [
-          { produtoId: 'p-9', nome: 'Feijão 1kg', motivo: 'Produto inativado' },
-          { produtoId: 'p-8', nome: 'Óleo 900ml', motivo: 'Produto inativado' },
-        ],
-      }),
-    ),
-    http.get('*/api/cotacoes/c-2', () => HttpResponse.json(COPIA)),
-    http.get('*/api/cotacoes/c-2/participantes', () => HttpResponse.json([])),
-  )
-  const user = userEvent.setup()
-  await user.click(await screen.findByRole('button', { name: 'Duplicar' }))
-
-  expect(await screen.findByRole('heading', { name: 'Compra semanal (cópia)' })).toBeInTheDocument()
-  const aviso = screen.getByRole('status')
-  expect(aviso).toHaveTextContent('Feijão 1kg — Produto inativado')
-  expect(aviso).toHaveTextContent('Óleo 900ml — Produto inativado')
-})
-
-test('"Duplicar" com erro mostra a mensagem em alerta e não navega', async () => {
-  setup('RASCUNHO')
-  server.use(
-    http.get('*/api/analises/produtos/insight', () => HttpResponse.json({})),
-    http.post('*/api/cotacoes/c-1/duplicar', () =>
-      HttpResponse.json(
-        { type: 'about:blank', title: 'Conflito', status: 409, detail: 'Não foi possível duplicar.' },
-        { status: 409 },
-      ),
-    ),
-  )
-  const user = userEvent.setup()
-  await user.click(await screen.findByRole('button', { name: 'Duplicar' }))
-
-  expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível duplicar.')
-  expect(screen.getByRole('heading', { name: 'Compra semanal' })).toBeInTheDocument()
-})
+// --- duplicar-cotacao-ui removido: "Duplicar" deixou de existir na tela de detalhe. ---
 
 test('Caminho Triste: Erro 500 ao carregar a cotação exibe mensagem de erro e não quebra a tela', async () => {
   server.use(
