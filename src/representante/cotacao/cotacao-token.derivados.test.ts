@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { prazoExpirando, contarComPreco } from './cotacao-token.derivados'
+import { prazoExpirando, contarComPreco, itemEhNovo } from './cotacao-token.derivados'
 import type { ItemLance } from './cotacao-token.schema'
+import type { LanceStatus } from '@/shared/domain/tipos-base'
 
 describe('cotacao-token.derivados', () => {
   describe('prazoExpirando', () => {
@@ -40,6 +41,37 @@ describe('cotacao-token.derivados', () => {
 
       expect(contarComPreco(itens)).toBe(2)
       expect(contarComPreco([])).toBe(0)
+    })
+  })
+
+  describe('itemEhNovo', () => {
+    const item = (id: string, statusLance: LanceStatus): ItemLance =>
+      ({ itemCotacaoId: id, statusLance } as ItemLance)
+
+    it('true: item PENDENTE com outro item COTADO', () => {
+      const itens = [item('a', 'PENDENTE'), item('b', 'COTADO')]
+      expect(itemEhNovo(itens[0], itens)).toBe(true)
+    })
+
+    it('true: item PENDENTE com outro item NAO_COTADO', () => {
+      const itens = [item('a', 'PENDENTE'), item('b', 'NAO_COTADO')]
+      expect(itemEhNovo(itens[0], itens)).toBe(true)
+    })
+
+    it('false: tudo PENDENTE (primeiro acesso)', () => {
+      const itens = [item('a', 'PENDENTE'), item('b', 'PENDENTE')]
+      expect(itemEhNovo(itens[0], itens)).toBe(false)
+      expect(itemEhNovo(itens[1], itens)).toBe(false)
+    })
+
+    it('false: o próprio item não está PENDENTE', () => {
+      const itens = [item('a', 'COTADO'), item('b', 'PENDENTE')]
+      expect(itemEhNovo(itens[0], itens)).toBe(false)
+    })
+
+    it('false: item PENDENTE sozinho, sem nenhum outro item', () => {
+      const itens = [item('a', 'PENDENTE')]
+      expect(itemEhNovo(itens[0], itens)).toBe(false)
     })
   })
 })

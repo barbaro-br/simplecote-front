@@ -10,7 +10,7 @@ import { TelaDeSucesso } from './TelaDeSucesso'
 import { TutorialOnboarding } from './TutorialOnboarding'
 import { useCotacaoPorToken, useFinalizar } from './cotacao-token.api'
 import { useFilaDeSincronizacao } from './useFilaDeSincronizacao'
-import { prazoExpirando, contarComPreco } from './cotacao-token.derivados'
+import { prazoExpirando, contarComPreco, itemEhNovo } from './cotacao-token.derivados'
 import type { CotacaoPorToken } from './cotacao-token.schema'
 
 const CHAVE_TUTORIAL = 'simplecote:tutorial-preco:v1'
@@ -175,6 +175,7 @@ export function CotacaoPorTokenPage() {
               autoFocus={item.itemCotacaoId === primeiroSemPreco}
               status={fila.statusPorItem[item.itemCotacaoId]}
               erro={fila.errosPorItem[item.itemCotacaoId]}
+              novo={itemEhNovo(item, d.itens)}
               aoAssentar={(patch) => fila.gravarEEnviar(item.itemCotacaoId, patch)}
               onPrecoChange={onPrecoChange}
             />

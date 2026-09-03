@@ -15,3 +15,14 @@ export function prazoExpirando(prazo: string | null, agora: Date = new Date()): 
 export function contarComPreco(itens: ItemLance[]): number {
   return itens.filter((i) => i.preco != null).length
 }
+
+// Heurística "item novo": o item ainda está PENDENTE enquanto pelo menos um
+// outro item da mesma cotação já foi respondido (COTADO/NAO_COTADO) — sinal de
+// que ele apareceu depois que o representante começou a responder. Inferido só
+// dos status de lance já retornados, sem campo novo do backend.
+export function itemEhNovo(item: ItemLance, todosItens: ItemLance[]): boolean {
+  if (item.statusLance !== 'PENDENTE') return false
+  return todosItens.some(
+    (i) => i.itemCotacaoId !== item.itemCotacaoId && i.statusLance !== 'PENDENTE',
+  )
+}

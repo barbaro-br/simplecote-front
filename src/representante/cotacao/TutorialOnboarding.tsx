@@ -34,6 +34,24 @@ function MiniCard({ preco }: { preco: string }) {
   )
 }
 
+function MiniCardSwipeDemo() {
+  return (
+    <div className="relative overflow-hidden rounded-xl">
+      <div
+        className="absolute inset-y-0 right-0 flex w-20 items-center justify-center rounded-xl bg-destructive"
+        aria-hidden="true"
+      >
+        <svg width="18" height="18" viewBox="0 0 12 12" fill="none">
+          <path d="M2 2l8 8M10 2l-8 8" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+      <div className="swipe-demo">
+        <MiniCard preco="12,68" />
+      </div>
+    </div>
+  )
+}
+
 function Etiqueta({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
@@ -132,6 +150,7 @@ export function TutorialOnboarding({ aoConcluir }: { aoConcluir: () => void }) {
                   />
                 </svg>
               </div>
+              <MiniCardSwipeDemo />
               <p className="text-center text-sm leading-relaxed text-muted-foreground">
                 {PASSOS[passo].desc}
               </p>

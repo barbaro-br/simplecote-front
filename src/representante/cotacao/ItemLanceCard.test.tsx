@@ -1,11 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { Toaster, toast } from 'sonner'
 import { ItemLanceCard } from './ItemLanceCard'
 import type { ItemLance } from './cotacao-token.schema'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const APOS_DEBOUNCE = 950
+
+afterEach(() => toast.dismiss())
 
 const baseItem: ItemLance = {
   itemCotacaoId: 'i-1',
@@ -145,5 +148,90 @@ describe('ItemLanceCard', () => {
     await user.type(campo(), '9')
 
     expect(screen.getByText('calculando…')).toBeInTheDocument()
+  })
+
+  it('renderiza o badge "Novo" quando novo é true', () => {
+    renderCard({ novo: true })
+    expect(screen.getByText('Novo')).toBeInTheDocument()
+  })
+
+  it('não renderiza o badge "Novo" quando novo é false', () => {
+    renderCard({ novo: false })
+    expect(screen.queryByText('Novo')).not.toBeInTheDocument()
+  })
+
+  it('não renderiza o badge "Novo" por padrão (sem a prop)', () => {
+    renderCard()
+    expect(screen.queryByText('Novo')).not.toBeInTheDocument()
+  })
+
+  it('limpar um preço já digitado dispara o toast "Preço removido" com "Desfazer"', async () => {
+    const user = userEvent.setup()
+    const aoAssentar = vi.fn()
+    render(
+      <>
+        <Toaster />
+        <ItemLanceCard
+          item={{ ...baseItem, preco: 10 }}
+          podeEditar
+          status={undefined}
+          erro={undefined}
+          aoAssentar={aoAssentar}
+        />
+      </>,
+    )
+
+    await user.clear(campo())
+    await sleep(APOS_DEBOUNCE)
+
+    expect(await screen.findByText('Preço removido')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /desfazer/i })).toBeInTheDocument()
+    await waitFor(() => expect(aoAssentar).toHaveBeenCalledWith({ naoCotado: true }))
+  })
+
+  it('acionar "Desfazer" restaura o valor anterior no campo', async () => {
+    const user = userEvent.setup()
+    const aoAssentar = vi.fn()
+    render(
+      <>
+        <Toaster />
+        <ItemLanceCard
+          item={{ ...baseItem, preco: 10 }}
+          podeEditar
+          status={undefined}
+          erro={undefined}
+          aoAssentar={aoAssentar}
+        />
+      </>,
+    )
+
+    await user.clear(campo())
+    await sleep(APOS_DEBOUNCE)
+
+    await screen.findByText('Preço removido')
+    fireEvent.click(screen.getByRole('button', { name: /desfazer/i }))
+
+    await waitFor(() => expect((campo() as HTMLInputElement).value).toBe('10'))
+    await sleep(APOS_DEBOUNCE)
+    await waitFor(() => expect(aoAssentar).toHaveBeenCalledWith({ preco: 10 }))
+  })
+
+  it('esvaziar um campo que já estava vazio NÃO dispara o toast', async () => {
+    render(
+      <>
+        <Toaster />
+        <ItemLanceCard
+          item={baseItem}
+          podeEditar
+          status={undefined}
+          erro={undefined}
+          aoAssentar={vi.fn()}
+        />
+      </>,
+    )
+
+    await sleep(APOS_DEBOUNCE)
+
+    expect(screen.queryByText('Preço removido')).not.toBeInTheDocument()
   })
 })
