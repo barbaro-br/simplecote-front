@@ -61,6 +61,17 @@ function setup(decididoPorDesempate?: boolean) {
         itensSemVencedor: [],
       }),
     ),
+    http.get('*/api/cotacoes/c-1', () =>
+      HttpResponse.json({
+        id: 'c-1',
+        titulo: 'Compra semanal',
+        status: 'PEDIDOS_GERADOS',
+        prazo: null,
+        criadaEm: '2026-08-01T12:00:00Z',
+        encerradaEm: null,
+        itens: [],
+      }),
+    ),
     http.get('*/api/cotacoes/c-1/pedidos', () =>
       HttpResponse.json([pedido(state.status, decididoPorDesempate)]),
     ),
@@ -92,6 +103,17 @@ test('renderiza o vencedor por item pelo nome da Empresa', async () => {
   setup()
   const linha = (await screen.findByRole('cell', { name: 'Arroz Tipo 1 5kg' })).closest('tr')!
   expect(within(linha).getByText('Atacadão Central')).toBeInTheDocument()
+})
+
+test('breadcrumb mostra Cotações › título › Resultado, com Cotações apontando para /admin', async () => {
+  setup()
+  expect(await screen.findByRole('link', { name: 'Cotações' })).toHaveAttribute('href', '/admin')
+  expect(screen.getByRole('link', { name: 'Compra semanal' })).toHaveAttribute(
+    'href',
+    '/admin/cotacoes/c-1',
+  )
+  expect(screen.getByText('Resultado')).toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: 'Resultado' })).not.toBeInTheDocument()
 })
 
 test('item com decididoPorDesempate true renderiza o badge Empate', async () => {

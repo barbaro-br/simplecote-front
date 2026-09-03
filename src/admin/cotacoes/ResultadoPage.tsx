@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { FileDown, Send } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { Breadcrumb } from '@/shared/components/ui/breadcrumb'
 import { moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import {
   baixarPedidoPdf,
   baixarResultadoXlsx,
+  useCotacao,
   useEnviarPedido,
   usePedidos,
   useResultado,
@@ -34,6 +36,7 @@ export function ResultadoPage() {
   const { id = '' } = useParams()
   const resultado = useResultado(id)
   const pedidos = usePedidos(id)
+  const cotacao = useCotacao(id)
   const enviar = useEnviarPedido(id)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -65,6 +68,13 @@ export function ResultadoPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-8">
+      <Breadcrumb
+        items={[
+          { label: 'Cotações', to: '/admin' },
+          { label: cotacao.data?.titulo ?? '', to: `/admin/cotacoes/${id}` },
+          { label: 'Resultado' },
+        ]}
+      />
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Resultado da apuração</h1>
@@ -81,9 +91,6 @@ export function ResultadoPage() {
             <FileDown className="mr-2 size-4" />
             Baixar XLSX
           </Button>
-          <Link to={`/admin/cotacoes/${id}`} className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors">
-            ← Detalhe
-          </Link>
         </div>
       </div>
 
