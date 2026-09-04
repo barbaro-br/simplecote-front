@@ -10,6 +10,7 @@ import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
+import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { AlertTriangle } from 'lucide-react'
 
 const loginSchema = z.object({
@@ -129,6 +130,21 @@ export function LoginPage() {
           >
             Esqueci minha senha
           </Link>
+
+          {CREDITO_DESENVOLVEDOR.href ? (
+            <a
+              href={CREDITO_DESENVOLVEDOR.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center text-xs text-muted-foreground/70 mt-2 hover:text-foreground hover:underline"
+            >
+              {CREDITO_DESENVOLVEDOR.texto}
+            </a>
+          ) : (
+            <p className="text-center text-xs text-muted-foreground/70 mt-2">
+              {CREDITO_DESENVOLVEDOR.texto}
+            </p>
+          )}
         </Card>
       </div>
     </div>

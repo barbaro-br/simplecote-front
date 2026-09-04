@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
 import { AuthProvider } from '@/shared/auth/AuthContext'
+import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { LoginPage } from './LoginPage'
 
 const SESSION_KEY = 'simplecote_token'
@@ -88,4 +89,10 @@ test('link "Esqueci minha senha" navega para /esqueci-senha', async () => {
   await user.click(screen.getByRole('link', { name: 'Esqueci minha senha' }))
 
   expect(await screen.findByText('esqueci senha view')).toBeInTheDocument()
+})
+
+test('renderiza o crédito de desenvolvedor abaixo de "Esqueci minha senha"', () => {
+  renderLogin()
+
+  expect(screen.getByText(CREDITO_DESENVOLVEDOR.texto)).toBeInTheDocument()
 })

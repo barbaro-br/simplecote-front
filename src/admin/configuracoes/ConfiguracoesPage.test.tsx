@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { vi } from 'vitest'
 import { ConfiguracoesPage } from './ConfiguracoesPage'
 import { resetarMock, definirFalhaAoSalvar } from './configuracoes.api'
 
@@ -73,4 +74,43 @@ test('estilo de navegação selecionado persiste ao salvar', async () => {
 
   renderPage()
   expect(await screen.findByRole('radio', { name: 'Inferior' })).toBeChecked()
+})
+
+test('exibe o link do colaborador e o botão de copiar escreve na área de transferência', async () => {
+  const user = userEvent.setup()
+  // `userEvent.setup()` instala um stub próprio em `navigator.clipboard`; o mock
+  // precisa ser definido depois disso para o clique ver a nossa implementação.
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  Object.defineProperty(window.navigator, 'clipboard', {
+    value: { writeText },
+    configurable: true,
+  })
+  renderPage()
+
+  const input = await screen.findByLabelText('Link do colaborador')
+  const linkEsperado = `${window.location.origin}/colaborador/link-colaborador-exemplo`
+  expect(input).toHaveValue(linkEsperado)
+
+  await user.click(screen.getByRole('button', { name: 'Copiar' }))
+  expect(writeText).toHaveBeenCalledWith(linkEsperado)
+})
+
+test('tema renderiza os dois radios, reflete o valor atual e persiste ao salvar', async () => {
+  const user = userEvent.setup()
+  const { unmount } = renderPage()
+
+  expect(await screen.findByRole('radio', { name: 'Claro' })).toBeChecked()
+  expect(screen.getByRole('radio', { name: 'Escuro' })).not.toBeChecked()
+
+  await user.click(screen.getByRole('radio', { name: 'Escuro' }))
+  await user.click(screen.getByRole('button', { name: 'Salvar' }))
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Salvar' })).toBeEnabled()
+  })
+
+  unmount()
+
+  renderPage()
+  expect(await screen.findByRole('radio', { name: 'Escuro' })).toBeChecked()
 })

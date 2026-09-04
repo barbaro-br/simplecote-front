@@ -6,6 +6,7 @@ import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { StatusBadge } from '@/shared/components/StatusBadge'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { ErrorAlert } from '@/shared/components/ui/error-alert'
 import { Breadcrumb } from '@/shared/components/ui/breadcrumb'
 import { ItensSection } from './ItensSection'
 import { GradeAoVivoTabela } from './GradeAoVivoTabela'
@@ -194,6 +195,12 @@ export function CotacaoDetalhePage() {
             </Link>
           )}
 
+          {status !== 'CANCELADA' && (
+            <Button variant="outline" onClick={() => setModalConviteAberto(true)}>
+              Representantes
+            </Button>
+          )}
+
           <div className="ml-auto flex items-center gap-2">
             {(status === 'RASCUNHO' || status === 'ABERTA') && (
               <Button
@@ -204,21 +211,11 @@ export function CotacaoDetalhePage() {
                 Cancelar
               </Button>
             )}
-
-            {status !== 'CANCELADA' && (
-              <Button variant="outline" onClick={() => setModalConviteAberto(true)}>
-                Representantes
-              </Button>
-            )}
           </div>
         </div>
       </div>
 
-      {erroAcao && (
-        <div role="alert" className="text-sm text-destructive font-medium">
-          {erroAcao}
-        </div>
-      )}
+      {erroAcao && <ErrorAlert>{erroAcao}</ErrorAlert>}
 
       <div className="space-y-6">
         {(status === 'RASCUNHO' || status === 'CANCELADA' || status === 'PEDIDOS_GERADOS') && (

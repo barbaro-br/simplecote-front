@@ -6,7 +6,7 @@ Modal "Abrir Cotação" que o Comprador usa para definir o prazo de resposta ant
 ## Requirements
 
 ### Requirement: Definição de Prazo da Cotação
-O sistema SHALL permitir que o usuário defina o prazo de respostas da cotação. Presets de prazo (ex.: "Hoje às 18h") cujo horário resultante já esteja no passado no momento em que o modal é exibido SHALL aparecer desabilitados (não clicáveis, com indicação visual de indisponível), em vez de aparentar disponíveis e só falhar depois do clique em confirmar. O preset selecionado por padrão ao abrir o modal SHALL ser o primeiro preset, na ordem em que são exibidos, cujo horário ainda esteja no futuro.
+O sistema SHALL permitir que o usuário defina o prazo de respostas da cotação. Presets de prazo (ex.: "Hoje às 18h") cujo horário resultante já esteja no passado no momento em que o modal é exibido SHALL aparecer desabilitados (não clicáveis, com indicação visual de indisponível), em vez de aparentar disponíveis e só falhar depois do clique em confirmar. O preset selecionado por padrão ao abrir o modal SHALL ser o primeiro preset, na ordem em que são exibidos, cujo horário ainda esteja no futuro. As visualizações de presets e de Data Personalizada dentro do modal SHALL ter a mesma altura mínima, de modo que alternar entre elas não cause um salto visual perceptível no tamanho do modal.
 
 #### Scenario: Seleção em duas etapas (Data Personalizada)
 - **WHEN** o usuário clica em "Data Personalizada" no modal "Abrir Cotação"
@@ -22,3 +22,8 @@ O sistema SHALL permitir que o usuário defina o prazo de respostas da cotação
 
 - **WHEN** o usuário abre o modal "Abrir Cotação" em qualquer horário do dia
 - **THEN** o preset pré-selecionado ao abrir o modal é sempre um horário no futuro, nunca um preset já vencido
+
+#### Scenario: Alternar visualização não muda a altura do modal
+
+- **WHEN** o usuário alterna entre a visualização de presets e a de Data Personalizada (em qualquer direção)
+- **THEN** o modal mantém a mesma altura mínima nas duas visualizações, sem salto visual perceptível de tamanho

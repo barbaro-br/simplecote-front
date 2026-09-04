@@ -1,10 +1,13 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { vi } from 'vitest'
+import { toast } from 'sonner'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
 import { RepresentantesModal } from './RepresentantesModal'
 import type { ParticipanteDaCotacao } from './cotacoes.schema'
+import type { Representante } from '@/admin/representantes/representantes.schema'
 
 function participante(
   empresaId: string,
@@ -25,13 +28,19 @@ function participante(
   }
 }
 
-function setup(status: string, iniciais: ParticipanteDaCotacao[]) {
+type EmpresaTeste = { id: string; nome: string; ativo: boolean }
+
+function setup(
+  status: string,
+  iniciais: ParticipanteDaCotacao[],
+  extras: { empresas?: EmpresaTeste[]; representantes?: Representante[] } = {},
+) {
   let lista = [...iniciais]
-  const empresas = iniciais.map((p) => ({ id: p.empresaId, nome: p.empresaNome, ativo: true }))
+  const empresas = extras.empresas ?? iniciais.map((p) => ({ id: p.empresaId, nome: p.empresaNome, ativo: true }))
 
   server.use(
     http.get('*/api/empresas', () => HttpResponse.json(empresas)),
-    http.get('*/api/representantes', () => HttpResponse.json([])),
+    http.get('*/api/representantes', () => HttpResponse.json(extras.representantes ?? [])),
     http.get('*/api/cotacoes/c-1/participantes', () => HttpResponse.json(lista)),
     http.post('*/api/participantes/:participanteId/finalizar', ({ params }) => {
       const participanteId = params.participanteId as string
@@ -192,4 +201,80 @@ test('participante RESPONDIDO com conviteStatus FALHOU não mostra badge de conv
   expect(screen.queryByText('Falha no envio')).not.toBeInTheDocument()
   expect(screen.queryByText('Enviado')).not.toBeInTheDocument()
   expect(screen.queryByText('Não enviado')).not.toBeInTheDocument()
+})
+
+test('linha com repEmail preenchido renderiza link mailto com o e-mail no href e no title', async () => {
+  const empresaId = '11111111-1111-4111-8111-111111111111'
+  setup('RASCUNHO', [], {
+    empresas: [{ id: empresaId, nome: 'Mercado A', ativo: true }],
+    representantes: [
+      {
+        id: '22222222-2222-4222-8222-222222222222',
+        empresaId,
+        nome: 'João Representante',
+        email: 'joao@empresa.com',
+        whatsapp: null,
+        ativo: true,
+      },
+    ],
+  })
+
+  const link = await screen.findByTitle('joao@empresa.com')
+  expect(link).toHaveAttribute('href', expect.stringContaining('mailto:joao@empresa.com'))
+})
+
+test('clicar no indicador de telefone copia o número formatado e mostra toast', async () => {
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true, writable: true })
+  const successSpy = vi.spyOn(toast, 'success')
+
+  const empresaId = '11111111-1111-4111-8111-111111111111'
+  setup('RASCUNHO', [], {
+    empresas: [{ id: empresaId, nome: 'Mercado A', ativo: true }],
+    representantes: [
+      {
+        id: '22222222-2222-4222-8222-222222222222',
+        empresaId,
+        nome: 'João Representante',
+        email: 'joao@empresa.com',
+        whatsapp: '11987654321',
+        ativo: true,
+      },
+    ],
+  })
+  const botao = await screen.findByTitle('(11) 98765-4321')
+  fireEvent.click(botao)
+
+  expect(writeText).toHaveBeenCalledWith('(11) 98765-4321')
+  expect(successSpy).toHaveBeenCalledWith('Telefone copiado!')
+
+  successSpy.mockRestore()
+})
+
+test('linha sem e-mail/telefone não renderiza os indicadores', async () => {
+  const comRep = '11111111-1111-4111-8111-111111111111'
+  const semRep = '55555555-5555-4555-8555-555555555555'
+  setup('RASCUNHO', [], {
+    empresas: [
+      { id: comRep, nome: 'Mercado A', ativo: true },
+      { id: semRep, nome: 'Mercado B', ativo: true },
+    ],
+    representantes: [
+      {
+        id: '22222222-2222-4222-8222-222222222222',
+        empresaId: comRep,
+        nome: 'João Representante',
+        email: 'joao@empresa.com',
+        whatsapp: '11987654321',
+        ativo: true,
+      },
+    ],
+  })
+
+  await screen.findByTitle('joao@empresa.com')
+
+  const linhaSemRep = (await screen.findByText('Mercado B')).closest('li')
+  expect(linhaSemRep).not.toBeNull()
+  expect(within(linhaSemRep!).queryByTitle('joao@empresa.com')).not.toBeInTheDocument()
+  expect(within(linhaSemRep!).queryByTitle('(11) 98765-4321')).not.toBeInTheDocument()
 })

@@ -16,7 +16,7 @@ O sistema SHALL exibir um item de menu identificado por um ícone de engrenagem 
 
 ### Requirement: Editar dados da loja
 
-A tela de Configurações SHALL permitir editar nome da loja, cor de marca, telefone da loja e o layout de e-mail usado nas comunicações aos representantes, e SHALL persistir essas alterações via API. A tela SHALL exibir os valores atuais ao carregar, indicar o estado de salvamento em andamento, e exibir a mensagem de erro do backend quando a gravação falhar.
+A tela de Configurações SHALL permitir editar nome da loja, cor de marca, telefone da loja, o layout de e-mail usado nas comunicações aos representantes e o tema do painel (`Claro`/`Escuro`), e SHALL persistir essas alterações via API. A tela SHALL exibir os valores atuais ao carregar, indicar o estado de salvamento em andamento, e exibir a mensagem de erro do backend quando a gravação falhar. A tela SHALL também exibir, em modo somente leitura, a URL completa do link do colaborador (montada a partir de `linkColaboradorToken`), com um botão para copiá-la à área de transferência.
 
 #### Scenario: Salvar alteração com sucesso
 
@@ -27,6 +27,16 @@ A tela de Configurações SHALL permitir editar nome da loja, cor de marca, tele
 
 - **WHEN** a API rejeita a alteração
 - **THEN** a tela exibe a mensagem de erro do backend e mantém os valores anteriores visíveis
+
+#### Scenario: Trocar o tema do painel
+
+- **WHEN** o admin seleciona "Escuro" nas Configurações e salva
+- **THEN** a alteração é persistida via API e o painel passa a exibir o tema escuro para todos os usuários dessa loja
+
+#### Scenario: Copiar o link do colaborador
+
+- **WHEN** o admin clica no botão de copiar ao lado do link do colaborador
+- **THEN** a URL completa (`{origin}/colaborador/{linkColaboradorToken}`) é escrita na área de transferência, com retorno visual temporário de confirmação
 
 ### Requirement: Nome e cor da loja aplicados em toda a interface
 

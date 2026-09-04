@@ -159,6 +159,8 @@ A coluna de nome da empresa e do representante SHALL ter largura mínima garanti
 
 O status de convite (`conviteStatus`) SHALL ser exibido, **enquanto o participante ainda está em `CONVIDADO`**, distinguindo três casos: `ENVIADO` (rótulo neutro/positivo), `FALHOU` (rótulo com destaque visual de erro, indicando que o sistema tentou enviar e não conseguiu — nunca o mesmo rótulo usado para "ainda não enviado"), e qualquer outro valor SHALL cair no rótulo neutro atual de "Não enviado". A partir do momento em que o `participanteStatus` deixa de ser `CONVIDADO` (`VISUALIZOU` ou `RESPONDIDO`), o badge de status de convite NÃO SHALL ser exibido — o participante comprovadamente teve acesso à cotação por algum caminho, então o estado de entrega do e-mail automático deixa de ser informação relevante ali.
 
+Quando a linha de um participante tem e-mail e/ou telefone do representante disponíveis, o sistema SHALL exibir indicadores de e-mail/telefone que são funcionais e mostram o valor real ao passar o mouse (não um texto genérico): o indicador de e-mail SHALL abrir um `mailto:` pré-preenchido para aquele representante; o indicador de telefone SHALL copiar o número formatado para a área de transferência com retorno visual de confirmação.
+
 #### Scenario: Convite de empresas via modal
 - **WHEN** o Comprador aciona o botão de "Representantes" no cabeçalho fixo
 - **THEN** um modal é aberto exibindo a lista de empresas disponíveis para convite, permitindo a seleção múltipla e envio
@@ -211,8 +213,23 @@ O status de convite (`conviteStatus`) SHALL ser exibido, **enquanto o participan
 - **WHEN** a linha de um participante exibe simultaneamente um badge de status de resposta e o menu "⋯" de ações
 - **THEN** o nome da empresa e o nome do representante continuam legíveis (não truncam para um único caractere) para nomes de tamanho comum
 
+#### Scenario: Indicador de e-mail abre o cliente de e-mail
+
+- **WHEN** o representante de uma Empresa tem e-mail cadastrado e o Comprador clica no indicador de e-mail da linha
+- **THEN** abre-se um rascunho `mailto:` endereçado a esse e-mail, com assunto e corpo pré-preenchidos com uma mensagem de convite
+
+#### Scenario: Indicador de telefone copia o número
+
+- **WHEN** o representante de uma Empresa tem WhatsApp/telefone cadastrado e o Comprador clica no indicador de telefone da linha
+- **THEN** o número formatado é copiado para a área de transferência e a interface mostra uma confirmação temporária
+
+#### Scenario: Hover revela o valor real
+
+- **WHEN** o Comprador passa o mouse sobre o indicador de e-mail ou de telefone de uma linha
+- **THEN** a dica exibida mostra o e-mail ou o telefone formatado real daquele representante, não um texto genérico como "Possui E-mail"
+
 ### Requirement: Transições de estado com confirmação
-O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação antes de `encerrar`, `cancelar` e `apurar`, nomeando a consequência de cada uma. O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação. "Cancelar" SHALL ser exibido como um botão visível (não dentro de um menu overflow), com estilo visual de alerta (ex.: contorno/texto na cor de destrutivo, sem ser um botão preenchido do mesmo peso das transições primárias) e separado espacialmente dos botões de transição primária (Abrir/Encerrar/Reabrir/Apurar) na fileira de ações, para reduzir o risco de clique acidental mesmo estando visível. "Cancelar" SHALL só ser exibido quando `status` é `RASCUNHO` ou `ABERTA` — a única combinação que o backend (`Cotacao.cancelar()`) de fato aceita; em qualquer outro status (`ENCERRADA`, `PEDIDOS_GERADOS`, `CANCELADA`) o botão NÃO SHALL ser exibido.
+O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação antes de `encerrar`, `cancelar` e `apurar`, nomeando a consequência de cada uma. O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação. "Cancelar" SHALL ser exibido como um botão visível (não dentro de um menu overflow), com estilo visual de alerta (ex.: contorno/texto na cor de destrutivo, sem ser um botão preenchido do mesmo peso das transições primárias) e separado espacialmente dos botões de transição primária (Abrir/Encerrar/Reabrir/Apurar) na fileira de ações, para reduzir o risco de clique acidental mesmo estando visível. "Cancelar" SHALL só ser exibido quando `status` é `RASCUNHO` ou `ABERTA` — a única combinação que o backend (`Cotacao.cancelar()`) de fato aceita; em qualquer outro status (`ENCERRADA`, `PEDIDOS_GERADOS`, `CANCELADA`) o botão NÃO SHALL ser exibido. O botão "Representantes" SHALL ficar agrupado visualmente ao lado do botão de transição primária (Abrir/Encerrar/Reabrir+Apurar/Ver resultado), não ao lado de "Cancelar" — "Cancelar" SHALL permanecer sozinho, isolado no extremo oposto da fileira de ações.
 
 #### Scenario: Abrir a Cotação
 - **WHEN** o Comprador informa um `prazo` e confirma "Abrir"
@@ -253,6 +270,11 @@ O sistema SHALL disparar as transições de estado da Cotação — abrir com `p
 
 - **WHEN** o Comprador abre o detalhe de uma Cotação `PEDIDOS_GERADOS` ou já `CANCELADA`
 - **THEN** o botão "Cancelar" não é exibido
+
+#### Scenario: Representantes fica agrupado com a transição primária
+
+- **WHEN** o Comprador abre o detalhe de uma Cotação em qualquer status onde "Representantes" é exibido (todos exceto `CANCELADA`)
+- **THEN** o botão "Representantes" aparece visualmente ao lado do botão de transição primária daquele status, e "Cancelar" (quando aplicável) fica isolado no extremo oposto da fileira
 
 ### Requirement: Cabeçalho fixo da tela de detalhe sem elevação de cartão
 

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/shared/auth/AuthContext'
+import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { resetarMock, definirConfiguracaoMock } from '../configuracoes/configuracoes.api'
 import { AdminLayout } from './AdminLayout'
 
@@ -138,6 +139,56 @@ test('logout na sidebar navega para /login', async () => {
   await user.click(await screen.findByRole('button', { name: 'Sair' }))
 
   expect(await screen.findByText('login view')).toBeInTheDocument()
+})
+
+test('renderiza o crédito de desenvolvedor com a sidebar expandida e o esconde ao recolher', async () => {
+  const user = userEvent.setup()
+  renderLayout('/admin/produtos')
+
+  const credito = screen.getByText(CREDITO_DESENVOLVEDOR.texto)
+  expect(credito).toBeInTheDocument()
+  expect(credito).not.toHaveClass('opacity-0')
+
+  await user.click(screen.getByRole('button', { name: 'Recolher menu' }))
+  await user.unhover(screen.getByRole('button', { name: 'Expandir menu' }))
+
+  expect(screen.getByText(CREDITO_DESENVOLVEDOR.texto)).toHaveClass('opacity-0')
+})
+
+test('3.1 — o botão flutuante de ajuda está presente no DOM ao renderizar AdminLayout', () => {
+  renderLayout('/admin/produtos')
+  expect(screen.getByRole('button', { name: 'Ajuda' })).toBeInTheDocument()
+})
+
+test('3.2 — clicar no botão abre o modal "Ajuda" com as 4 perguntas listadas', async () => {
+  const user = userEvent.setup()
+  renderLayout('/admin/produtos')
+
+  await user.click(screen.getByRole('button', { name: 'Ajuda' }))
+
+  expect(screen.getByRole('heading', { name: 'Ajuda' })).toBeInTheDocument()
+  expect(screen.getByText('Como criar uma nova cotação?')).toBeInTheDocument()
+  expect(screen.getByText('Como convidar representantes?')).toBeInTheDocument()
+  expect(screen.getByText('Como apurar uma cotação e gerar pedidos?')).toBeInTheDocument()
+  expect(screen.getByText('Como cancelar uma cotação?')).toBeInTheDocument()
+})
+
+test('3.3 — clicar numa pergunta expande a resposta correspondente', async () => {
+  const user = userEvent.setup()
+  renderLayout('/admin/produtos')
+
+  await user.click(screen.getByRole('button', { name: 'Ajuda' }))
+
+  const resumo = screen.getByText('Como criar uma nova cotação?')
+  const details = resumo.closest('details') as HTMLDetailsElement
+  expect(details.open).toBe(false)
+
+  await user.click(resumo)
+
+  expect(details.open).toBe(true)
+  expect(
+    screen.getByText(/acesse Cotações e clique em "Nova cotação"/),
+  ).toBeInTheDocument()
 })
 
 describe('estilo Inferior (BottomNavBar)', () => {

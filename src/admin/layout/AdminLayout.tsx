@@ -16,7 +16,9 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/shared/auth/AuthContext'
 import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
+import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { BottomNavBar } from './BottomNavBar'
+import { BotaoAjudaFlutuante } from '../ajuda/BotaoAjudaFlutuante'
 
 const SIDEBAR_KEY = 'simplecote:sidebar'
 
@@ -155,6 +157,20 @@ function Sidebar({ nome, onLogout }: { nome: string; onLogout: () => void }) {
           Sair
         </span>
       </button>
+
+      <div
+        className={`overflow-hidden whitespace-nowrap transition-all duration-300 text-[11px] text-muted-foreground/60 ${
+          isExpanded ? 'opacity-100 translate-x-0 mt-2' : 'opacity-0 -translate-x-4 w-0 mt-0'
+        }`}
+      >
+        {CREDITO_DESENVOLVEDOR.href ? (
+          <a href={CREDITO_DESENVOLVEDOR.href} target="_blank" rel="noopener noreferrer">
+            {CREDITO_DESENVOLVEDOR.texto}
+          </a>
+        ) : (
+          CREDITO_DESENVOLVEDOR.texto
+        )}
+      </div>
     </aside>
   )
 }
@@ -185,6 +201,7 @@ export function AdminLayout() {
           <RouteTransition />
         </div>
       </main>
+      <BotaoAjudaFlutuante />
     </div>
   )
 }
