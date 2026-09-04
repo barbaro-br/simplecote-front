@@ -198,16 +198,15 @@ export function ItemLanceCard({
                 Novo
               </span>
             )}
-            <span className="flex-1" />
-            {item.codigoBarras && (
-              <span className="shrink-0 font-mono text-[10px] tracking-wide text-muted-foreground">
-                {item.codigoBarras}
-              </span>
-            )}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {unitText}
           </p>
+          {item.codigoBarras && (
+            <p className="mt-0.5 font-mono text-[10px] tracking-wide text-muted-foreground">
+              {item.codigoBarras}
+            </p>
+          )}
         </div>
 
         <div className="flex items-end gap-3">

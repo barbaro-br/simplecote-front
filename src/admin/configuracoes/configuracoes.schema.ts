@@ -11,6 +11,7 @@ export const configuracaoSchema = z.object({
   layoutEmail: z.string().min(1, 'Layout de e-mail é obrigatório'),
   estiloNavegacao: z.enum(['LATERAL', 'INFERIOR']),
   tema: z.enum(['CLARO', 'ESCURO']),
+  destacarMenorPrecoNaGrade: z.boolean(),
 })
 
 export type ConfiguracaoFormValues = z.infer<typeof configuracaoSchema>
@@ -22,6 +23,7 @@ export type Configuracao = {
   layoutEmail: string
   estiloNavegacao: EstiloNavegacao
   tema: Tema
+  destacarMenorPrecoNaGrade: boolean
   // Somente leitura: token permanente do link público do colaborador
   // (`/colaborador/{linkColaboradorToken}`). Não faz parte do schema de submit.
   linkColaboradorToken: string

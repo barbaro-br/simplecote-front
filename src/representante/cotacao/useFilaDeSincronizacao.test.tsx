@@ -137,3 +137,75 @@ test('sucesso do PUT atualiza o cache com o precoUnitario devolvido', async () =
     expect(qc.getQueryData(cotacaoKey(TOKEN))).toEqual(resposta)
   })
 })
+
+test('respostas concorrentes de itens diferentes não sobrescrevem o precoUnitario um do outro', async () => {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const w = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+  )
+
+  const item = (id: string, preco: number | null, precoUnitario: number | null) => ({
+    itemCotacaoId: id,
+    nome: id === 'i-1' ? 'Arroz' : 'Feijão',
+    codigoBarras: null,
+    unidade: 'Fardo',
+    quantidadeSolicitada: 10,
+    quantidadePorEmbalagemSnapshot: 20,
+    preco,
+    precoUnitario,
+    statusLance: 'COTADO' as const,
+  })
+
+  // Cache inicial: dois itens ainda sem preço unitário (como viria do GET).
+  qc.setQueryData(cotacaoKey(TOKEN), {
+    cotacaoId: 'c-1',
+    titulo: 'Cotação',
+    status: 'ABERTA',
+    prazo: null,
+    podeEditar: true,
+    participanteStatus: 'PENDENTE',
+    representanteNome: 'Ana',
+    empresaNome: 'Empresa X',
+    compradorNome: 'Supermercado',
+    itens: [item('i-1', null, null), item('i-2', null, null)],
+  })
+
+  // Resposta de cada PUT traz só o item daquela requisição atualizado; o outro
+  // item volta "stale" (precoUnitario null), reproduzindo o snapshot desatualizado.
+  server.use(
+    http.put(`*/public/cotacoes/${TOKEN}/lances`, async ({ request }) => {
+      const body = (await request.json()) as { lances: { itemCotacaoId: string }[] }
+      const id = body.lances[0].itemCotacaoId
+      return HttpResponse.json({
+        cotacaoId: 'c-1',
+        titulo: 'Cotação',
+        status: 'ABERTA',
+        prazo: null,
+        podeEditar: true,
+        participanteStatus: 'PENDENTE',
+        representanteNome: 'Ana',
+        empresaNome: 'Empresa X',
+        compradorNome: 'Supermercado',
+        itens: [
+          item('i-1', id === 'i-1' ? 10 : null, id === 'i-1' ? 0.5 : null),
+          item('i-2', id === 'i-2' ? 20 : null, id === 'i-2' ? 0.25 : null),
+        ],
+      })
+    }),
+  )
+
+  semear({
+    'i-1': { preco: 10, tentativas: 0, ultimaTentativaEm: 1 },
+    'i-2': { preco: 20, tentativas: 0, ultimaTentativaEm: 2 },
+  })
+
+  renderHook(() => useFilaDeSincronizacao(TOKEN), { wrapper: w })
+
+  await vi.waitFor(() => {
+    const cache = qc.getQueryData(cotacaoKey(TOKEN)) as {
+      itens: { itemCotacaoId: string; precoUnitario: number | null }[]
+    }
+    expect(cache.itens.find((i) => i.itemCotacaoId === 'i-1')?.precoUnitario).toBe(0.5)
+    expect(cache.itens.find((i) => i.itemCotacaoId === 'i-2')?.precoUnitario).toBe(0.25)
+  })
+})

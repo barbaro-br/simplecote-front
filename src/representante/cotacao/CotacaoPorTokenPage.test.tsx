@@ -84,9 +84,11 @@ test('token válido: mostra a saudação, o contexto e os itens, com a bolha de 
   server.use(http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao())))
   renderPage()
 
-  // A saudação virou texto secundário na barra inferior (não é mais heading).
-  expect(await screen.findByText(/olá, francisco/i)).toBeInTheDocument()
-  expect(screen.getByText(/Atacadão Central · cotação de Supermercado X/)).toBeInTheDocument()
+  // A saudação aparece duas vezes no DOM: no cabeçalho (só visível em desktop
+  // via CSS) e na barra inferior (só visível em mobile via CSS) — ambas
+  // renderizam sempre, a visibilidade é responsiva por classe, não por remontagem.
+  expect(await screen.findAllByText(/olá, francisco/i)).toHaveLength(2)
+  expect(screen.getAllByText(/Atacadão Central · cotação de Supermercado X/)).toHaveLength(2)
   expect(screen.getByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /finalizar/i })).toBeInTheDocument()
 
@@ -101,8 +103,12 @@ test('prazo alerta < 2h renderiza classe text-destructive', async () => {
   server.use(http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao({ prazo: daquiUmPouco.toISOString() }))))
   renderPage()
 
-  const prazoEl = await screen.findByText(/Prazo:/i)
-  expect(prazoEl).toHaveClass('text-destructive')
+  // Aparece no cabeçalho (desktop) e na barra inferior (mobile); ambos alertam.
+  const prazoEls = await screen.findAllByText(/Prazo:/i)
+  expect(prazoEls).toHaveLength(2)
+  for (const el of prazoEls) {
+    expect(el).toHaveClass('text-destructive')
+  }
 })
 
 test('podeEditar falso: campos desabilitados e sem botão de finalizar/bolha', async () => {

@@ -107,6 +107,20 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
       </div>
 
       <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            {...form.register('destacarMenorPrecoNaGrade')}
+            className="rounded border-input text-primary focus:ring-primary w-4 h-4"
+          />
+          Destacar menor preço na grade ao vivo
+        </label>
+        <p className="text-xs text-muted-foreground">
+          Quando ligado, a grade ao vivo destaca em verde o menor preço unitário de cada item.
+        </p>
+      </div>
+
+      <div className="space-y-2">
         <label htmlFor="layoutEmail" className="text-sm font-medium">
           Layout de e-mail
         </label>

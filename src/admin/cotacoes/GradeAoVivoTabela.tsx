@@ -7,6 +7,7 @@ import { moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { CelulaGrid, GridAoVivo, ItemGrid } from './cotacoes.schema'
 import { useCorrigirLance, useAtualizarQuantidadeItem } from './cotacoes.api'
+import { useConfiguracaoLoja } from '@/admin/configuracoes/configuracoes.api'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
 
 type Coluna = { participanteId: string; empresa: string }
@@ -93,6 +94,7 @@ type LinhaProps = {
   quantidadeEditavel: boolean
   quantidadePendente: boolean
   aoAtualizarQuantidade: (itemId: string, quantidade: number) => void
+  destacarMenorPreco: boolean
 }
 
 // `memo` por linha (spec.md §14): o poll não deve re-renderizar linhas iguais.
@@ -103,6 +105,7 @@ const LinhaItem = memo(function LinhaItem({
   quantidadeEditavel,
   quantidadePendente,
   aoAtualizarQuantidade,
+  destacarMenorPreco,
 }: LinhaProps) {
   return (
     <tr className="group transition-colors hover:bg-muted/40">
@@ -155,6 +158,7 @@ const LinhaItem = memo(function LinhaItem({
           )
         }
         const ehMenor =
+          destacarMenorPreco &&
           celula.status === 'COTADO' &&
           celula.precoUnitario != null &&
           item.menorPrecoUnitario != null &&
@@ -198,11 +202,14 @@ type Alvo = { item: ItemGrid; celula: CelulaGrid }
 export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; grade: GridAoVivo }) {
   const corrigir = useCorrigirLance(cotacaoId)
   const atualizarQuantidade = useAtualizarQuantidadeItem(cotacaoId)
+  const { data: configuracao } = useConfiguracaoLoja()
   const [alvo, setAlvo] = useState<Alvo | null>(null)
   const [preco, setPreco] = useState('')
   const [naoCotado, setNaoCotado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [erroQuantidade, setErroQuantidade] = useState<string | null>(null)
+
+  const destacarMenorPreco = configuracao?.destacarMenorPrecoNaGrade ?? true
 
   const quantidadeEditavel = grade.status === 'ABERTA' || grade.status === 'ENCERRADA'
 
@@ -285,6 +292,7 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
                   quantidadeEditavel={quantidadeEditavel}
                   quantidadePendente={atualizarQuantidade.isPending}
                   aoAtualizarQuantidade={aoAtualizarQuantidade}
+                  destacarMenorPreco={destacarMenorPreco}
                 />
               ))}
             </tbody>

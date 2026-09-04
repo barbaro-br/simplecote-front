@@ -42,7 +42,24 @@ export function useFilaDeSincronizacao(token: string) {
           lances: [{ itemCotacaoId, ...patch }],
         })
         if (versao !== (versaoRef.current[itemCotacaoId] ?? 0)) return // resultado obsoleto
-        queryClient.setQueryData(cotacaoKey(token), data)
+        // Aplica a resposta isolada por item: mescla só a célula do item que a
+        // requisição enviou. Nunca substitui o snapshot inteiro — um snapshot pode
+        // conter `precoUnitario` desatualizado de outro item ainda em voo. Itens
+        // novos da resposta (ex.: adicionados pelo comprador) entram no fim, sem
+        // sobrescrever nenhuma célula já em cache.
+        queryClient.setQueryData(
+          cotacaoKey(token),
+          (atual: CotacaoPorToken | undefined) => {
+            if (!atual || !atual.itens) return data
+            const itemAtualizado = data.itens?.find((i) => i.itemCotacaoId === itemCotacaoId)
+            const idsExistentes = new Set(atual.itens.map((i) => i.itemCotacaoId))
+            const itens = atual.itens.map((item) =>
+              item.itemCotacaoId === itemCotacaoId ? (itemAtualizado ?? item) : item,
+            )
+            const novos = data.itens?.filter((i) => !idsExistentes.has(i.itemCotacaoId)) ?? []
+            return { ...data, itens: [...itens, ...novos] }
+          },
+        )
         setFila(removerEntrada(token, itemCotacaoId))
         setStatusPorItem((s) => ({ ...s, [itemCotacaoId]: 'sincronizado' }))
         setErrosPorItem((e) => {
