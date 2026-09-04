@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { FileText, Plus, RefreshCw, Search, ServerCrash } from 'lucide-react'
-import { dataHoraBr } from '@/shared/format/formatters'
+import { dataHoraBr, chaveMes, mesAnoBr } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 import { StatusBadge } from '@/shared/components/StatusBadge'
@@ -58,6 +58,28 @@ export function CotacoesPage() {
     setSearchParams(next, { replace: true })
   }
 
+  // Meses com prazo definido, mais recente primeiro — só cotações abertas/encerradas têm prazo.
+  const mesesDisponiveis = useMemo(() => {
+    const chaves = new Set<string>()
+    for (const c of cotacoes ?? []) {
+      if (c.prazo) chaves.add(chaveMes(c.prazo))
+    }
+    return [...chaves].sort().reverse()
+  }, [cotacoes])
+
+  const mesParam = searchParams.get('mes')
+  const mes = mesesDisponiveis.includes(mesParam ?? '') ? mesParam! : ''
+
+  function setMes(m: string) {
+    const next = new URLSearchParams(searchParams)
+    if (m === '') {
+      next.delete('mes')
+    } else {
+      next.set('mes', m)
+    }
+    setSearchParams(next, { replace: true })
+  }
+
   const navigate = useNavigate()
   const excluir = useExcluirCotacao()
   const [erroAcao, setErroAcao] = useState<string | null>(null)
@@ -83,6 +105,7 @@ export function CotacoesPage() {
   const total = cotacoes?.length ?? 0
   const lista = (cotacoes ?? [])
     .filter((c) => filtro === 'TODOS' || c.status === filtro)
+    .filter((c) => mes === '' || (c.prazo != null && chaveMes(c.prazo) === mes))
     .filter(
       (c) => busca.trim() === '' || c.titulo.toLowerCase().includes(busca.trim().toLowerCase()),
     )
@@ -142,6 +165,21 @@ export function CotacoesPage() {
             )
           })}
         </div>
+        {mesesDisponiveis.length > 0 && (
+          <select
+            aria-label="Filtrar por mês do prazo"
+            value={mes}
+            onChange={(e) => setMes(e.target.value)}
+            className="h-7 rounded-full border-0 bg-muted px-3 text-xs font-medium text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <option value="">Todos os meses</option>
+            {mesesDisponiveis.map((m) => (
+              <option key={m} value={m}>
+                {mesAnoBr(m)}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {erroAcao && <ErrorAlert>{erroAcao}</ErrorAlert>}
