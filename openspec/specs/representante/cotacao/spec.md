@@ -11,7 +11,7 @@ O sistema SHALL, em `/cotacao/:token`, carregar `GET /public/cotacoes/:token` e 
 
 O contexto da cotação — título, saudação pelo `representanteNome`, linha de Empresa/Comprador e a linha de **Prazo** — SHALL ficar na **barra de ação fixa na base da viewport** (`sticky bottom`, junto do botão "Finalizar" e da bolha de progresso; ver requisito "Finalização com trava e limpeza da fila"), não mais num cabeçalho fixo no topo. A lista de itens SHALL ocupar a área rolável a partir do topo da tela. A linha de Prazo SHALL exibir a data/hora formatada e SHALL ganhar realce visual de alerta (ex.: texto vermelho) quando faltar menos de 2 horas para o `prazo` ou o prazo já tiver vencido (neste caso exibindo "Prazo expirado"); com prazo folgado ou ausente, a linha SHALL usar um tom neutro. O cálculo de "faltam menos de 2h" SHALL usar o horário atual do dispositivo comparado ao `prazo` da API.
 
-Cada item SHALL ser apresentado num card com hierarquia visual clara: o **nome do produto** em destaque, o **código de barras** (quando houver) alinhado à direita numa fonte discreta, uma linha compacta com a unidade/embalagem e a quantidade a comprar (ex.: "fd com 20un · comprar 10", em tamanho de fonte legível — `text-xs` ou maior), e o **campo de preço da embalagem** com prefixo "R$" e área de toque ampliada, com o rótulo **"P.CX"** exibido acima do campo. O **preço unitário derivado** SHALL ser exibido como texto simples (nunca como input), com o rótulo **"P.UN"** acima do valor — ambos os rótulos ("P.CX"/"P.UN") SHALL ficar sempre na mesma posição relativa (acima do respectivo valor) em todo item, nunca ao lado, e SHALL usar um tamanho de fonte legível (mínimo `text-[10px]`, nunca abaixo disso). O campo de preço da embalagem SHALL ter largura suficiente para exibir, sem rolagem interna, valores de até 4 dígitos inteiros com centavos (ex.: "9.999,99"). As caixas do P.CX e do P.UN SHALL ter largura visualmente consistente entre si, independente do conteúdo do P.UN ("—", "calculando…" ou um valor formatado) — a caixa do P.UN NÃO SHALL crescer/encolher livremente com o texto a ponto de destoar da largura da caixa do P.CX ao lado. O card SHALL exibir um **indicador de status automático**, derivado apenas de haver ou não valor no campo de preço: **visto (✓) verde** quando há preço, **marca (✗) vermelha** quando o campo está vazio. NÃO SHALL existir toggle, checkbox ou qualquer outro controle explícito para "não cotar" um item: a ausência de preço no campo é, por si, a marcação de "não cotado". Quando o campo de um item passa de vazio para preenchido, a borda do card SHALL dar um flash verde breve. O comportamento de autosave por item permanece o mesmo.
+Cada item SHALL ser apresentado num card com hierarquia visual clara: o **nome do produto** em destaque, uma linha compacta com a unidade/embalagem e a quantidade a comprar (ex.: "fd com 20un · comprar 10", em tamanho de fonte legível — `text-xs` ou maior), o **código de barras** (quando houver) numa linha própria logo abaixo dessa, em fonte discreta — nunca ao lado do nome do produto, onde ficaria espremido — e o **campo de preço da embalagem** com prefixo "R$" e área de toque ampliada, com o rótulo **"P.CX"** exibido acima do campo. O **preço unitário derivado** SHALL ser exibido como texto simples (nunca como input), com o rótulo **"P.UN"** acima do valor — ambos os rótulos ("P.CX"/"P.UN") SHALL ficar sempre na mesma posição relativa (acima do respectivo valor) em todo item, nunca ao lado, e SHALL usar um tamanho de fonte legível (mínimo `text-[10px]`, nunca abaixo disso). O campo de preço da embalagem SHALL ter largura suficiente para exibir, sem rolagem interna, valores de até 4 dígitos inteiros com centavos (ex.: "9.999,99"). As caixas do P.CX e do P.UN SHALL ter largura visualmente consistente entre si, independente do conteúdo do P.UN ("—", "calculando…" ou um valor formatado) — a caixa do P.UN NÃO SHALL crescer/encolher livremente com o texto a ponto de destoar da largura da caixa do P.CX ao lado. O card SHALL exibir um **indicador de status automático**, derivado apenas de haver ou não valor no campo de preço: **visto (✓) verde** quando há preço, **marca (✗) vermelha** quando o campo está vazio. NÃO SHALL existir toggle, checkbox ou qualquer outro controle explícito para "não cotar" um item: a ausência de preço no campo é, por si, a marcação de "não cotado". Quando o campo de um item passa de vazio para preenchido, a borda do card SHALL dar um flash verde breve. O comportamento de autosave por item permanece o mesmo.
 
 As cores da tela SHALL usar os tokens de tema do projeto (`primary`, `success`, `destructive`, `background`, subárvore `.tema-claro`); não SHALL haver cores fixas de marca embutidas no componente.
 
@@ -78,7 +78,7 @@ As cores da tela SHALL usar os tokens de tema do projeto (`primary`, `success`, 
 - **THEN** o valor inteiro fica visível no campo sem exigir rolagem horizontal para conferir o que foi digitado
 
 ### Requirement: Autosave por item com máquina de estados de sincronização
-O sistema SHALL, para cada item independentemente, aplicar o fluxo `digitando → (debounce de 800ms sem nova tecla) → enviando → sincronizado | falhou`. Ao entrar em `enviando`, o sistema SHALL gravar uma entrada na fila local e disparar `PUT /public/cotacoes/:token/lances` contendo **apenas aquele item**: `{ itemCotacaoId, preco }` quando há preço no campo, ou `{ itemCotacaoId, naoCotado: true }` quando um campo antes preenchido passou a vazio. Um campo que nunca teve preço não dispara requisição. Cada célula SHALL ter indicador visual distinto para `sincronizado` e `falhou`; o representante nunca precisa entender fila ou retry. No sucesso da requisição, o sistema SHALL aplicar a resposta ao estado local da cotação (incluindo o `precoUnitario` recalculado pelo backend), para que o valor unitário do item reflita imediatamente, sem exigir refresh manual. Enquanto a célula está em `enviando` e ainda não há `precoUnitario` vindo do servidor, o campo de preço unitário SHALL exibir o estado "calculando…" em vez de "—".
+O sistema SHALL, para cada item independentemente, aplicar o fluxo `digitando → (debounce de 800ms sem nova tecla) → enviando → sincronizado | falhou`. Ao entrar em `enviando`, o sistema SHALL gravar uma entrada na fila local e disparar `PUT /public/cotacoes/:token/lances` contendo **apenas aquele item**: `{ itemCotacaoId, preco }` quando há preço no campo, ou `{ itemCotacaoId, naoCotado: true }` quando um campo antes preenchido passou a vazio. Um campo que nunca teve preço não dispara requisição. Cada célula SHALL ter indicador visual distinto para `sincronizado` e `falhou`; o representante nunca precisa entender fila ou retry. No sucesso da requisição, o sistema SHALL aplicar a resposta ao estado local da cotação (incluindo o `precoUnitario` recalculado pelo backend), para que o valor unitário do item reflita imediatamente, sem exigir refresh manual. Enquanto a célula está em `enviando` e ainda não há `precoUnitario` vindo do servidor, o campo de preço unitário SHALL exibir o estado "calculando…" em vez de "—". A aplicação da resposta de sincronização de um item ao estado local SHALL ser isolada por `itemCotacaoId`: quando duas ou mais sincronizações de itens diferentes estiverem em andamento ao mesmo tempo, a resposta de cada uma SHALL atualizar somente a célula do item correspondente, e a ordem de chegada das respostas NÃO SHALL fazer a resposta de um item sobrescrever ou apagar o `precoUnitario` já aplicado de outro item.
 
 #### Scenario: Preço digitado sincroniza sozinho
 - **WHEN** o representante digita um preço num item e para de digitar por 800ms
@@ -99,6 +99,16 @@ O sistema SHALL, para cada item independentemente, aplicar o fluxo `digitando �
 #### Scenario: Unitário mostra "calculando…" durante o envio
 - **WHEN** um item está em `enviando` e o servidor ainda não devolveu o `precoUnitario`
 - **THEN** o campo de preço unitário exibe "calculando…" em vez de "—"
+
+#### Scenario: Sincronizações concorrentes de itens diferentes não se atropelam
+
+- **WHEN** o representante preenche o preço de dois itens diferentes em sequência rápida, de forma que as duas sincronizações fiquem em andamento ao mesmo tempo e terminem próximas uma da outra
+- **THEN** ambos os itens exibem o respectivo `precoUnitario` recalculado corretamente assim que sua própria sincronização termina, sem que a resposta de um item deixe o P.UN do outro travado em "—" ou "calculando…"
+
+#### Scenario: Recarregar a página nunca é necessário para ver o preço unitário
+
+- **WHEN** o representante sincroniza dois ou mais itens em sequência rápida
+- **THEN** o valor de `precoUnitario` exibido em cada item, sem precisar recarregar a página, é o mesmo valor que apareceria após um F5
 
 ### Requirement: Destaque do preço unitário
 O preço unitário de cada item SHALL ser exibido com destaque visual — tamanho legível, algarismos tabulares (`tabular-nums`), alinhado à direita e na cor de primeiro plano do tema (`foreground`) — em vez de um texto apagado, para que o representante consiga comparar os valores unitários enquanto digita.
@@ -267,3 +277,32 @@ Um item da Cotação SHALL exibir um indicador visual de "Novo" no card quando o
 
 - **WHEN** o representante abre a cotação pela primeira vez e todos os itens estão `PENDENTE`
 - **THEN** nenhum card exibe o indicador "Novo"
+
+### Requirement: Layout dedicado para desktop
+Em viewports largos (desktop, acima do breakpoint mobile/tablet do projeto), a tela `/cotacao/:token` SHALL exibir seu conteúdo (saudação, contexto de Empresa/Comprador, linha de Prazo e a lista de itens) dentro de um contêiner centralizado horizontalmente, com largura máxima confortável de leitura — em vez de a lista de itens ficar ancorada à esquerda ocupando só uma fração estreita da largura da tela, com o restante do espaço vazio. O fundo da página fora desse contêiner SHALL usar a mesma cor de superfície do tema (`.tema-claro`) já usada em mobile, mantendo a identidade visual consistente entre os dois layouts. Os cards de item SHALL manter a mesma hierarquia de informação e os mesmos rótulos ("P.CX"/"P.UN") já especificados para mobile, apenas com o contêiner pai redimensionado — nenhum dado ou campo exibido em mobile SHALL ficar ausente em desktop.
+
+Em desktop, a tela SHALL exibir um cabeçalho fixo no topo do contêiner central (visível só a partir do breakpoint de desktop) com o título da Cotação, a saudação pelo nome do representante, o contexto de Empresa/Comprador e a linha de Prazo — a mesma informação que, em mobile, fica só na barra de ação fixa na base. Nesse caso, a barra de ação fixa na base SHALL, em desktop, omitir esse bloco de texto (já coberto pelo cabeçalho do topo) e exibir apenas a bolha de progresso e o botão "Finalizar", evitando repetir a mesma informação duas vezes na tela; qualquer mensagem de erro de finalização continua sendo exibida na barra da base em qualquer largura. O comportamento mobile-only (gesto de deslizar por toque, o bloco de texto completo na barra fixa da base, o tutorial de primeira visita) permanece regido pelos requisitos já existentes; este requisito não os substitui, apenas define o comportamento de layout em telas largas.
+
+#### Scenario: Conteúdo centralizado em tela larga
+- **WHEN** o representante abre `/cotacao/:token` num navegador desktop com viewport larga (ex.: 1440px)
+- **THEN** a saudação, o contexto da loja, a linha de Prazo e a lista de itens aparecem dentro de um contêiner centralizado com largura máxima definida, sem a lista de itens ficar esticada à largura total da tela nem ancorada isolada num canto com grande área vazia ao redor
+
+#### Scenario: Cards de item mantêm a mesma informação em desktop
+- **WHEN** o representante visualiza um item da lista em desktop
+- **THEN** o card exibe nome do produto, código de barras, unidade/embalagem, quantidade, os campos P.CX/P.UN com seus rótulos e o indicador de status — os mesmos dados e rótulos já exibidos em mobile
+
+#### Scenario: Fundo da página consistente com o tema claro forçado
+- **WHEN** a tela é aberta em desktop
+- **THEN** o fundo ao redor do contêiner centralizado usa o mesmo token de superfície do tema claro (`.tema-claro`) já aplicado à tela em mobile, sem introduzir uma cor de fundo diferente
+
+#### Scenario: Comportamento mobile permanece inalterado
+- **WHEN** a mesma tela é aberta numa viewport mobile
+- **THEN** o layout, a barra de ação fixa na base (com título/saudação/empresa/prazo completos), os gestos de deslizar e o tutorial de primeira visita continuam se comportando exatamente como já especificado, sem nenhuma regressão introduzida pelo layout de desktop
+
+#### Scenario: Cabeçalho de desktop mostra a identidade da loja e da cotação
+- **WHEN** o representante abre a tela em desktop
+- **THEN** um cabeçalho no topo do contêiner central exibe o título da Cotação, a saudação, o contexto de Empresa/Comprador e o Prazo, dando à tela uma identidade visual clara mesmo antes de rolar até os itens
+
+#### Scenario: Barra da base em desktop não repete o que já está no cabeçalho
+- **WHEN** o representante está em desktop com a cotação ainda editável
+- **THEN** a barra de ação fixa na base mostra só a bolha de progresso e o botão "Finalizar" (e um erro de finalização, se houver) — sem repetir título, saudação, empresa ou prazo, que já aparecem no cabeçalho do topo

@@ -163,7 +163,24 @@ export function CotacaoPorTokenPage() {
 
   // Comentário: TemaClaro.tsx atua como container de rolagem.
   return (
-    <div className="mx-auto max-w-2xl pb-40">
+    <div className="mx-auto w-full max-w-2xl md:max-w-3xl pb-40">
+      {/* Cabeçalho só em desktop — em mobile essas informações ficam na barra fixa da base. */}
+      <div className="hidden border-b border-border px-5 py-5 md:block">
+        <h1 className="text-xl font-bold leading-tight">{d.titulo}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Olá, {primeiroNome}! · {d.empresaNome} · cotação de {d.compradorNome}
+        </p>
+        {d.prazo && (
+          <p
+            className={`mt-1 text-[13px] ${
+              expirando || vencido ? 'font-semibold text-destructive' : 'text-muted-foreground'
+            }`}
+          >
+            {vencido ? 'Prazo expirado' : `Prazo: ${dataHoraBr(d.prazo)}`}
+          </p>
+        )}
+      </div>
+
       {tutorialEl}
       {(pullY > 0 || isRefreshing) && (
         <div className="flex justify-center w-full transition-transform" style={{ transform: `translateY(${pullY}px)`, height: 0 }}>
@@ -223,24 +240,27 @@ export function CotacaoPorTokenPage() {
             </div>
           </div>
 
-          <div className="mx-auto flex max-w-2xl items-center gap-4 px-5 pb-4 pt-4">
+          <div className="mx-auto flex w-full max-w-2xl md:max-w-3xl items-center gap-4 px-5 pb-4 pt-4">
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-bold leading-tight">{d.titulo}</h1>
-              <p className="mt-0.5 text-[13px] text-muted-foreground">
-                Olá, {primeiroNome}!
-              </p>
-              <p className="text-[13px] text-muted-foreground">
-                {d.empresaNome} · cotação de {d.compradorNome}
-              </p>
-              {d.prazo && (
-                <p
-                  className={`mt-0.5 text-[11px] ${
-                    expirando || vencido ? 'font-semibold text-destructive' : 'text-muted-foreground'
-                  }`}
-                >
-                  {vencido ? 'Prazo expirado' : `Prazo: ${dataHoraBr(d.prazo)}`}
+              {/* Em desktop, título/saudação/empresa/prazo já aparecem no cabeçalho do topo. */}
+              <div className="md:hidden">
+                <h1 className="truncate text-base font-bold leading-tight">{d.titulo}</h1>
+                <p className="mt-0.5 text-[13px] text-muted-foreground">
+                  Olá, {primeiroNome}!
                 </p>
-              )}
+                <p className="text-[13px] text-muted-foreground">
+                  {d.empresaNome} · cotação de {d.compradorNome}
+                </p>
+                {d.prazo && (
+                  <p
+                    className={`mt-0.5 text-[11px] ${
+                      expirando || vencido ? 'font-semibold text-destructive' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {vencido ? 'Prazo expirado' : `Prazo: ${dataHoraBr(d.prazo)}`}
+                  </p>
+                )}
+              </div>
               {erroFinal && (
                 <p role="alert" className="mt-1 text-[13px] text-destructive">
                   {erroFinal}

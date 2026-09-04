@@ -59,6 +59,73 @@ test('lista os produtos do catálogo', async () => {
   expect(screen.getByText('Fardo')).toBeInTheDocument()
 })
 
+test('busca filtra por nome parcial, sem diferenciar caixa ou acento', async () => {
+  const lista = [
+    { id: '1', nome: 'Açúcar refinado 1kg', codigoBarras: '111', unidade: 'Unidade', quantidadePorEmbalagem: 1, ativo: true },
+    { id: '2', nome: 'Arroz 5kg', codigoBarras: '222', unidade: 'Fardo', quantidadePorEmbalagem: 30, ativo: true },
+  ]
+  server.use(http.get('*/api/produtos', () => HttpResponse.json(lista)))
+
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+  expect(await screen.findByText('Açúcar refinado 1kg')).toBeInTheDocument()
+
+  await user.type(screen.getByRole('searchbox', { name: 'Buscar produto' }), 'acucar')
+
+  expect(screen.getByText('Açúcar refinado 1kg')).toBeInTheDocument()
+  expect(screen.queryByText('Arroz 5kg')).not.toBeInTheDocument()
+})
+
+test('busca filtra por código de barras parcial', async () => {
+  const lista = [
+    { id: '1', nome: 'Arroz 5kg', codigoBarras: '1234567890123', unidade: 'Fardo', quantidadePorEmbalagem: 30, ativo: true },
+    { id: '2', nome: 'Feijão 1kg', codigoBarras: '9999999999999', unidade: 'Caixa', quantidadePorEmbalagem: 1, ativo: true },
+  ]
+  server.use(http.get('*/api/produtos', () => HttpResponse.json(lista)))
+
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+
+  await user.type(screen.getByRole('searchbox', { name: 'Buscar produto' }), '456789')
+
+  expect(screen.getByText('Arroz 5kg')).toBeInTheDocument()
+  expect(screen.queryByText('Feijão 1kg')).not.toBeInTheDocument()
+})
+
+test('limpar a busca restaura a lista completa', async () => {
+  const lista = [
+    { id: '1', nome: 'Arroz 5kg', codigoBarras: '123', unidade: 'Fardo', quantidadePorEmbalagem: 30, ativo: true },
+    { id: '2', nome: 'Feijão 1kg', codigoBarras: '456', unidade: 'Caixa', quantidadePorEmbalagem: 1, ativo: true },
+  ]
+  server.use(http.get('*/api/produtos', () => HttpResponse.json(lista)))
+
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+
+  const busca = screen.getByRole('searchbox', { name: 'Buscar produto' })
+  await user.type(busca, 'feijao')
+  expect(screen.queryByText('Arroz 5kg')).not.toBeInTheDocument()
+
+  await user.clear(busca)
+
+  expect(screen.getByText('Arroz 5kg')).toBeInTheDocument()
+  expect(screen.getByText('Feijão 1kg')).toBeInTheDocument()
+})
+
+test('termo sem correspondência mostra estado vazio de busca', async () => {
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+
+  await user.type(screen.getByRole('searchbox', { name: 'Buscar produto' }), 'naoexiste')
+
+  expect(screen.getByText('Nenhum produto encontrado para a busca.')).toBeInTheDocument()
+  expect(screen.queryByText('Arroz 5kg')).not.toBeInTheDocument()
+  expect(screen.queryByText('Nenhum produto cadastrado.')).not.toBeInTheDocument()
+})
+
 test('abre o formulário de novo produto, preenche e salva', async () => {
   renderComQuery(<ProdutosPage />)
   const user = userEvent.setup()

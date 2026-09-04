@@ -1,13 +1,18 @@
 import { useState } from 'react'
-import { Archive, ArchiveRestore, Pencil, PlusCircle } from 'lucide-react'
+import { Archive, ArchiveRestore, Pencil, PlusCircle, Search } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
+import { Input } from '@/shared/components/ui/input'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { useProdutos, useInativarProduto, useAtivarProduto } from './produtos.api'
 import { ProdutoForm } from './ProdutoForm'
 import type { Produto } from './produtos.schema'
+
+function normalizar(termo: string): string {
+  return termo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
 
 export function ProdutosPage() {
   const { data: produtos, isLoading, error } = useProdutos({ incluirInativos: true })
@@ -15,6 +20,16 @@ export function ProdutosPage() {
   const ativar = useAtivarProduto()
   const [mostrarForm, setMostrarForm] = useState(false)
   const [produtoEditando, setProdutoEditando] = useState<Produto | undefined>(undefined)
+  const [busca, setBusca] = useState('')
+
+  const termo = normalizar(busca.trim())
+  const listaFiltrada = (produtos ?? []).filter((p) => {
+    if (termo === '') return true
+    return (
+      normalizar(p.nome).includes(termo) ||
+      (p.codigoBarras != null && normalizar(p.codigoBarras).includes(termo))
+    )
+  })
 
   if (isLoading) return <p className="p-6 text-muted-foreground">Carregando catálogo…</p>
   if (error) return <p className="p-6 text-destructive">Erro ao carregar produtos: {error.message}</p>
@@ -47,6 +62,20 @@ export function ProdutosPage() {
             Novo produto
           </Button>
         </div>
+        <div className="relative max-w-xs">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            type="search"
+            aria-label="Buscar produto"
+            placeholder="Buscar por nome ou código de barras…"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="pl-9 pr-3"
+          />
+        </div>
       </div>
 
       <Dialog
@@ -77,8 +106,14 @@ export function ProdutosPage() {
                     Nenhum produto cadastrado.
                   </td>
                 </tr>
+              ) : listaFiltrada.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                    Nenhum produto encontrado para a busca.
+                  </td>
+                </tr>
               ) : (
-                produtos.map((produto) => (
+                listaFiltrada.map((produto) => (
                   <tr
                     key={produto.id}
                     className={`transition-colors hover:bg-muted/50 ${produto.ativo ? '' : 'opacity-60 bg-muted/10'}`}

@@ -11,6 +11,7 @@ export const CONFIGURACAO_SEED: Configuracao = {
   layoutEmail: 'Olá {representante},\n\nSegue o convite para a cotação. Acesse o link para enviar seus preços.',
   estiloNavegacao: 'LATERAL',
   tema: 'CLARO',
+  destacarMenorPrecoNaGrade: true,
   linkColaboradorToken: 'link-colaborador-exemplo',
 }
 

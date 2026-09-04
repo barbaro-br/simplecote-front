@@ -114,3 +114,25 @@ test('tema renderiza os dois radios, reflete o valor atual e persiste ao salvar'
   renderPage()
   expect(await screen.findByRole('radio', { name: 'Escuro' })).toBeChecked()
 })
+
+test('destacar menor preço na grade é ligado por padrão e persiste ao desligar', async () => {
+  const user = userEvent.setup()
+  const { unmount } = renderPage()
+
+  const toggle = await screen.findByRole('checkbox', { name: 'Destacar menor preço na grade ao vivo' })
+  expect(toggle).toBeChecked()
+
+  await user.click(toggle)
+  await user.click(screen.getByRole('button', { name: 'Salvar' }))
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Salvar' })).toBeEnabled()
+  })
+
+  unmount()
+
+  renderPage()
+  expect(
+    await screen.findByRole('checkbox', { name: 'Destacar menor preço na grade ao vivo' }),
+  ).not.toBeChecked()
+})

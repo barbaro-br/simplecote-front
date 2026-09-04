@@ -5,6 +5,11 @@ import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
 import { GradeAoVivoTabela } from './GradeAoVivoTabela'
 import type { GridAoVivo } from './cotacoes.schema'
+import { resetarMock, definirConfiguracaoMock } from '@/admin/configuracoes/configuracoes.api'
+
+beforeEach(() => {
+  resetarMock()
+})
 
 const gradeBase: GridAoVivo = {
   status: 'ABERTA',
@@ -210,6 +215,72 @@ test('célula COTADO menor preço mantém destaque verde sem o texto "MENOR"', (
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
   expect(celula).toHaveClass('bg-success/5')
   expect(screen.queryByText(/MENOR/i)).not.toBeInTheDocument()
+})
+
+test('item com um único lance recebe destaque de menor preço quando a preferência está ligada', async () => {
+  const gradeMenor: GridAoVivo = {
+    ...gradeBase,
+    itens: [
+      {
+        ...gradeBase.itens[0],
+        menorPrecoUnitario: 5,
+      },
+    ],
+  }
+
+  renderGrade(gradeMenor)
+  await screen.findByText('Arroz')
+
+  const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
+  await waitFor(() => expect(celula).toHaveClass('bg-success/5'))
+})
+
+test('preferência desligada remove o destaque de menor preço mesmo com lance único', async () => {
+  definirConfiguracaoMock({ destacarMenorPrecoNaGrade: false })
+  const gradeMenor: GridAoVivo = {
+    ...gradeBase,
+    itens: [
+      {
+        ...gradeBase.itens[0],
+        menorPrecoUnitario: 5,
+      },
+    ],
+  }
+
+  renderGrade(gradeMenor)
+  await screen.findByText('Arroz')
+
+  const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
+  await waitFor(() => expect(celula).not.toHaveClass('bg-success/5'))
+})
+
+test('com múltiplos lances, apenas a célula de menor preço é destacada quando ligada', async () => {
+  const gradeMulti: GridAoVivo = {
+    ...gradeBase,
+    respondidos: 2,
+    totalParticipantes: 2,
+    itens: [
+      {
+        ...gradeBase.itens[0],
+        menorPrecoUnitario: 4,
+        precos: [
+          { participanteId: 'p1', empresaId: 'e1', empresa: 'Atacadão', preco: 100, precoUnitario: 5, status: 'COTADO' },
+          { participanteId: 'p2', empresaId: 'e2', empresa: 'Mercado Bom', preco: 80, precoUnitario: 4, status: 'COTADO' },
+        ],
+      },
+    ],
+  }
+
+  renderGrade(gradeMulti)
+  await screen.findByText('Arroz')
+
+  const maior = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
+  const menor = screen.getByRole('button', { name: /Corrigir lance de Mercado Bom para Arroz/i })
+
+  await waitFor(() => {
+    expect(menor).toHaveClass('bg-success/5')
+    expect(maior).not.toHaveClass('bg-success/5')
+  })
 })
 
 test('cabeçalho das Empresas e preço padrão alinhados à direita com cartão', () => {
