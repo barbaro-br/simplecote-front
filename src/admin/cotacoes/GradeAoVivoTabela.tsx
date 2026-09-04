@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -46,17 +46,21 @@ function CampoQuantidade({
 
   // Sincroniza com fonte externa (SSE/query) apenas quando o campo não está
   // em edição, para não sobrescrever o que o Comprador está digitando.
-  useEffect(() => {
+  const [quantidadeAnterior, setQuantidadeAnterior] = useState(item.quantidadeSolicitada)
+  if (item.quantidadeSolicitada !== quantidadeAnterior) {
+    setQuantidadeAnterior(item.quantidadeSolicitada)
     if (!focado) {
       setValor(String(item.quantidadeSolicitada))
     }
-  }, [item.quantidadeSolicitada, focado])
+  }
 
   function confirmar() {
     const v = parseInt(valor, 10)
     if (Number.isInteger(v) && v >= 1) {
       if (v !== item.quantidadeSolicitada) {
         aoAtualizarQuantidade(item.itemCotacaoId, v)
+      } else {
+        setValor(String(item.quantidadeSolicitada))
       }
     } else {
       setValor(String(item.quantidadeSolicitada))

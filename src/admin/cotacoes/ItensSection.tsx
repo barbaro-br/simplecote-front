@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
@@ -30,10 +30,11 @@ function Stepper({
   disabled: boolean
 }) {
   const [localVal, setLocalVal] = useState<number | ''>(value)
-
-  useEffect(() => {
+  const [prevValue, setPrevValue] = useState(value)
+  if (value !== prevValue) {
+    setPrevValue(value)
     setLocalVal(value)
-  }, [value])
+  }
 
   const dec = () => {
     if (typeof localVal === 'number' && localVal > 1) {

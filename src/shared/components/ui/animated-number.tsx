@@ -10,15 +10,12 @@ export function AnimatedNumber({ value, duration = 1000, formatter }: Props) {
   // Pula a animação nos testes do vitest/jest
   const isTest = import.meta.env.MODE === 'test';
   
-  const [currentValue, setCurrentValue] = useState(isTest ? value : 0);
+  const [currentValue, setCurrentValue] = useState(0);
   const startTime = useRef<number | null>(null);
-  const startValue = useRef(isTest ? value : 0);
+  const startValue = useRef(0);
 
   useEffect(() => {
-    if (isTest) {
-      setCurrentValue(value);
-      return;
-    }
+    if (isTest) return;
 
     let animationFrameId: number;
 
@@ -48,11 +45,13 @@ export function AnimatedNumber({ value, duration = 1000, formatter }: Props) {
     };
   }, [value, duration, isTest]);
 
-  const formatted = formatter 
-    ? formatter(currentValue)
-    : (value % 1 !== 0 
-      ? currentValue.toFixed(2).replace('.', ',')
-      : Math.round(currentValue).toString());
+  const displayValue = isTest ? value : currentValue;
+
+  const formatted = formatter
+    ? formatter(displayValue)
+    : (value % 1 !== 0
+      ? displayValue.toFixed(2).replace('.', ',')
+      : Math.round(displayValue).toString());
 
   return <span>{formatted}</span>;
 }

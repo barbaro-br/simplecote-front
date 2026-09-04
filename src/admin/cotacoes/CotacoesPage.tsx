@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { FileText, Plus, RefreshCw, Search, ServerCrash } from 'lucide-react'
 import { dataHoraBr } from '@/shared/format/formatters'
@@ -39,12 +39,9 @@ export function CotacoesPage() {
   // Estado (não ref) porque é lido durante o render, para aplicar o fade-in
   // só na primeira carga (não em refetches subsequentes).
   const [primeiraCarga, setPrimeiraCarga] = useState(true)
-
-  useEffect(() => {
-    if (!isLoading) {
-      setPrimeiraCarga(false)
-    }
-  }, [isLoading])
+  if (primeiraCarga && !isLoading) {
+    setPrimeiraCarga(false)
+  }
 
   const statusParam = searchParams.get('status')
   const filtro: Filtro = STATUS.some((s) => s.valor === statusParam)

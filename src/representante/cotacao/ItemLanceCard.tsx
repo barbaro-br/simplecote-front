@@ -80,7 +80,7 @@ export function ItemLanceCard({
     setErroLocal(null)
     jaEnviadoRef.current = valorDebounced
     aoAssentar({ preco: parsed.data })
-  }, [valorDebounced, podeEditar, aoAssentar])
+  }, [valorDebounced, podeEditar, aoAssentar, item.itemCotacaoId])
 
   // Flash de borda verde quando o preço vai de vazio → preenchido.
   const precoAnteriorRef = useRef(precoTexto)
