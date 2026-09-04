@@ -104,3 +104,45 @@ test('menu de cada linha não tem mais "Duplicar" (só Ver detalhes e Excluir)',
   expect(screen.getByRole('menuitem', { name: 'Ver detalhes' })).toBeInTheDocument()
   expect(screen.getByRole('menuitem', { name: 'Excluir' })).toBeInTheDocument()
 })
+
+test('filtro de mês lista só os meses com prazo, mais recente primeiro', async () => {
+  renderPage()
+  await screen.findByRole('link', { name: 'Compra semanal' })
+
+  const select = screen.getByRole('combobox', { name: 'Filtrar por mês do prazo' })
+  const opcoes = within(select).getAllByRole('option').map((o) => o.textContent)
+  expect(opcoes).toEqual(['Todos os meses', 'Agosto de 2026'])
+})
+
+test('filtrar por mês esconde cotações sem prazo e de outros meses', async () => {
+  renderPage()
+  await screen.findByRole('link', { name: 'Compra semanal' })
+  const user = userEvent.setup()
+
+  await user.selectOptions(
+    screen.getByRole('combobox', { name: 'Filtrar por mês do prazo' }),
+    'Agosto de 2026',
+  )
+
+  expect(screen.queryByRole('link', { name: 'Compra semanal' })).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Hortifruti agosto' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Limpeza Q3' })).toBeInTheDocument()
+})
+
+test('filtro de mês vem da URL (?mes=)', async () => {
+  renderPage('/admin/cotacoes?mes=2026-08')
+
+  await screen.findByRole('link', { name: 'Hortifruti agosto' })
+  expect(screen.queryByRole('link', { name: 'Compra semanal' })).not.toBeInTheDocument()
+  expect(
+    screen.getByRole('combobox', { name: 'Filtrar por mês do prazo' }),
+  ).toHaveValue('2026-08')
+})
+
+test('mês inválido na URL mostra todos os meses', async () => {
+  renderPage('/admin/cotacoes?mes=2099-01')
+
+  await screen.findByRole('link', { name: 'Compra semanal' })
+  expect(screen.getByRole('link', { name: 'Hortifruti agosto' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Limpeza Q3' })).toBeInTheDocument()
+})
