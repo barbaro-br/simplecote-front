@@ -185,6 +185,30 @@
 }
 
 /*
+ * Scrollbar fina para contêineres de rolagem pontuais (ex.: tabela do
+ * Catálogo de Produtos). Usa tokens de tema (--border/--muted-foreground),
+ * funcionando automaticamente nos temas claro e escuro.
+ */
+.scrollbar-fina {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.scrollbar-fina::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-fina::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-fina::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 9999px;
+}
+.scrollbar-fina::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
+}
+
+/*
  * Tela do representante (spec.md §13): tema claro forçado, independente do
  * `.dark` num ancestral ou do `prefers-color-scheme` do sistema. Redeclara os
  * tokens claros (iguais aos de :root) na própria subárvore.

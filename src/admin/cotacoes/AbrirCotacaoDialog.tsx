@@ -104,7 +104,7 @@ export function AbrirCotacaoDialog({ pendente, onAbrir, onCancelar }: Props) {
       <div className="flex flex-col relative z-10 transition-all duration-300">
         
         {view === 'presets' ? (
-          <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+          <div className="animate-in fade-in slide-in-from-left-4 duration-300 min-h-[420px] flex flex-col justify-center">
             <div className="px-6 py-6 pb-4 shrink-0 flex flex-col items-center justify-center text-center">
               <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 ring-1 ring-primary/20 shadow-inner">
                 <Rocket className="size-7" />

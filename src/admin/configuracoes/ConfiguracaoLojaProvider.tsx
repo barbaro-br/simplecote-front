@@ -15,5 +15,9 @@ export function ConfiguracaoLojaProvider({ children }: { children: ReactNode }) 
     }
   }, [data?.corPrimaria])
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', data?.tema === 'ESCURO')
+  }, [data?.tema])
+
   return <>{children}</>
 }

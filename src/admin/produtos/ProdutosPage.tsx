@@ -59,7 +59,7 @@ export function ProdutosPage() {
       </Dialog>
 
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-14rem)]">
+        <div className="scrollbar-fina overflow-x-auto overflow-y-auto max-h-[calc(100vh-14rem)]">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted-foreground">

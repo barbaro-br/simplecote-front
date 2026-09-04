@@ -12,7 +12,8 @@ import {
 } from './cotacoes.api'
 import { Send, Mail, Phone, Search, X, Info, CheckCircle2, Loader2 } from 'lucide-react'
 import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
-import { urlWhatsApp } from './compartilhar-link'
+import { urlWhatsApp, urlMailto } from './compartilhar-link'
+import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
 import { toast } from 'sonner'
 
 type Props = {
@@ -266,8 +267,34 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                     {/* Ícones de Contato */}
                     {!isAberta && (e.repEmail || e.repWhatsapp) && (
                       <div className="flex items-center gap-2 text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors">
-                        {e.repEmail && <span title="Possui E-mail"><Mail className="size-3.5" /></span>}
-                        {e.repWhatsapp && <span title="Possui WhatsApp"><Phone className="size-3.5" /></span>}
+                        {e.repEmail && (
+                          <a
+                            href={urlMailto(
+                              `Olá ${e.part?.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação.${e.part?.linkMagico ? ` Acesse: ${e.part.linkMagico}` : ''}`,
+                              'Cotação — link de acesso',
+                              e.repEmail,
+                            )}
+                            title={e.repEmail}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(ev) => ev.stopPropagation()}
+                          >
+                            <Mail className="size-3.5" />
+                          </a>
+                        )}
+                        {e.repWhatsapp && (
+                          <button
+                            type="button"
+                            title={aplicarMascaraTelefone(e.repWhatsapp)}
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              navigator.clipboard.writeText(aplicarMascaraTelefone(e.repWhatsapp!))
+                              toast.success('Telefone copiado!')
+                            }}
+                          >
+                            <Phone className="size-3.5" />
+                          </button>
+                        )}
                       </div>
                     )}
 

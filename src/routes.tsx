@@ -18,6 +18,7 @@ import { RedefinirSenhaPage } from './admin/recuperar-senha/RedefinirSenhaPage'
 import { TemaClaro } from './representante/TemaClaro'
 import { CotacaoPorTokenPage } from './representante/cotacao/CotacaoPorTokenPage'
 import { PedidoPorTokenPage } from './representante/pedido/PedidoPorTokenPage'
+import { ColaboradorPage } from './colaborador/ColaboradorPage'
 
 export const routes = createBrowserRouter([
   {
@@ -97,6 +98,10 @@ export const routes = createBrowserRouter([
       {
         path: '/pedido/:token',
         element: <PedidoPorTokenPage />,
+      },
+      {
+        path: '/colaborador/:token',
+        element: <ColaboradorPage />,
       },
     ],
   },

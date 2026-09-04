@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Check, Copy } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Card } from '@/shared/components/ui/card'
@@ -91,6 +92,21 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
       </div>
 
       <div className="space-y-2">
+        <span className="text-sm font-medium">Tema</span>
+        <div className="flex gap-6">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" value="CLARO" {...form.register('tema')} />
+            Claro
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" value="ESCURO" {...form.register('tema')} />
+            Escuro
+          </label>
+        </div>
+        <p className="text-xs text-muted-foreground">Aparência do painel (claro ou escuro) para todos os usuários da loja.</p>
+      </div>
+
+      <div className="space-y-2">
         <label htmlFor="layoutEmail" className="text-sm font-medium">
           Layout de e-mail
         </label>
@@ -146,6 +162,44 @@ export function ConfiguracoesPage() {
       <Card className="p-8">
         <ConfiguracoesForm configuracaoInicial={data} />
       </Card>
+
+      <Card className="p-8">
+        <LinkColaboradorSection token={data.linkColaboradorToken} />
+      </Card>
     </PageContainer>
+  )
+}
+
+function LinkColaboradorSection({ token }: { token: string }) {
+  const [copiado, setCopiado] = useState(false)
+  const link = `${window.location.origin}/colaborador/${token}`
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopiado(true)
+      toast.success('Link copiado!')
+      setTimeout(() => setCopiado(false), 2000)
+    } catch {
+      toast.error('Não foi possível copiar o link.')
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <label htmlFor="linkColaborador" className="text-sm font-medium">
+        Link do colaborador
+      </label>
+      <p className="text-xs text-muted-foreground">
+        Compartilhe este link com o time da loja para adicionarem itens à cotação em rascunho.
+      </p>
+      <div className="flex items-center gap-2">
+        <Input id="linkColaborador" value={link} readOnly className="font-mono text-xs" />
+        <Button type="button" variant="outline" onClick={copiar} className="shrink-0">
+          {copiado ? <Check className="size-4" /> : <Copy className="size-4" />}
+          {copiado ? 'Copiado!' : 'Copiar'}
+        </Button>
+      </div>
+    </div>
   )
 }

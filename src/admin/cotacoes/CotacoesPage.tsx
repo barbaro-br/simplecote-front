@@ -11,6 +11,7 @@ import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
+import { ErrorAlert } from '@/shared/components/ui/error-alert'
 import { useCotacoes, useExcluirCotacao } from './cotacoes.api'
 import { ConfirmarDialog } from './ConfirmarDialog'
 
@@ -147,11 +148,7 @@ export function CotacoesPage() {
         </div>
       </div>
 
-      {erroAcao && (
-        <div role="alert" className="text-sm text-destructive font-medium">
-          {erroAcao}
-        </div>
-      )}
+      {erroAcao && <ErrorAlert>{erroAcao}</ErrorAlert>}
 
       <Card>
         <table className="w-full text-sm">

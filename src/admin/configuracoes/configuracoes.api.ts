@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '@/shared/api/api-client'
-import type { Configuracao } from './configuracoes.schema'
+import type { Configuracao, ConfiguracaoFormValues } from './configuracoes.schema'
 
 const chave = ['configuracao-loja'] as const
 
@@ -10,6 +10,8 @@ export const CONFIGURACAO_SEED: Configuracao = {
   telefone: '(11) 4002-8922',
   layoutEmail: 'Olá {representante},\n\nSegue o convite para a cotação. Acesse o link para enviar seus preços.',
   estiloNavegacao: 'LATERAL',
+  tema: 'CLARO',
+  linkColaboradorToken: 'link-colaborador-exemplo',
 }
 
 // ---- MOCK local (substituir pelas chamadas reais a GET/PUT /api/configuracoes na task 4.1) ----
@@ -38,12 +40,14 @@ export async function buscarConfiguracao(): Promise<Configuracao> {
   return { ...valorEmMemoria }
 }
 
-export async function salvarConfiguracao(valores: Configuracao): Promise<Configuracao> {
+export async function salvarConfiguracao(valores: ConfiguracaoFormValues): Promise<Configuracao> {
   await aguardar()
   if (falhaAoSalvar) {
     throw new ApiError({ type: 'about:blank', title: 'Erro', status: 400, detail: falhaAoSalvar })
   }
-  valorEmMemoria = { ...valores }
+  // Merge (não substituição): preserva campos somente-leitura como
+  // `linkColaboradorToken`, que não fazem parte do formulário de submit.
+  valorEmMemoria = { ...valorEmMemoria, ...valores }
   return { ...valorEmMemoria }
 }
 // ------------------------------------------------------------------------------------------------
