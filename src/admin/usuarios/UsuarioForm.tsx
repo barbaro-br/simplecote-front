@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { Check, Eye, EyeOff } from 'lucide-react'
 import {
   ROTULO_PAPEL,
   SENHA_MIN,
@@ -26,6 +27,7 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
   const criar = useCriarUsuario()
   const atualizar = useAtualizarUsuario()
   const [erro, setErro] = useState<string | null>(null)
+  const [mostrarSenha, setMostrarSenha] = useState(false)
 
   const form = useForm<UsuarioFormValues>({
     resolver: zodResolver(usuarioFormSchema),
@@ -36,6 +38,9 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
       senha: '',
     },
   })
+
+  const senha = form.watch('senha') ?? ''
+  const senhaValida = senha.length >= SENHA_MIN
 
   const isPending = criar.isPending || atualizar.isPending
   const err = form.formState.errors
@@ -108,16 +113,38 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
             <label htmlFor="user-senha" className="text-sm font-medium">
               Senha inicial
             </label>
-            <Input
-              id="user-senha"
-              type="password"
-              {...form.register('senha')}
-              placeholder="Mínimo 8 caracteres"
-              disabled={isPending}
-            />
+            <div className="relative">
+              <Input
+                id="user-senha"
+                type={mostrarSenha ? 'text' : 'password'}
+                {...form.register('senha')}
+                placeholder="Mínimo 8 caracteres"
+                className="pr-10"
+                disabled={isPending}
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarSenha((v) => !v)}
+                aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+                disabled={isPending}
+              >
+                {mostrarSenha ? (
+                  <EyeOff className="size-4" aria-hidden />
+                ) : (
+                  <Eye className="size-4" aria-hidden />
+                )}
+              </button>
+            </div>
             {err.senha && (
               <p className="text-[13px] text-destructive font-medium">{err.senha.message}</p>
             )}
+            <p
+              className={`flex items-center gap-1.5 text-[13px] font-medium ${senhaValida ? 'text-success' : 'text-muted-foreground'}`}
+            >
+              {senhaValida && <Check className="size-3.5" aria-hidden />}
+              8+ caracteres
+            </p>
           </div>
         )}
       </div>

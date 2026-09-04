@@ -169,3 +169,98 @@ test('inativar: confirmação marca inativo; sem botão de reativar', async () =
   expect(screen.queryByRole('button', { name: 'Ativar' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'Inativar' })).toBeNull()
 })
+
+test('cadastro: revelar senha alterna type e aria-label do botão', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('Ana Admin')
+
+  await user.click(screen.getByRole('button', { name: /Novo usuário/i }))
+  const dialog = within(screen.getByRole('dialog'))
+
+  const senha = dialog.getByLabelText(/Senha inicial/i)
+  expect(senha).toHaveAttribute('type', 'password')
+
+  const botao = dialog.getByRole('button', { name: 'Mostrar senha' })
+  await user.click(botao)
+  expect(senha).toHaveAttribute('type', 'text')
+  expect(dialog.getByRole('button', { name: 'Ocultar senha' })).toBeInTheDocument()
+
+  await user.click(dialog.getByRole('button', { name: 'Ocultar senha' }))
+  expect(senha).toHaveAttribute('type', 'password')
+})
+
+test('cadastro: indicador de tamanho mínimo muda ao atingir 8+', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('Ana Admin')
+
+  await user.click(screen.getByRole('button', { name: /Novo usuário/i }))
+  const dialog = within(screen.getByRole('dialog'))
+
+  const senha = dialog.getByLabelText(/Senha inicial/i)
+  const indicador = () => dialog.getByText('8+ caracteres')
+
+  await user.type(senha, 'curta')
+  expect(indicador()).toHaveClass('text-muted-foreground')
+
+  await user.type(senha, '123')
+  expect(indicador()).toHaveClass('text-success')
+})
+
+test('cadastro: indicador ao vivo não substitui a validação de submit', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('Ana Admin')
+
+  await user.click(screen.getByRole('button', { name: /Novo usuário/i }))
+  const dialog = within(screen.getByRole('dialog'))
+
+  await user.type(dialog.getByLabelText('Nome'), 'Carla')
+  await user.type(dialog.getByLabelText('E-mail'), 'carla@x.com')
+  await user.type(dialog.getByLabelText(/Senha inicial/i), 'curta')
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
+
+  expect(await dialog.findByText(/Mínimo 8 caracteres/i)).toBeInTheDocument()
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+})
+
+test('trocar senha: revelar de cada campo é independente', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('Ana Admin')
+
+  await user.click(screen.getAllByRole('button', { name: 'Trocar senha' })[0])
+  const dialog = within(screen.getByRole('dialog'))
+
+  const nova = dialog.getByLabelText('Nova senha')
+  const confirmar = dialog.getByLabelText('Confirmar senha')
+  expect(nova).toHaveAttribute('type', 'password')
+  expect(confirmar).toHaveAttribute('type', 'password')
+
+  await user.click(dialog.getByRole('button', { name: 'Mostrar nova senha' }))
+  expect(nova).toHaveAttribute('type', 'text')
+  expect(confirmar).toHaveAttribute('type', 'password')
+  expect(dialog.getByRole('button', { name: 'Ocultar nova senha' })).toBeInTheDocument()
+
+  await user.click(dialog.getByRole('button', { name: 'Mostrar confirmação de senha' }))
+  expect(confirmar).toHaveAttribute('type', 'text')
+  expect(nova).toHaveAttribute('type', 'text')
+})
+
+test('trocar senha: indicador de coincidência muda ao vivo', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('Ana Admin')
+
+  await user.click(screen.getAllByRole('button', { name: 'Trocar senha' })[0])
+  const dialog = within(screen.getByRole('dialog'))
+
+  await user.type(dialog.getByLabelText('Nova senha'), 'senha1234')
+  await user.type(dialog.getByLabelText('Confirmar senha'), 'outra1234')
+  expect(dialog.getByText('As senhas ainda não coincidem')).toBeInTheDocument()
+
+  await user.clear(dialog.getByLabelText('Confirmar senha'))
+  await user.type(dialog.getByLabelText('Confirmar senha'), 'senha1234')
+  expect(dialog.getByText('As senhas coincidem')).toBeInTheDocument()
+})

@@ -146,19 +146,19 @@ describe('ItemLanceCard', () => {
 
   it('a caixa do P.UN tem largura mínima no estado vazio ("—")', () => {
     renderCard()
-    expect(caixaDoPun('—').className).toContain('min-w-[72px]')
+    expect(caixaDoPun('—').className).toContain('min-w-[114px]')
   })
 
   it('a caixa do P.UN tem largura mínima no estado "calculando…"', async () => {
     const user = userEvent.setup()
     renderCard({ status: 'enviando' })
     await user.type(campo(), '9')
-    expect(caixaDoPun('calculando…').className).toContain('min-w-[72px]')
+    expect(caixaDoPun('calculando…').className).toContain('min-w-[114px]')
   })
 
   it('a caixa do P.UN tem largura mínima com valor formatado', () => {
     renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
-    expect(caixaDoPun(/R\$\s0,50/).className).toContain('min-w-[72px]')
+    expect(caixaDoPun(/R\$\s0,50/).className).toContain('min-w-[114px]')
   })
 
   it('renderiza os rótulos "P.CX" e "P.UN" acima dos valores', () => {

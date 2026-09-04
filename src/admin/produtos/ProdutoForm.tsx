@@ -89,6 +89,12 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
               id="codigoBarras"
               {...form.register('codigoBarras', { onChange: () => setLookupStatus('idle') })}
               placeholder="Ex: 7891234567890"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleLookup()
+                }
+              }}
               className={form.formState.errors.codigoBarras ? "border-destructive focus-visible:ring-destructive" : ""}
             />
             <Button

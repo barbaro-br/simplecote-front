@@ -143,3 +143,87 @@ test('editar empresa sem representante cria o representante ao salvar', async ()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
+
+test('aplica máscara no WhatsApp em tempo real e envia só os dígitos', async () => {
+  let whatsappEnviado: unknown
+  server.use(
+    http.post('*/api/representantes', async ({ request }) => {
+      const data = (await request.json()) as Record<string, unknown>
+      whatsappEnviado = data.whatsapp
+      return HttpResponse.json({ id: REP_ID, ...data }, { status: 201 })
+    }),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Fornecedor A LTDA')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Nova Empresa/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Nome da empresa'), 'Novo Fornecedor')
+  await user.type(dialog.getByLabelText('Nome do representante'), 'Maria')
+  await user.type(dialog.getByLabelText('E-mail'), 'maria@email.com')
+  await user.type(dialog.getByLabelText(/WhatsApp/), '11987654321')
+
+  expect(dialog.getByLabelText(/WhatsApp/)).toHaveValue('(11) 98765-4321')
+
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
+
+  await waitFor(() => {
+    expect(whatsappEnviado).toBe('11987654321')
+  })
+})
+
+test('falha ao cadastrar representante não duplica empresa; reenviar chama só criarRepresentante', async () => {
+  let empresasCriadas = 0
+  let representantesCriados = 0
+  let empresaIdEnviado: unknown
+
+  server.use(
+    http.post('*/api/empresas', async ({ request }) => {
+      empresasCriadas += 1
+      const data = (await request.json()) as { nome: string }
+      return HttpResponse.json({ id: EMPRESA_ID, ...data, ativo: true }, { status: 201 })
+    }),
+    http.post('*/api/representantes', async ({ request }) => {
+      representantesCriados += 1
+      const data = (await request.json()) as Record<string, unknown>
+      empresaIdEnviado = data.empresaId
+      if (representantesCriados === 1) {
+        return HttpResponse.json(
+          { title: 'Bad Request', status: 400, detail: 'E-mail inválido' },
+          { status: 400 },
+        )
+      }
+      return HttpResponse.json({ id: REP_ID, ...data }, { status: 201 })
+    }),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Fornecedor A LTDA')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Nova Empresa/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Nome da empresa'), 'Novo Fornecedor')
+  await user.type(dialog.getByLabelText('Nome do representante'), 'Maria')
+  await user.type(dialog.getByLabelText('E-mail'), 'maria@email.com')
+
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
+
+  expect(await screen.findByText(/Empresa criada, mas houve falha ao cadastrar o representante/)).toBeInTheDocument()
+  expect(empresasCriadas).toBe(1)
+  expect(representantesCriados).toBe(1)
+
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
+
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  expect(empresasCriadas).toBe(1)
+  expect(representantesCriados).toBe(2)
+  expect(empresaIdEnviado).toBe(EMPRESA_ID)
+})

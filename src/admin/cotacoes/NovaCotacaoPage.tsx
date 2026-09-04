@@ -6,6 +6,7 @@ import { Copy, PlusCircle } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Card } from '@/shared/components/ui/card'
+import { Combobox } from '@/shared/components/ui/combobox'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { criarCotacaoSchema, type CriarCotacaoValues } from './cotacoes.schema'
@@ -130,19 +131,14 @@ export function NovaCotacaoPage() {
                 <label htmlFor="origem" className="text-sm font-medium">
                   Cotação de origem
                 </label>
-                <select
+                <Combobox
                   id="origem"
+                  options={(cotacoes ?? []).map((c) => ({ value: c.id, label: c.titulo }))}
                   value={origemId}
-                  onChange={(e) => setOrigemId(e.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="">Selecione uma cotação…</option>
-                  {(cotacoes ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.titulo}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setOrigemId}
+                  placeholder="Selecione uma cotação…"
+                  emptyMessage="Nenhuma cotação encontrada"
+                />
               </div>
               <Button
                 type="button"

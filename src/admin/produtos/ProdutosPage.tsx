@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, EyeOff, Pencil, PlusCircle } from 'lucide-react'
+import { Archive, ArchiveRestore, Pencil, PlusCircle } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
@@ -36,15 +36,17 @@ export function ProdutosPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Catálogo de produtos</h1>
-          <p className="text-sm text-muted-foreground">Gerencie os produtos, códigos de barra e configurações de embalagem.</p>
+      <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Catálogo de produtos</h1>
+            <p className="text-sm text-muted-foreground">Gerencie os produtos, códigos de barra e configurações de embalagem.</p>
+          </div>
+          <Button onClick={abrirNovo}>
+            <PlusCircle className="mr-2 size-4" />
+            Novo produto
+          </Button>
         </div>
-        <Button onClick={abrirNovo}>
-          <PlusCircle className="mr-2 size-4" />
-          Novo produto
-        </Button>
       </div>
 
       <Dialog
@@ -57,15 +59,15 @@ export function ProdutosPage() {
       </Dialog>
 
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-14rem)]">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 border-b">
+            <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Código de barras</th>
-                <th className="px-4 py-3 font-medium">Embalagem</th>
-                <th className="px-4 py-3 font-medium text-right">Qtd./embalagem</th>
-                <th className="px-4 py-3 font-medium text-right">Ações</th>
+                <th className="sticky top-0 bg-muted px-4 py-3 font-medium border-b">Nome</th>
+                <th className="sticky top-0 bg-muted px-4 py-3 font-medium border-b">Código de barras</th>
+                <th className="sticky top-0 bg-muted px-4 py-3 font-medium border-b">Embalagem</th>
+                <th className="sticky top-0 bg-muted px-4 py-3 font-medium text-right border-b">Qtd.</th>
+                <th className="sticky top-0 bg-muted px-4 py-3 font-medium text-right border-b border-l border-border">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -88,7 +90,7 @@ export function ProdutosPage() {
                     <td className="px-4 py-3 text-muted-foreground">{produto.codigoBarras ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{produto.unidade}</td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground text-right">{produto.quantidadePorEmbalagem}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right border-l border-border">
                       <div className="flex gap-1 justify-end">
                         {produto.ativo ? (
                           <>
@@ -98,15 +100,16 @@ export function ProdutosPage() {
                               onClick={() => abrirEditar(produto)}
                             />
                             <IconButton
-                              icon={EyeOff}
+                              icon={Archive}
                               label="Inativar"
+                              tone="destructive"
                               onClick={() => inativar.mutate(produto.id)}
                               disabled={inativar.isPending}
                             />
                           </>
                         ) : (
                           <IconButton
-                            icon={Eye}
+                            icon={ArchiveRestore}
                             label="Ativar"
                             onClick={() => ativar.mutate(produto.id)}
                             disabled={ativar.isPending}
