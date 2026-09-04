@@ -180,12 +180,12 @@ const LinhaItem = memo(function LinhaItem({
               }`}
             >
               {celula.status === 'COTADO' && celula.preco != null ? (
-                <span className="tabular-nums">
-                  <span className={`font-semibold ${ehMenor ? 'text-success' : 'text-foreground'}`}>
+                <span className="tabular-nums flex flex-col items-end leading-tight">
+                  <span className={`font-semibold whitespace-nowrap ${ehMenor ? 'text-success' : 'text-foreground'}`}>
                     {moeda(celula.preco)}
                   </span>
                   {celula.precoUnitario != null && (
-                    <span className="text-xs text-muted-foreground"> · {moeda(celula.precoUnitario)} / un</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">{moeda(celula.precoUnitario)} / un</span>
                   )}
                 </span>
               ) : (
@@ -279,7 +279,7 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
                 {colunas.map((c) => (
                   <th
                     key={c.participanteId}
-                    className="sticky top-0 z-20 bg-muted px-4 py-2 font-medium min-w-[140px] border-b text-right"
+                    className="sticky top-0 z-20 bg-muted px-2 py-2 font-medium min-w-[140px] border-b text-right"
                   >
                     {c.empresa}
                   </th>

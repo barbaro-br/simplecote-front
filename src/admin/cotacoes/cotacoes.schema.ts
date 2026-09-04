@@ -110,6 +110,12 @@ export type ParticipanteDaCotacao = {
   conviteStatus: ConviteStatus | null
   participanteStatus: ParticipanteStatus
   linkMagico: string
+  /** Instante do envio do e-mail de convite (nulo enquanto não enviado). */
+  conviteEnviadoEm: string | null
+  /** Instante da primeira visualização por token (nulo enquanto nunca abriu o link). */
+  visualizadoEm: string | null
+  /** Instante da finalização da resposta (nulo enquanto não respondeu). */
+  respondidoEm: string | null
 }
 
 export type StatusCelula = 'COTADO' | 'NAO_COTADO' | 'PENDENTE'

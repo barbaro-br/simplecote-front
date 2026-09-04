@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { dataHoraBr } from '@/shared/format/formatters'
@@ -27,7 +28,8 @@ import {
   useConvidarEmpresas,
   useGradeAoVivo,
   useGradeAoVivoSSE,
-  useParticipantes
+  useParticipantes,
+  useFinalizarParticipante
 } from './cotacoes.api'
 
 type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | 'encerrar' | null
@@ -110,11 +112,14 @@ export function CotacaoDetalhePage() {
   const apurar = useApurar(id)
   const convidar = useConvidarEmpresas(id)
   const participantes = useParticipantes(id)
+  const gradeAoVivo = useGradeAoVivo(id)
+  const finalizarParticipante = useFinalizarParticipante(id)
 
   const [dialog, setDialog] = useState<DialogAberto>(null)
   const [erroAcao, setErroAcao] = useState<string | null>(null)
   const [modalConviteAberto, setModalConviteAberto] = useState(false)
   const [empresasSelecionadas, setEmpresasSelecionadas] = useState<string[]>([])
+  const [finalizandoMassa, setFinalizandoMassa] = useState(false)
 
   function tratarErro(e: unknown) {
     if (e instanceof SessaoExpiradaError) return
@@ -147,6 +152,34 @@ export function CotacaoDetalhePage() {
   const pendentesVisualizou = (participantes.data ?? []).filter(
     (p) => p.participanteStatus === 'VISUALIZOU',
   )
+
+  const participantesComLanceCotado = (participantes.data ?? []).filter((p) => {
+    if (p.participanteStatus === 'RESPONDIDO') return false
+    const temLanceCotado = (gradeAoVivo.data?.itens ?? []).some((item) =>
+      item.precos.some((c) => c.participanteId === p.participanteId && c.status === 'COTADO'),
+    )
+    return temLanceCotado
+  })
+
+  async function finalizarTodosAntesDeEncerrar() {
+    const alvos = participantesComLanceCotado
+    if (alvos.length === 0) return
+    setFinalizandoMassa(true)
+    const toastId = toast.loading('Finalizando respostas...')
+    const resultados = await Promise.allSettled(
+      alvos.map((p) => finalizarParticipante.mutateAsync(p.participanteId)),
+    )
+    setFinalizandoMassa(false)
+    const sucessos = resultados.filter((r) => r.status === 'fulfilled').length
+    const falhas = resultados.filter((r) => r.status === 'rejected').length
+    if (falhas === 0) {
+      toast.success(`${sucessos} resposta(s) finalizada(s).`, { id: toastId })
+    } else if (sucessos === 0) {
+      toast.error(`Falha ao finalizar ${falhas} resposta(s).`, { id: toastId })
+    } else {
+      toast.warning(`${sucessos} resposta(s) finalizada(s), mas ${falhas} falharam.`, { id: toastId })
+    }
+  }
 
   return (
     <PageContainer maxWidth="4xl" className="space-y-6">
@@ -280,6 +313,26 @@ export function CotacaoDetalhePage() {
           <p className="text-sm text-muted-foreground">
             A cotação deixará de aceitar novas respostas dos representantes. Você pode reabri-la depois.
           </p>
+          {participantesComLanceCotado.length > 0 && (
+            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm space-y-2">
+              <p className="font-medium text-warning">
+                Representantes que preencheram preço mas não finalizaram a resposta:
+              </p>
+              <ul className="list-disc pl-5 text-muted-foreground">
+                {participantesComLanceCotado.map((p) => (
+                  <li key={p.participanteId}>{p.empresaNome}</li>
+                ))}
+              </ul>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={finalizandoMassa}
+                onClick={finalizarTodosAntesDeEncerrar}
+              >
+                {finalizandoMassa ? 'Finalizando…' : 'Finalizar todos antes de encerrar'}
+              </Button>
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setDialog(null)} disabled={encerrar.isPending}>
               Voltar
