@@ -44,7 +44,9 @@ detalhe de uma Cotação. O formulário de Nova Cotação SHALL apresentar os do
 formulário — não dois cards separados por um divisor — mostrando apenas o campo
 relevante ao modo selecionado (Título para "Em branco"; seleção de cotação de
 origem para "Duplicar existente"), com um único controle de submit cujo rótulo e
-ação acompanham o modo escolhido. Ao ser acionada, o sistema SHALL chamar
+ação acompanham o modo escolhido. A seleção da cotação de origem SHALL usar um
+combobox com busca (filtra a lista pelo título digitado), não um `<select>` nativo
+do navegador. Ao ser acionada, o sistema SHALL chamar
 `POST /api/cotacoes/{id}/duplicar` e, no sucesso, navegar para o detalhe da Cotação
 recém-criada (que nasce em `RASCUNHO`).
 
@@ -94,6 +96,11 @@ SHALL ser exibido. Quando a duplicação falha, o sistema SHALL exibir a mensage
 #### Scenario: Duplicação em andamento trava o controle
 - **WHEN** o Comprador aciona "Duplicar" e a resposta ainda não chegou
 - **THEN** o controle mostra "Duplicando…" e fica desabilitado até a resposta
+
+#### Scenario: Buscar a cotação de origem pelo título
+
+- **WHEN** o Comprador abre o combobox de "Cotação de origem" e digita parte do título de uma cotação anterior
+- **THEN** a lista mostra só as cotações cujo título contém o texto digitado, e selecionar uma delas preenche `origemId` como antes
 
 ### Requirement: Montar itens da Cotação
 O sistema SHALL permitir, enquanto a Cotação está em `RASCUNHO`, adicionar itens escolhendo um Produto do catálogo (`POST /api/cotacoes/{id}/itens`), ajustar a quantidade solicitada diretamente na listagem de itens e remover itens (`DELETE /api/cotacoes/{id}/itens/{itemId}`). A listagem de itens SHALL exibir claramente a embalagem do produto juntamente com a sua quantidade por embalagem (ex.: Caixa (12x)). Fora de `RASCUNHO` a edição de quantidade e a remoção de itens SHALL ficar indisponível. Quando o Produto desejado ainda não existe no catálogo, o sistema SHALL permitir cadastrá-lo **sem sair da tela de montagem da Cotação** e usá-lo imediatamente no item. Enquanto a Cotação está `ABERTA`, o sistema SHALL também permitir adicionar um novo item — a partir da tela de acompanhamento da grade ao vivo, não da listagem de montagem — reaproveitando o mesmo formulário de escolha de Produto. O sistema SHALL, do mesmo jeito, permitir **editar** um Produto já existente diretamente da lista de escolha de produtos, sem sair da tela de montagem.
@@ -290,6 +297,8 @@ O sistema SHALL exibir o resultado de uma Cotação apurada (`GET /api/cotacoes/
 
 A lista de pedidos e o vencedor por item SHALL ser apresentados numa única lista de pedidos (não duas tabelas separadas). Cada linha de pedido (Empresa, status, total, ações) SHALL ter um controle de expandir/recolher; ao expandir, os itens vencidos daquele pedido (produto, preço da embalagem, preço unitário — com o indicador de empate quando aplicável — e subtotal) SHALL aparecer inline, abaixo da linha do pedido, sem navegar para outra tela. Itens sem vencedor (sem lance algum, portanto sem pedido associado) SHALL continuar sendo listados à parte, abaixo da lista de pedidos.
 
+A tela SHALL oferecer um campo de **margem de lucro (%)** global, acima da lista de pedidos. Quando preenchido, cada item exibido nas linhas expandidas SHALL mostrar, além do preço de custo já existente, um **preço de venda sugerido** (`preço de custo × (1 + margem / 100)`), calculado inteiramente no front a partir do preço de custo já apurado pela API — sem alterar, recalcular ou substituir o preço de custo, o vencedor ou qualquer outro dado da apuração. Cada item SHALL permitir sobrescrever a margem global com uma margem própria; um item com margem própria SHALL manter seu valor mesmo que a margem global mude depois. A margem (global e por item) SHALL ser efêmera — mantida só no estado da tela, sem ser persistida no backend, sem ser enviada em nenhuma chamada de API, e sem aparecer no XLSX/PDF exportados (que continuam vindo prontos do backend). A interface SHALL deixar claro que o preço de venda é uma sugestão/prévia, não o preço de custo real do pedido.
+
 #### Scenario: Ver resultado com vencedores por empresa
 - **WHEN** o Comprador abre o resultado de uma Cotação `PEDIDOS_GERADOS`
 - **THEN** cada item mostra o nome da Empresa vencedora e os preços já calculados pelo backend, sem o front recalcular nada
@@ -324,6 +333,31 @@ A lista de pedidos e o vencedor por item SHALL ser apresentados numa única list
 
 - **WHEN** a apuração tem um ou mais itens sem nenhum lance vencedor
 - **THEN** esses itens aparecem listados abaixo da lista de pedidos, independente de qualquer pedido estar expandido ou não
+
+#### Scenario: Margem global aplica a todos os itens
+
+- **WHEN** o Comprador preenche o campo de margem de lucro global com "30" e expande um pedido
+- **THEN** cada item daquele pedido mostra um preço de venda sugerido igual ao preço de custo do item multiplicado por 1,30
+
+#### Scenario: Margem por item sobrescreve a global
+
+- **WHEN** o Comprador já preencheu uma margem global e edita a margem de um item específico para um valor diferente
+- **THEN** o preço de venda sugerido daquele item usa a margem própria dele, e os demais itens continuam usando a margem global
+
+#### Scenario: Margem por item não é afetada por mudanças na margem global depois de customizada
+
+- **WHEN** um item já tem margem própria definida e o Comprador muda o valor do campo de margem global
+- **THEN** o preço de venda sugerido do item customizado não muda; só os itens que nunca tiveram margem própria acompanham a nova margem global
+
+#### Scenario: Sem margem preenchida, nenhum preço de venda é exibido
+
+- **WHEN** o Comprador não preenche nenhuma margem (nem global, nem de item específico)
+- **THEN** a coluna de preço de venda sugerido mostra "—", sem afetar as demais colunas já existentes
+
+#### Scenario: Margem não é persistida nem enviada ao backend
+
+- **WHEN** o Comprador preenche uma margem, envia um pedido ou baixa o XLSX/PDF, e depois recarrega a página do Resultado
+- **THEN** nenhuma chamada de API (envio de pedido, exportação) inclui a margem ou o preço de venda sugerido, e ao recarregar a página o campo de margem volta a ficar vazio
 
 ### Requirement: Grade ao vivo da Cotação
 O sistema SHALL oferecer a grade de acompanhamento da Cotação **diretamente na tela de detalhe da Cotação**, substituindo as seções estáticas de Itens e Respostas. A grade: linhas = itens, colunas = Empresas convidadas, cada célula com o status do lance (`COTADO`/`NAO_COTADO`/`PENDENTE`), o preço da embalagem e o preço unitário derivado que vêm prontos de `GET /api/cotacoes/{id}/ao-vivo`; o menor preço unitário do item SHALL ser destacado. A tela SHALL mostrar a contagem de participantes `RESPONDIDO` sobre o total. O front NÃO SHALL recalcular preço, vencedor ou menor preço — tudo vem da API.
@@ -368,7 +402,7 @@ Cada célula SHALL exibir seu conteúdo numa única linha visual: uma célula `C
 
 ### Requirement: Ajuste de quantidade na grade
 
-Enquanto a Cotação está `ABERTA` ou `ENCERRADA`, a grade SHALL exibir a `quantidadeSolicitada` de cada item e permitir ao Comprador alterá-la inline, chamando `PATCH /api/cotacoes/{id}/itens/{itemId}/quantidade`. Em `PEDIDOS_GERADOS` e `CANCELADA` a quantidade SHALL ficar somente leitura (não editável). Após salvar, a grade SHALL refletir a nova quantidade sem recarregar a página.
+Enquanto a Cotação está `ABERTA` ou `ENCERRADA`, a grade SHALL exibir a `quantidadeSolicitada` de cada item e permitir ao Comprador alterá-la tanto pelos botões `[-]`/`[+]` (ajuste de 1 em 1) quanto digitando o valor diretamente num campo numérico editável (confirmado ao perder o foco ou pressionar Enter), ambos chamando `PATCH /api/cotacoes/{id}/itens/{itemId}/quantidade`. Um valor digitado inválido (vazio, zero, negativo ou não numérico) NÃO SHALL disparar a chamada — o campo SHALL reverter ao último valor confirmado. Em `PEDIDOS_GERADOS` e `CANCELADA` a quantidade SHALL ficar somente leitura (não editável, nem pelos botões nem pelo campo digitável). Após salvar, a grade SHALL refletir a nova quantidade sem recarregar a página.
 
 #### Scenario: Alterar quantidade na grade
 
@@ -379,6 +413,21 @@ Enquanto a Cotação está `ABERTA` ou `ENCERRADA`, a grade SHALL exibir a `quan
 
 - **WHEN** a Cotação está `PEDIDOS_GERADOS` ou `CANCELADA`
 - **THEN** a quantidade dos itens não é editável na grade
+
+#### Scenario: Digitar a quantidade diretamente
+
+- **WHEN** o Comprador clica no campo de quantidade de um item (Cotação `ABERTA` ou `ENCERRADA`), digita um novo valor inteiro válido e pressiona Enter (ou clica fora do campo)
+- **THEN** o sistema chama o mesmo `PATCH` de atualização de quantidade com o valor digitado, e a grade passa a exibir o novo valor
+
+#### Scenario: Valor inválido não é enviado
+
+- **WHEN** o Comprador digita um valor vazio, zero, negativo ou não numérico no campo de quantidade e sai do campo
+- **THEN** nenhuma chamada é feita à API e o campo volta a exibir o último valor confirmado
+
+#### Scenario: Ajuste fino continua disponível pelos botões
+
+- **WHEN** o Comprador clica em `[-]` ou `[+]` ao lado do campo de quantidade
+- **THEN** a quantidade muda em 1 unidade e é confirmada, exatamente como antes — o campo digitável é um caminho adicional, não uma substituição
 
 ### Requirement: Referência de última compra no hover
 O sistema SHALL exibir, ao passar o mouse sobre um item da grade ao vivo, um popover com a **referência de última compra** daquele produto (campos `ultimoPrecoUnitario`, `ultimaCompraEmpresa`, `ultimaCompraEm` da resposta): o preço unitário, a Empresa que venceu e a data (formatada pt-BR / America/Sao_Paulo). Quando o produto nunca foi comprado, o popover SHALL indicar "sem compra anterior". O popover PODE indicar visualmente se o menor preço atual do item está acima ou abaixo dessa referência.

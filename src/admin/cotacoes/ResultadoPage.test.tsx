@@ -21,7 +21,23 @@ afterAll(() => {
   clickSpy.mockRestore()
 })
 
-function pedido(status: string, decididoPorDesempate?: boolean) {
+function item(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'ip1',
+    itemCotacaoId: 'ic1',
+    lanceId: 'l1',
+    nomeSnapshot: 'Arroz Tipo 1 5kg',
+    unidadeSnapshot: 'Fardo',
+    quantidadePorEmbalagemSnapshot: 1,
+    quantidade: 10,
+    precoEmbalagem: 10,
+    precoUnitario: 2,
+    subtotal: 100,
+    ...overrides,
+  }
+}
+
+function pedido(status: string, decididoPorDesempate?: boolean, itens: ReturnType<typeof item>[] = [item()]) {
   return {
     id: 'p1',
     cotacaoId: 'c-1',
@@ -33,31 +49,24 @@ function pedido(status: string, decididoPorDesempate?: boolean) {
     enviadoEm: null,
     confirmadoEm: null,
     total: 100,
-    itens: [
-      {
-        id: 'ip1',
-        itemCotacaoId: 'ic1',
-        lanceId: 'l1',
-        nomeSnapshot: 'Arroz Tipo 1 5kg',
-        unidadeSnapshot: 'Fardo',
-        quantidadePorEmbalagemSnapshot: 1,
-        quantidade: 10,
-        precoEmbalagem: 10,
-        precoUnitario: 2,
-        subtotal: 100,
-        ...(decididoPorDesempate === undefined ? {} : { decididoPorDesempate }),
-      },
-    ],
+    itens: itens.map((i) => (decididoPorDesempate === undefined ? i : { ...i, decididoPorDesempate })),
   }
 }
 
-function setup(decididoPorDesempate?: boolean, itensSemVencedor: Array<{ id: string; nomeSnapshot: string }> = []) {
+let enviarBody = ''
+
+function setup(
+  decididoPorDesempate?: boolean,
+  itensSemVencedor: Array<{ id: string; nomeSnapshot: string }> = [],
+  itens: ReturnType<typeof item>[] = [item()],
+) {
   const state = { status: 'GERADO' }
   let xlsxChamado = false
+  enviarBody = ''
   server.use(
     http.get('*/api/cotacoes/c-1/resultado', () =>
       HttpResponse.json({
-        pedidos: [pedido(state.status, decididoPorDesempate)],
+        pedidos: [pedido(state.status, decididoPorDesempate, itens)],
         itensSemVencedor,
       }),
     ),
@@ -73,11 +82,12 @@ function setup(decididoPorDesempate?: boolean, itensSemVencedor: Array<{ id: str
       }),
     ),
     http.get('*/api/cotacoes/c-1/pedidos', () =>
-      HttpResponse.json([pedido(state.status, decididoPorDesempate)]),
+      HttpResponse.json([pedido(state.status, decididoPorDesempate, itens)]),
     ),
-    http.post('*/api/pedidos/p1/enviar', () => {
+    http.post('*/api/pedidos/p1/enviar', async ({ request }) => {
+      enviarBody = await request.text()
       state.status = 'ENVIADO'
-      return HttpResponse.json(pedido('ENVIADO'))
+      return HttpResponse.json(pedido('ENVIADO', decididoPorDesempate, itens))
     }),
     http.get('*/api/cotacoes/c-1/resultado.xlsx', () => {
       xlsxChamado = true
@@ -96,7 +106,7 @@ function setup(decididoPorDesempate?: boolean, itensSemVencedor: Array<{ id: str
       <RouterProvider router={router} />
     </QueryClientProvider>,
   )
-  return { getXlsxChamado: () => xlsxChamado }
+  return { getXlsxChamado: () => xlsxChamado, getEnviarBody: () => enviarBody }
 }
 
 test('renderiza um só card de pedidos, sem "Vencedor por item" separado', async () => {
@@ -197,4 +207,83 @@ test('"Baixar XLSX" chama o endpoint binário', async () => {
 
   await waitFor(() => expect(getXlsxChamado()).toBe(true))
   expect(criarObjectURL).toHaveBeenCalled()
+})
+
+test('margem global calcula o preço de venda dos itens (precoUnitario × 1,30 para "30")', async () => {
+  setup()
+  const user = userEvent.setup()
+  await screen.findByText('Atacadão Central')
+
+  await user.type(screen.getByLabelText('Margem de lucro (%)'), '30')
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
+
+  expect(screen.getByText(/2,60/)).toBeInTheDocument()
+})
+
+test('sem nenhuma margem, a coluna de preço de venda mostra "—"', async () => {
+  setup()
+  const user = userEvent.setup()
+  await screen.findByText('Atacadão Central')
+
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
+  await screen.findByText('Arroz Tipo 1 5kg')
+
+  expect(screen.getByText('—')).toBeInTheDocument()
+})
+
+const doisItens = [
+  item({ id: 'ip1', nomeSnapshot: 'Arroz Tipo 1 5kg', precoUnitario: 2, precoEmbalagem: 10, subtotal: 100 }),
+  item({ id: 'ip2', nomeSnapshot: 'Feijão Carioca 1kg', precoUnitario: 4, precoEmbalagem: 20, subtotal: 100 }),
+]
+
+test('margem por item sobrescreve a global sem afetar os demais itens', async () => {
+  setup(undefined, [], doisItens)
+  const user = userEvent.setup()
+  await screen.findByText('Atacadão Central')
+
+  await user.type(screen.getByLabelText('Margem de lucro (%)'), '30')
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
+
+  expect(screen.getByText(/2,60/)).toBeInTheDocument()
+  expect(screen.getByText(/5,20/)).toBeInTheDocument()
+
+  await user.clear(screen.getByLabelText('Margem (%) de Arroz Tipo 1 5kg'))
+  await user.type(screen.getByLabelText('Margem (%) de Arroz Tipo 1 5kg'), '50')
+
+  expect(screen.getByText(/3,00/)).toBeInTheDocument()
+  expect(screen.getByText(/5,20/)).toBeInTheDocument()
+})
+
+test('mudar a margem global depois de customizar um item não afeta esse item', async () => {
+  setup(undefined, [], doisItens)
+  const user = userEvent.setup()
+  await screen.findByText('Atacadão Central')
+
+  await user.type(screen.getByLabelText('Margem de lucro (%)'), '30')
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
+
+  await user.clear(screen.getByLabelText('Margem (%) de Arroz Tipo 1 5kg'))
+  await user.type(screen.getByLabelText('Margem (%) de Arroz Tipo 1 5kg'), '50')
+
+  expect(screen.getByText(/3,00/)).toBeInTheDocument()
+  expect(screen.getByText(/5,20/)).toBeInTheDocument()
+
+  await user.clear(screen.getByLabelText('Margem de lucro (%)'))
+  await user.type(screen.getByLabelText('Margem de lucro (%)'), '40')
+
+  expect(screen.getByText(/3,00/)).toBeInTheDocument()
+  expect(screen.getByText(/5,60/)).toBeInTheDocument()
+  expect(screen.queryByText(/5,20/)).not.toBeInTheDocument()
+})
+
+test('a margem não é enviada na chamada de enviar pedido', async () => {
+  const { getEnviarBody } = setup()
+  const user = userEvent.setup()
+  await screen.findByText('Atacadão Central')
+
+  await user.type(screen.getByLabelText('Margem de lucro (%)'), '30')
+  await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Enviar' })).not.toBeInTheDocument())
+  expect(getEnviarBody()).not.toContain('margem')
 })

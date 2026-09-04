@@ -205,14 +205,14 @@ export function ItemLanceCard({
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {unitText}
           </p>
         </div>
 
         <div className="flex items-end gap-3">
           <div className="flex flex-col items-center gap-1">
-            <span className="text-[9px] font-medium uppercase text-muted-foreground">
+            <span className="text-[10px] font-medium uppercase text-muted-foreground">
               P.CX
             </span>
             <label htmlFor={`preco-${item.itemCotacaoId}`} className="sr-only">
@@ -233,15 +233,15 @@ export function ItemLanceCard({
                 disabled={!podeEditar}
                 onChange={(e) => alterarPreco(e.target.value)}
                 placeholder="0,00"
-                className="w-14 bg-transparent text-[12px] font-semibold tabular-nums outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+                className="w-20 bg-transparent text-[12px] font-semibold tabular-nums outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
               />
             </div>
           </div>
           <div className="flex flex-col items-center gap-1">
-            <span className="text-[9px] font-medium uppercase text-muted-foreground">
+            <span className="text-[10px] font-medium uppercase text-muted-foreground">
               P.UN
             </span>
-            <div className="min-w-[72px] rounded-lg border border-border bg-card px-2 py-1 text-center">
+            <div className="min-w-[114px] rounded-lg border border-border bg-card px-2 py-1 text-center">
               <span
                 className={`whitespace-nowrap tabular-nums ${
                   item.precoUnitario != null

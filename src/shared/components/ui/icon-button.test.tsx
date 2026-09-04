@@ -22,3 +22,23 @@ test('disabled: fica desabilitado e não dispara onClick', async () => {
   await userEvent.click(btn)
   expect(onClick).not.toHaveBeenCalled()
 })
+
+test('sem tone: mantém as classes de hover neutras (sem regressão)', () => {
+  render(<IconButton icon={Pencil} label="Editar" onClick={() => {}} />)
+
+  const btn = screen.getByRole('button', { name: 'Editar' })
+  expect(btn.className).toContain('hover:bg-muted')
+  expect(btn.className).toContain('hover:text-foreground')
+  expect(btn.className).not.toContain('hover:bg-destructive')
+  expect(btn.className).not.toContain('hover:text-destructive')
+})
+
+test('com tone="destructive": usa classes de hover destrutivas', () => {
+  render(<IconButton icon={Pencil} label="Editar" onClick={() => {}} tone="destructive" />)
+
+  const btn = screen.getByRole('button', { name: 'Editar' })
+  expect(btn.className).toContain('hover:bg-destructive/10')
+  expect(btn.className).toContain('hover:text-destructive')
+  expect(btn.className).not.toContain('hover:bg-muted')
+  expect(btn.className).not.toContain('hover:text-foreground')
+})

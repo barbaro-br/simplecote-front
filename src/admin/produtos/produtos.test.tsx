@@ -144,6 +144,39 @@ test('lookup por código de barras: acha → preenche o nome e avisa que foi sug
   expect(dialog.getByText(/sugerido pelo código de barras/i)).toBeInTheDocument()
 })
 
+test('Enter no campo de código de barras aciona a busca, sem submeter o formulário', async () => {
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  const codigoInput = dialog.getByLabelText(/Código de barras/i)
+  await user.type(codigoInput, '1111111111111{Enter}')
+
+  await waitFor(() => {
+    expect(dialog.getByLabelText('Nome do produto')).toHaveValue('Arroz Tio João 5kg')
+  })
+  expect(dialog.getByText(/sugerido pelo código de barras/i)).toBeInTheDocument()
+  expect(dialog.queryByText(/Informe o nome do produto/i)).not.toBeInTheDocument()
+})
+
+test('Enter em outro campo (nome) continua submetendo o formulário', async () => {
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Nome do produto'), 'Arroz Parboilizado{Enter}')
+
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+})
+
 test('lookup sem resultado (404): degrada para preenchimento manual e ainda salva', async () => {
   renderComQuery(<ProdutosPage />)
   const user = userEvent.setup()

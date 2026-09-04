@@ -8,6 +8,7 @@ import { useCriarEmpresa, useAtualizarEmpresa } from './empresas.api'
 import { useCriarRepresentante, useAtualizarRepresentante } from '../representantes/representantes.api'
 import type { Representante } from '../representantes/representantes.schema'
 import { apenasNumeros } from '@/shared/utils/cnpj'
+import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
 
 export function EmpresaForm({
   aoSalvar,
@@ -24,6 +25,7 @@ export function EmpresaForm({
   const criarRepresentante = useCriarRepresentante()
   const atualizarRepresentante = useAtualizarRepresentante()
   const [genericError, setGenericError] = useState<string | null>(null)
+  const [empresaIdCriada, setEmpresaIdCriada] = useState<string | null>(null)
 
   const form = useForm<EmpresaFormValues>({
     resolver: zodResolver(empresaSchema),
@@ -31,7 +33,7 @@ export function EmpresaForm({
       nome: empresaParaEditar?.nome ?? '',
       nomeRepresentante: representanteParaEditar?.nome ?? '',
       emailRepresentante: representanteParaEditar?.email ?? '',
-      whatsappRepresentante: representanteParaEditar?.whatsapp ?? '',
+      whatsappRepresentante: aplicarMascaraTelefone(representanteParaEditar?.whatsapp ?? ''),
     },
   })
 
@@ -67,15 +69,29 @@ export function EmpresaForm({
           })
         }
       } else {
-        const empresaCriada = await criarEmpresa.mutateAsync({ nome: valores.nome })
-        await criarRepresentante.mutateAsync({
-          empresaId: empresaCriada.id,
-          nome: valores.nomeRepresentante,
-          email: valores.emailRepresentante,
-          whatsapp,
-        })
+        let empresaId = empresaIdCriada
+        if (!empresaId) {
+          const empresaCriada = await criarEmpresa.mutateAsync({ nome: valores.nome })
+          empresaId = empresaCriada.id
+          setEmpresaIdCriada(empresaId)
+        }
+        try {
+          await criarRepresentante.mutateAsync({
+            empresaId,
+            nome: valores.nomeRepresentante,
+            email: valores.emailRepresentante,
+            whatsapp,
+          })
+        } catch (e: unknown) {
+          const motivo = e instanceof Error ? e.message : 'Erro inesperado'
+          setGenericError(
+            `Empresa criada, mas houve falha ao cadastrar o representante (${motivo}). Tente salvar novamente.`,
+          )
+          return
+        }
       }
       form.reset()
+      setEmpresaIdCriada(null)
       aoSalvar()
     } catch (e: unknown) {
       setGenericError(e instanceof Error ? e.message : 'Erro inesperado')
@@ -154,7 +170,12 @@ export function EmpresaForm({
               </label>
               <Input
                 id="whatsappRepresentante"
-                {...form.register('whatsappRepresentante')}
+                {...form.register('whatsappRepresentante', {
+                  onChange: (e) =>
+                    form.setValue('whatsappRepresentante', aplicarMascaraTelefone(e.target.value), {
+                      shouldValidate: true,
+                    }),
+                })}
                 placeholder="(11) 99999-9999"
                 className={form.formState.errors.whatsappRepresentante ? 'border-destructive focus-visible:ring-destructive' : ''}
               />

@@ -98,7 +98,8 @@ test('duplicar no modo "Duplicar existente" chama a mutation e navega para a có
   ])
 
   await user.click(screen.getByRole('tab', { name: 'Duplicar existente' }))
-  await user.selectOptions(screen.getByLabelText('Cotação de origem'), 'c-9')
+  await user.click(screen.getByLabelText('Cotação de origem'))
+  await user.click(screen.getByRole('option', { name: 'Compra anterior' }))
   await user.click(screen.getByRole('button', { name: /duplicar cotação/i }))
 
   expect(await screen.findByText('detalhe')).toBeInTheDocument()

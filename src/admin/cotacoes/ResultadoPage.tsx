@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { ChevronRight, FileDown, Send } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { Input } from '@/shared/components/ui/input'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { Breadcrumb } from '@/shared/components/ui/breadcrumb'
 import { moeda } from '@/shared/format/formatters'
@@ -20,6 +21,14 @@ const ROTULO_PEDIDO: Record<string, string> = {
   GERADO: 'Gerado',
   ENVIADO: 'Enviado',
   CONFIRMADO: 'Confirmado',
+}
+
+function precoDeVenda(precoCusto: number, margemStr: string): number | null {
+  const valor = margemStr.trim()
+  if (!valor) return null
+  const numero = Number(valor.replace(',', '.'))
+  if (!Number.isFinite(numero) || numero < 0) return null
+  return precoCusto * (1 + numero / 100)
 }
 
 function PedidoStatusBadge({ status }: { status: string }) {
@@ -40,6 +49,8 @@ export function ResultadoPage() {
   const enviar = useEnviarPedido(id)
   const [erro, setErro] = useState<string | null>(null)
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set())
+  const [margemGlobal, setMargemGlobal] = useState('')
+  const [margensPorItem, setMargensPorItem] = useState<Record<string, string>>({})
 
   function alternarExpansao(pedidoId: string) {
     setExpandidos((prev) => {
@@ -51,6 +62,10 @@ export function ResultadoPage() {
       }
       return novo
     })
+  }
+
+  function margemEfetiva(itemId: string): string {
+    return margensPorItem[itemId] ?? margemGlobal
   }
 
   function tratarErro(e: unknown) {
@@ -103,6 +118,26 @@ export function ResultadoPage() {
         <CardHeader>
           <CardTitle>Pedidos Gerados</CardTitle>
         </CardHeader>
+        <div className="px-4 py-3">
+          <label htmlFor="margem-global" className="text-sm font-medium">
+            Margem de lucro (%)
+          </label>
+          <div className="mt-1 flex items-center gap-2">
+            <Input
+              id="margem-global"
+              value={margemGlobal}
+              onChange={(e) => setMargemGlobal(e.target.value)}
+              placeholder="Ex: 30"
+              inputMode="decimal"
+              className="max-w-40"
+            />
+            <span className="text-sm text-muted-foreground">%</span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Prévia de preço de venda — não afeta o pedido enviado. Aplica a todos os itens e pode ser
+            ajustada por item.
+          </p>
+        </div>
         <div className="overflow-x-auto border-t">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
@@ -175,28 +210,48 @@ export function ResultadoPage() {
                                 <th className="py-1.5 font-medium">Produto</th>
                                 <th className="py-1.5 font-medium text-right">Preço embalagem</th>
                                 <th className="py-1.5 font-medium text-right">Preço unitário</th>
+                                <th className="py-1.5 font-medium text-right">Margem (%)</th>
+                                <th className="py-1.5 font-medium text-right">Preço de venda</th>
                                 <th className="py-1.5 font-medium text-right">Subtotal</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                              {pedido.itens.map((item) => (
-                                <tr key={item.id}>
-                                  <td className="py-2 font-medium">{item.nomeSnapshot}</td>
-                                  <td className="py-2 text-right tabular-nums text-muted-foreground">{moeda(item.precoEmbalagem)}</td>
-                                  <td className="py-2 text-right tabular-nums text-muted-foreground">
-                                    {moeda(item.precoUnitario)}
-                                    {item.decididoPorDesempate && (
-                                      <span
-                                        title="Empate de preço — decidido por ordem de resposta"
-                                        className="ml-2 inline-flex items-center rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning"
-                                      >
-                                        Empate
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td className="py-2 text-right tabular-nums text-foreground font-medium">{moeda(item.subtotal)}</td>
-                                </tr>
-                              ))}
+                              {pedido.itens.map((item) => {
+                                const precoVenda = precoDeVenda(item.precoUnitario, margemEfetiva(item.id))
+                                return (
+                                  <tr key={item.id}>
+                                    <td className="py-2 font-medium">{item.nomeSnapshot}</td>
+                                    <td className="py-2 text-right tabular-nums text-muted-foreground">{moeda(item.precoEmbalagem)}</td>
+                                    <td className="py-2 text-right tabular-nums text-muted-foreground">
+                                      {moeda(item.precoUnitario)}
+                                      {item.decididoPorDesempate && (
+                                        <span
+                                          title="Empate de preço — decidido por ordem de resposta"
+                                          className="ml-2 inline-flex items-center rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning"
+                                        >
+                                          Empate
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="py-2 text-right">
+                                      <Input
+                                        value={margemEfetiva(item.id)}
+                                        onChange={(e) =>
+                                          setMargensPorItem((prev) => ({ ...prev, [item.id]: e.target.value }))
+                                        }
+                                        placeholder="—"
+                                        inputMode="decimal"
+                                        aria-label={`Margem (%) de ${item.nomeSnapshot}`}
+                                        className="ml-auto h-8 w-20 text-right tabular-nums"
+                                      />
+                                    </td>
+                                    <td className="py-2 text-right tabular-nums text-foreground font-medium">
+                                      {precoVenda === null ? '—' : moeda(precoVenda)}
+                                    </td>
+                                    <td className="py-2 text-right tabular-nums text-foreground font-medium">{moeda(item.subtotal)}</td>
+                                  </tr>
+                                )
+                              })}
                             </tbody>
                           </table>
                         </td>

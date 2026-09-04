@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -29,6 +29,61 @@ function rotuloStatus(status: CelulaGrid['status']): string {
   if (status === 'COTADO') return 'Cotado'
   if (status === 'NAO_COTADO') return 'Não cotou'
   return 'Pendente'
+}
+
+function CampoQuantidade({
+  item,
+  pendente,
+  aoAtualizarQuantidade,
+}: {
+  item: ItemGrid
+  pendente: boolean
+  aoAtualizarQuantidade: (itemId: string, quantidade: number) => void
+}) {
+  const [valor, setValor] = useState(String(item.quantidadeSolicitada))
+  const [focado, setFocado] = useState(false)
+
+  // Sincroniza com fonte externa (SSE/query) apenas quando o campo não está
+  // em edição, para não sobrescrever o que o Comprador está digitando.
+  useEffect(() => {
+    if (!focado) {
+      setValor(String(item.quantidadeSolicitada))
+    }
+  }, [item.quantidadeSolicitada, focado])
+
+  function confirmar() {
+    const v = parseInt(valor, 10)
+    if (Number.isInteger(v) && v >= 1) {
+      if (v !== item.quantidadeSolicitada) {
+        aoAtualizarQuantidade(item.itemCotacaoId, v)
+      }
+    } else {
+      setValor(String(item.quantidadeSolicitada))
+    }
+  }
+
+  return (
+    <input
+      type="number"
+      inputMode="numeric"
+      min={1}
+      value={valor}
+      disabled={pendente}
+      onChange={(e) => setValor(e.target.value)}
+      onFocus={() => setFocado(true)}
+      onBlur={() => {
+        setFocado(false)
+        confirmar()
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.currentTarget.blur()
+        }
+      }}
+      aria-label={`Quantidade de ${item.nome}`}
+      className="h-6 w-12 rounded border border-input bg-transparent px-1 text-center text-xs font-medium tabular-nums focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+    />
+  )
 }
 
 type LinhaProps = {
@@ -72,9 +127,7 @@ const LinhaItem = memo(function LinhaItem({
               >
                 <Minus className="size-3" />
               </Button>
-              <span className="min-w-6 text-center text-xs font-medium tabular-nums">
-                {item.quantidadeSolicitada}
-              </span>
+              <CampoQuantidade item={item} pendente={quantidadePendente} aoAtualizarQuantidade={aoAtualizarQuantidade} />
               <Button
                 type="button"
                 variant="outline"
