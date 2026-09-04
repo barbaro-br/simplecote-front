@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { Button } from '@/shared/components/ui/button'
@@ -39,7 +39,7 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
     },
   })
 
-  const senha = form.watch('senha') ?? ''
+  const senha = useWatch({ control: form.control, name: 'senha' }) ?? ''
   const senhaValida = senha.length >= SENHA_MIN
 
   const isPending = criar.isPending || atualizar.isPending

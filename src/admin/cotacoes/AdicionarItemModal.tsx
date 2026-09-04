@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
 import { useProdutos } from '@/admin/produtos/produtos.api'
@@ -39,12 +39,14 @@ export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastra
   }, [itens])
 
   // Reset do search e drafts quando abre
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (open) {
       setSearch('')
       setDrafts(new Map())
     }
-  }, [open])
+  }
 
   const handleClose = () => {
     if (drafts.size > 0) {

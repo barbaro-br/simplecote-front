@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { AlertTriangle, Check, Copy } from 'lucide-react'
@@ -18,6 +18,7 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
     resolver: zodResolver(configuracaoSchema),
     defaultValues: configuracaoInicial,
   })
+  const corPrimaria = useWatch({ control: form.control, name: 'corPrimaria' })
 
   async function aoEnviar(valores: ConfiguracaoFormValues) {
     setErro(null)
@@ -56,7 +57,7 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
             {...form.register('corPrimaria')}
             className="h-9 w-16 cursor-pointer p-1"
           />
-          <span className="text-sm text-muted-foreground font-mono">{form.watch('corPrimaria')}</span>
+          <span className="text-sm text-muted-foreground font-mono">{corPrimaria}</span>
         </div>
         <p className="text-xs text-muted-foreground">Usada como cor primária (botões, foco e destaques).</p>
       </div>
