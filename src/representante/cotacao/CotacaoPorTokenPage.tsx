@@ -52,8 +52,10 @@ export function CotacaoPorTokenPage() {
   const [temPrecoLocal, setTemPrecoLocal] = useState<Record<string, boolean> | null>(null)
   const [fonteSemeada, setFonteSemeada] = useState<CotacaoPorToken | null>(null)
   // Ids presentes no primeiro carregamento bem-sucedido — base do indicador
-  // "Novo" (item cujo id não estava aqui foi adicionado depois).
-  const idsConhecidosRef = useRef<Set<string> | null>(null)
+  // "Novo" (item cujo id não estava aqui foi adicionado depois). Estado (não
+  // ref) porque é lido durante o render, junto com sua escrita — o mesmo
+  // padrão de "ajustar estado durante o render" já usado acima.
+  const [idsConhecidos, setIdsConhecidos] = useState<Set<string> | null>(null)
   if (cotacao.data && cotacao.data !== fonteSemeada) {
     const data = cotacao.data
     setFonteSemeada(data)
@@ -70,8 +72,8 @@ export function CotacaoPorTokenPage() {
       )
       return { ...base, ...novos }
     })
-    if (idsConhecidosRef.current === null) {
-      idsConhecidosRef.current = new Set(data.itens.map((i) => i.itemCotacaoId))
+    if (idsConhecidos === null) {
+      setIdsConhecidos(new Set(data.itens.map((i) => i.itemCotacaoId)))
     }
   }
 
@@ -209,7 +211,7 @@ export function CotacaoPorTokenPage() {
               autoFocus={item.itemCotacaoId === primeiroSemPreco}
               status={fila.statusPorItem[item.itemCotacaoId]}
               erro={fila.errosPorItem[item.itemCotacaoId]}
-              novo={itemEhNovo(item, idsConhecidosRef.current ?? new Set())}
+              novo={itemEhNovo(item, idsConhecidos ?? new Set())}
               aoAssentar={(patch) => fila.gravarEEnviar(item.itemCotacaoId, patch)}
               onPrecoChange={onPrecoChange}
             />

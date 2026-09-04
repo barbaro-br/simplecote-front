@@ -326,7 +326,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                             try {
                               await convidar.mutateAsync([e.id])
                               toast.success('Empresa convidada com sucesso!')
-                            } catch (error) {
+                            } catch {
                               toast.error('Erro ao convidar empresa')
                             }
                           }}
@@ -365,7 +365,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                                 try {
                                   await reenviar.mutateAsync(e.part!.participanteId)
                                   toast.success(`E-mail reenviado para ${e.nome}`)
-                                } catch (err) {
+                                } catch {
                                   toast.error(`Falha ao reenviar e-mail para ${e.nome}`)
                                 } finally {
                                   setLoadingMailId(null)
@@ -381,7 +381,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                                       try {
                                         await finalizar.mutateAsync(e.part!.participanteId)
                                         toast.success('Resposta finalizada em nome do participante.')
-                                      } catch (error) {
+                                      } catch {
                                         toast.error('Erro ao finalizar participante')
                                       }
                                     },
@@ -397,7 +397,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                                       try {
                                         await reabrir.mutateAsync(e.part!.participanteId)
                                         toast.success('Resposta reaberta.')
-                                      } catch (error) {
+                                      } catch {
                                         toast.error('Erro ao reabrir participante')
                                       }
                                     },

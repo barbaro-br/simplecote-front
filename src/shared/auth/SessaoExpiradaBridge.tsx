@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { configurarSessaoExpirada } from '@/shared/api/api-client'
 import { routes } from '@/routes'
-import { useAuth } from './AuthContext'
+import { useAuth } from './useAuth'
 
 /**
  * Fia o handler de sessão expirada do `api-client` ao `AuthContext` + router.

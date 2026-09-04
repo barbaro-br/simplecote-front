@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
-import { InsightEmpresaCard, duracaoAprox } from './InsightEmpresaCard'
+import { InsightEmpresaCard } from './InsightEmpresaCard'
+import { duracaoAprox } from './duracao'
 import type { InsightEmpresa } from './analise.schema'
 
 describe('InsightEmpresaCard', () => {

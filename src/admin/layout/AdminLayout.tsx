@@ -14,7 +14,7 @@ import {
   ShoppingBag,
   UserCog,
 } from 'lucide-react'
-import { useAuth } from '@/shared/auth/AuthContext'
+import { useAuth } from '@/shared/auth/useAuth'
 import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { BottomNavBar } from './BottomNavBar'
