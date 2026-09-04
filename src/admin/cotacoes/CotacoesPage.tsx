@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { FileText, Plus, RefreshCw, Search, ServerCrash } from 'lucide-react'
 import { dataHoraBr } from '@/shared/format/formatters'
@@ -6,7 +6,8 @@ import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 import { StatusBadge } from '@/shared/components/StatusBadge'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
-import { Button, buttonClasses } from '@/shared/components/ui/button'
+import { Button } from '@/shared/components/ui/button'
+import { buttonClasses } from '@/shared/components/ui/button-classes'
 import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Skeleton } from '@/shared/components/ui/skeleton'
@@ -23,10 +24,6 @@ const STATUS: { valor: StatusCotacao; rotulo: string }[] = [
   { valor: 'CANCELADA', rotulo: 'Cancelada' },
 ]
 
-export function rotuloStatus(status: StatusCotacao): string {
-  return STATUS.find((s) => s.valor === status)?.rotulo ?? status
-}
-
 type Filtro = StatusCotacao | 'TODOS'
 
 const FILTROS: { valor: Filtro; rotulo: string }[] = [
@@ -39,11 +36,13 @@ export function CotacoesPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [busca, setBusca] = useState('')
 
-  const primeiraCargaRef = useRef(true)
+  // Estado (não ref) porque é lido durante o render, para aplicar o fade-in
+  // só na primeira carga (não em refetches subsequentes).
+  const [primeiraCarga, setPrimeiraCarga] = useState(true)
 
   useEffect(() => {
     if (!isLoading) {
-      primeiraCargaRef.current = false
+      setPrimeiraCarga(false)
     }
   }, [isLoading])
 
@@ -228,10 +227,10 @@ export function CotacoesPage() {
                   <tr
                     key={c.id}
                     className={`transition-colors hover:bg-muted/40${
-                      primeiraCargaRef.current ? ' fade-in' : ''
+                      primeiraCarga ? ' fade-in' : ''
                     }`}
                     style={
-                      primeiraCargaRef.current
+                      primeiraCarga
                         ? { animationDelay: `${Math.min(i * 50, 500)}ms` }
                         : undefined
                     }

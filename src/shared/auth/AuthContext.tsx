@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { useState, useCallback, type ReactNode } from 'react'
 import { api } from '@/shared/api/api-client'
+import { AuthContext } from './auth-context'
 
 interface TokenResponse {
   token: string
@@ -7,13 +8,6 @@ interface TokenResponse {
 
 interface AuthState {
   token: string | null
-}
-
-interface AuthContextValue {
-  token: string | null
-  isAutenticado: boolean
-  login: (email: string, senha: string) => Promise<void>
-  logout: () => void
 }
 
 const SESSION_KEY = 'simplecote_token'
@@ -41,8 +35,6 @@ function removerTokenDaSessao(): void {
     // ignorar
   }
 }
-
-const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthState>(() => ({
@@ -72,12 +64,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext)
-  if (!ctx) {
-    throw new Error('useAuth deve ser usado dentro de <AuthProvider>')
-  }
-  return ctx
 }
