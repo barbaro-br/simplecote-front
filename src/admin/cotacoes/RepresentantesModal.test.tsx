@@ -117,26 +117,22 @@ test('Finalizar chama a mutation e a linha passa a refletir Respondido', async (
   expect(screen.queryByRole('menuitem', { name: 'Finalizar' })).not.toBeInTheDocument()
 })
 
-test('em PEDIDOS_GERADOS, participante RESPONDIDO não mostra "Reabrir resposta" no menu', async () => {
+test('em PEDIDOS_GERADOS, participante RESPONDIDO não mostra o menu "Mais opções"', async () => {
   setup('PEDIDOS_GERADOS', [participante('e1', 'Mercado A', 'RESPONDIDO')])
-  const user = userEvent.setup()
 
   expect(await screen.findByText('Respondido')).toBeInTheDocument()
 
-  await abrirMenu(user, 'Mercado A')
-  expect(screen.queryByRole('menuitem', { name: 'Reabrir resposta' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('menuitem', { name: 'Finalizar' })).not.toBeInTheDocument()
+  const linha = (await screen.findByText('Mercado A')).closest('li')!
+  expect(within(linha).queryByTitle('Mais opções')).not.toBeInTheDocument()
 })
 
-test('em CANCELADA, participante VISUALIZOU não mostra "Finalizar" no menu', async () => {
+test('em CANCELADA, participante VISUALIZOU não mostra o menu "Mais opções"', async () => {
   setup('CANCELADA', [participante('e1', 'Mercado A', 'VISUALIZOU')])
-  const user = userEvent.setup()
 
   expect(await screen.findByText('Visualizou')).toBeInTheDocument()
 
-  await abrirMenu(user, 'Mercado A')
-  expect(screen.queryByRole('menuitem', { name: 'Finalizar' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('menuitem', { name: 'Reabrir resposta' })).not.toBeInTheDocument()
+  const linha = (await screen.findByText('Mercado A')).closest('li')!
+  expect(within(linha).queryByTitle('Mais opções')).not.toBeInTheDocument()
 })
 
 test('em ENCERRADA, os itens Finalizar/Reabrir continuam sendo exibidos (sem regressão)', async () => {
@@ -159,15 +155,24 @@ test('em ENCERRADA, os itens Finalizar/Reabrir continuam sendo exibidos (sem reg
   expect(screen.queryByRole('menuitem', { name: 'Finalizar' })).not.toBeInTheDocument()
 })
 
-test('participante convidado não exibe ações soltas na linha, apenas o menu "⋯"', async () => {
+test('participante aberto exibe ícones de ação direto na linha (sem WhatsApp quando não há telefone), e o menu "⋯" só com Finalizar/Reabrir', async () => {
   setup('ABERTA', [participante('e1', 'Mercado A', 'VISUALIZOU')])
 
-  await screen.findByText('Mercado A')
+  const linha = (await screen.findByText('Mercado A')).closest('li')!
 
-  expect(screen.queryByTitle('Enviar por WhatsApp')).not.toBeInTheDocument()
-  expect(screen.queryByTitle('Copiar Link')).not.toBeInTheDocument()
-  expect(screen.queryByTitle('Reenviar E-mail')).not.toBeInTheDocument()
-  expect(screen.getByTitle('Mais opções')).toBeInTheDocument()
+  expect(within(linha).queryByTitle('Enviar por WhatsApp')).not.toBeInTheDocument()
+  expect(within(linha).getByTitle('Copiar link')).toBeInTheDocument()
+  expect(within(linha).getByTitle('Reenviar convite')).toBeInTheDocument()
+  expect(within(linha).getByTitle('Mais opções')).toBeInTheDocument()
+})
+
+test('participante com WhatsApp cadastrado exibe o ícone de WhatsApp na linha', async () => {
+  setup('ABERTA', [
+    { ...participante('e1', 'Mercado A', 'CONVIDADO'), whatsappRepresentante: '11987654321' },
+  ])
+
+  const linha = (await screen.findByText('Mercado A')).closest('li')!
+  expect(within(linha).getByTitle('Enviar por WhatsApp')).toBeInTheDocument()
 })
 
 test('participante com conviteStatus FALHOU exibe rótulo de erro, distinto do "Não enviado"', async () => {

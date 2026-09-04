@@ -10,7 +10,7 @@ import {
   useFinalizarParticipante,
   useReabrirParticipante,
 } from './cotacoes.api'
-import { Send, Mail, Phone, Search, X, Info, CheckCircle2, Loader2 } from 'lucide-react'
+import { Send, Mail, Phone, Search, X, Info, CheckCircle2, Loader2, Copy, MessageCircle } from 'lucide-react'
 import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
 import { urlWhatsApp, urlMailto } from './compartilhar-link'
 import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
@@ -76,10 +76,16 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const isAberta = status !== 'RASCUNHO'
   const podeGerenciarResposta = status === 'ABERTA' || status === 'ENCERRADA'
 
-  // Quando o modal abre
-  useEffect(() => {
+  // Quando o modal abre: reseta a busca (durante o render) e foca o campo (efeito de DOM).
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (open) {
       setSearch('')
+    }
+  }
+  useEffect(() => {
+    if (open) {
       setTimeout(() => searchRef.current?.focus(), 50)
     }
   }, [open])
@@ -298,17 +304,12 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                       </div>
                     )}
 
-                    {/* Status Badge (apenas se aberta) */}
-                    {isAberta && e.isChecked && e.part?.participanteStatus === 'CONVIDADO' && (
-                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${classeConvite}`}>
-                        {rotuloConvite}
-                      </span>
-                    )}
-
-                    {/* Status da resposta (apenas se aberta) */}
+                    {/* Status Único (apenas se aberta) */}
                     {isAberta && e.part && (
-                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${CLASSE_STATUS_RESPOSTA[e.part.participanteStatus]}`}>
-                        {ROTULO_STATUS_RESPOSTA[e.part.participanteStatus]}
+                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
+                        e.part.participanteStatus === 'CONVIDADO' ? classeConvite : CLASSE_STATUS_RESPOSTA[e.part.participanteStatus]
+                      }`}>
+                        {e.part.participanteStatus === 'CONVIDADO' ? rotuloConvite : ROTULO_STATUS_RESPOSTA[e.part.participanteStatus]}
                       </span>
                     )}
 
@@ -336,76 +337,99 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                       </div>
                     )}
 
-                    {/* Menu de Ações (Apenas Aberta) */}
+                    {/* Ações Diretas (Aberta) */}
                     {isAberta && e.part && (
-                      <div className="flex items-center ml-2">
-                        <MenuAcoes
-                          items={[
-                            {
-                              label: 'Enviar por WhatsApp',
-                              onSelect: () => {
-                                const link = e.part!.linkMagico
-                                const msg = `Olá ${e.part!.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação. Acesse: ${link}`
-                                const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
-                                window.open(url, '_blank')
-                              },
-                            },
-                            {
-                              label: 'Copiar link',
-                              onSelect: () => {
-                                navigator.clipboard.writeText(e.part!.linkMagico)
-                                toast.success('Link copiado com sucesso!')
-                              },
-                            },
-                            {
-                              label: 'Reenviar convite',
-                              disabled: loadingMailId === e.id,
-                              onSelect: async () => {
-                                setLoadingMailId(e.id)
-                                try {
-                                  await reenviar.mutateAsync(e.part!.participanteId)
-                                  toast.success(`E-mail reenviado para ${e.nome}`)
-                                } catch {
-                                  toast.error(`Falha ao reenviar e-mail para ${e.nome}`)
-                                } finally {
-                                  setLoadingMailId(null)
-                                }
-                              },
-                            },
-                            ...(podeGerenciarResposta && e.part.participanteStatus === 'VISUALIZOU'
-                              ? [
-                                  {
-                                    label: 'Finalizar',
-                                    disabled: finalizar.isPending,
-                                    onSelect: async () => {
-                                      try {
-                                        await finalizar.mutateAsync(e.part!.participanteId)
-                                        toast.success('Resposta finalizada em nome do participante.')
-                                      } catch {
-                                        toast.error('Erro ao finalizar participante')
-                                      }
-                                    },
-                                  },
-                                ]
-                              : []),
-                            ...(podeGerenciarResposta && e.part.participanteStatus === 'RESPONDIDO'
-                              ? [
-                                  {
-                                    label: 'Reabrir resposta',
-                                    disabled: reabrir.isPending,
-                                    onSelect: async () => {
-                                      try {
-                                        await reabrir.mutateAsync(e.part!.participanteId)
-                                        toast.success('Resposta reaberta.')
-                                      } catch {
-                                        toast.error('Erro ao reabrir participante')
-                                      }
-                                    },
-                                  },
-                                ]
-                              : []),
-                          ]}
-                        />
+                      <div className="flex items-center gap-1.5 ml-2 text-muted-foreground/60">
+                        {e.part.whatsappRepresentante && (
+                          <button
+                            type="button"
+                            title="Enviar por WhatsApp"
+                            className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              const link = e.part!.linkMagico
+                              const msg = `Olá ${e.part!.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação. Acesse: ${link}`
+                              const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
+                              window.open(url, '_blank')
+                            }}
+                          >
+                            <MessageCircle className="size-4" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          title="Copiar link"
+                          className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                          onClick={(ev) => {
+                            ev.stopPropagation()
+                            navigator.clipboard.writeText(e.part!.linkMagico)
+                            toast.success('Link copiado com sucesso!')
+                          }}
+                        >
+                          <Copy className="size-4" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Reenviar convite"
+                          disabled={loadingMailId === e.id}
+                          className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={async (ev) => {
+                            ev.stopPropagation()
+                            setLoadingMailId(e.id)
+                            try {
+                              await reenviar.mutateAsync(e.part!.participanteId)
+                              toast.success(`E-mail reenviado para ${e.nome}`)
+                            } catch {
+                              toast.error(`Falha ao reenviar e-mail para ${e.nome}`)
+                            } finally {
+                              setLoadingMailId(null)
+                            }
+                          }}
+                        >
+                          {loadingMailId === e.id ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
+                        </button>
+
+                        {/* Menu de Ações Secundárias (Finalizar/Reabrir) */}
+                        {podeGerenciarResposta && (e.part.participanteStatus === 'VISUALIZOU' || e.part.participanteStatus === 'RESPONDIDO') && (
+                          <div onClick={ev => ev.stopPropagation()}>
+                            <MenuAcoes
+                              items={[
+                                ...(e.part.participanteStatus === 'VISUALIZOU'
+                                  ? [
+                                      {
+                                        label: 'Finalizar',
+                                        disabled: finalizar.isPending,
+                                        onSelect: async () => {
+                                          try {
+                                            await finalizar.mutateAsync(e.part!.participanteId)
+                                            toast.success('Resposta finalizada em nome do participante.')
+                                          } catch {
+                                            toast.error('Erro ao finalizar participante')
+                                          }
+                                        },
+                                      },
+                                    ]
+                                  : []),
+                                ...(e.part.participanteStatus === 'RESPONDIDO'
+                                  ? [
+                                      {
+                                        label: 'Reabrir resposta',
+                                        disabled: reabrir.isPending,
+                                        onSelect: async () => {
+                                          try {
+                                            await reabrir.mutateAsync(e.part!.participanteId)
+                                            toast.success('Resposta reaberta.')
+                                          } catch {
+                                            toast.error('Erro ao reabrir participante')
+                                          }
+                                        },
+                                      },
+                                    ]
+                                  : []),
+                              ]}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
