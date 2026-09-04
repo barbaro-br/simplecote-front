@@ -397,3 +397,98 @@ test('diálogo de Apurar sem participantes não finalizados não lista nada', as
   const dialog = screen.getByRole('dialog')
   expect(dialog).not.toHaveTextContent('Participantes que não finalizaram a resposta')
 })
+
+function gradeComLances(participantesIds: string[]) {
+  return {
+    status: 'ABERTA',
+    respondidos: 0,
+    totalParticipantes: participantesIds.length,
+    itens: [
+      {
+        itemCotacaoId: 'item-1',
+        nome: 'Arroz Tipo 1 5kg',
+        unidade: 'Fardo',
+        quantidadePorEmbalagem: 1,
+        quantidadeSolicitada: 5,
+        ultimoPrecoUnitario: 10,
+        menorPrecoUnitario: 10,
+        precos: participantesIds.map((participanteId) => ({
+          participanteId,
+          empresaId: `emp-${participanteId}`,
+          empresa: 'Empresa',
+          preco: 10,
+          precoUnitario: 10,
+          status: 'COTADO',
+        })),
+      },
+    ],
+  }
+}
+
+test('diálogo de Encerrar sem pendências não mostra o aviso nem o botão de finalizar em massa', async () => {
+  setup('ABERTA')
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Encerrar' }))
+
+  const dialog = screen.getByRole('dialog')
+  expect(dialog).toHaveTextContent('deixará de aceitar novas respostas')
+  expect(dialog).not.toHaveTextContent('preencheram preço mas não finalizaram')
+  expect(screen.queryByRole('button', { name: 'Finalizar todos antes de encerrar' })).not.toBeInTheDocument()
+})
+
+test('diálogo de Encerrar com pendências lista os nomes e finaliza em massa ao clicar', async () => {
+  setup('ABERTA')
+  let lista = [
+    participante('p1', 'Mercado A', 'VISUALIZOU'),
+    participante('p2', 'Mercado B', 'RESPONDIDO'),
+  ]
+  server.use(
+    http.get('*/api/cotacoes/c-1/participantes', () => HttpResponse.json(lista)),
+    http.get('*/api/cotacoes/c-1/ao-vivo', () => HttpResponse.json(gradeComLances(['p1', 'p2']))),
+    http.post('*/api/participantes/:participanteId/finalizar', ({ params }) => {
+      const participanteId = params.participanteId as string
+      lista = lista.map((p) =>
+        p.participanteId === participanteId ? { ...p, participanteStatus: 'RESPONDIDO' as const } : p,
+      )
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Encerrar' }))
+
+  const dialog = screen.getByRole('dialog')
+  expect(await within(dialog).findByText('Mercado A')).toBeInTheDocument()
+  expect(within(dialog).queryByText('Mercado B')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Finalizar todos antes de encerrar' })).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Finalizar todos antes de encerrar' }))
+
+  await waitFor(() => {
+    expect(within(screen.getByRole('dialog')).queryByText('Mercado A')).not.toBeInTheDocument()
+  })
+  expect(screen.queryByRole('button', { name: 'Finalizar todos antes de encerrar' })).not.toBeInTheDocument()
+})
+
+test('Encerrar continua funcionando normalmente mesmo com o aviso visível', async () => {
+  const { chamadas } = setup('ABERTA')
+  server.use(
+    http.get('*/api/cotacoes/c-1/participantes', () =>
+      HttpResponse.json([participante('p1', 'Mercado A', 'VISUALIZOU')]),
+    ),
+    http.get('*/api/cotacoes/c-1/ao-vivo', () => HttpResponse.json(gradeComLances(['p1']))),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Encerrar' }))
+
+  const dialog = screen.getByRole('dialog')
+  expect(await within(dialog).findByText('Mercado A')).toBeInTheDocument()
+
+  await user.click(within(dialog).getByRole('button', { name: 'Encerrar' }))
+  await waitFor(() => expect(chamadas.encerrar).toBe(1))
+})

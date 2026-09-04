@@ -272,3 +272,15 @@ export function useFinalizarParticipante(cotacaoId: string) {
     },
   })
 }
+
+export function useDesconvidarParticipante(cotacaoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (participanteId: string) =>
+      api.delete<void>(`/api/participantes/${participanteId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: participantesKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+    },
+  })
+}

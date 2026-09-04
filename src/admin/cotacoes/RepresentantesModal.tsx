@@ -7,13 +7,15 @@ import {
   useParticipantes,
   useReenviarConvite,
   useConvidarEmpresas,
+  useDesconvidarParticipante,
   useFinalizarParticipante,
   useReabrirParticipante,
 } from './cotacoes.api'
-import { Send, Mail, Phone, Search, X, Info, CheckCircle2, Loader2, Copy, MessageCircle } from 'lucide-react'
-import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
+import { Send, Mail, Phone, Search, X, Info, CheckCircle2, Loader2, Copy, MessageCircle, RotateCcw } from 'lucide-react'
+import { ConfirmarDialog } from './ConfirmarDialog'
 import { urlWhatsApp, urlMailto } from './compartilhar-link'
 import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
+import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { toast } from 'sonner'
 
 type Props = {
@@ -64,16 +66,18 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const convidar = useConvidarEmpresas(cotacaoId)
   const finalizar = useFinalizarParticipante(cotacaoId)
   const reabrir = useReabrirParticipante(cotacaoId)
+  const desconvidar = useDesconvidarParticipante(cotacaoId)
   const { data: empresas } = useEmpresas()
   const { data: reps } = useRepresentantes()
   const [loadingMailId, setLoadingMailId] = useState<string | null>(null)
   const [isEnviando, setIsEnviando] = useState(false)
-  const [mostrarNaoConvidados, setMostrarNaoConvidados] = useState(false)
+  const [alvoDesconvidar, setAlvoDesconvidar] = useState<{ participanteId: string; nome: string } | null>(null)
 
   const [search, setSearch] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
 
   const isAberta = status !== 'RASCUNHO'
+  const emAberta = status === 'ABERTA'
   const podeGerenciarResposta = status === 'ABERTA' || status === 'ENCERRADA'
 
   // Quando o modal abre: reseta a busca (durante o render) e foca o campo (efeito de DOM).
@@ -112,21 +116,17 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   }, [empresas, reps, participantes.data, selecionadas, isAberta])
 
   const filtrados = useMemo(() => {
-    let base = lista
-    if (isAberta && !mostrarNaoConvidados) {
-      base = base.filter(l => l.part)
-    }
-    
-    if (!search) return base
-    
+    if (!search) return lista
+
     const s = search.toLowerCase()
-    return base.filter(e => 
-      e.nome.toLowerCase().includes(s) || 
+    return lista.filter(e =>
+      e.nome.toLowerCase().includes(s) ||
       (e.repNome && e.repNome.toLowerCase().includes(s))
     )
-  }, [lista, search, isAberta, mostrarNaoConvidados])
+  }, [lista, search])
 
   const totalSelecionados = lista.filter(l => l.isChecked).length
+  const totalConvidados = lista.filter(l => l.part).length
   const naoEnviadoCount = lista.filter(l => l.part && l.part.conviteStatus !== 'ENVIADO').length
 
   const handleDispararTodosEmail = async () => {
@@ -175,8 +175,8 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                 </>
               ) : (
                 <>
-                  <span className="bg-muted px-2 rounded-sm text-foreground">{filtrados.length}</span>
-                  {filtrados.length === 1 ? 'empresa' : 'empresas'} na cotação
+                  <span className="bg-muted px-2 rounded-sm text-foreground">{totalConvidados}</span>
+                  {totalConvidados === 1 ? 'empresa' : 'empresas'} na cotação
                 </>
               )}
             </div>
@@ -204,19 +204,10 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
               className="w-full pl-10 pr-4 py-2 text-[13px] bg-muted/40 border border-transparent rounded-xl outline-none text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary/30 focus:ring-2 focus:ring-primary/20 transition-all"
             />
           </div>
-          {isAberta && (
-            <Button
-              variant={mostrarNaoConvidados ? "secondary" : "ghost"}
-              className="h-9 px-3 rounded-xl text-[12px]"
-              onClick={() => setMostrarNaoConvidados(!mostrarNaoConvidados)}
-            >
-              {mostrarNaoConvidados ? 'Ocultar não convidadas' : 'Ver todas'}
-            </Button>
-          )}
         </div>
 
-        {/* Lista de Representantes */}
-        <div className="flex-1 overflow-y-auto min-h-0 bg-transparent">
+        {/* Lista de Representantes — altura de ~4 linhas, o resto rola */}
+        <div className="overflow-y-auto min-h-0 max-h-[500px] bg-transparent">
           <ul className="m-0 p-2 space-y-1">
             {filtrados.map((e) => {
               const conviteStatus = e.part?.conviteStatus
@@ -238,15 +229,53 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                     group flex flex-wrap items-center gap-4 px-4 py-3 rounded-xl transition-all
                     ${!isAberta ? 'cursor-pointer hover:bg-muted' : 'bg-transparent'}
                     ${e.isChecked && !isAberta ? 'bg-primary/10 hover:bg-primary/20 ring-1 ring-primary/20 shadow-sm' : ''}
+                    ${e.isChecked && isAberta ? 'bg-success/5' : ''}
                   `}
                 >
-                  {/* Status Check ou Circle (Apenas Rascunho) */}
-                  {!isAberta && (
+                  {/* Status Check ou Circle — Rascunho: convida/remove seleção; Aberta: convida/desconvida (menor) */}
+                  {(!isAberta || emAberta) && (
                     <div className="shrink-0 flex items-center justify-center transition-transform">
-                      {e.isChecked ? (
-                        <CheckCircle2 className="size-5 text-primary animate-in zoom-in duration-200" />
+                      {!isAberta ? (
+                        e.isChecked ? (
+                          <CheckCircle2 className="size-5 text-primary animate-in zoom-in duration-200" />
+                        ) : (
+                          <div className="size-5 rounded-full border-2 border-muted-foreground/30 group-hover:border-muted-foreground/80 group-hover:bg-background/50 transition-colors" />
+                        )
+                      ) : e.part ? (
+                        e.part.participanteStatus === 'RESPONDIDO' ? (
+                          <CheckCircle2 className="size-4 text-success" />
+                        ) : (
+                          <button
+                            type="button"
+                            title="Desconvidar"
+                            disabled={desconvidar.isPending}
+                            className="disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              setAlvoDesconvidar({ participanteId: e.part!.participanteId, nome: e.nome })
+                            }}
+                          >
+                            <CheckCircle2 className="size-4 text-primary hover:text-destructive transition-colors" />
+                          </button>
+                        )
                       ) : (
-                        <div className="size-5 rounded-full border-2 border-muted-foreground/30 group-hover:border-muted-foreground/80 group-hover:bg-background/50 transition-colors" />
+                        <button
+                          type="button"
+                          title="Convidar"
+                          disabled={convidar.isPending}
+                          className="disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={async (ev) => {
+                            ev.stopPropagation()
+                            try {
+                              await convidar.mutateAsync([e.id])
+                              toast.success('Empresa convidada com sucesso!')
+                            } catch {
+                              toast.error('Erro ao convidar empresa')
+                            }
+                          }}
+                        >
+                          <div className="size-4 rounded-full border-2 border-muted-foreground/30 hover:border-primary transition-colors" />
+                        </button>
                       )}
                     </div>
                   )}
@@ -258,17 +287,64 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
 
                   {/* Info */}
                   <div className="flex-1 min-w-[8rem]">
-                    <div className={`text-sm ${e.isChecked ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} truncate transition-colors`}>
+                    <div className={`text-base ${e.isChecked ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} truncate transition-colors`}>
                       {e.nome}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[12px] text-muted-foreground truncate">
+                      <span className="text-sm text-muted-foreground truncate">
                         {e.part?.representanteNome || e.repNome || 'Representante'}
                       </span>
                     </div>
+                    {/* Status Único + info, embaixo do nome do representante (apenas se aberta) */}
+                    {isAberta && e.part && (
+                      <div className="flex items-center gap-1.5 mt-1" onClick={(ev) => ev.stopPropagation()}>
+                        <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
+                          e.part.participanteStatus === 'CONVIDADO' ? classeConvite : CLASSE_STATUS_RESPOSTA[e.part.participanteStatus]
+                        }`}>
+                          {e.part.participanteStatus === 'CONVIDADO' ? rotuloConvite : ROTULO_STATUS_RESPOSTA[e.part.participanteStatus]}
+                        </span>
+                        {podeGerenciarResposta && (
+                          e.part.participanteStatus === 'RESPONDIDO' ? (
+                            <button
+                              type="button"
+                              title="Reabrir"
+                              disabled={reabrir.isPending}
+                              className="p-1 text-muted-foreground/60 hover:text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={async () => {
+                                try {
+                                  await reabrir.mutateAsync(e.part!.participanteId)
+                                  toast.success('Resposta reaberta.')
+                                } catch {
+                                  toast.error('Erro ao reabrir participante')
+                                }
+                              }}
+                            >
+                              <RotateCcw className="size-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              title="Finalizar"
+                              disabled={finalizar.isPending}
+                              className="p-1 text-muted-foreground/60 hover:text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={async () => {
+                                try {
+                                  await finalizar.mutateAsync(e.part!.participanteId)
+                                  toast.success('Resposta finalizada em nome do participante.')
+                                } catch {
+                                  toast.error('Erro ao finalizar participante')
+                                }
+                              }}
+                            >
+                              <CheckCircle2 className="size-3.5" />
+                            </button>
+                          )
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Badges e Ações Direita */}
+                  {/* Ações Direita */}
                   <div className="shrink-0 flex flex-wrap items-center gap-3">
                     {/* Ícones de Contato */}
                     {!isAberta && (e.repEmail || e.repWhatsapp) && (
@@ -304,17 +380,8 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                       </div>
                     )}
 
-                    {/* Status Único (apenas se aberta) */}
-                    {isAberta && e.part && (
-                      <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                        e.part.participanteStatus === 'CONVIDADO' ? classeConvite : CLASSE_STATUS_RESPOSTA[e.part.participanteStatus]
-                      }`}>
-                        {e.part.participanteStatus === 'CONVIDADO' ? rotuloConvite : ROTULO_STATUS_RESPOSTA[e.part.participanteStatus]}
-                      </span>
-                    )}
-
-                    {/* Botão Convidar para Atrasados */}
-                    {isAberta && !e.part && (
+                    {/* Botão Convidar — fora de ABERTA (o círculo assume esse papel dentro de ABERTA) */}
+                    {isAberta && !emAberta && !e.part && (
                       <div className="flex items-center ml-2">
                         <Button
                           type="button"
@@ -337,9 +404,9 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                       </div>
                     )}
 
-                    {/* Ações Diretas (Aberta) */}
+                    {/* Ações Diretas (Aberta) — empilhadas verticalmente do lado direito do card */}
                     {isAberta && e.part && (
-                      <div className="flex items-center gap-1.5 ml-2 text-muted-foreground/60">
+                      <div className="flex flex-col items-center gap-1 ml-2 text-muted-foreground/60">
                         {e.part.whatsappRepresentante && (
                           <button
                             type="button"
@@ -388,48 +455,6 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                         >
                           {loadingMailId === e.id ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
                         </button>
-
-                        {/* Menu de Ações Secundárias (Finalizar/Reabrir) */}
-                        {podeGerenciarResposta && (e.part.participanteStatus === 'VISUALIZOU' || e.part.participanteStatus === 'RESPONDIDO') && (
-                          <div onClick={ev => ev.stopPropagation()}>
-                            <MenuAcoes
-                              items={[
-                                ...(e.part.participanteStatus === 'VISUALIZOU'
-                                  ? [
-                                      {
-                                        label: 'Finalizar',
-                                        disabled: finalizar.isPending,
-                                        onSelect: async () => {
-                                          try {
-                                            await finalizar.mutateAsync(e.part!.participanteId)
-                                            toast.success('Resposta finalizada em nome do participante.')
-                                          } catch {
-                                            toast.error('Erro ao finalizar participante')
-                                          }
-                                        },
-                                      },
-                                    ]
-                                  : []),
-                                ...(e.part.participanteStatus === 'RESPONDIDO'
-                                  ? [
-                                      {
-                                        label: 'Reabrir resposta',
-                                        disabled: reabrir.isPending,
-                                        onSelect: async () => {
-                                          try {
-                                            await reabrir.mutateAsync(e.part!.participanteId)
-                                            toast.success('Resposta reaberta.')
-                                          } catch {
-                                            toast.error('Erro ao reabrir participante')
-                                          }
-                                        },
-                                      },
-                                    ]
-                                  : []),
-                              ]}
-                            />
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -477,6 +502,27 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
           )}
         </div>
       </div>
+
+      {alvoDesconvidar && (
+        <ConfirmarDialog
+          titulo={`Desconvidar ${alvoDesconvidar.nome}?`}
+          descricao="A empresa perderá o acesso ao link e os preços já informados serão apagados. Esta ação não pode ser desfeita."
+          rotuloConfirmar="Desconvidar"
+          pendente={desconvidar.isPending}
+          onCancelar={() => setAlvoDesconvidar(null)}
+          onConfirmar={async () => {
+            try {
+              await desconvidar.mutateAsync(alvoDesconvidar.participanteId)
+              toast.success('Representante desconvidado.')
+            } catch (e) {
+              if (e instanceof SessaoExpiradaError) return
+              toast.error(e instanceof ApiError ? e.message : 'Erro ao desconvidar representante')
+            } finally {
+              setAlvoDesconvidar(null)
+            }
+          }}
+        />
+      )}
     </Dialog>
   )
 }

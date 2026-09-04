@@ -229,7 +229,7 @@ Quando a linha de um participante tem e-mail e/ou telefone do representante disp
 - **THEN** a dica exibida mostra o e-mail ou o telefone formatado real daquele representante, não um texto genérico como "Possui E-mail"
 
 ### Requirement: Transições de estado com confirmação
-O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação antes de `encerrar`, `cancelar` e `apurar`, nomeando a consequência de cada uma. O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação. "Cancelar" SHALL ser exibido como um botão visível (não dentro de um menu overflow), com estilo visual de alerta (ex.: contorno/texto na cor de destrutivo, sem ser um botão preenchido do mesmo peso das transições primárias) e separado espacialmente dos botões de transição primária (Abrir/Encerrar/Reabrir/Apurar) na fileira de ações, para reduzir o risco de clique acidental mesmo estando visível. "Cancelar" SHALL só ser exibido quando `status` é `RASCUNHO` ou `ABERTA` — a única combinação que o backend (`Cotacao.cancelar()`) de fato aceita; em qualquer outro status (`ENCERRADA`, `PEDIDOS_GERADOS`, `CANCELADA`) o botão NÃO SHALL ser exibido. O botão "Representantes" SHALL ficar agrupado visualmente ao lado do botão de transição primária (Abrir/Encerrar/Reabrir+Apurar/Ver resultado), não ao lado de "Cancelar" — "Cancelar" SHALL permanecer sozinho, isolado no extremo oposto da fileira de ações.
+O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação antes de `encerrar`, `cancelar` e `apurar`, nomeando a consequência de cada uma. O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação. O diálogo de confirmação de `encerrar` SHALL, quando existir ao menos um participante com pelo menos um lance `Cotado` (na Grade ao Vivo, já carregada pela tela) que ainda não está `Respondido`, listar esses participantes como aviso e oferecer um botão para finalizar a resposta de todos eles de uma vez, antes de encerrar — sem bloquear a confirmação de "Encerrar" caso o Comprador prefira ignorar o aviso. "Cancelar" SHALL ser exibido como um botão visível (não dentro de um menu overflow), com estilo visual de alerta (ex.: contorno/texto na cor de destrutivo, sem ser um botão preenchido do mesmo peso das transições primárias) e separado espacialmente dos botões de transição primária (Abrir/Encerrar/Reabrir/Apurar) na fileira de ações, para reduzir o risco de clique acidental mesmo estando visível. "Cancelar" SHALL só ser exibido quando `status` é `RASCUNHO` ou `ABERTA` — a única combinação que o backend (`Cotacao.cancelar()`) de fato aceita; em qualquer outro status (`ENCERRADA`, `PEDIDOS_GERADOS`, `CANCELADA`) o botão NÃO SHALL ser exibido. O botão "Representantes" SHALL ficar agrupado visualmente ao lado do botão de transição primária (Abrir/Encerrar/Reabrir+Apurar/Ver resultado), não ao lado de "Cancelar" — "Cancelar" SHALL permanecer sozinho, isolado no extremo oposto da fileira de ações.
 
 #### Scenario: Abrir a Cotação
 - **WHEN** o Comprador informa um `prazo` e confirma "Abrir"
@@ -276,6 +276,21 @@ O sistema SHALL disparar as transições de estado da Cotação — abrir com `p
 - **WHEN** o Comprador abre o detalhe de uma Cotação em qualquer status onde "Representantes" é exibido (todos exceto `CANCELADA`)
 - **THEN** o botão "Representantes" aparece visualmente ao lado do botão de transição primária daquele status, e "Cancelar" (quando aplicável) fica isolado no extremo oposto da fileira
 
+#### Scenario: Encerrar avisa sobre representantes que preencheram preço mas não finalizaram
+
+- **WHEN** o Comprador aciona "Encerrar" numa Cotação `ABERTA` e há um ou mais participantes com pelo menos um lance `Cotado` que ainda não estão `Respondido`
+- **THEN** o diálogo de confirmação lista esses participantes, além da descrição padrão da consequência, e mostra um botão para finalizar a resposta de todos eles antes de encerrar
+
+#### Scenario: Finalizar em massa antes de encerrar
+
+- **WHEN** o Comprador aciona o botão de finalizar em massa no diálogo de "Encerrar"
+- **THEN** o sistema chama `POST /api/participantes/{participanteId}/finalizar` para cada participante listado e, ao concluir, a lista de pendentes do diálogo reflete o novo estado (fica vazia se todos foram finalizados com sucesso)
+
+#### Scenario: Encerrar sem pendências não mostra o aviso
+
+- **WHEN** o Comprador aciona "Encerrar" e todos os participantes já estão `Respondido` (ou nenhum tem lance `Cotado` fora de `Respondido`)
+- **THEN** o diálogo mostra só a descrição padrão da consequência, sem lista de pendentes nem botão de finalizar em massa
+
 ### Requirement: Cabeçalho fixo da tela de detalhe sem elevação de cartão
 
 O cabeçalho sticky da tela de detalhe da Cotação (título, status, prazo e botões de ação) SHALL usar uma borda inferior sutil para se separar visualmente do conteúdo rolável, mas NÃO SHALL usar sombra de elevação — o cabeçalho não deve parecer um cartão/caixa flutuante sobreposto à página.
@@ -287,7 +302,7 @@ O cabeçalho sticky da tela de detalhe da Cotação (título, status, prazo e bo
 
 ### Requirement: Correção de lance e reabertura de resposta pelo admin
 
-O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`), reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`) e finalizar em nome de um participante `VISUALIZOU` (`POST /api/participantes/{participanteId}/finalizar`), a partir da tela de detalhe da Cotação. A grade de respostas é lida de `GET /api/cotacoes/{id}/ao-vivo` sem polling (o polling é Fase 2). O modal de participantes (`RepresentantesModal`, acionado pelo botão "Representantes") SHALL, quando a Cotação está `ABERTA` ou `ENCERRADA`, mostrar em cada linha também o status da resposta (`Convidado`/`Visualizou`/`Respondido`) e, dentro do menu "⋯" daquela linha, o item de finalizar/reabrir aplicável, junto das demais ações do participante (ver requirement "Convidar Empresas"). Quando a Cotação não está `ABERTA` nem `ENCERRADA` (ex.: `PEDIDOS_GERADOS`, `CANCELADA`), o menu "⋯" NÃO SHALL oferecer "Finalizar" nem "Reabrir resposta", mesmo que o participante esteja em `VISUALIZOU`/`RESPONDIDO` — essas ações não têm efeito útil fora desse intervalo.
+O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um participante para um item (`PUT /api/participantes/{participanteId}/lances/{itemId}`), reabrir a resposta de um participante `RESPONDIDO` (`POST /api/participantes/{participanteId}/reabrir`) e finalizar em nome de um participante `VISUALIZOU` ou `CONVIDADO` (`POST /api/participantes/{participanteId}/finalizar`), a partir da tela de detalhe da Cotação. A grade de respostas é lida de `GET /api/cotacoes/{id}/ao-vivo` sem polling (o polling é Fase 2). O modal de participantes (`RepresentantesModal`, acionado pelo botão "Representantes") SHALL, quando a Cotação está `ABERTA` ou `ENCERRADA`, mostrar em cada linha também o status da resposta (`Convidado`/`Visualizou`/`Respondido`) como badge, junto de um botão de ícone visível (não dentro de um menu overflow) com a ação de finalizar/reabrir aplicável àquele status (`Finalizar` para `Convidado` e para `Visualizou`; `Reabrir` para `Respondido`), posicionado ao lado do badge, logo abaixo do nome do representante. Quando a Cotação não está `ABERTA` nem `ENCERRADA` (ex.: `PEDIDOS_GERADOS`, `CANCELADA`), esse botão de finalizar/reabrir NÃO SHALL ser exibido, mesmo que o participante esteja em `CONVIDADO`/`VISUALIZOU`/`RESPONDIDO` — essas ações não têm efeito útil fora desse intervalo.
 
 #### Scenario: Admin corrige um lance
 
@@ -296,23 +311,62 @@ O sistema SHALL permitir ao Comprador corrigir diretamente o lance de um partici
 
 #### Scenario: Admin reabre a resposta de um participante
 
-- **WHEN** o Comprador abre o menu "⋯" de um participante `RESPONDIDO` e aciona "Reabrir resposta"
+- **WHEN** o Comprador aciona o botão "Reabrir" exibido junto ao badge de um participante `RESPONDIDO`
 - **THEN** o sistema chama a API e o participante volta a aparecer como editável pelo representante
 
 #### Scenario: Admin finaliza a resposta de um participante que não finalizou
 
-- **WHEN** o Comprador abre o menu "⋯" de um participante `VISUALIZOU` e aciona "Finalizar"
+- **WHEN** o Comprador aciona o botão "Finalizar" exibido junto ao badge de um participante `VISUALIZOU`
 - **THEN** o sistema chama `POST /api/participantes/{participanteId}/finalizar` e a linha desse participante passa a mostrar `Respondido`
 
 #### Scenario: Modal "Representantes" reflete o status de resposta de cada um
 
 - **WHEN** o Comprador abre o modal "Representantes" de uma Cotação `ABERTA` ou `ENCERRADA` com participantes em status de resposta diferentes
-- **THEN** cada participante aparece com seu status de resposta atual (badge) e, dentro do seu menu "⋯", só o item de ação aplicável àquele status (`Finalizar` para `Visualizou`, `Reabrir resposta` para `Respondido`, nenhum dos dois para `Convidado`), junto das demais ações do participante
+- **THEN** cada participante aparece com seu status de resposta atual (badge) e, ao lado, o botão de ação aplicável àquele status (`Finalizar` para `Convidado` e para `Visualizou`, `Reabrir` para `Respondido`)
+
+#### Scenario: Admin finaliza um participante que nunca visualizou
+
+- **WHEN** o Comprador aciona o botão "Finalizar" exibido junto ao badge de um participante `CONVIDADO` (nunca abriu o link)
+- **THEN** o sistema chama `POST /api/participantes/{participanteId}/finalizar`, a linha passa a mostrar `Respondido` e nenhum lance desse participante entra na apuração (nenhum item foi cotado)
 
 #### Scenario: Ações de finalizar/reabrir somem fora de ABERTA/ENCERRADA
 
 - **WHEN** o Comprador abre o modal "Representantes" de uma Cotação em `PEDIDOS_GERADOS` ou `CANCELADA`
-- **THEN** nenhum menu "⋯" oferece os itens "Finalizar" ou "Reabrir resposta", independentemente do status de resposta de cada participante
+- **THEN** nenhuma linha exibe o botão "Finalizar" ou "Reabrir", independentemente do status de resposta de cada participante
+
+### Requirement: Desconvidar um representante
+
+O modal "Representantes" SHALL reaproveitar, também quando a Cotação está `ABERTA`, o círculo de marcação já usado à esquerda do avatar no modo `RASCUNHO` (menor nesse contexto que no modo `RASCUNHO`) — marcado quando o participante já existe (foi convidado), desmarcado quando ainda não. Clicar num círculo desmarcado SHALL convidar a empresa (mesmo efeito do botão "Convidar" que este requirement substitui). Clicar num círculo marcado de um participante que NÃO está `Respondido` SHALL remover o participante da Cotação (`DELETE /api/participantes/{id}`), após confirmação explícita — mesmo padrão do diálogo "Excluir Cotação" já usado em `CotacoesPage`, nomeando a consequência: o representante e qualquer preço que ele tenha preenchido serão removidos, sem volta. Quando o participante está `Respondido`, o círculo SHALL aparecer marcado mas NÃO SHALL ser clicável.
+
+#### Scenario: Marcar um círculo desmarcado convida a empresa
+
+- **WHEN** o Comprador clica no círculo desmarcado de uma empresa ainda não convidada, numa Cotação `ABERTA`
+- **THEN** o sistema chama a API de convidar e o círculo passa a aparecer marcado
+
+#### Scenario: Desmarcar o círculo de um participante Convidado pede confirmação e desconvida
+
+- **WHEN** o Comprador clica no círculo marcado de um participante `Convidado`, confirma no diálogo
+- **THEN** o sistema chama `DELETE /api/participantes/{id}` e o participante deixa de aparecer na lista de convidados
+
+#### Scenario: Desmarcar o círculo de um participante Visualizou pede confirmação e desconvida
+
+- **WHEN** o Comprador clica no círculo marcado de um participante `Visualizou` (com ou sem preços já preenchidos), confirma no diálogo
+- **THEN** o sistema chama a API e o participante deixa de aparecer na lista de convidados
+
+#### Scenario: Círculo de um participante Respondido não é clicável
+
+- **WHEN** o Comprador visualiza o card de um participante `Respondido`
+- **THEN** o círculo aparece marcado, mas clicar nele não dispara nenhuma ação
+
+#### Scenario: Desconvidar exige confirmação explícita
+
+- **WHEN** o Comprador clica no círculo marcado de um participante que não é `Respondido`
+- **THEN** um diálogo nomeia a consequência (remoção definitiva do representante e de qualquer preço preenchido) antes de a API ser chamada
+
+#### Scenario: Erro do backend é exibido sem remover a linha
+
+- **WHEN** a API rejeita a remoção (ex.: o participante já finalizou a resposta entre o card carregar e o Comprador confirmar)
+- **THEN** a mensagem de erro é exibida e o participante continua na lista, com o círculo ainda marcado
 
 ### Requirement: Resultado da apuração e pedidos
 O sistema SHALL exibir o resultado de uma Cotação apurada (`GET /api/cotacoes/{id}/resultado`): vencedor por item identificado pelo **nome da Empresa** (não do representante), preço da embalagem e preço unitário derivado que já vêm prontos da API. SHALL listar os pedidos gerados (`GET /api/cotacoes/{id}/pedidos`), permitir enviar um pedido (`POST /api/pedidos/{id}/enviar`), baixar o resultado em XLSX (`GET /api/cotacoes/{id}/resultado.xlsx`) e baixar o PDF de um pedido (`GET /api/pedidos/{id}.pdf`). Quando a API indicar que um item foi `decididoPorDesempate`, a tela SHALL exibir um indicador visual junto ao preço desse item, sem recalcular ou inferir o empate.
