@@ -159,12 +159,12 @@ export function ConfiguracoesPage() {
         </p>
       </div>
 
-      <Card className="p-8">
-        <ConfiguracoesForm configuracaoInicial={data} />
+      <Card className="p-6">
+        <LinkColaboradorSection token={data.linkColaboradorToken} />
       </Card>
 
       <Card className="p-8">
-        <LinkColaboradorSection token={data.linkColaboradorToken} />
+        <ConfiguracoesForm configuracaoInicial={data} />
       </Card>
     </PageContainer>
   )
