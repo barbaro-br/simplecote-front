@@ -69,17 +69,20 @@ jobs:
           ok=""
           for i in 1 2 3 4 5; do
             html=$(curl -fsS "$alias_url/" || true)
-            bundle=""
-            if [[ "$html" =~ (/assets/index-[A-Za-z0-9_-]+\.js) ]]; then bundle="${BASH_REMATCH[1]}"; fi
-            if [ -n "$bundle" ]; then
+            # Com o code-splitting por rota, a URL do back pode cair em qualquer
+            # chunk referenciado no HTML (hoje em utils-*.js, não mais em index-*.js).
+            # Por isso varre todos os /assets/*.js em vez de fixar o prefixo index-.
+            bundles=$(printf '%s' "$html" | grep -oE '/assets/[A-Za-z0-9_-]+\.js' | sort -u || true)
+            for bundle in $bundles; do
               js=$(curl -fsS "$alias_url$bundle" || true)
               case "$js" in *"$host"*) ok=1; break ;; esac
-            fi
+            done
+            [ -n "$ok" ] && break
             echo "tentativa $i: bundle ainda não propagou, aguardando…"
             sleep 6
           done
           if [ -z "$ok" ]; then
-            echo "::error::bundle publicado não contém $host — VITE_API_BASE_URL não entrou no build"
+            echo "::error::nenhum bundle publicado contém $host — VITE_API_BASE_URL não entrou no build"
             exit 1
           fi
           code=$(curl -s -o /dev/null -w '%{http_code}' "$VITE_API_BASE_URL/actuator/health")
