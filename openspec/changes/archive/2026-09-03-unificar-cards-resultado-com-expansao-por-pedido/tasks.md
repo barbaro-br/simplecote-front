@@ -16,4 +16,4 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar com dados reais (dev): apurar uma cotação com 2+ empresas vencedoras e itens sem vencedor, expandir e recolher cada pedido, confirmar que os totais/badges/itens batem com o que estava nos dois cards antigos.
+- [x] 3.1 Testar com dados reais (dev): apurar uma cotação com 2+ empresas vencedoras e itens sem vencedor, expandir e recolher cada pedido, confirmar que os totais/badges/itens batem com o que estava nos dois cards antigos. **(verificado visualmente pelo dono do produto em 05/09/2026)**

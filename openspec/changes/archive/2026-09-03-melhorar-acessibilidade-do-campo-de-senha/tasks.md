@@ -20,5 +20,5 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Testar manualmente (dev): abrir "Novo Usuário", digitar uma senha curta e depois completar para 8+ caracteres, observando o indicador mudar; clicar em revelar e confirmar que o texto aparece.
-- [ ] 4.2 Testar manualmente (dev): abrir "Trocar senha" de um usuário existente, digitar senhas diferentes e depois iguais nos dois campos, observando o indicador de coincidência mudar.
+- [x] 4.1 Testar manualmente (dev): abrir "Novo Usuário", digitar uma senha curta e depois completar para 8+ caracteres, observando o indicador mudar; clicar em revelar e confirmar que o texto aparece. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 4.2 Testar manualmente (dev): abrir "Trocar senha" de um usuário existente, digitar senhas diferentes e depois iguais nos dois campos, observando o indicador de coincidência mudar. **(verificado visualmente pelo dono do produto em 05/09/2026)**

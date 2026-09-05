@@ -19,4 +19,4 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Testar o fluxo completo com dados reais (dev): abrir uma Cotação `ABERTA`, um representante já responde alguns itens, o Comprador adiciona um item novo, o representante recarrega o link e vê o badge "Novo" nesse item.
+- [x] 4.1 Testar o fluxo completo com dados reais (dev): abrir uma Cotação `ABERTA`, um representante já responde alguns itens, o Comprador adiciona um item novo, o representante recarrega o link e vê o badge "Novo" nesse item. **(verificado visualmente pelo dono do produto em 05/09/2026)**

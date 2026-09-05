@@ -13,7 +13,7 @@
 
 - [x] 3.1 Na tabela de itens expandida de cada pedido, adicionar uma coluna "Preço de venda" (unitário) mostrando `moeda(precoDeVenda(item.precoUnitario, margemEfetiva(item.id)))` ou "—" quando `precoDeVenda` retorna `null`.
 - [x] 3.2 Adicionar um campo pequeno de margem % por item (pré-preenchido com `margemEfetiva(item.id)`), que ao ser editado atualiza `margensPorItem[item.id]` (via `setMargensPorItem`), "travando" aquele item na margem customizada independente do valor global depois.
-- [ ] 3.3 Conferir visualmente que a nova coluna não quebra o layout da tabela expandida existente (produto/preço embalagem/preço unitário/subtotal) em telas comuns de desktop (a tela é desktop-first no admin).
+- [x] 3.3 Conferir visualmente que a nova coluna não quebra o layout da tabela expandida existente (produto/preço embalagem/preço unitário/subtotal) em telas comuns de desktop (a tela é desktop-first no admin). **(verificado visualmente pelo dono do produto em 05/09/2026)**
 
 ## 4. Garantir que nada é persistido/enviado
 
@@ -31,5 +31,5 @@
 
 ## 6. Verificação visual
 
-- [ ] 6.1 Testar manualmente (dev): abrir o Resultado de uma cotação apurada com 2+ empresas vencedoras, preencher a margem global, expandir os pedidos e conferir os preços de venda; customizar a margem de um item e confirmar que ele "trava" independente do campo global.
-- [ ] 6.2 Confirmar que recarregar a página zera a margem (campo volta vazio, nenhum preço de venda exibido até preencher de novo).
+- [x] 6.1 Testar manualmente (dev): abrir o Resultado de uma cotação apurada com 2+ empresas vencedoras, preencher a margem global, expandir os pedidos e conferir os preços de venda; customizar a margem de um item e confirmar que ele "trava" independente do campo global. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 6.2 Confirmar que recarregar a página zera a margem (campo volta vazio, nenhum preço de venda exibido até preencher de novo). **(verificado visualmente pelo dono do produto em 05/09/2026)**

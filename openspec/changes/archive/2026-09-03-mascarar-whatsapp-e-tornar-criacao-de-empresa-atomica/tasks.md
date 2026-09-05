@@ -20,5 +20,5 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Testar manualmente (dev): abrir "Nova Empresa", digitar um WhatsApp e confirmar a máscara aparecendo em tempo real.
-- [ ] 4.2 Testar manualmente (dev, se der pra simular falha — ex.: desconectar a rede entre os dois submits ou usar um representante com e-mail inválido que o backend rejeite): confirmar que reenviar depois de uma falha parcial não duplica a Empresa na listagem.
+- [x] 4.1 Testar manualmente (dev): abrir "Nova Empresa", digitar um WhatsApp e confirmar a máscara aparecendo em tempo real. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 4.2 Testar manualmente (dev, se der pra simular falha — ex.: desconectar a rede entre os dois submits ou usar um representante com e-mail inválido que o backend rejeite): confirmar que reenviar depois de uma falha parcial não duplica a Empresa na listagem. **(verificado visualmente pelo dono do produto em 05/09/2026)**

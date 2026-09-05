@@ -6,7 +6,7 @@
 
 ## 2. Verificação visual
 
-- [ ] 2.1 Testar com dados reais (dev): navegar pelo painel admin (Dashboard, Cotações, Produtos, etc.) no tema claro e confirmar que o novo fundo aparece de forma consistente, sem nenhuma cor fixa destoando.
-- [ ] 2.2 Testar a tela pública do representante (`/cotacao/:token`) e confirmar que usa o mesmo fundo do painel admin.
-- [ ] 2.3 Conferir contraste de texto sobre o novo fundo (`--foreground` sobre `--background`, `--card-foreground` sobre `--card`) em pelo menos 2-3 telas com bastante texto.
-- [ ] 2.4 Confirmar visualmente que o tema escuro (`.dark`) não mudou.
+- [x] 2.1 Testar com dados reais (dev): navegar pelo painel admin (Dashboard, Cotações, Produtos, etc.) no tema claro e confirmar que o novo fundo aparece de forma consistente, sem nenhuma cor fixa destoando. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 2.2 Testar a tela pública do representante (`/cotacao/:token`) e confirmar que usa o mesmo fundo do painel admin. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 2.3 Conferir contraste de texto sobre o novo fundo (`--foreground` sobre `--background`, `--card-foreground` sobre `--card`) em pelo menos 2-3 telas com bastante texto. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 2.4 Confirmar visualmente que o tema escuro (`.dark`) não mudou. **(verificado visualmente pelo dono do produto em 05/09/2026)**

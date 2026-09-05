@@ -30,4 +30,4 @@
 ## 6. Verificação geral
 
 - [x] 6.1 Rodar a suíte completa (`npm test`) e confirmar 0 regressões.
-- [ ] 6.2 Testar com dados reais (dev) os 5 pontos acima, um a um, confirmando visualmente cada correção.
+- [x] 6.2 Testar com dados reais (dev) os 5 pontos acima, um a um, confirmando visualmente cada correção. **(verificado visualmente pelo dono do produto em 05/09/2026)**

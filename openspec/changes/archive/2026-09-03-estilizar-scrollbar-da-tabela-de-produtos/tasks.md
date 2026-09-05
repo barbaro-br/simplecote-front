@@ -8,4 +8,4 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar manualmente (dev, com os 200+ produtos de teste já semeados): rolar a tabela e conferir visualmente a barra de rolagem fina e com a cor do tema, no claro e no escuro (alternando `.dark` na raiz, se houver como testar).
+- [x] 3.1 Testar manualmente (dev, com os 200+ produtos de teste já semeados): rolar a tabela e conferir visualmente a barra de rolagem fina e com a cor do tema, no claro e no escuro (alternando `.dark` na raiz, se houver como testar). **(verificado visualmente pelo dono do produto em 05/09/2026)**

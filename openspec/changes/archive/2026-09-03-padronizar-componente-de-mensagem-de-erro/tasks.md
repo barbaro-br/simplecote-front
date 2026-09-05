@@ -15,4 +15,4 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Testar manualmente (dev): provocar um erro de ação na lista de Cotações (ex.: tentar excluir algo que a API rejeite) e no detalhe da Cotação, conferindo visualmente o novo estilo com fundo/borda/ícone.
+- [x] 4.1 Testar manualmente (dev): provocar um erro de ação na lista de Cotações (ex.: tentar excluir algo que a API rejeite) e no detalhe da Cotação, conferindo visualmente o novo estilo com fundo/borda/ícone. **(verificado visualmente pelo dono do produto em 05/09/2026)**

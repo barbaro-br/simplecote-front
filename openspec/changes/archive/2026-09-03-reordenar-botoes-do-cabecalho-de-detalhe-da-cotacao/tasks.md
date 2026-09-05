@@ -10,4 +10,4 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar manualmente (dev) nos status `RASCUNHO`, `ABERTA`, `ENCERRADA` e `PEDIDOS_GERADOS`: confirmar que "Representantes" aparece ao lado do botão de transição primária de cada status, e "Cancelar" (quando aplicável) aparece isolado no extremo direito.
+- [x] 3.1 Testar manualmente (dev) nos status `RASCUNHO`, `ABERTA`, `ENCERRADA` e `PEDIDOS_GERADOS`: confirmar que "Representantes" aparece ao lado do botão de transição primária de cada status, e "Cancelar" (quando aplicável) aparece isolado no extremo direito. **(verificado visualmente pelo dono do produto em 05/09/2026)**

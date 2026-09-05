@@ -16,4 +16,4 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Testar com dados reais (dev): abrir o modal Representantes numa cotação `PEDIDOS_GERADOS` e confirmar que os botões somem; confirmar visualmente o novo rótulo de falha de envio.
+- [x] 4.1 Testar com dados reais (dev): abrir o modal Representantes numa cotação `PEDIDOS_GERADOS` e confirmar que os botões somem; confirmar visualmente o novo rótulo de falha de envio. **(verificado visualmente pelo dono do produto em 05/09/2026)**

@@ -18,5 +18,5 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Conferir que o menu "⋯" abre/fecha corretamente e não corta na borda da tela em viewport estreito.
-- [ ] 4.2 No modal Representantes, conferir numa cotação com participante `RESPONDIDO`/`VISUALIZOU` que a linha quebra corretamente em vez de cortar texto, em larguras estreitas e médias.
+- [x] 4.1 Conferir que o menu "⋯" abre/fecha corretamente e não corta na borda da tela em viewport estreito. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 4.2 No modal Representantes, conferir numa cotação com participante `RESPONDIDO`/`VISUALIZOU` que a linha quebra corretamente em vez de cortar texto, em larguras estreitas e médias. **(verificado visualmente pelo dono do produto em 05/09/2026)**

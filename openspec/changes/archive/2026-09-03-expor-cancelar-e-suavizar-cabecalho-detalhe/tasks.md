@@ -21,4 +21,4 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Testar com dados reais (dev): conferir visualmente que "Cancelar" fica separado dos botões de transição primária, com estilo de alerta discernível; confirmar que o cabeçalho não tem mais a sombra elevada, mantendo a borda inferior legível ao rolar a lista de itens.
+- [x] 4.1 Testar com dados reais (dev): conferir visualmente que "Cancelar" fica separado dos botões de transição primária, com estilo de alerta discernível; confirmar que o cabeçalho não tem mais a sombra elevada, mantendo a borda inferior legível ao rolar a lista de itens. **(verificado visualmente pelo dono do produto em 05/09/2026)**

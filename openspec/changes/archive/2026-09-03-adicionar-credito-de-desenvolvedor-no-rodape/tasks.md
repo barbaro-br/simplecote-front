@@ -18,4 +18,4 @@
 
 ## 5. Verificação visual
 
-- [ ] 5.1 Testar manualmente (dev): abrir a tela de login e conferir o crédito abaixo de "Esqueci minha senha"; no admin, expandir/recolher a sidebar e confirmar que o crédito aparece/some junto com o rótulo "Sair".
+- [x] 5.1 Testar manualmente (dev): abrir a tela de login e conferir o crédito abaixo de "Esqueci minha senha"; no admin, expandir/recolher a sidebar e confirmar que o crédito aparece/some junto com o rótulo "Sair". **(verificado visualmente pelo dono do produto em 05/09/2026)**

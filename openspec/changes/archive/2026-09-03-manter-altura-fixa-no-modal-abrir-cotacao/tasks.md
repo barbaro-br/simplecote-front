@@ -10,4 +10,4 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar manualmente (dev): abrir "Abrir Cotação" numa Cotação `RASCUNHO`, clicar em "Data Personalizada" e depois em voltar, observando que o modal não muda de tamanho perceptivelmente em nenhuma das duas transições.
+- [x] 3.1 Testar manualmente (dev): abrir "Abrir Cotação" numa Cotação `RASCUNHO`, clicar em "Data Personalizada" e depois em voltar, observando que o modal não muda de tamanho perceptivelmente em nenhuma das duas transições. **(verificado visualmente pelo dono do produto em 05/09/2026)**

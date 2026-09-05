@@ -17,5 +17,5 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar manualmente (dev, Cotação `ABERTA`): clicar no campo de quantidade de um item, digitar um valor bem diferente (ex.: de 5 para 50) e confirmar com Enter — a grade deve refletir o novo valor sem recarregar a página.
-- [ ] 3.2 Testar manualmente: digitar um valor inválido (ex.: "0") e sair do campo — confirmar que volta ao valor anterior sem chamar a API.
+- [x] 3.1 Testar manualmente (dev, Cotação `ABERTA`): clicar no campo de quantidade de um item, digitar um valor bem diferente (ex.: de 5 para 50) e confirmar com Enter — a grade deve refletir o novo valor sem recarregar a página. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 3.2 Testar manualmente: digitar um valor inválido (ex.: "0") e sair do campo — confirmar que volta ao valor anterior sem chamar a API. **(verificado visualmente pelo dono do produto em 05/09/2026)**

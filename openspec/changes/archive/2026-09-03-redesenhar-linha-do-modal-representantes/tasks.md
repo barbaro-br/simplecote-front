@@ -23,4 +23,4 @@
 
 ## 5. Verificação visual
 
-- [ ] 5.1 Testar com dados reais (dev): abrir o modal com participantes de nomes como "Comercial Boa Praça" e "Distribuidora Sul" e confirmar que os nomes aparecem por completo (ou truncam de forma razoável, não para 1 caractere), com o menu "⋯" funcionando para cada ação.
+- [x] 5.1 Testar com dados reais (dev): abrir o modal com participantes de nomes como "Comercial Boa Praça" e "Distribuidora Sul" e confirmar que os nomes aparecem por completo (ou truncam de forma razoável, não para 1 caractere), com o menu "⋯" funcionando para cada ação. **(verificado visualmente pelo dono do produto em 05/09/2026)**

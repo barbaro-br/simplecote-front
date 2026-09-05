@@ -15,4 +15,4 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Testar com dados reais (dev): limpar um preço, cronometrar quanto tempo o toast leva pra sumir sozinho, e confirmar que não sobrevive a uma navegação de tela (ex.: finalizar a cotação logo em seguida).
+- [x] 4.1 Testar com dados reais (dev): limpar um preço, cronometrar quanto tempo o toast leva pra sumir sozinho, e confirmar que não sobrevive a uma navegação de tela (ex.: finalizar a cotação logo em seguida). **(verificado visualmente pelo dono do produto em 05/09/2026)**

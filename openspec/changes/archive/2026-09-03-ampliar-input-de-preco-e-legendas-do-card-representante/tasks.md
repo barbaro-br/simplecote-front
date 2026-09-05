@@ -13,6 +13,6 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar manualmente (dev, viewport 375px): digitar um preço de embalagem com 4 dígitos inteiros e centavos (ex.: "9999,99") e confirmar que o valor fica totalmente visível no campo sem cortar/rolar.
-- [ ] 3.2 Confirmar visualmente que as caixas de P.CX e P.UN continuam com a mesma largura entre si nos três estados do P.UN.
-- [ ] 3.3 Confirmar que a linha de nome do produto + badges (índice, "Novo", código de barras) continua numa única linha em 375px, sem quebrar — já que essa linha não foi alterada, mas a largura maior do P.CX ao lado pode indiretamente apertar o espaço disponível para o nome do produto (`truncate` já existente deve continuar cobrindo isso).
+- [x] 3.1 Testar manualmente (dev, viewport 375px): digitar um preço de embalagem com 4 dígitos inteiros e centavos (ex.: "9999,99") e confirmar que o valor fica totalmente visível no campo sem cortar/rolar. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 3.2 Confirmar visualmente que as caixas de P.CX e P.UN continuam com a mesma largura entre si nos três estados do P.UN. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 3.3 Confirmar que a linha de nome do produto + badges (índice, "Novo", código de barras) continua numa única linha em 375px, sem quebrar — já que essa linha não foi alterada, mas a largura maior do P.CX ao lado pode indiretamente apertar o espaço disponível para o nome do produto (`truncate` já existente deve continuar cobrindo isso). **(verificado visualmente pelo dono do produto em 05/09/2026)**

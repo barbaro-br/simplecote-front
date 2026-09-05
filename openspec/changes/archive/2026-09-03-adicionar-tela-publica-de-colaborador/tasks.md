@@ -35,5 +35,5 @@
 
 ## 6. Verificação visual
 
-- [ ] 6.1 Testar manualmente (dev, com o backend da change de pré-requisito rodando, viewport 375px): copiar o link em Configurações, abrir numa aba anônima, buscar um produto, adicionar com uma quantidade, e confirmar que o item aparece na cotação (conferindo na tela de detalhe da cotação no admin).
-- [ ] 6.2 Testar o caso de dois envios do mesmo produto (simulando dois colaboradores) e confirmar que a quantidade soma em vez de dar erro.
+- [x] 6.1 Testar manualmente (dev, com o backend da change de pré-requisito rodando, viewport 375px): copiar o link em Configurações, abrir numa aba anônima, buscar um produto, adicionar com uma quantidade, e confirmar que o item aparece na cotação (conferindo na tela de detalhe da cotação no admin). **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 6.2 Testar o caso de dois envios do mesmo produto (simulando dois colaboradores) e confirmar que a quantidade soma em vez de dar erro. **(verificado visualmente pelo dono do produto em 05/09/2026)**

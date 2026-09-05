@@ -18,4 +18,4 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Testar em viewport mobile real (ou emulado): tutorial mostra a animação do gesto no último passo; limpar um preço (swipe e teclado) mostra o toast no topo, sem colidir com a barra de ação fixa na base.
+- [x] 4.1 Testar em viewport mobile real (ou emulado): tutorial mostra a animação do gesto no último passo; limpar um preço (swipe e teclado) mostra o toast no topo, sem colidir com a barra de ação fixa na base. **(verificado visualmente pelo dono do produto em 05/09/2026)**

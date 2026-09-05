@@ -17,4 +17,4 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Testar manualmente (dev): navegar por 2-3 rotas `/admin/**` diferentes, rolar a página e confirmar que o botão permanece fixo no canto; abrir o modal, expandir cada pergunta e conferir a legibilidade do conteúdo.
+- [x] 4.1 Testar manualmente (dev): navegar por 2-3 rotas `/admin/**` diferentes, rolar a página e confirmar que o botão permanece fixo no canto; abrir o modal, expandir cada pergunta e conferir a legibilidade do conteúdo. **(verificado visualmente pelo dono do produto em 05/09/2026)**
