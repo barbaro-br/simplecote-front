@@ -14,4 +14,4 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar manualmente (dev): abrir o modal Representantes de uma cotação com participantes que têm e-mail/WhatsApp cadastrados, passar o mouse sobre os indicadores (confirmar que mostram o valor real), clicar no de e-mail (abre o cliente de e-mail padrão) e no de telefone (copia e mostra confirmação).
+- [x] 3.1 Testar manualmente (dev): abrir o modal Representantes de uma cotação com participantes que têm e-mail/WhatsApp cadastrados, passar o mouse sobre os indicadores (confirmar que mostram o valor real), clicar no de e-mail (abre o cliente de e-mail padrão) e no de telefone (copia e mostra confirmação). **(verificado visualmente pelo dono do produto em 05/09/2026)**

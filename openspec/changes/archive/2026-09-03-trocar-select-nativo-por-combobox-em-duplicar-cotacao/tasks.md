@@ -20,4 +20,4 @@
 
 ## 4. Verificação visual
 
-- [ ] 4.1 Testar manualmente (dev, com várias cotações cadastradas): abrir "Nova Cotação" → "Duplicar existente", abrir o combobox, digitar parte de um título e confirmar que a lista filtra corretamente; selecionar e confirmar que "Duplicar" funciona como antes.
+- [x] 4.1 Testar manualmente (dev, com várias cotações cadastradas): abrir "Nova Cotação" → "Duplicar existente", abrir o combobox, digitar parte de um título e confirmar que a lista filtra corretamente; selecionar e confirmar que "Duplicar" funciona como antes. **(verificado visualmente pelo dono do produto em 05/09/2026)**

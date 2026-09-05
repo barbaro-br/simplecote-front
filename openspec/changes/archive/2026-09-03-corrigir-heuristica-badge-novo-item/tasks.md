@@ -13,5 +13,5 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar com dados reais (dev): criar uma cotação ABERTA com 2+ itens, responder um item pelo link do representante e confirmar visualmente que os demais não ganham o badge "Novo".
-- [ ] 3.2 Testar o caso verdadeiro-positivo: com a cotação já aberta e respondida parcialmente, adicionar um item pelo admin (`AdicionarItemModal`) e confirmar que ele aparece com "Novo" na próxima atualização da tela do representante.
+- [x] 3.1 Testar com dados reais (dev): criar uma cotação ABERTA com 2+ itens, responder um item pelo link do representante e confirmar visualmente que os demais não ganham o badge "Novo". **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 3.2 Testar o caso verdadeiro-positivo: com a cotação já aberta e respondida parcialmente, adicionar um item pelo admin (`AdicionarItemModal`) e confirmar que ele aparece com "Novo" na próxima atualização da tela do representante. **(verificado visualmente pelo dono do produto em 05/09/2026)**

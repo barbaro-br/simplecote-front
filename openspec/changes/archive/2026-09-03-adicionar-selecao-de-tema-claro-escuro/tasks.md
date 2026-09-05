@@ -23,4 +23,4 @@
 
 ## 5. Verificação visual
 
-- [ ] 5.1 Testar manualmente (dev, com o backend da change de pré-requisito já rodando): em Configurações, trocar pra "Escuro" e salvar — confirmar que o painel inteiro (não só um componente) passa a refletir o tema escuro; voltar pra "Claro" e confirmar que volta ao normal.
+- [x] 5.1 Testar manualmente (dev, com o backend da change de pré-requisito já rodando): em Configurações, trocar pra "Escuro" e salvar — confirmar que o painel inteiro (não só um componente) passa a refletir o tema escuro; voltar pra "Claro" e confirmar que volta ao normal. **(verificado visualmente pelo dono do produto em 05/09/2026)**

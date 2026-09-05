@@ -14,4 +14,4 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar com dados reais (dev): criar uma cotação com 2+ participantes cotando preços diferentes e confirmar visualmente que a grade ficou mais fina, com preço+unitário numa linha, sem os textos "COTADO"/"MENOR", e que o menor preço continua claramente identificável pela cor.
+- [x] 3.1 Testar com dados reais (dev): criar uma cotação com 2+ participantes cotando preços diferentes e confirmar visualmente que a grade ficou mais fina, com preço+unitário numa linha, sem os textos "COTADO"/"MENOR", e que o menor preço continua claramente identificável pela cor. **(verificado visualmente pelo dono do produto em 05/09/2026)**

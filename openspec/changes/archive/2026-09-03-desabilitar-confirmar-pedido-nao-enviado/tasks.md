@@ -13,4 +13,4 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar com dados reais (dev): gerar um pedido sem enviar, abrir `/pedido/:token` e confirmar visualmente que "Confirmar" não aparece; depois enviar pelo admin e confirmar que o botão passa a aparecer.
+- [x] 3.1 Testar com dados reais (dev): gerar um pedido sem enviar, abrir `/pedido/:token` e confirmar visualmente que "Confirmar" não aparece; depois enviar pelo admin e confirmar que o botão passa a aparecer. **(verificado visualmente pelo dono do produto em 05/09/2026)**

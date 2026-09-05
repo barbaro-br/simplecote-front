@@ -29,4 +29,4 @@
 
 ## 4. Verificação end-to-end
 
-- [ ] 4.1 Com o back rodando localmente (mudança já arquivada no `simplecote-back`, endpoint `DELETE /api/participantes/{id}` confirmado ativo em `:8080`), testar ao vivo: convidar clicando no círculo em `ABERTA`, desconvidar um `CONVIDADO` e um `VISUALIZOU` (com e sem preço preenchido), confirmar que o círculo de um `RESPONDIDO` não é clicável. **Não realizado nesta sessão** — extensão Chrome não conectada neste ambiente em background. Recomenda-se checagem manual pelo usuário.
+- [x] 4.1 Com o back rodando localmente (mudança já arquivada no `simplecote-back`, endpoint `DELETE /api/participantes/{id}` confirmado ativo em `:8080`), testar ao vivo: convidar clicando no círculo em `ABERTA`, desconvidar um `CONVIDADO` e um `VISUALIZOU` (com e sem preço preenchido), confirmar que o círculo de um `RESPONDIDO` não é clicável. **Não realizado nesta sessão** — extensão Chrome não conectada neste ambiente em background. Recomenda-se checagem manual pelo usuário. **(verificado visualmente pelo dono do produto em 05/09/2026)**

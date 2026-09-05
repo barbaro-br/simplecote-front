@@ -12,4 +12,4 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar com dados reais (dev): abrir a cotação pelo link do representante em duas abas com o mesmo token, precificar um item numa aba, forçar um refresh/refoco na mesma aba logo em seguida, e confirmar que a contagem "N de T" e o modal de confirmação não retrocedem.
+- [x] 3.1 Testar com dados reais (dev): abrir a cotação pelo link do representante em duas abas com o mesmo token, precificar um item numa aba, forçar um refresh/refoco na mesma aba logo em seguida, e confirmar que a contagem "N de T" e o modal de confirmação não retrocedem. **(verificado visualmente pelo dono do produto em 05/09/2026)**

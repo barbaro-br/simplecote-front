@@ -1,7 +1,7 @@
 ## 1. Contêiner de rolagem
 
 - [x] 1.1 Em `GradeAoVivoTabela.tsx` (linha ~220): no wrapper externo (`rounded-md border ... overflow-hidden`) ou no wrapper interno (`overflow-x-auto`), adicionar `max-h-[65vh] overflow-y-auto` (mantendo o `overflow-x-auto` já existente pra rolagem horizontal) — as duas rolagens (x e y) precisam coexistir no mesmo contêiner pra `sticky` funcionar nos dois eixos.
-- [ ] 1.2 Confirmar visualmente que `sticky top-0`/`sticky left-0` das células (linhas 54, 225, 231) passam a funcionar dentro desse contêiner — não deve ser necessário mexer nas classes dessas células, só no wrapper.
+- [x] 1.2 Confirmar visualmente que `sticky top-0`/`sticky left-0` das células (linhas 54, 225, 231) passam a funcionar dentro desse contêiner — não deve ser necessário mexer nas classes dessas células, só no wrapper. **(verificado visualmente pelo dono do produto em 05/09/2026)**
 
 ## 2. Testes
 
@@ -10,5 +10,5 @@
 
 ## 3. Verificação visual
 
-- [ ] 3.1 Testar com uma Cotação real de 70+ itens (dev): rolar verticalmente e confirmar que o cabeçalho da grade (nomes das Empresas) fica visível fixo no topo da grade, sem sobrepor nem ser sobreposto pelo cabeçalho da página.
-- [ ] 3.2 Testar rolagem horizontal com várias Empresas: coluna "Item" continua fixa à esquerda.
+- [x] 3.1 Testar com uma Cotação real de 70+ itens (dev): rolar verticalmente e confirmar que o cabeçalho da grade (nomes das Empresas) fica visível fixo no topo da grade, sem sobrepor nem ser sobreposto pelo cabeçalho da página. **(verificado visualmente pelo dono do produto em 05/09/2026)**
+- [x] 3.2 Testar rolagem horizontal com várias Empresas: coluna "Item" continua fixa à esquerda. **(verificado visualmente pelo dono do produto em 05/09/2026)**
