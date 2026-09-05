@@ -21,7 +21,7 @@ beforeEach(() => {
 test('carrega e exibe os valores atuais da configuração', async () => {
   renderPage()
 
-  expect(await screen.findByLabelText('Nome da loja')).toHaveValue('Sara Supermercado')
+  expect(await screen.findByLabelText('Nome da loja')).toHaveValue('Supermercado Sarah')
   expect(screen.getByLabelText('Telefone da loja')).toHaveValue('(11) 4002-8922')
 })
 
