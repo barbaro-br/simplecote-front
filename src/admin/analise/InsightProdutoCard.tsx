@@ -25,8 +25,7 @@ export function InsightProdutoCard({ insight }: Props) {
     )
   }
 
-  const parseNum = (str: string | null) => (str ? Number(str) : 0)
-  const variacao = insight.variacaoPct ? Number(insight.variacaoPct) : null
+  const variacao = insight.variacaoPct
   const subiu = variacao !== null && variacao > 0
   const desceu = variacao !== null && variacao < 0
 
@@ -36,7 +35,7 @@ export function InsightProdutoCard({ insight }: Props) {
       <div className="flex justify-between items-start mb-3">
         <div>
           <div className="font-semibold text-base">
-            {moeda(parseNum(insight.ultimaCompra.precoUnitario))}
+            {moeda(insight.ultimaCompra.precoUnitario)}
             <span className="sr-only">/ un</span>
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">
@@ -77,28 +76,28 @@ export function InsightProdutoCard({ insight }: Props) {
         <div className="bg-muted/50 p-2 rounded">
           <div className="text-muted-foreground mb-1">Menor</div>
           <div className="font-medium">
-            {insight.menorPreco ? moeda(parseNum(insight.menorPreco)) : '—'}
+            {insight.menorPrecoUnitario !== null ? moeda(insight.menorPrecoUnitario) : '—'}
           </div>
         </div>
         <div className="bg-muted/50 p-2 rounded">
           <div className="text-muted-foreground mb-1">Média 90d</div>
           <div className="font-medium">
-            {insight.media90d ? moeda(parseNum(insight.media90d)) : '—'}
+            {insight.precoMedioUnitario90d !== null ? moeda(insight.precoMedioUnitario90d) : '—'}
           </div>
         </div>
         <div className="bg-muted/50 p-2 rounded">
           <div className="text-muted-foreground mb-1">Compras</div>
-          <div className="font-medium">{insight.numeroCompras ?? '—'}</div>
+          <div className="font-medium">{insight.compras ?? '—'}</div>
         </div>
         <div className="bg-muted/50 p-2 rounded">
           <div className="text-muted-foreground mb-1">Fornecedores</div>
-          <div className="font-medium">{insight.numeroFornecedores ?? '—'}</div>
+          <div className="font-medium">{insight.fornecedoresDistintos ?? '—'}</div>
         </div>
       </div>
 
       {insight.serie && insight.serie.length > 0 && (
         <div className="mb-3 flex justify-center text-primary" data-testid="container-sparkline">
-          <Sparkline pontos={insight.serie} />
+          <Sparkline pontos={insight.serie.map(p => p.precoUnitario)} />
         </div>
       )}
 

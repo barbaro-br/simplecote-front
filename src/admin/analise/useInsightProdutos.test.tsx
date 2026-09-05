@@ -48,10 +48,10 @@ describe('useInsightProdutos', () => {
           [id1]: { 
             ultimaCompra: null, 
             variacaoPct: null, 
-            menorPreco: null, 
-            media90d: null, 
-            numeroCompras: null, 
-            numeroFornecedores: null, 
+            menorPrecoUnitario: null, 
+            precoMedioUnitario90d: null, 
+            compras: 0, 
+            fornecedoresDistintos: 0, 
             serie: [] 
           },
         })

@@ -118,16 +118,17 @@ export function RedefinirSenhaForm({ usuarioId, usuarioNome, aoSalvar }: Props) 
               )}
             </button>
           </div>
-          {err.confirmar && (
+          {err.confirmar ? (
             <p className="text-[13px] text-destructive font-medium">{err.confirmar.message}</p>
-          )}
-          {confirmar !== '' && (
-            <p
-              className={`flex items-center gap-1.5 text-[13px] font-medium ${coincidem ? 'text-success' : 'text-muted-foreground'}`}
-            >
-              {coincidem && <Check className="size-3.5" aria-hidden />}
-              {coincidem ? 'As senhas coincidem' : 'As senhas ainda não coincidem'}
-            </p>
+          ) : (
+            confirmar !== '' && (
+              <p
+                className={`flex items-center gap-1.5 text-[13px] font-medium ${coincidem ? 'text-success' : 'text-muted-foreground'}`}
+              >
+                {coincidem && <Check className="size-3.5" aria-hidden />}
+                {coincidem ? 'As senhas coincidem' : 'As senhas ainda não coincidem'}
+              </p>
+            )
           )}
         </div>
       </div>

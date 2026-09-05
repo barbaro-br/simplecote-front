@@ -72,16 +72,16 @@ export const insightProdutoSchema = z.object({
     cotacaoId: z.string().uuid().nullable(),
     empresa: z.string(),
     representante: z.string(),
-    precoUnitario: z.string(),
+    precoUnitario: z.number(),
     data: z.string(),
     quantidade: z.number(),
   }).nullable(),
-  variacaoPct: z.string().nullable(),
-  menorPreco: z.string().nullable(),
-  media90d: z.string().nullable(),
-  numeroCompras: z.number().nullable(),
-  numeroFornecedores: z.number().nullable(),
-  serie: z.array(z.number()).max(6),
+  variacaoPct: z.number().nullable(),
+  menorPrecoUnitario: z.number().nullable(),
+  precoMedioUnitario90d: z.number().nullable(),
+  compras: z.number(),
+  fornecedoresDistintos: z.number(),
+  serie: z.array(z.object({ data: z.string(), precoUnitario: z.number() })),
 })
 
 export const insightProdutosMapSchema = z.record(

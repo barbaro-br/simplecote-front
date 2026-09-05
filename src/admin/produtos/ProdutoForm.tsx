@@ -72,7 +72,7 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
   }
 
   return (
-    <form onSubmit={form.handleSubmit(aoEnviar)} className="space-y-6">
+    <form onSubmit={form.handleSubmit(aoEnviar)} className="space-y-6" noValidate>
       <div>
         <h2 className="text-lg font-semibold tracking-tight">{isEdit ? 'Editar Produto' : 'Novo Produto'}</h2>
         <p className="text-sm text-muted-foreground">{isEdit ? 'Atualize as informações do produto.' : 'Cadastre um novo produto no catálogo.'}</p>

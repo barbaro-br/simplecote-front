@@ -18,15 +18,15 @@ export function UltimaCompraPopover({ item, insight }: { item?: ItemGrid; insigh
           cotacaoId: null,
           empresa: item.ultimaCompraEmpresa ?? '—',
           representante: '',
-          precoUnitario: String(item.ultimoPrecoUnitario),
+          precoUnitario: item.ultimoPrecoUnitario as number,
           data: item.ultimaCompraEm as string,
           quantidade: 1,
         },
         variacaoPct: null,
-        menorPreco: item.menorPrecoUnitario ? String(item.menorPrecoUnitario) : null,
-        media90d: null,
-        numeroCompras: null,
-        numeroFornecedores: null,
+        menorPrecoUnitario: item.menorPrecoUnitario ?? null,
+        precoMedioUnitario90d: null,
+        compras: 0,
+        fornecedoresDistintos: 0,
         serie: [],
       }
     }
@@ -36,8 +36,8 @@ export function UltimaCompraPopover({ item, insight }: { item?: ItemGrid; insigh
     <HoverCard
       trigger={
         <>
-          <span className="font-normal">{item?.nome ?? 'Produto'}</span>
-          <Info className="size-3.5 text-muted-foreground/50" />
+          <span className="font-normal truncate" title={item?.nome}>{item?.nome ?? 'Produto'}</span>
+          <Info className="size-3.5 shrink-0 text-muted-foreground/50" />
         </>
       }
     >

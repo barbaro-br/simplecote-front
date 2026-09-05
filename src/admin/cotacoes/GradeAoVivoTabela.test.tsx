@@ -5,11 +5,7 @@ import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
 import { GradeAoVivoTabela } from './GradeAoVivoTabela'
 import type { GridAoVivo } from './cotacoes.schema'
-import { resetarMock, definirConfiguracaoMock } from '@/admin/configuracoes/configuracoes.api'
 
-beforeEach(() => {
-  resetarMock()
-})
 
 const gradeBase: GridAoVivo = {
   status: 'ABERTA',
@@ -235,8 +231,7 @@ test('item com um único lance recebe destaque de menor preço quando a preferê
   await waitFor(() => expect(celula).toHaveClass('bg-success/5'))
 })
 
-test('preferência desligada remove o destaque de menor preço mesmo com lance único', async () => {
-  definirConfiguracaoMock({ destacarMenorPrecoNaGrade: false })
+test('o destaque de menor preço está sempre ligado (design fixo)', async () => {
   const gradeMenor: GridAoVivo = {
     ...gradeBase,
     itens: [
@@ -251,7 +246,7 @@ test('preferência desligada remove o destaque de menor preço mesmo com lance �
   await screen.findByText('Arroz')
 
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
-  await waitFor(() => expect(celula).not.toHaveClass('bg-success/5'))
+  await waitFor(() => expect(celula).toHaveClass('bg-success/5'))
 })
 
 test('com múltiplos lances, apenas a célula de menor preço é destacada quando ligada', async () => {
@@ -292,14 +287,16 @@ test('cabeçalho das Empresas e preço padrão alinhados à direita com cartão'
   expect(celula).toHaveClass('bg-card', 'border-border', 'text-right')
 })
 
-test('a grade tem contêiner de rolagem próprio com altura limitada', () => {
+test('a grade tem contêiner de rolagem com limite de altura (65vh) e overflow nos dois eixos', () => {
   renderGrade(gradeBase)
 
   const table = screen.getByRole('table')
   const container = table.parentElement
 
-  expect(container).toHaveClass('overflow-x-auto', 'overflow-y-auto')
-  expect(container?.className).toMatch(/max-h-\[65vh\]/)
+  expect(container).toHaveClass('overflow-x-auto')
+  expect(container).toHaveClass('overflow-y-auto')
+  expect(container).toHaveClass('max-h-[65vh]')
+  expect(container).not.toHaveClass('relative')
 })
 
 test('atualização simulada de preço dispara o flash verde na célula e some após o pulso', async () => {

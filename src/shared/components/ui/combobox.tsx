@@ -89,6 +89,8 @@ export function Combobox({
           >
             <div className="p-2">
               <input
+                id={id ? `${id}-input` : undefined}
+                name={id ? `${id}-input` : 'combobox-input'}
                 ref={buscaRef}
                 type="text"
                 value={filtro}

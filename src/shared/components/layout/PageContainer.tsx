@@ -1,9 +1,10 @@
 import type { HTMLAttributes } from 'react'
 import { cn } from '@/shared/lib/utils'
 
-export type PageMaxWidth = 'lg' | '4xl' | '5xl'
+export type PageMaxWidth = 'md' | 'lg' | '4xl' | '5xl'
 
 const MAX_WIDTH_CLASSES: Record<PageMaxWidth, string> = {
+  md: 'max-w-md',
   lg: 'max-w-lg',
   '4xl': 'max-w-4xl',
   '5xl': 'max-w-5xl',

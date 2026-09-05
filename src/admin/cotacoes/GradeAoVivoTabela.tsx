@@ -7,7 +7,6 @@ import { moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { CelulaGrid, GridAoVivo, ItemGrid } from './cotacoes.schema'
 import { useCorrigirLance, useAtualizarQuantidadeItem } from './cotacoes.api'
-import { useConfiguracaoLoja } from '@/admin/configuracoes/configuracoes.api'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
 import { useHighlightOnUpdate } from '@/shared/hooks/useHighlightOnUpdate'
 
@@ -87,7 +86,7 @@ function CampoQuantidade({
         }
       }}
       aria-label={`Quantidade de ${item.nome}`}
-      className="h-6 w-12 rounded border border-input bg-transparent px-1 text-center text-xs font-medium tabular-nums focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+      className="h-7 w-11 rounded-r-none rounded-l border border-input bg-transparent px-1 text-center text-sm font-semibold tabular-nums focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
     />
   )
 }
@@ -112,7 +111,7 @@ const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, aoCorrigi
   const destacado = pulsoPreco || pulsoLideranca
 
   return (
-    <td className="px-2 py-1 min-w-[140px]">
+    <td className="px-2 py-1 min-w-[140px] border-b border-l shadow-[0_1px_0_0_var(--border)] bg-card group-hover:bg-muted/40">
       <button
         type="button"
         onClick={() => aoCorrigir(item, celula)}
@@ -166,7 +165,7 @@ const LinhaItem = memo(function LinhaItem({
 }: LinhaProps) {
   return (
     <tr className="group transition-colors hover:bg-muted/40">
-      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-2 border-r shadow-[1px_0_0_0_var(--border)]">
+      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-2 border-b border-r shadow-[1px_1px_0_0_var(--border)] w-[340px] min-w-[340px] max-w-[340px]">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <UltimaCompraPopover item={item} />
@@ -175,30 +174,32 @@ const LinhaItem = memo(function LinhaItem({
             </div>
           </div>
           {quantidadeEditavel ? (
-            <div className="flex shrink-0 items-center gap-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label={`Diminuir quantidade de ${item.nome}`}
-                className="size-6 h-6 w-6"
-                onClick={() => aoAtualizarQuantidade(item.itemCotacaoId, item.quantidadeSolicitada - 1)}
-                disabled={quantidadePendente || item.quantidadeSolicitada <= 1}
-              >
-                <Minus className="size-3" />
-              </Button>
+            <div className="flex shrink-0 items-center gap-0.5">
               <CampoQuantidade item={item} pendente={quantidadePendente} aoAtualizarQuantidade={aoAtualizarQuantidade} />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label={`Aumentar quantidade de ${item.nome}`}
-                className="size-6 h-6 w-6"
-                onClick={() => aoAtualizarQuantidade(item.itemCotacaoId, item.quantidadeSolicitada + 1)}
-                disabled={quantidadePendente}
-              >
-                <Plus className="size-3" />
-              </Button>
+              <div className="flex flex-col">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label={`Aumentar quantidade de ${item.nome}`}
+                  className="h-3.5 w-5 min-w-0 rounded-b-none p-0"
+                  onClick={() => aoAtualizarQuantidade(item.itemCotacaoId, item.quantidadeSolicitada + 1)}
+                  disabled={quantidadePendente}
+                >
+                  <Plus className="size-2" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label={`Diminuir quantidade de ${item.nome}`}
+                  className="-mt-px h-3.5 w-5 min-w-0 rounded-t-none p-0"
+                  onClick={() => aoAtualizarQuantidade(item.itemCotacaoId, item.quantidadeSolicitada - 1)}
+                  disabled={quantidadePendente || item.quantidadeSolicitada <= 1}
+                >
+                  <Minus className="size-2" />
+                </Button>
+              </div>
             </div>
           ) : (
             <span className="shrink-0 text-xs text-muted-foreground">qtd {item.quantidadeSolicitada}</span>
@@ -209,7 +210,7 @@ const LinhaItem = memo(function LinhaItem({
         const celula = item.precos.find((c) => c.participanteId === col.participanteId)
         if (!celula) {
           return (
-            <td key={col.participanteId} className="px-4 py-3 text-muted-foreground text-center">
+            <td key={col.participanteId} className="px-4 py-3 text-muted-foreground text-center border-b border-l shadow-[0_1px_0_0_var(--border)] bg-card group-hover:bg-muted/40">
               —
             </td>
           )
@@ -239,14 +240,14 @@ type Alvo = { item: ItemGrid; celula: CelulaGrid }
 export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; grade: GridAoVivo }) {
   const corrigir = useCorrigirLance(cotacaoId)
   const atualizarQuantidade = useAtualizarQuantidadeItem(cotacaoId)
-  const { data: configuracao } = useConfiguracaoLoja()
   const [alvo, setAlvo] = useState<Alvo | null>(null)
   const [preco, setPreco] = useState('')
   const [naoCotado, setNaoCotado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [erroQuantidade, setErroQuantidade] = useState<string | null>(null)
 
-  const destacarMenorPreco = configuracao?.destacarMenorPrecoNaGrade ?? true
+  // Destaque do menor preço é sempre ligado por padrão
+  const destacarMenorPreco = true
 
   const quantidadeEditavel = grade.status === 'ABERTA' || grade.status === 'ENCERRADA'
 
@@ -301,25 +302,25 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
           {erroQuantidade}
         </p>
       )}
-      <div className="rounded-md border bg-card text-card-foreground shadow-sm overflow-hidden">
+      <div className="rounded-md border bg-card text-card-foreground shadow-sm flex flex-col">
         <div className="overflow-x-auto overflow-y-auto max-h-[65vh]">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm border-separate border-spacing-0">
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="sticky top-0 left-0 z-30 bg-muted px-4 py-2 font-medium border-b border-r shadow-[1px_0_0_0_var(--border)]">
+                <th className="sticky top-0 left-0 z-30 bg-muted px-4 py-2 font-medium border-b border-r shadow-[1px_0_0_0_var(--border)] whitespace-nowrap w-[340px] min-w-[340px] max-w-[340px]">
                   Item
                 </th>
                 {colunas.map((c) => (
                   <th
                     key={c.participanteId}
-                    className="sticky top-0 z-20 bg-muted px-2 py-2 font-medium min-w-[140px] border-b text-right"
+                    className="sticky top-0 z-20 bg-muted px-2 py-2 font-medium min-w-[140px] border-b border-l shadow-[0_1px_0_0_var(--border)] text-right whitespace-nowrap"
                   >
                     {c.empresa}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {grade.itens.map((item) => (
                 <LinhaItem
                   key={item.itemCotacaoId}

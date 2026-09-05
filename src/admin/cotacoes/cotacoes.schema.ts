@@ -10,6 +10,7 @@ export type CotacaoResumo = {
   prazo: string | null
   criadaEm: string
   encerradaEm: string | null
+  valorTotalComprado?: number | null
 }
 
 export type ItemCotacao = {

@@ -175,12 +175,102 @@ function Sidebar({ nome, onLogout }: { nome: string; onLogout: () => void }) {
   )
 }
 
+import { Menu, X } from 'lucide-react'
+
+// ... (keep the same imports and initial setup) ...
+
+function SidebarMobile({ nome, onLogout, aberta, aoFechar }: { nome: string; onLogout: () => void; aberta: boolean; aoFechar: () => void }) {
+  return (
+    <>
+      {aberta && (
+        <div
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+          onClick={aoFechar}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-3/4 max-w-sm border-r bg-background p-4 flex flex-col shadow-lg transition-transform duration-300 ease-in-out md:hidden ${
+          aberta ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-8 h-10">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <ShoppingBag className="size-6" aria-hidden />
+            </div>
+            <span title={nome} className="min-w-0 flex-1 truncate text-lg font-bold tracking-tight">{nome}</span>
+          </div>
+          <button
+            type="button"
+            onClick={aoFechar}
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+            aria-label="Fechar menu"
+          >
+            <X className="size-6" />
+          </button>
+        </div>
+
+        <nav className="space-y-2 flex flex-col flex-1">
+          {ITENS.map(({ to, label, Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              onClick={aoFechar}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-md px-3 py-3 text-base transition-colors overflow-hidden ${
+                  isActive
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`
+              }
+            >
+              <Icon className="size-6 shrink-0" aria-hidden />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        <button
+          onClick={() => {
+            aoFechar()
+            onLogout()
+          }}
+          className="flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium text-muted-foreground hover:text-destructive transition-colors mt-4 pt-4 border-t"
+        >
+          <LogOut className="size-6 shrink-0" aria-hidden />
+          <span>Sair</span>
+        </button>
+      </aside>
+    </>
+  )
+}
+
 export function AdminLayout() {
   const { logout } = useAuth()
   const { data: configuracao } = useConfiguracaoLoja()
   const navigate = useNavigate()
 
+  const [ehEstreita, setEhEstreita] = useState<boolean>(lerTelaEstreita)
+  const [drawerAberto, setDrawerAberto] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    const mql = window.matchMedia('(max-width: 767px)')
+    function aoMudar(e: MediaQueryListEvent) {
+      setEhEstreita(e.matches)
+      if (!e.matches) setDrawerAberto(false)
+    }
+    mql.addEventListener('change', aoMudar)
+    return () => mql.removeEventListener('change', aoMudar)
+  }, [])
+
   const estilo = configuracao?.estiloNavegacao ?? 'LATERAL'
+  // BottomNav só aparece se estilo for INFERIOR, mas em telas mobile usamos topbar + drawer
+  // A spec diz: abaixo de 768px a sidebar vira um drawer oculto aberto por botão hamburger numa topbar
+  // O BottomNavBar de `estiloNavegacao` continua intocado? Sim, mas o drawer mobile substitui a sidebar.
+  // Vamos preservar a regra: se for INFERIOR, usa BottomNavBar e não tem drawer. Se for LATERAL e mobile, usa TopBar + Drawer.
   const ehInferior = estilo === 'INFERIOR'
 
   function handleLogout() {
@@ -188,16 +278,51 @@ export function AdminLayout() {
     navigate('/login', { replace: true })
   }
 
+  const nomeLoja = configuracao?.nome ?? ''
+
   return (
-    <div className="flex h-screen overflow-hidden bg-card text-foreground">
+    <div className="flex h-screen overflow-hidden bg-card text-foreground flex-col md:flex-row">
       <ScrollRestoration />
+      
+      {/* Mobile Topbar */}
+      {ehEstreita && !ehInferior && (
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 shadow-sm md:hidden shrink-0">
+          <button
+            type="button"
+            onClick={() => setDrawerAberto(true)}
+            className="inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted p-2 -ml-2"
+            aria-label="Abrir menu"
+          >
+            <Menu className="size-6" />
+          </button>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground">
+              <ShoppingBag className="size-4" aria-hidden />
+            </div>
+            <span className="truncate font-bold tracking-tight">{nomeLoja}</span>
+          </div>
+        </header>
+      )}
+
+      {/* Drawer Mobile */}
+      {ehEstreita && !ehInferior && (
+        <SidebarMobile
+          nome={nomeLoja}
+          onLogout={handleLogout}
+          aberta={drawerAberto}
+          aoFechar={() => setDrawerAberto(false)}
+        />
+      )}
+
+      {/* Navegação */}
       {ehInferior ? (
         <BottomNavBar onLogout={handleLogout} />
-      ) : (
-        <Sidebar nome={configuracao?.nome ?? ''} onLogout={handleLogout} />
-      )}
-      <main className={`flex-1 h-screen overflow-y-auto ${ehInferior ? 'pb-20' : ''}`}>
-        <div className="mx-auto w-full max-w-7xl p-8">
+      ) : !ehEstreita ? (
+        <Sidebar nome={nomeLoja} onLogout={handleLogout} />
+      ) : null}
+
+      <main className={`flex-1 min-w-0 h-full overflow-y-auto ${ehInferior ? 'pb-20' : ''}`}>
+        <div className="mx-auto w-full px-4 md:px-6 py-6 max-w-full">
           <RouteTransition />
         </div>
       </main>

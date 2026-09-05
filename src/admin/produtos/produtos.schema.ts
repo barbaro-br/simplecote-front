@@ -8,10 +8,11 @@ export const produtoSchema = z.object({
   nome: z.string().min(1, 'Informe o nome do produto'),
   codigoBarras: z.string().optional(),
   unidade: z.enum(tiposDeEmbalagem, { message: 'Informe o tipo de embalagem' }),
-  quantidadePorEmbalagem: z
-    .number()
-    .int()
-    .min(1, 'A quantidade por embalagem deve ser no mínimo 1'),
+  quantidadePorEmbalagem: z.any()
+    .transform(Number)
+    .refine((n) => !Number.isNaN(n) && n !== 0, 'Informe a quantidade por embalagem')
+    .refine((n) => Number.isInteger(n), 'A quantidade deve ser um número inteiro')
+    .refine((n) => n >= 1, 'A quantidade por embalagem deve ser no mínimo 1'),
 })
 
 export type ProdutoFormValues = z.infer<typeof produtoSchema>

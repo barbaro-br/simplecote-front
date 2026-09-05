@@ -260,7 +260,6 @@ export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastra
                       disabled={isSubmitting}
                       onClick={(ev) => {
                         ev.stopPropagation()
-                        onClose()
                         aoEditarProduto(p)
                       }}
                       className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
@@ -314,7 +313,7 @@ export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastra
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={() => { onClose(); aoCadastrarProduto() }}
+                  onClick={() => { aoCadastrarProduto() }}
                   className="text-[13px] text-primary hover:underline font-medium"
                 >
                   Cadastrar novo produto
@@ -328,7 +327,7 @@ export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastra
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={() => { onClose(); aoCadastrarProduto() }}
+                  onClick={() => { aoCadastrarProduto() }}
                   className="text-xs text-primary hover:underline"
                 >
                   Não achou? Cadastrar novo produto

@@ -16,14 +16,19 @@ type MenuAcoesProps = {
 
 export function MenuAcoes({ items }: MenuAcoesProps) {
   const [aberto, setAberto] = useState(false)
-  const [coords, setCoords] = useState<{ top: number; right: number } | null>(null)
+  const [coords, setCoords] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const posicionar = useCallback(() => {
     const r = buttonRef.current?.getBoundingClientRect()
     if (r) {
-      setCoords({ top: r.bottom + 4, right: window.innerWidth - r.right })
+      const nearBottom = r.bottom + 120 > window.innerHeight
+      if (nearBottom) {
+        setCoords({ bottom: window.innerHeight - r.top + 4, right: window.innerWidth - r.right })
+      } else {
+        setCoords({ top: r.bottom + 4, right: window.innerWidth - r.right })
+      }
     }
   }, [])
 
@@ -91,8 +96,8 @@ export function MenuAcoes({ items }: MenuAcoesProps) {
           <div
             ref={menuRef}
             role="menu"
-            style={{ position: 'fixed', top: coords.top, right: coords.right }}
-            className="z-50 mt-1 w-48 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in zoom-in-95"
+            style={{ position: 'fixed', top: coords.top, bottom: coords.bottom, right: coords.right }}
+            className={`z-50 w-48 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in zoom-in-95 ${coords.bottom ? 'mb-1 origin-bottom-right' : 'mt-1 origin-top-right'}`}
           >
             <div className="py-1">
               {items.map((item, index) => (
