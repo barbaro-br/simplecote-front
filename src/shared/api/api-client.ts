@@ -85,7 +85,11 @@ async function fetchWrapper<T>(endpoint: string, options: RequestOptions = {}): 
   if (!response.ok) {
     // 401 em chamada autenticada → sessão expirada. O 401 de `POST /api/auth/login`
     // (credencial inválida) e de rotas /public/** segue virando ApiError normal.
-    if (response.status === 401 && !isLoginRequest(endpoint, init.method) && !publico) {
+    // O `token` no teste garante que só é "sessão expirada" quando a chamada de fato
+    // mandou credencial: um 401 numa chamada anônima (ex: página pública que encostou
+    // num endpoint /api/**, como o /api/configuracoes do provider global) é só "precisa
+    // logar pra este recurso" — não sequestra a navegação do visitante pro /login.
+    if (response.status === 401 && !isLoginRequest(endpoint, init.method) && !publico && token) {
       limparToken()
       if (sessaoExpiradaHandler) {
         sessaoExpiradaHandler()
