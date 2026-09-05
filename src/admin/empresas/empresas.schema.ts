@@ -13,4 +13,6 @@ export type Empresa = {
   id: string
   nome: string
   ativo: boolean
+  /** `false` quando a empresa já participou de alguma cotação — só então a exclusão é bloqueada. */
+  podeExcluir: boolean
 }
