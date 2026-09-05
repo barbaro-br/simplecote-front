@@ -5,7 +5,7 @@ import type { Configuracao, ConfiguracaoFormValues } from './configuracoes.schem
 const chave = ['configuracao-loja'] as const
 
 export const CONFIGURACAO_SEED: Configuracao = {
-  nome: 'Sara Supermercado',
+  nome: 'Supermercado Sarah',
   corPrimaria: '#0f766e',
   telefone: '(11) 4002-8922',
   layoutEmail: 'Olá {representante},\n\nSegue o convite para a cotação. Acesse o link para enviar seus preços.',

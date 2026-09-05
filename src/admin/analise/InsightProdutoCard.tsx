@@ -11,7 +11,7 @@ interface Props {
 export function InsightProdutoCard({ insight }: Props) {
   if (insight === 'erro') {
     return (
-      <div className="p-4 text-sm text-destructive" data-testid="insight-produto-erro">
+      <div className="p-4 w-64 text-sm text-destructive bg-popover text-popover-foreground rounded-md shadow-md border" data-testid="insight-produto-erro">
         Insight indisponível.
       </div>
     )
@@ -19,7 +19,7 @@ export function InsightProdutoCard({ insight }: Props) {
 
   if (insight === null || !insight.ultimaCompra) {
     return (
-      <div className="p-4 text-sm text-muted-foreground" data-testid="insight-produto-vazio">
+      <div className="p-4 w-64 text-sm text-muted-foreground bg-popover rounded-md shadow-md border" data-testid="insight-produto-vazio">
         Sem compra anterior.
       </div>
     )
