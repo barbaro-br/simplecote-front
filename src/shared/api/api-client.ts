@@ -62,10 +62,18 @@ function isLoginRequest(endpoint: string, method?: string): boolean {
   return (method ?? 'GET').toUpperCase() === 'POST' && path.endsWith(LOGIN_PATH)
 }
 
+// Rotas /public/** (colaborador, representante por token) são anônimas por
+// design — nunca devem carregar o JWT do admin (ex: mesma aba/sessionStorage
+// herdado de uma aba de admin aberta antes) nem redirecionar pra /login num 401.
+function isPublicRequest(endpoint: string): boolean {
+  return endpoint.split('?')[0].startsWith('/public/')
+}
+
 async function fetchWrapper<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { lookup, ...init } = options
   const url = `${getBaseUrl()}${endpoint}`
-  const token = getToken()
+  const publico = isPublicRequest(endpoint)
+  const token = publico ? null : getToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -76,8 +84,8 @@ async function fetchWrapper<T>(endpoint: string, options: RequestOptions = {}): 
 
   if (!response.ok) {
     // 401 em chamada autenticada → sessão expirada. O 401 de `POST /api/auth/login`
-    // (credencial inválida) segue virando ApiError normal.
-    if (response.status === 401 && !isLoginRequest(endpoint, init.method)) {
+    // (credencial inválida) e de rotas /public/** segue virando ApiError normal.
+    if (response.status === 401 && !isLoginRequest(endpoint, init.method) && !publico) {
       limparToken()
       if (sessaoExpiradaHandler) {
         sessaoExpiradaHandler()
