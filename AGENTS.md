@@ -65,13 +65,46 @@ Padrão por feature: `*.schema.ts` (zod, espelha a Bean Validation do back) → 
 
 ## Testes
 
-Vitest + React Testing Library + MSW (`setupTests.ts`, `onUnhandledRequest: 'error'`). **Passar no MSW não garante a integração real** — o contrato é o `simplecote-back/spec.md` §12. Se mexeu no contrato, alinhe o back também.
+Vitest + React Testing Library + MSW (`setupTests.ts`, `onUnhandledRequest: 'error'`). **Passar no MSW não garante a integração real** — o contrato é o `simplecote-back/spec.md` §12. Se mexeu no contrato, alinhe o back também. `spec.md` nem sempre detalha campo a campo: pra conferência exata, compare o schema Zod contra o DTO Java real (`simplecote-back/src/main/java/**/dto/*.java`) — skill `contrato-drift`. Mismatch de nome de campo não quebra nada visível, só faz o dado sumir/cair em fallback — já aconteceu (`insightProdutoSchema` vs `InsightProdutoDTO`).
 
 ## Como rodar
 
 1. Back no repo irmão: `AUTH_ENABLED=true ./mvnw spring-boot:test-run` (sobe em `:8080`, requer Docker).
 2. Aqui: `cp .env.example .env.development` e `npm run dev` (Vite em `:5173`).
 3. Login: `admin@dev.local` / `admin123`. JWT em `sessionStorage`; `401` leva de volta ao `/login`.
+
+## Deploy
+
+Front (este repo) → **Vercel**, projeto `simplecote-front`. Back (`simplecote-back`) → **Heroku**,
+app `immense-badlands-31311`. Nenhum dos dois é push manual pro provider — os dois são só
+`git push origin main`; quem deploya de fato é o GitHub Actions.
+
+- **Front** (`.github/workflows/deploy.yml`): push em `main` → `ci` (build+test+lint) → `deploy`
+  (`vercel deploy --prebuilt --prod`) → smoke test que baixa o bundle publicado e confere se ele
+  contém a URL do back e se `/actuator/health` responde 200. Smoke vermelho = o deploy **já foi ao
+  ar** e está quebrado — rode `vercel rollback`, não tente consertar pra frente sob pressão.
+- **Back** (`simplecote-back/.github/workflows/deploy.yml`): push em `main` → `mvn test`
+  (Testcontainers) → `git push --force` pro remote git do Heroku com `HEROKU_API_KEY`. O buildpack
+  `heroku/jvm` compila do lado de lá — daqui só sai o commit.
+- **Nunca**: `git push heroku` direto, nem `vercel --prod` manual sem passar pelo CI. O pipeline é
+  a fonte de verdade; push manual diverge do que está no GitHub e ninguém mais vê o que rodou.
+
+## Decisões que parecem bug (não são)
+
+- `vercel.json`: `deploymentEnabled.main: false` — integração nativa Git↔Vercel desligada de
+  propósito, o deploy real é só via Actions (acima). Não reative.
+- `VITE_API_BASE_URL` fixada como `env:` no `deploy.yml`, não como env var no painel da Vercel —
+  proposital (URL do Heroku é pública; deploy não depende de config manual no painel). Não mova
+  pra "Environment Variables" da Vercel — o guard do `vite.config.ts` espera vir do build.
+- Postgres local (`spring-boot:test-run`) sobe via Testcontainers com **porta efêmera**, muda a
+  cada restart do back. Não é ambiente quebrado; não hardcode essa porta em lugar nenhum.
+
+## Mocks e pendências conhecidas
+
+- `src/admin/configuracoes/configuracoes.api.ts` é mock em memória (comentário no próprio arquivo:
+  "substituir pelas chamadas reais... task 4.1"). A tela de Configurações não persiste nada de
+  verdade hoje — `GET/PUT /api/configuracoes` já existe e funciona no back, o front só nunca chama.
+  Se for mexer nessa tela, isso é o bug a resolver antes de qualquer feature nova em cima dele.
 
 ## OpenSpec
 
