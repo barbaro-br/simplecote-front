@@ -1,11 +1,15 @@
 import { useMemo, useState } from 'react'
-import { Eye, EyeOff, Pencil, PlusCircle } from 'lucide-react'
+import { Eye, EyeOff, Pencil, PlusCircle, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
+import { Tooltip } from '@/shared/components/ui/tooltip'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
-import { useEmpresas, useInativarEmpresa, useAtivarEmpresa } from './empresas.api'
+import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
+import { ConfirmarDialog } from '../cotacoes/ConfirmarDialog'
+import { useEmpresas, useInativarEmpresa, useAtivarEmpresa, useExcluirEmpresa } from './empresas.api'
 import { useRepresentantes } from '../representantes/representantes.api'
 import { EmpresaForm } from './EmpresaForm'
 import type { Empresa } from './empresas.schema'
@@ -16,12 +20,20 @@ export function EmpresasPage() {
   const { data: representantes } = useRepresentantes()
   const inativar = useInativarEmpresa()
   const ativar = useAtivarEmpresa()
+  const excluir = useExcluirEmpresa()
   const [mostrarForm, setMostrarForm] = useState(false)
   const [empresaEditando, setEmpresaEditando] = useState<Empresa | undefined>(undefined)
+  const [empresaParaExcluir, setEmpresaParaExcluir] = useState<Empresa | null>(null)
 
   const representantePorEmpresa = useMemo(
     () => new Map((representantes ?? []).map((r) => [r.empresaId, r] as const)),
     [representantes],
+  )
+
+  // Ativas primeiro — inativa não compete por atenção no meio da lista.
+  const empresasOrdenadas = useMemo(
+    () => [...(empresas ?? [])].sort((a, b) => Number(b.ativo) - Number(a.ativo)),
+    [empresas],
   )
 
   if (isLoading) return <p className="p-6 text-muted-foreground">Carregando fornecedores…</p>
@@ -40,6 +52,18 @@ export function EmpresasPage() {
   function fecharForm() {
     setMostrarForm(false)
     setEmpresaEditando(undefined)
+  }
+
+  async function confirmarExclusao() {
+    if (!empresaParaExcluir) return
+    try {
+      await excluir.mutateAsync(empresaParaExcluir.id)
+      toast.success('Empresa excluída.')
+      setEmpresaParaExcluir(null)
+    } catch (e) {
+      if (e instanceof SessaoExpiradaError) return
+      toast.error(e instanceof ApiError ? e.message : 'Erro ao excluir a empresa.')
+    }
   }
 
   return (
@@ -70,6 +94,17 @@ export function EmpresasPage() {
         />
       </Dialog>
 
+      {empresaParaExcluir && (
+        <ConfirmarDialog
+          titulo="Excluir empresa"
+          descricao={`Excluir definitivamente "${empresaParaExcluir.nome}"? Esta ação é irreversível e não pode ser desfeita.`}
+          rotuloConfirmar="Excluir"
+          pendente={excluir.isPending}
+          onConfirmar={confirmarExclusao}
+          onCancelar={() => setEmpresaParaExcluir(null)}
+        />
+      )}
+
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">
@@ -88,7 +123,7 @@ export function EmpresasPage() {
                   </td>
                 </tr>
               ) : (
-                empresas.map((empresa) => {
+                empresasOrdenadas.map((empresa) => {
                   const rep: Representante | undefined = representantePorEmpresa.get(empresa.id)
                   return (
                     <tr
@@ -136,6 +171,24 @@ export function EmpresasPage() {
                               onClick={() => ativar.mutate(empresa.id)}
                               disabled={ativar.isPending}
                             />
+                          )}
+                          {empresa.podeExcluir ? (
+                            <IconButton
+                              icon={Trash2}
+                              label="Excluir"
+                              tone="destructive"
+                              onClick={() => setEmpresaParaExcluir(empresa)}
+                            />
+                          ) : (
+                            <Tooltip content="Não é possível excluir: a empresa já participou de uma cotação. Use Inativar.">
+                              <IconButton
+                                icon={Trash2}
+                                label="Excluir"
+                                tone="destructive"
+                                disabled
+                                onClick={() => setEmpresaParaExcluir(empresa)}
+                              />
+                            </Tooltip>
                           )}
                         </div>
                       </td>

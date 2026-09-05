@@ -1,5 +1,7 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { vi } from 'vitest'
+import { toast } from 'sonner'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
@@ -226,4 +228,122 @@ test('falha ao cadastrar representante não duplica empresa; reenviar chama só 
   expect(empresasCriadas).toBe(1)
   expect(representantesCriados).toBe(2)
   expect(empresaIdEnviado).toBe(EMPRESA_ID)
+})
+
+test('excluir empresa sem histórico remove a linha após confirmação', async () => {
+  const successSpy = vi.spyOn(toast, 'success')
+  const lista = [
+    { id: '1', nome: 'Fornecedor A LTDA', ativo: true, podeExcluir: true },
+  ]
+  server.use(
+    http.get('*/api/empresas', () => HttpResponse.json(lista)),
+    http.delete('*/api/empresas/:id', ({ params }) => {
+      const i = lista.findIndex((x) => x.id === params.id)
+      if (i >= 0) lista.splice(i, 1)
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Fornecedor A LTDA')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Excluir' }))
+  const dialog = within(screen.getByRole('dialog'))
+  expect(dialog.getByText(/Excluir definitivamente/)).toBeInTheDocument()
+  await user.click(dialog.getByRole('button', { name: 'Excluir' }))
+
+  await waitFor(() => {
+    expect(screen.queryByText('Fornecedor A LTDA')).not.toBeInTheDocument()
+  })
+  expect(successSpy).toHaveBeenCalledWith('Empresa excluída.')
+  successSpy.mockRestore()
+})
+
+test('erro 409 ao excluir mantém a empresa e exibe a mensagem da API', async () => {
+  const errorSpy = vi.spyOn(toast, 'error')
+  server.use(
+    http.get('*/api/empresas', () =>
+      HttpResponse.json([{ id: '1', nome: 'Fornecedor A LTDA', ativo: true, podeExcluir: true }])
+    ),
+    http.delete('*/api/empresas/:id', () =>
+      HttpResponse.json(
+        { title: 'Conflito', status: 409, detail: 'Não é possível excluir: a empresa já participou de uma cotação.' },
+        { status: 409 },
+      )
+    ),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Fornecedor A LTDA')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Excluir' }))
+  const dialog = within(screen.getByRole('dialog'))
+  await user.click(dialog.getByRole('button', { name: 'Excluir' }))
+
+  await waitFor(() => {
+    expect(errorSpy).toHaveBeenCalledWith('Não é possível excluir: a empresa já participou de uma cotação.')
+  })
+  expect(screen.getByText('Fornecedor A LTDA')).toBeInTheDocument()
+  errorSpy.mockRestore()
+})
+
+test('empresa com histórico tem Excluir desabilitado com dica; sem histórico abre o diálogo', async () => {
+  server.use(
+    http.get('*/api/empresas', () =>
+      HttpResponse.json([
+        { id: '1', nome: 'Com Histórico', ativo: true, podeExcluir: false },
+        { id: '2', nome: 'Sem Histórico', ativo: true, podeExcluir: true },
+      ])
+    ),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Com Histórico')).toBeInTheDocument()
+
+  const excluir = screen.getAllByRole('button', { name: 'Excluir' })
+  expect(excluir).toHaveLength(2)
+  expect(excluir[0]).toBeDisabled()
+  expect(excluir[1]).toBeEnabled()
+
+  fireEvent.mouseEnter(excluir[0])
+  const tooltip = await screen.findByRole('tooltip')
+  expect(tooltip).toHaveTextContent(/já participou de uma cotação/)
+
+  await user.click(excluir[1])
+  expect(await screen.findByRole('dialog')).toBeInTheDocument()
+  expect(screen.getByText(/Excluir definitivamente/)).toBeInTheDocument()
+})
+
+test('cancelar a confirmação não dispara o DELETE; confirmar dispara uma única vez', async () => {
+  let deletou = 0
+  server.use(
+    http.get('*/api/empresas', () =>
+      HttpResponse.json([{ id: '1', nome: 'Fornecedor A LTDA', ativo: true, podeExcluir: true }])
+    ),
+    http.delete('*/api/empresas/:id', () => {
+      deletou += 1
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Fornecedor A LTDA')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Excluir' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Voltar' }))
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(deletou).toBe(0)
+
+  await user.click(screen.getByRole('button', { name: 'Excluir' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Excluir' }))
+  await waitFor(() => {
+    expect(deletou).toBe(1)
+  })
 })

@@ -48,3 +48,11 @@ export function useAtualizarEmpresa() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: chave }),
   })
 }
+
+export function useExcluirEmpresa() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete<void>(`/api/empresas/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: chave }),
+  })
+}
