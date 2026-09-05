@@ -1,20 +1,4 @@
-# core/setup Specification
-
-## Purpose
-Fornece o esqueleto inicial de navegação e integração de rede da aplicação (roteamento duplo e cliente HTTP).
-
-## Requirements
-
-### Requirement: Roteamento isolado por perfil
-A aplicação MUST disponibilizar duas árvores de rota independentes: uma área de administração (`/admin/**`) com navegação global, e uma área pública de acesso via token (`/cotacao/:token` e `/pedido/:token`) desenhada primariamente para mobile.
-
-#### Scenario: Acesso Admin
-- **WHEN** o usuário acessa `/admin/produtos`
-- **THEN** a interface exibe o shell do painel (sidebar, layout global) e o conteúdo da rota
-
-#### Scenario: Acesso Representante
-- **WHEN** o usuário acessa `/cotacao/abc-123`
-- **THEN** a interface exibe apenas o formulário da cotação sem navegação lateral (shell minimalista)
+## MODIFIED Requirements
 
 ### Requirement: Cliente HTTP unificado
 Todo consumo de APIs REST MUST ocorrer através de um utilitário centralizado (`api-client`) que intercepte e normalize erros. O utilitário SHALL:
@@ -44,14 +28,3 @@ Todo consumo de APIs REST MUST ocorrer através de um utilitário centralizado (
 #### Scenario: 404 fora de um lookup
 - **WHEN** uma chamada comum (não-lookup) responde `404`
 - **THEN** o `api-client` lança `ApiError` (com o `ProblemDetail` quando houver, ou uma mensagem genérica quando o corpo estiver vazio)
-
-### Requirement: Reset de scroll na navegação
-A aplicação SHALL resetar a posição de scroll para o topo ao navegar entre rotas do painel (`/admin/**`), sem que o conteúdo da nova tela apareça deslocado para baixo ou "salte". Ao usar o back/forward (POP) do navegador, a posição de scroll anterior SHALL ser restaurada.
-
-#### Scenario: Navegação entre telas do painel
-- **WHEN** o usuário navega de uma tela do painel para outra (ex.: `/usuarios` → `/cotacoes`)
-- **THEN** a nova tela abre com o scroll no topo, sem deslocamento ou salto visível
-
-#### Scenario: Voltar restaura a posição
-- **WHEN** o usuário usa o botão voltar (back) do navegador
-- **THEN** a tela anterior reaparece na posição de scroll em que estava

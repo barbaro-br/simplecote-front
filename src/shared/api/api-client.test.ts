@@ -54,6 +54,18 @@ describe('api-client — 401 / sessão expirada', () => {
     expect(handler).toHaveBeenCalledTimes(1)
   })
 
+  it('401 numa chamada SEM token enviado → ApiError normal, não chama o handler', async () => {
+    // Página pública (colaborador/representante) sem sessão de admin encosta num
+    // endpoint /api/** (ex: /api/configuracoes do provider global): 401 aqui é
+    // "precisa logar pra este recurso", não "sessão expirada" — não pode jogar o
+    // visitante pro /login.
+    sessionStorage.removeItem('simplecote_token')
+    server.use(http.get('*/api/configuracoes', () => new HttpResponse(null, { status: 401 })))
+
+    await expect(api.get('/api/configuracoes')).rejects.toBeInstanceOf(ApiError)
+    expect(handler).not.toHaveBeenCalled()
+  })
+
   it('401 de POST /api/auth/login continua virando ApiError e não chama o handler', async () => {
     server.use(
       http.post('*/api/auth/login', () =>

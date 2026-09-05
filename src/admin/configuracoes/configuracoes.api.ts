@@ -12,10 +12,11 @@ export async function salvarConfiguracao(valores: ConfiguracaoFormValues): Promi
   return api.put<Configuracao>('/api/configuracoes', valores)
 }
 
-export function useConfiguracaoLoja() {
+export function useConfiguracaoLoja(opts?: { enabled?: boolean }) {
   return useQuery({
     queryKey: chave,
     queryFn: buscarConfiguracao,
+    enabled: opts?.enabled ?? true,
   })
 }
 
