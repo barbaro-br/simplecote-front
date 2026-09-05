@@ -143,35 +143,36 @@ No modal "Adicionar Produtos", o subtítulo do cabeçalho (contagem de produtos)
 - **THEN** o subtítulo do cabeçalho do modal atualiza a contagem imediatamente a cada marcação/desmarcação, sem esperar o clique em "Concluído"
 
 ### Requirement: Convidar Empresas
-O sistema SHALL permitir acessar a lista de convidados através de uma ação principal no cabeçalho fixo (sticky) da tela de detalhes. O formulário para selecionar uma ou mais Empresas ativas do Comprador e convidá-las para a Cotação (`POST /api/cotacoes/{id}/participantes` com `empresaIds`) SHALL ser exibido em um modal sobreposto, garantindo que o Comprador não perca o contexto da lista de itens, independentemente de quão longa ela seja. O sistema SHALL listar os participantes com seu status de convite (a partir de `GET /api/cotacoes/{id}/participantes`), reenviar o convite de um participante (`POST /api/participantes/{participanteId}/reenviar-convite`) e compartilhar o link mágico do participante.
+O sistema SHALL permitir acessar a lista de convidados através de uma ação principal no cabeçalho fixo (sticky) da tela de detalhes. O formulário para selecionar uma ou mais Empresas ativas do Comprador e convidá-las para a Cotação (`POST /api/cotacoes/{id}/participantes` com `empresaIds`) SHALL ser exibido em um modal sobreposto, garantindo que o Comprador não perca o contexto da lista de itens, independentemente de quão longa ela seja. O sistema SHALL listar os participantes com seu status de convite e resposta (a partir de `GET /api/cotacoes/{id}/participantes`), permitir convidar novas empresas ou desconvidar participantes existentes (`DELETE /api/participantes/{participanteId}`), reenviar o convite de um participante (`POST /api/participantes/{participanteId}/reenviar-convite`) e compartilhar o link mágico do participante.
 
-O compartilhamento do link mágico SHALL oferecer três formas, com o link e uma mensagem amigável já montados pelo front:
-
-- **WhatsApp**: SHALL abrir `https://wa.me/` numa nova aba com o parâmetro `text` contendo uma mensagem no formato `Olá {representanteNome}, aqui está o link da cotação {titulo} da {empresaNome}. O prazo é até {prazo}. Acesse: {linkMagico}`, com todo o texto URL-encodado. Quando o telefone do representante estiver disponível na resposta da API, a URL SHALL ser `https://wa.me/{telefone-somente-digitos}?text=...`; quando não estiver, SHALL ser `https://wa.me/?text=...` (o Comprador escolhe o contato). Se o `prazo` for nulo, a frase do prazo SHALL ser omitida.
-- **E-mail**: SHALL abrir um link `mailto:` com `subject` (ex.: `Cotação {titulo}`) e `body` iguais à mensagem do WhatsApp, ambos URL-encodados. Quando o e-mail do representante estiver disponível na resposta da API, ele SHALL ser o destinatário (`mailto:{email}?subject=...&body=...`); quando não estiver, SHALL abrir sem destinatário.
-- **Copiar link**: SHALL escrever `linkMagico` na área de transferência e dar retorno visual temporário ("Copiado!").
-
-Ações de compartilhamento SHALL estar disponíveis para qualquer participante já listado, independentemente do estado da Cotação (diferente de "Convidar", que só vale em `RASCUNHO`).
-
-Para um participante já convidado, todas as ações da linha (as três de compartilhamento acima, Reenviar convite, e — quando aplicável — Finalizar/Reabrir resposta, ver requirement "Correção de lance e reabertura de resposta pelo admin") SHALL ficar agrupadas num único menu overflow ("⋯", componente `MenuAcoes` já usado em outras telas do produto), não como ícones ou botões soltos na linha. "Convidar" SHALL continuar como botão visível de primeiro nível, já que só existe para uma empresa ainda não convidada (linha sem badge de status nem outras ações concorrendo por espaço).
-
-A coluna de nome da empresa e do representante SHALL ter largura mínima garantida na linha, de modo a não ser a primeira a ceder espaço quando outros elementos (badge de status, menu de ações) estão presentes na mesma linha — nomes de tamanho comum NÃO SHALL truncar para um único caractere.
-
-O status de convite (`conviteStatus`) SHALL ser exibido, **enquanto o participante ainda está em `CONVIDADO`**, distinguindo três casos: `ENVIADO` (rótulo neutro/positivo), `FALHOU` (rótulo com destaque visual de erro, indicando que o sistema tentou enviar e não conseguiu — nunca o mesmo rótulo usado para "ainda não enviado"), e qualquer outro valor SHALL cair no rótulo neutro atual de "Não enviado". A partir do momento em que o `participanteStatus` deixa de ser `CONVIDADO` (`VISUALIZOU` ou `RESPONDIDO`), o badge de status de convite NÃO SHALL ser exibido — o participante comprovadamente teve acesso à cotação por algum caminho, então o estado de entrega do e-mail automático deixa de ser informação relevante ali.
-
-Quando a linha de um participante tem e-mail e/ou telefone do representante disponíveis, o sistema SHALL exibir indicadores de e-mail/telefone que são funcionais e mostram o valor real ao passar o mouse (não um texto genérico): o indicador de e-mail SHALL abrir um `mailto:` pré-preenchido para aquele representante; o indicador de telefone SHALL copiar o número formatado para a área de transferência com retorno visual de confirmação.
+O card de cada empresa no modal SHALL seguir a hierarquia visual desenhada:
+1. **Controle de Participação (Esquerda)**: Um checkbox acessível de 20px (`size-5`) e sem avatar circular com inicial ao lado.
+   - Em cotação aberta (`ABERTA`), o checkbox marcado indica que a empresa participa da cotação. Ao clicar no checkbox marcado de qualquer participante — inclusive aquele já com status `RESPONDIDO` —, o sistema SHALL abrir um diálogo de confirmação informando expressamente que o representante perderá o acesso e os preços já informados não terão validade nesta cotação. Ao confirmar, o sistema SHALL invocar a exclusão do participante via `DELETE /api/participantes/{participanteId}`.
+   - Quando desmarcado, clicar no checkbox convida a empresa imediatamente para a cotação aberta (`POST /api/cotacoes/{id}/participantes`).
+   - Em rascunho (`RASCUNHO`), o checkbox seleciona/desmarca as empresas a serem convidadas na abertura.
+2. **Identificação da Empresa**: Nome da empresa em destaque principal em caixa alta (uppercase/bold) e nome do representante logo abaixo.
+3. **Linha de Status e Fechamento**: Posicionada abaixo dos nomes:
+   - **Badge de Status**: SHALL refletir três estados de forma clara:
+     - `Pendente`: convite ainda não enviado ou com falha de envio.
+     - `Enviado`: convite enviado por e-mail ou acessado pelo representante, aguardando conclusão.
+     - `Finalizado`: cotação finalizada pelo representante ou pelo admin.
+   - **Botão Fechar Cotação**: SHALL ser exibido ao lado do badge de status quando a cotação estiver `ABERTA` e o participante ainda não estiver `Finalizado`. Ao ser acionado, chama `POST /api/participantes/{participanteId}/finalizar`, mudando o status imediatamente para `Finalizado`.
+4. **Ações Rápidas (Direita)**: Ícones de ação direta na ordem:
+   - **E-mail (E)**: Reenviar convite por e-mail ou abrir mailto.
+   - **WhatsApp (W)**: Abrir conversa com mensagem pronta e link mágico (quando telefone disponível).
+   - **Copiar Link (C)**: Copiar o link mágico para a área de transferência com toast de retorno.
 
 #### Scenario: Convite de empresas via modal
 - **WHEN** o Comprador aciona o botão de "Representantes" no cabeçalho fixo
-- **THEN** um modal é aberto exibindo a lista de empresas disponíveis para convite, permitindo a seleção múltipla e envio
+- **THEN** um modal é aberto exibindo a lista de empresas disponíveis para convite, permitindo a seleção múltipla e envio através de checkboxes diretos
 
 #### Scenario: Cabeçalho sempre visível
 - **WHEN** o Comprador rola a lista contendo 200 itens
 - **THEN** o cabeçalho com o título da cotação, status, e botões principais de ação (incluindo o acesso aos Representantes) permanece visível no topo da tela
 
 #### Scenario: Reenviar convite
-- **WHEN** o Comprador abre o menu "⋯" de um participante e aciona "Reenviar convite"
-- **THEN** o sistema chama a API de reenvio e reflete o novo status/instante do convite
+- **WHEN** o Comprador aciona o ícone de e-mail na coluna da direita de um participante
+- **THEN** o sistema chama a API de reenvio (`POST /api/participantes/{participanteId}/reenviar-convite`) e reflete o novo status/instante do convite
 
 #### Scenario: Erro de convite é exibido
 - **WHEN** a API rejeita o convite (ex.: Empresa sem representante, cotação fora de `RASCUNHO`)
@@ -182,51 +183,52 @@ Quando a linha de um participante tem e-mail e/ou telefone do representante disp
 - **THEN** a lista de participantes e seus status de convite são carregados de `GET /api/cotacoes/{id}/participantes`
 
 #### Scenario: Enviar link por WhatsApp com mensagem pronta
-- **WHEN** o Comprador abre o menu "⋯" de um participante e aciona "Enviar por WhatsApp"
-- **THEN** abre-se uma nova aba em `https://wa.me/...?text=...` com a mensagem contendo o nome do representante, o título da cotação, a empresa, o prazo (quando houver) e o link mágico, todo o texto URL-encodado; o número do representante é usado no caminho quando a API o fornece
+- **WHEN** o Comprador clica no ícone de WhatsApp na coluna da direita de um participante
+- **THEN** abre-se uma nova aba em `https://wa.me/` com a mensagem pronta contendo link mágico e dados da cotação
 
 #### Scenario: Enviar link por e-mail com mensagem pronta
-- **WHEN** o Comprador aciona "Enviar por e-mail" num participante
-- **THEN** abre-se um rascunho `mailto:` com assunto e corpo pré-preenchidos com a mesma mensagem; o e-mail do representante é usado como destinatário quando a API o fornece, senão o rascunho abre sem destinatário
+- **WHEN** o Comprador aciona "Enviar por e-mail" num participante em rascunho
+- **THEN** abre-se um rascunho `mailto:` com assunto e corpo pré-preenchidos com a mesma mensagem
 
 #### Scenario: Copiar link continua disponível como ação secundária
-- **WHEN** o Comprador abre o menu "⋯" de um participante e aciona "Copiar link"
+- **WHEN** o Comprador clica no ícone de copiar link na coluna da direita de um participante
 - **THEN** o `linkMagico` é escrito na área de transferência e o item mostra retorno visual temporário de confirmação
 
 #### Scenario: Falha real de envio é distinguida de "ainda não enviado"
-
-- **WHEN** o `conviteStatus` de um participante é `FALHOU` (o sistema tentou enviar o e-mail e não conseguiu) e o participante ainda está `CONVIDADO`
-- **THEN** o participante exibe um rótulo com destaque visual de erro, diferente do rótulo neutro usado quando o convite simplesmente ainda não foi enviado
+- **WHEN** o `conviteStatus` de um participante é `FALHOU` e o participante ainda está `CONVIDADO`
+- **THEN** o badge exibe o estado `Pendente` com indicação de falha no envio
 
 #### Scenario: Falha de envio some depois que o participante engaja
-
 - **WHEN** um participante com `conviteStatus: FALHOU` passa a `VISUALIZOU` ou `RESPONDIDO`
-- **THEN** o badge de "Falha no envio" deixa de aparecer para esse participante, mesmo que `conviteStatus` continue `FALHOU` — só o badge de status de resposta (`Visualizou`/`Respondido`) é exibido
+- **THEN** o badge reflete o novo estado (`Enviado` ou `Finalizado`), sem persistir a mensagem de falha de envio
 
 #### Scenario: Ações de um participante ficam agrupadas num único menu
-
-- **WHEN** o Comprador vê a linha de um participante já convidado (independentemente do `participanteStatus`)
-- **THEN** as ações implementadas e aplicáveis àquela linha (Enviar por WhatsApp, Copiar link, Reenviar convite, e Finalizar/Reabrir resposta quando aplicável) ficam dentro do menu "⋯", sem ícones ou botões de ação soltos na linha
+- **WHEN** o Comprador visualiza a linha de um participante já convidado
+- **THEN** as ações rápidas de contato (E-mail, WhatsApp, Copiar link) aparecem alinhadas diretamente na coluna direita do card
 
 #### Scenario: Nome não trunca para um único caractere
-
-- **WHEN** a linha de um participante exibe simultaneamente um badge de status de resposta e o menu "⋯" de ações
-- **THEN** o nome da empresa e o nome do representante continuam legíveis (não truncam para um único caractere) para nomes de tamanho comum
+- **WHEN** a linha de um participante exibe o badge de status e o botão de fechar cotação
+- **THEN** o nome da empresa e o nome do representante continuam legíveis e destacados, sem truncamento indevido
 
 #### Scenario: Indicador de e-mail abre o cliente de e-mail
-
-- **WHEN** o representante de uma Empresa tem e-mail cadastrado e o Comprador clica no indicador de e-mail da linha
-- **THEN** abre-se um rascunho `mailto:` endereçado a esse e-mail, com assunto e corpo pré-preenchidos com uma mensagem de convite
+- **WHEN** o representante de uma Empresa tem e-mail cadastrado em rascunho e o Comprador clica no indicador
+- **THEN** abre-se um rascunho `mailto:` endereçado a esse e-mail com a mensagem de convite
 
 #### Scenario: Indicador de telefone copia o número
-
-- **WHEN** o representante de uma Empresa tem WhatsApp/telefone cadastrado e o Comprador clica no indicador de telefone da linha
-- **THEN** o número formatado é copiado para a área de transferência e a interface mostra uma confirmação temporária
+- **WHEN** o representante de uma Empresa tem WhatsApp/telefone cadastrado em rascunho e o Comprador clica no indicador
+- **THEN** o número formatado é copiado para a área de transferência com confirmação temporária
 
 #### Scenario: Hover revela o valor real
-
 - **WHEN** o Comprador passa o mouse sobre o indicador de e-mail ou de telefone de uma linha
-- **THEN** a dica exibida mostra o e-mail ou o telefone formatado real daquele representante, não um texto genérico como "Possui E-mail"
+- **THEN** a dica exibida mostra o e-mail ou o telefone formatado real daquele representante
+
+#### Scenario: Desconvidar participante em qualquer status (inclusive Respondido)
+- **WHEN** o Comprador clica no checkbox marcado de um participante com status `RESPONDIDO` (ou `CONVIDADO`/`VISUALIZOU`) em cotação aberta
+- **THEN** o sistema exibe um diálogo de confirmação alertando que o representante perderá o acesso e os preços informados não terão validade; após a confirmação do Comprador, o participante é desconvidado via `DELETE /api/participantes/{participanteId}` e a linha volta a exibir o checkbox desmarcado
+
+#### Scenario: Fechar cotação para o representante através de botão dedicado
+- **WHEN** o Comprador clica no botão "Fechar cotação" ao lado do status do participante
+- **THEN** o sistema finaliza a resposta do participante via `POST /api/participantes/{participanteId}/finalizar` e o badge passa a exibir "Finalizado"
 
 ### Requirement: Transições de estado com confirmação
 O sistema SHALL disparar as transições de estado da Cotação — abrir com `prazo` (`POST /api/cotacoes/{id}/abrir`), encerrar, reabrir, cancelar e apurar — e SHALL exigir um diálogo de confirmação antes de `encerrar`, `cancelar` e `apurar`, nomeando a consequência de cada uma. O resultado de cada ação SHALL vir do backend; o front não decide se a transição é válida. Quando existirem participantes em status `VISUALIZOU` (engajaram mas não finalizaram a resposta), o diálogo de confirmação de `apurar` SHALL listar seus nomes como aviso informativo, sem bloquear a confirmação. O diálogo de confirmação de `encerrar` SHALL, quando existir ao menos um participante com pelo menos um lance `Cotado` (na Grade ao Vivo, já carregada pela tela) que ainda não está `Respondido`, listar esses participantes como aviso e oferecer um botão para finalizar a resposta de todos eles de uma vez, antes de encerrar — sem bloquear a confirmação de "Encerrar" caso o Comprador prefira ignorar o aviso. "Cancelar" SHALL ser exibido como um botão visível (não dentro de um menu overflow), com estilo visual de alerta (ex.: contorno/texto na cor de destrutivo, sem ser um botão preenchido do mesmo peso das transições primárias) e separado espacialmente dos botões de transição primária (Abrir/Encerrar/Reabrir/Apurar) na fileira de ações, para reduzir o risco de clique acidental mesmo estando visível. "Cancelar" SHALL só ser exibido quando `status` é `RASCUNHO` ou `ABERTA` — a única combinação que o backend (`Cotacao.cancelar()`) de fato aceita; em qualquer outro status (`ENCERRADA`, `PEDIDOS_GERADOS`, `CANCELADA`) o botão NÃO SHALL ser exibido. O botão "Representantes" SHALL ficar agrupado visualmente ao lado do botão de transição primária (Abrir/Encerrar/Reabrir+Apurar/Ver resultado), não ao lado de "Cancelar" — "Cancelar" SHALL permanecer sozinho, isolado no extremo oposto da fileira de ações.
@@ -592,3 +594,17 @@ O destaque visual do menor preço unitário na Grade de Respostas (Ao Vivo) SHAL
 #### Scenario: Preferência ligada mantém o comportamento existente com múltiplos lances
 - **WHEN** a preferência está ligada e um item tem dois ou mais lances `COTADO` com preços diferentes
 - **THEN** apenas a célula com o menor preço unitário exibe o destaque, como já acontecia antes
+
+### Requirement: Microinterações em ações rápidas
+Os botões de ações rápidas no painel de cotações e modais associados SHALL exibir *tooltips* informativos com transições suaves e possuir um estado de *hover* que ofereça feedback visual/tátil imediato (como alteração sutil de fundo ou elevação), sem alterar a funcionalidade da ação.
+
+#### Scenario: Interação com botões de ação
+- **WHEN** o usuário posiciona o cursor sobre os ícones de ação rápida (Copiar Link, WhatsApp, Email, etc.)
+- **THEN** o sistema exibe um tooltip explicativo instantâneo com uma animação suave de entrada, e o ícone apresenta feedback visual imediato
+
+### Requirement: Esqueletos de carregamento (Skeleton Screens)
+Durante o carregamento de dados estruturados (listas, tabelas e modais densos), o sistema SHALL exibir estruturas de *skeleton* animadas no formato do conteúdo esperado, substituindo *spinners* circulares básicos para melhorar a percepção de tempo de resposta.
+
+#### Scenario: Carregamento inicial de lista
+- **WHEN** o usuário acessa uma página ou modal que depende de carregamento de dados
+- **THEN** o sistema mostra um layout de *skeleton* cintilante (*shimmer effect*) até que os dados sejam completamente renderizados
