@@ -23,13 +23,16 @@ export function ProdutosPage() {
   const [busca, setBusca] = useState('')
 
   const termo = normalizar(busca.trim())
-  const listaFiltrada = (produtos ?? []).filter((p) => {
-    if (termo === '') return true
-    return (
-      normalizar(p.nome).includes(termo) ||
-      (p.codigoBarras != null && normalizar(p.codigoBarras).includes(termo))
-    )
-  })
+  const listaFiltrada = (produtos ?? [])
+    .filter((p) => {
+      if (termo === '') return true
+      return (
+        normalizar(p.nome).includes(termo) ||
+        (p.codigoBarras != null && normalizar(p.codigoBarras).includes(termo))
+      )
+    })
+    // Ativos primeiro — inativo não compete por atenção no meio da lista.
+    .sort((a, b) => Number(b.ativo) - Number(a.ativo))
 
   if (isLoading) return <p className="p-6 text-muted-foreground">Carregando catálogo…</p>
   if (error) return <p className="p-6 text-destructive">Erro ao carregar produtos: {error.message}</p>

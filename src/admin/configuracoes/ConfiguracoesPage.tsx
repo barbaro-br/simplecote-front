@@ -8,6 +8,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Card } from '@/shared/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
 import { configuracaoSchema, type Configuracao, type ConfiguracaoFormValues } from './configuracoes.schema'
 import { useConfiguracaoLoja, useAtualizarConfiguracao } from './configuracoes.api'
 
@@ -18,6 +19,7 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
     resolver: zodResolver(configuracaoSchema),
     defaultValues: {
       ...configuracaoInicial,
+      telefone: aplicarMascaraTelefone(configuracaoInicial.telefone),
     },
   })
 
@@ -54,7 +56,14 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
 
               <div className="space-y-2">
                 <label htmlFor="telefone" className="text-sm font-medium">Telefone da loja</label>
-                <Input id="telefone" {...form.register('telefone')} placeholder="(11) 99999-9999" className={errors.telefone ? 'border-destructive' : ''} />
+                <Input
+                  id="telefone"
+                  {...form.register('telefone', {
+                    onChange: (e) => form.setValue('telefone', aplicarMascaraTelefone(e.target.value), { shouldValidate: true }),
+                  })}
+                  placeholder="(11) 99999-9999"
+                  className={errors.telefone ? 'border-destructive' : ''}
+                />
                 {errors.telefone && <p className="text-[13px] text-destructive">{errors.telefone.message}</p>}
               </div>
             </div>
