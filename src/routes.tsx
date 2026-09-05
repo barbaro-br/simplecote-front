@@ -2,23 +2,11 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AdminLayout } from './admin/layout/AdminLayout'
 import { AuthGuard } from './shared/auth/AuthGuard'
 
-import { ProdutosPage } from './admin/produtos/ProdutosPage'
-import { EmpresasPage } from './admin/empresas/EmpresasPage'
-import { UsuariosPage } from './admin/usuarios/UsuariosPage'
 import { LoginPage } from './admin/login/LoginPage'
-import { CotacoesPage } from './admin/cotacoes/CotacoesPage'
-import { NovaCotacaoPage } from './admin/cotacoes/NovaCotacaoPage'
-import { CotacaoDetalhePage } from './admin/cotacoes/CotacaoDetalhePage'
-import { ResultadoPage } from './admin/cotacoes/ResultadoPage'
-import { AnalisesPage } from './admin/analise/AnalisesPage'
-import { DashboardPage } from './admin/analise/DashboardPage'
-import { ConfiguracoesPage } from './admin/configuracoes/ConfiguracoesPage'
 import { EsqueciSenhaPage } from './admin/recuperar-senha/EsqueciSenhaPage'
 import { RedefinirSenhaPage } from './admin/recuperar-senha/RedefinirSenhaPage'
 import { TemaClaro } from './representante/TemaClaro'
-import { CotacaoPorTokenPage } from './representante/cotacao/CotacaoPorTokenPage'
-import { PedidoPorTokenPage } from './representante/pedido/PedidoPorTokenPage'
-import { ColaboradorPage } from './colaborador/ColaboradorPage'
+import { RouteLoadingFallback } from './shared/components/ui/route-loading'
 
 export const routes = createBrowserRouter([
   {
@@ -40,49 +28,54 @@ export const routes = createBrowserRouter([
   {
     path: '/admin',
     element: <AuthGuard />,
+    HydrateFallback: RouteLoadingFallback,
     children: [
       {
         element: <AdminLayout />,
         children: [
           {
             path: '',
-            element: <DashboardPage />,
+            lazy: () => import('./admin/analise/DashboardPage').then(m => ({ Component: m.DashboardPage })),
           },
           {
             path: 'cotacoes',
-            element: <CotacoesPage />,
+            lazy: () => import('./admin/cotacoes/CotacoesPage').then(m => ({ Component: m.CotacoesPage })),
           },
           {
             path: 'cotacoes/nova',
-            element: <NovaCotacaoPage />,
+            lazy: () => import('./admin/cotacoes/NovaCotacaoPage').then(m => ({ Component: m.NovaCotacaoPage })),
           },
           {
             path: 'cotacoes/:id',
-            element: <CotacaoDetalhePage />,
+            lazy: () => import('./admin/cotacoes/CotacaoDetalhePage').then(m => ({ Component: m.CotacaoDetalhePage })),
+          },
+          {
+            path: 'cotacoes/:id/bipar',
+            lazy: () => import('./admin/cotacoes/bipagem/BipagemPage').then(m => ({ Component: m.BipagemPage })),
           },
           {
             path: 'cotacoes/:id/resultado',
-            element: <ResultadoPage />,
+            lazy: () => import('./admin/cotacoes/ResultadoPage').then(m => ({ Component: m.ResultadoPage })),
           },
           {
             path: 'produtos',
-            element: <ProdutosPage />,
+            lazy: () => import('./admin/produtos/ProdutosPage').then(m => ({ Component: m.ProdutosPage })),
           },
           {
             path: 'empresas',
-            element: <EmpresasPage />,
+            lazy: () => import('./admin/empresas/EmpresasPage').then(m => ({ Component: m.EmpresasPage })),
           },
           {
             path: 'usuarios',
-            element: <UsuariosPage />,
+            lazy: () => import('./admin/usuarios/UsuariosPage').then(m => ({ Component: m.UsuariosPage })),
           },
           {
             path: 'analises',
-            element: <AnalisesPage />,
+            lazy: () => import('./admin/analise/AnalisesPage').then(m => ({ Component: m.AnalisesPage })),
           },
           {
             path: 'configuracoes',
-            element: <ConfiguracoesPage />,
+            lazy: () => import('./admin/configuracoes/ConfiguracoesPage').then(m => ({ Component: m.ConfiguracoesPage })),
           },
         ],
       },
@@ -90,18 +83,19 @@ export const routes = createBrowserRouter([
   },
   {
     element: <TemaClaro />,
+    HydrateFallback: RouteLoadingFallback,
     children: [
       {
         path: '/cotacao/:token',
-        element: <CotacaoPorTokenPage />,
+        lazy: () => import('./representante/cotacao/CotacaoPorTokenPage').then(m => ({ Component: m.CotacaoPorTokenPage })),
       },
       {
         path: '/pedido/:token',
-        element: <PedidoPorTokenPage />,
+        lazy: () => import('./representante/pedido/PedidoPorTokenPage').then(m => ({ Component: m.PedidoPorTokenPage })),
       },
       {
         path: '/colaborador/:token',
-        element: <ColaboradorPage />,
+        lazy: () => import('./colaborador/ColaboradorPage').then(m => ({ Component: m.ColaboradorPage })),
       },
     ],
   },
