@@ -9,6 +9,7 @@ import type { CelulaGrid, GridAoVivo, ItemGrid } from './cotacoes.schema'
 import { useCorrigirLance, useAtualizarQuantidadeItem } from './cotacoes.api'
 import { useConfiguracaoLoja } from '@/admin/configuracoes/configuracoes.api'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
+import { useHighlightOnUpdate } from '@/shared/hooks/useHighlightOnUpdate'
 
 type Coluna = { participanteId: string; empresa: string }
 
@@ -91,6 +92,58 @@ function CampoQuantidade({
   )
 }
 
+type CelulaPrecoProps = {
+  item: ItemGrid
+  celula: CelulaGrid
+  ehMenor: boolean
+  aoCorrigir: (item: ItemGrid, celula: CelulaGrid) => void
+}
+
+/**
+ * Célula de preço isolada em `memo` (design da change melhoria-ux-performance-grid):
+ * o pulso de destaque fica confinado aqui — o timer de ~800ms re-renderiza só a
+ * célula, nunca a tabela inteira. O flash dispara quando o preço muda (novo
+ * lance/correção, inclusive entrar ou sair de COTADO) e quando a célula assume
+ * a liderança de menor preço.
+ */
+const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, aoCorrigir }: CelulaPrecoProps) {
+  const pulsoPreco = useHighlightOnUpdate(celula.preco)
+  const pulsoLideranca = useHighlightOnUpdate(ehMenor) && ehMenor
+  const destacado = pulsoPreco || pulsoLideranca
+
+  return (
+    <td className="px-2 py-1 min-w-[140px]">
+      <button
+        type="button"
+        onClick={() => aoCorrigir(item, celula)}
+        aria-label={`Corrigir lance de ${celula.empresa} para ${item.nome}`}
+        className={`w-full h-full min-h-[2rem] rounded-md px-2 py-1 text-right transition-colors duration-700 border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+          destacado
+            ? 'bg-green-100/50 dark:bg-green-900/40 border-green-200'
+            : ehMenor
+              ? 'bg-success/5 border-success/20 ring-1 ring-success/20'
+              : 'bg-card border-border hover:bg-muted/50'
+        }`}
+      >
+        {celula.status === 'COTADO' && celula.preco != null ? (
+          <span className="tabular-nums flex flex-col items-end leading-tight">
+            <span className={`font-semibold whitespace-nowrap ${ehMenor ? 'text-success' : 'text-foreground'}`}>
+              {moeda(celula.preco)}
+            </span>
+            {celula.precoUnitario != null && (
+              <span className="text-xs text-muted-foreground whitespace-nowrap">{moeda(celula.precoUnitario)} / un</span>
+            )}
+          </span>
+        ) : (
+          <span className="rounded-full bg-muted text-muted-foreground text-[10px] font-medium uppercase tracking-wider px-2 py-0.5">
+            {rotuloStatus(celula.status)}
+          </span>
+        )}
+      </button>
+    </td>
+  )
+})
+
 type LinhaProps = {
   item: ItemGrid
   colunas: Coluna[]
@@ -168,33 +221,13 @@ const LinhaItem = memo(function LinhaItem({
           item.menorPrecoUnitario != null &&
           celula.precoUnitario === item.menorPrecoUnitario
         return (
-          <td key={col.participanteId} className="px-2 py-1 min-w-[140px]">
-            <button
-              type="button"
-              onClick={() => aoCorrigir(item, celula)}
-              aria-label={`Corrigir lance de ${col.empresa} para ${item.nome}`}
-              className={`w-full h-full min-h-[2rem] rounded-md px-2 py-1 text-right transition-colors border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
-                ehMenor 
-                  ? 'bg-success/5 border-success/20 ring-1 ring-success/20' 
-                  : 'bg-card border-border hover:bg-muted/50'
-              }`}
-            >
-              {celula.status === 'COTADO' && celula.preco != null ? (
-                <span className="tabular-nums flex flex-col items-end leading-tight">
-                  <span className={`font-semibold whitespace-nowrap ${ehMenor ? 'text-success' : 'text-foreground'}`}>
-                    {moeda(celula.preco)}
-                  </span>
-                  {celula.precoUnitario != null && (
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">{moeda(celula.precoUnitario)} / un</span>
-                  )}
-                </span>
-              ) : (
-                <span className="rounded-full bg-muted text-muted-foreground text-[10px] font-medium uppercase tracking-wider px-2 py-0.5">
-                  {rotuloStatus(celula.status)}
-                </span>
-              )}
-            </button>
-          </td>
+          <CelulaPreco
+            key={col.participanteId}
+            item={item}
+            celula={celula}
+            ehMenor={ehMenor}
+            aoCorrigir={aoCorrigir}
+          />
         )
       })}
     </tr>

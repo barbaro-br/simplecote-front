@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
@@ -300,4 +300,113 @@ test('a grade tem contêiner de rolagem próprio com altura limitada', () => {
 
   expect(container).toHaveClass('overflow-x-auto', 'overflow-y-auto')
   expect(container?.className).toMatch(/max-h-\[65vh\]/)
+})
+
+test('atualização simulada de preço dispara o flash verde na célula e some após o pulso', async () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const { rerender } = render(
+    <QueryClientProvider client={queryClient}>
+      <GradeAoVivoTabela cotacaoId="c-1" grade={gradeBase} />
+    </QueryClientProvider>,
+  )
+  await screen.findByText('Arroz')
+
+  const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
+  expect(celula).not.toHaveClass('bg-green-100/50')
+
+  vi.useFakeTimers()
+  try {
+    // SSE/refetch chega com preço novo (100 → 90): a célula deve piscar.
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <GradeAoVivoTabela
+          cotacaoId="c-1"
+          grade={{
+            ...gradeBase,
+            itens: [
+              {
+                ...gradeBase.itens[0],
+                menorPrecoUnitario: 4.5,
+                precos: [
+                  { participanteId: 'p1', empresaId: 'e1', empresa: 'Atacadão', preco: 90, precoUnitario: 4.5, status: 'COTADO' },
+                ],
+              },
+            ],
+          }}
+        />
+      </QueryClientProvider>,
+    )
+
+    expect(screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })).toHaveClass('bg-green-100/50')
+
+    act(() => {
+      vi.advanceTimersByTime(800)
+    })
+
+    expect(screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })).not.toHaveClass('bg-green-100/50')
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('mudança de liderança também dispara o flash na célula que assumiu o menor preço', async () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const gradeMulti: GridAoVivo = {
+    ...gradeBase,
+    respondidos: 2,
+    totalParticipantes: 2,
+    itens: [
+      {
+        ...gradeBase.itens[0],
+        menorPrecoUnitario: 5,
+        precos: [
+          { participanteId: 'p1', empresaId: 'e1', empresa: 'Atacadão', preco: 100, precoUnitario: 5, status: 'COTADO' },
+          { participanteId: 'p2', empresaId: 'e2', empresa: 'Mercado Bom', preco: 120, precoUnitario: 6, status: 'COTADO' },
+        ],
+      },
+    ],
+  }
+  const { rerender } = render(
+    <QueryClientProvider client={queryClient}>
+      <GradeAoVivoTabela cotacaoId="c-1" grade={gradeMulti} />
+    </QueryClientProvider>,
+  )
+  await screen.findByText('Arroz')
+
+  vi.useFakeTimers()
+  try {
+    // Mercado Bom abaixa para 80 (unitário 4): assume a liderança e pisca.
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <GradeAoVivoTabela
+          cotacaoId="c-1"
+          grade={{
+            ...gradeMulti,
+            itens: [
+              {
+                ...gradeMulti.itens[0],
+                menorPrecoUnitario: 4,
+                precos: [
+                  { participanteId: 'p1', empresaId: 'e1', empresa: 'Atacadão', preco: 100, precoUnitario: 5, status: 'COTADO' },
+                  { participanteId: 'p2', empresaId: 'e2', empresa: 'Mercado Bom', preco: 80, precoUnitario: 4, status: 'COTADO' },
+                ],
+              },
+            ],
+          }}
+        />
+      </QueryClientProvider>,
+    )
+
+    const novoLider = screen.getByRole('button', { name: /Corrigir lance de Mercado Bom para Arroz/i })
+    expect(novoLider).toHaveClass('bg-green-100/50')
+
+    act(() => {
+      vi.advanceTimersByTime(800)
+    })
+
+    expect(novoLider).not.toHaveClass('bg-green-100/50')
+    expect(novoLider).toHaveClass('bg-success/5')
+  } finally {
+    vi.useRealTimers()
+  }
 })
