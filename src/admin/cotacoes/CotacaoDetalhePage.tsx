@@ -179,7 +179,7 @@ export function CotacaoDetalhePage() {
   }
 
   return (
-    <PageContainer maxWidth="4xl" className="space-y-6">
+    <PageContainer maxWidth="full" className="space-y-6">
       <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border mb-6 space-y-4">
         <Breadcrumb
           items={[
