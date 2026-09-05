@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
+import { Tooltip } from '@/shared/components/ui/tooltip'
 import { useEmpresas } from '@/admin/empresas/empresas.api'
 import { useRepresentantes } from '@/admin/representantes/representantes.api'
 import {
@@ -27,31 +28,10 @@ type Props = {
   onToggle: (empresaId: string) => void
 }
 
-const coresAvatar = [
-  'text-avatar-1 bg-avatar-1/10',
-  'text-avatar-2 bg-avatar-2/10',
-  'text-avatar-3 bg-avatar-3/10',
-  'text-avatar-4 bg-avatar-4/10',
-  'text-avatar-5 bg-avatar-5/10',
-  'text-avatar-6 bg-avatar-6/10',
-  'text-avatar-7 bg-avatar-7/10',
-  'text-avatar-8 bg-avatar-8/10',
-  'text-avatar-9 bg-avatar-9/10',
-  'text-avatar-10 bg-avatar-10/10'
-]
-
-function obterCorPorNome(nome: string) {
-  let soma = 0
-  for (let i = 0; i < nome.length; i++) {
-    soma += nome.charCodeAt(i)
-  }
-  return coresAvatar[soma % coresAvatar.length]
-}
-
 const ROTULO_STATUS_RESPOSTA: Record<'CONVIDADO' | 'VISUALIZOU' | 'RESPONDIDO', string> = {
   CONVIDADO: 'Convidado',
-  VISUALIZOU: 'Visualizou',
-  RESPONDIDO: 'Respondido',
+  VISUALIZOU: 'Enviado',
+  RESPONDIDO: 'Finalizado',
 }
 
 const CLASSE_STATUS_RESPOSTA: Record<'CONVIDADO' | 'VISUALIZOU' | 'RESPONDIDO', string> = {
@@ -71,7 +51,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const { data: reps } = useRepresentantes()
   const [loadingMailId, setLoadingMailId] = useState<string | null>(null)
   const [isEnviando, setIsEnviando] = useState(false)
-  const [alvoDesconvidar, setAlvoDesconvidar] = useState<{ participanteId: string; nome: string } | null>(null)
+  const [alvoDesconvidar, setAlvoDesconvidar] = useState<{ participanteId: string; nome: string; status?: string } | null>(null)
 
   const [search, setSearch] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
@@ -80,7 +60,6 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const emAberta = status === 'ABERTA'
   const podeGerenciarResposta = status === 'ABERTA' || status === 'ENCERRADA'
 
-  // Quando o modal abre: reseta a busca (durante o render) e foca o campo (efeito de DOM).
   const [prevOpen, setPrevOpen] = useState(open)
   if (open !== prevOpen) {
     setPrevOpen(open)
@@ -135,18 +114,19 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
 
     setIsEnviando(true)
     const toastId = toast.loading('Reenviando convites...')
-    
+
     const results = await Promise.allSettled(
       pendentes.map(p => reenviar.mutateAsync(p.part!.participanteId))
     )
-    
+
     setIsEnviando(false)
-    
+
     const sucesso = results.filter(r => r.status === 'fulfilled').length
     const falha = results.filter(r => r.status === 'rejected').length
-    
+
     if (falha === 0) {
       toast.success(`${sucesso} convite(s) reenviado(s) com sucesso!`, { id: toastId })
+      onClose()
     } else if (sucesso === 0) {
       toast.error(`Falha ao reenviar ${falha} convite(s).`, { id: toastId })
     } else {
@@ -155,10 +135,10 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   }
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      className="max-w-md max-h-[85vh] p-0 overflow-hidden flex flex-col bg-background/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl"
+    <Dialog
+      open={open}
+      onClose={onClose}
+      className="max-w-4xl w-[900px] max-h-[85vh] p-0 overflow-hidden flex flex-col bg-background/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl"
     >
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header Fixo */}
@@ -181,10 +161,10 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
               )}
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onClose} 
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
             className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted"
           >
             <X className="size-4" />
@@ -206,18 +186,16 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
           </div>
         </div>
 
-        {/* Lista de Representantes — altura de ~4 linhas, o resto rola */}
-        <div className="overflow-y-auto min-h-0 max-h-[500px] bg-transparent">
-          <ul className="m-0 p-2 space-y-1">
+        {/* Lista de Representantes - Altura para ~4 itens e scroll no 5º */}
+        <div className="overflow-y-auto min-h-0 max-h-[490px] bg-transparent p-4 pt-1 pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border/40 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-border/60 transition-colors">
+          <ul className="m-0 space-y-2.5 pr-2">
             {filtrados.map((e) => {
               const conviteStatus = e.part?.conviteStatus
-              const rotuloConvite = conviteStatus === 'ENVIADO' ? 'Enviado' : conviteStatus === 'FALHOU' ? 'Falha no envio' : 'Não enviado'
               const classeConvite = conviteStatus === 'ENVIADO'
                 ? 'bg-success/10 text-success-foreground border-success/30'
                 : conviteStatus === 'FALHOU'
                   ? 'bg-destructive/10 text-destructive border-destructive/30'
                   : 'bg-muted text-muted-foreground border-transparent'
-              const avatarColor = obterCorPorNome(e.nome)
 
               return (
                 <li
@@ -226,90 +204,73 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                     if (!isAberta) onToggle(e.id)
                   }}
                   className={`
-                    group flex flex-wrap items-center gap-4 px-4 py-3 rounded-xl transition-all
-                    ${!isAberta ? 'cursor-pointer hover:bg-muted' : 'bg-transparent'}
-                    ${e.isChecked && !isAberta ? 'bg-primary/10 hover:bg-primary/20 ring-1 ring-primary/20 shadow-sm' : ''}
-                    ${e.isChecked && isAberta ? 'bg-success/5' : ''}
+                    group flex flex-wrap items-center justify-between gap-4 px-4 py-3.5 rounded-xl border transition-all shadow-sm
+                    ${!isAberta ? 'cursor-pointer hover:bg-muted/50' : 'bg-background'}
+                    ${e.isChecked && !isAberta ? 'border-primary/40 bg-primary/5 hover:bg-primary/10' : 'border-border/60'}
+                    ${e.isChecked && isAberta ? 'border-success/30 bg-success/5' : ''}
                   `}
                 >
-                  {/* Status Check ou Circle — Rascunho: convida/remove seleção; Aberta: convida/desconvida (menor) */}
-                  {(!isAberta || emAberta) && (
-                    <div className="shrink-0 flex items-center justify-center transition-transform">
-                      {!isAberta ? (
-                        e.isChecked ? (
-                          <CheckCircle2 className="size-5 text-primary animate-in zoom-in duration-200" />
-                        ) : (
-                          <div className="size-5 rounded-full border-2 border-muted-foreground/30 group-hover:border-muted-foreground/80 group-hover:bg-background/50 transition-colors" />
-                        )
-                      ) : e.part ? (
-                        e.part.participanteStatus === 'RESPONDIDO' ? (
-                          <CheckCircle2 className="size-4 text-success" />
-                        ) : (
-                          <button
-                            type="button"
-                            title="Desconvidar"
-                            disabled={desconvidar.isPending}
-                            className="disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={(ev) => {
-                              ev.stopPropagation()
-                              setAlvoDesconvidar({ participanteId: e.part!.participanteId, nome: e.nome })
-                            }}
-                          >
-                            <CheckCircle2 className="size-4 text-primary hover:text-destructive transition-colors" />
-                          </button>
-                        )
-                      ) : (
-                        <button
-                          type="button"
-                          title="Convidar"
-                          disabled={convidar.isPending}
-                          className="disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={async (ev) => {
-                            ev.stopPropagation()
-                            try {
-                              await convidar.mutateAsync([e.id])
-                              toast.success('Empresa convidada com sucesso!')
-                            } catch {
-                              toast.error('Erro ao convidar empresa')
-                            }
-                          }}
-                        >
-                          <div className="size-4 rounded-full border-2 border-muted-foreground/30 hover:border-primary transition-colors" />
-                        </button>
-                      )}
-                    </div>
-                  )}
 
-                  {/* Avatar Colorido */}
-                  <div className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[12px] font-bold tracking-wide shadow-sm ${e.isChecked ? avatarColor : 'bg-muted text-muted-foreground'}`}>
-                    {e.nome.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                  {/* Container Esquerdo (Checkbox, Nome, Representante) */}
+                  <div className="flex items-center gap-4 min-w-[12rem] flex-1">
+                    {/* Status Checkbox */}
+                    {(!isAberta || emAberta) && (
+                      <div className="shrink-0 flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          aria-label={e.part ? `Desconvidar ${e.nome}` : `Convidar ${e.nome}`}
+                          className={`size-5 accent-primary cursor-pointer border-muted-foreground/30 rounded ${!isAberta ? 'pointer-events-none' : ''}`}
+                          checked={e.isChecked}
+                          readOnly={!isAberta}
+                          onClick={isAberta ? (ev) => ev.stopPropagation() : undefined}
+                          onChange={isAberta ? () => {
+                            if (emAberta) {
+                              if (e.part) {
+                                setAlvoDesconvidar({ participanteId: e.part.participanteId, nome: e.nome, status: e.part.participanteStatus })
+                              } else {
+                                convidar.mutateAsync([e.id]).then(() => toast.success('Empresa convidada com sucesso!')).catch(() => toast.error('Erro ao convidar empresa'))
+                              }
+                            }
+                          } : undefined}
+                        />
+                      </div>
+                    )}
+
+                    {/* Info */}
+                    <div className="flex-1">
+                      <div className={`text-base uppercase ${e.isChecked ? 'font-bold text-foreground' : 'font-bold text-foreground/80'} truncate transition-colors`}>
+                        {e.nome}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-sm text-muted-foreground truncate">
+                          {e.part?.representanteNome || e.repNome || 'Representante'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-[8rem]">
-                    <div className={`text-base ${e.isChecked ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} truncate transition-colors`}>
-                      {e.nome}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-sm text-muted-foreground truncate">
-                        {e.part?.representanteNome || e.repNome || 'Representante'}
-                      </span>
-                    </div>
-                    {/* Status Único + info, embaixo do nome do representante (apenas se aberta) */}
+                  {/* Container Direito (Status, Reabrir/Fechar, Botões de Contato) */}
+                  <div className="shrink-0 flex flex-wrap items-center gap-4">
+                    {/* Status e Ações Próprias da Cotação Aberta */}
                     {isAberta && e.part && (
-                      <div className="flex items-center gap-1.5 mt-1" onClick={(ev) => ev.stopPropagation()}>
-                        <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                          e.part.participanteStatus === 'CONVIDADO' ? classeConvite : CLASSE_STATUS_RESPOSTA[e.part.participanteStatus]
-                        }`}>
-                          {e.part.participanteStatus === 'CONVIDADO' ? rotuloConvite : ROTULO_STATUS_RESPOSTA[e.part.participanteStatus]}
+                      <div className="flex items-center gap-2" onClick={(ev) => ev.stopPropagation()}>
+                        <span
+                          title={e.part.conviteStatus === 'FALHOU' ? 'Falha no envio' : undefined}
+                          className={`text-[11px] font-medium px-2.5 py-1.5 rounded-full border ${e.part.participanteStatus === 'CONVIDADO' ? classeConvite : CLASSE_STATUS_RESPOSTA[e.part.participanteStatus]
+                            }`}
+                        >
+                          {e.part.participanteStatus === 'CONVIDADO' ? (e.part.conviteStatus === 'ENVIADO' ? 'Enviado' : 'Pendente') : ROTULO_STATUS_RESPOSTA[e.part.participanteStatus]}
                         </span>
+
                         {podeGerenciarResposta && (
                           e.part.participanteStatus === 'RESPONDIDO' ? (
-                            <button
+                            <Button
                               type="button"
-                              title="Reabrir"
+                              variant="outline"
+                              size="sm"
                               disabled={reabrir.isPending}
-                              className="p-1 text-muted-foreground/60 hover:text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              // Tamanho fixo de 135px para evitar pulos no layout
+                              className="h-8 text-xs px-3 rounded-full w-[135px] flex items-center justify-center transition-all"
                               onClick={async () => {
                                 try {
                                   await reabrir.mutateAsync(e.part!.participanteId)
@@ -319,14 +280,16 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                                 }
                               }}
                             >
-                              <RotateCcw className="size-3.5" />
-                            </button>
+                              <RotateCcw className="size-3 mr-1.5" /> Reabrir
+                            </Button>
                           ) : (
-                            <button
+                            <Button
                               type="button"
-                              title="Finalizar"
+                              variant="outline"
+                              size="sm"
                               disabled={finalizar.isPending}
-                              className="p-1 text-muted-foreground/60 hover:text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              // Tamanho fixo de 135px para evitar pulos no layout
+                              className="h-8 text-xs px-3 rounded-full w-[135px] flex items-center justify-center transition-all"
                               onClick={async () => {
                                 try {
                                   await finalizar.mutateAsync(e.part!.participanteId)
@@ -336,17 +299,14 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                                 }
                               }}
                             >
-                              <CheckCircle2 className="size-3.5" />
-                            </button>
+                              <CheckCircle2 className="size-3 mr-1.5" /> Fechar cotação
+                            </Button>
                           )
                         )}
                       </div>
                     )}
-                  </div>
 
-                  {/* Ações Direita */}
-                  <div className="shrink-0 flex flex-wrap items-center gap-3">
-                    {/* Ícones de Contato */}
+                    {/* Botões de Ação de Contato (Fora de cotação aberta) */}
                     {!isAberta && (e.repEmail || e.repWhatsapp) && (
                       <div className="flex items-center gap-2 text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors">
                         {e.repEmail && (
@@ -361,7 +321,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                             rel="noopener noreferrer"
                             onClick={(ev) => ev.stopPropagation()}
                           >
-                            <Mail className="size-3.5" />
+                            <Mail className="size-5" />
                           </a>
                         )}
                         {e.repWhatsapp && (
@@ -374,15 +334,15 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                               toast.success('Telefone copiado!')
                             }}
                           >
-                            <Phone className="size-3.5" />
+                            <Phone className="size-5" />
                           </button>
                         )}
                       </div>
                     )}
 
-                    {/* Botão Convidar — fora de ABERTA (o círculo assume esse papel dentro de ABERTA) */}
+                    {/* Botão Convidar Genérico */}
                     {isAberta && !emAberta && !e.part && (
-                      <div className="flex items-center ml-2">
+                      <div className="flex items-center ml-1">
                         <Button
                           type="button"
                           variant="outline"
@@ -404,64 +364,70 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                       </div>
                     )}
 
-                    {/* Ações Diretas (Aberta) — empilhadas verticalmente do lado direito do card */}
+                    {/* Ações Diretas na Linha (E-mail, WhatsApp, Copiar) */}
                     {isAberta && e.part && (
-                      <div className="flex flex-col items-center gap-1 ml-2 text-muted-foreground/60">
-                        {e.part.whatsappRepresentante && (
+                      <div className="flex flex-row items-center gap-1.5 ml-2 text-muted-foreground/60 border-l border-border/50 pl-4">
+                        <Tooltip content="Reenviar convite">
                           <button
                             type="button"
-                            title="Enviar por WhatsApp"
-                            className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
-                            onClick={(ev) => {
+                            title="Reenviar convite"
+                            disabled={loadingMailId === e.id}
+                            className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={async (ev) => {
                               ev.stopPropagation()
-                              const link = e.part!.linkMagico
-                              const msg = `Olá ${e.part!.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação. Acesse: ${link}`
-                              const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
-                              window.open(url, '_blank')
+                              setLoadingMailId(e.id)
+                              try {
+                                await reenviar.mutateAsync(e.part!.participanteId)
+                                toast.success(`E-mail reenviado para ${e.nome}`)
+                              } catch {
+                                toast.error(`Falha ao reenviar e-mail para ${e.nome}`)
+                              } finally {
+                                setLoadingMailId(null)
+                              }
                             }}
                           >
-                            <MessageCircle className="size-4" />
+                            {loadingMailId === e.id ? <Loader2 className="size-5 animate-spin" /> : <Mail className="size-5" />}
                           </button>
+                        </Tooltip>
+                        {e.part.whatsappRepresentante && (
+                          <Tooltip content="Enviar por WhatsApp">
+                            <button
+                              type="button"
+                              title="Enviar por WhatsApp"
+                              className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+                              onClick={(ev) => {
+                                ev.stopPropagation()
+                                const link = e.part!.linkMagico
+                                const msg = `Olá ${e.part!.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação. Acesse: ${link}`
+                                const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
+                                window.open(url, '_blank')
+                              }}
+                            >
+                              <MessageCircle className="size-5" />
+                            </button>
+                          </Tooltip>
                         )}
-                        <button
-                          type="button"
-                          title="Copiar link"
-                          className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
-                          onClick={(ev) => {
-                            ev.stopPropagation()
-                            navigator.clipboard.writeText(e.part!.linkMagico)
-                            toast.success('Link copiado com sucesso!')
-                          }}
-                        >
-                          <Copy className="size-4" />
-                        </button>
-                        <button
-                          type="button"
-                          title="Reenviar convite"
-                          disabled={loadingMailId === e.id}
-                          className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={async (ev) => {
-                            ev.stopPropagation()
-                            setLoadingMailId(e.id)
-                            try {
-                              await reenviar.mutateAsync(e.part!.participanteId)
-                              toast.success(`E-mail reenviado para ${e.nome}`)
-                            } catch {
-                              toast.error(`Falha ao reenviar e-mail para ${e.nome}`)
-                            } finally {
-                              setLoadingMailId(null)
-                            }
-                          }}
-                        >
-                          {loadingMailId === e.id ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
-                        </button>
+                        <Tooltip content="Copiar link">
+                          <button
+                            type="button"
+                            title="Copiar link"
+                            className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              navigator.clipboard.writeText(e.part!.linkMagico)
+                              toast.success('Link copiado com sucesso!')
+                            }}
+                          >
+                            <Copy className="size-5" />
+                          </button>
+                        </Tooltip>
                       </div>
                     )}
                   </div>
                 </li>
               )
             })}
-            
+
             {filtrados.length === 0 && (
               <div className="py-12 text-center text-[13px] text-muted-foreground">
                 Nenhuma empresa encontrada.
@@ -506,7 +472,9 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
       {alvoDesconvidar && (
         <ConfirmarDialog
           titulo={`Desconvidar ${alvoDesconvidar.nome}?`}
-          descricao="A empresa perderá o acesso ao link e os preços já informados serão apagados. Esta ação não pode ser desfeita."
+          descricao={alvoDesconvidar.status === 'RESPONDIDO'
+            ? "A empresa perderá o acesso ao link e os preços já informados não terão validade nesta cotação. Esta ação não pode ser desfeita."
+            : "A empresa perderá o acesso ao link e os preços já informados serão apagados. Esta ação não pode ser desfeita."}
           rotuloConfirmar="Desconvidar"
           pendente={desconvidar.isPending}
           onCancelar={() => setAlvoDesconvidar(null)}

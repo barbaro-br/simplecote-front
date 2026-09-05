@@ -1,0 +1,6 @@
+## 1. Refatoração Visual do Modal
+
+-[x] 1.1 Ajustar o contêiner raiz do representante (`li` ou `div` externa do card) para separar claramente três áreas (`gap-4`): Checkbox (esquerda isolada e centralizada verticalmente), Dados/Status (centro), Ações (direita).
+-[x] 1.2 No bloco central de Dados/Status, garantir que a Empresa (`font-bold uppercase`) e o Representante fiquem empilhados verticalmente. Logo abaixo do Representante, colocar o badge de Status e o botão "Fechar / Abrir" na mesma linha (`flex-row`, `items-center`, `gap-2`). ATENÇÃO: O botão de Fechar/Reabrir deve ser um botão real com texto (ex: `[ Fechar cotação ]` ou `[ Reabrir ]`), e não apenas um ícone solto.
+-[x] 1.3 No bloco direito de Ações Rápidas (E-mail, WhatsApp, Copiar), alterar a disposição para um contêiner `flex-col` com `items-center` e adicionar um fundo/borda suave aos botões para que pareçam botões interativos reais empilhados (conforme a anotação "botoes alinhados verticalmente" da imagem), e não apenas ícones flutuantes soltos.
+-[x] 1.4 Executar checagem de saúde (`npm run build`, `npm test`, `npm run lint`) garantindo que as mudanças no markup não quebraram asserções do `RepresentantesModal.test.tsx`.

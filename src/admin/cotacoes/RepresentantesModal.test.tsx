@@ -109,66 +109,99 @@ function setup(
   )
 }
 
-test('VISUALIZOU mostra Finalizar (não Reabrir) e RESPONDIDO mostra Reabrir (não Finalizar)', async () => {
+test('VISUALIZOU mostra "Fechar cotação" (não Reabrir) e RESPONDIDO mostra Reabrir (não "Fechar cotação")', async () => {
   setup('ABERTA', [
     participante('e1', 'Mercado A', 'VISUALIZOU'),
     participante('e2', 'Mercado B', 'RESPONDIDO'),
   ])
 
   const linhaA = (await screen.findByText('Mercado A')).closest('li')!
-  expect(within(linhaA).getByRole('button', { name: 'Finalizar' })).toBeInTheDocument()
+  expect(within(linhaA).getByRole('button', { name: 'Fechar cotação' })).toBeInTheDocument()
   expect(within(linhaA).queryByRole('button', { name: 'Reabrir' })).not.toBeInTheDocument()
 
   const linhaB = (await screen.findByText('Mercado B')).closest('li')!
   expect(within(linhaB).getByRole('button', { name: 'Reabrir' })).toBeInTheDocument()
-  expect(within(linhaB).queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
+  expect(within(linhaB).queryByRole('button', { name: 'Fechar cotação' })).not.toBeInTheDocument()
 })
 
-test('Finalizar chama a mutation e a linha passa a refletir Respondido', async () => {
+test('VISUALIZOU exibe badge "Enviado" e RESPONDIDO exibe badge "Finalizado"', async () => {
+  setup('ABERTA', [
+    participante('e1', 'Mercado A', 'VISUALIZOU'),
+    participante('e2', 'Mercado B', 'RESPONDIDO'),
+  ])
+
+  expect(await screen.findByText('Enviado')).toBeInTheDocument()
+  expect(screen.getByText('Finalizado')).toBeInTheDocument()
+  expect(screen.queryByText('Visualizou')).not.toBeInTheDocument()
+  expect(screen.queryByText('Respondido')).not.toBeInTheDocument()
+})
+
+test('"Fechar cotação" chama a mutation e a linha passa a refletir Finalizado', async () => {
   setup('ABERTA', [participante('e1', 'Mercado A', 'VISUALIZOU')])
   const user = userEvent.setup()
 
   const linha = (await screen.findByText('Mercado A')).closest('li')!
-  await user.click(within(linha).getByRole('button', { name: 'Finalizar' }))
+  await user.click(within(linha).getByRole('button', { name: 'Fechar cotação' }))
 
-  expect(await screen.findByText('Respondido')).toBeInTheDocument()
+  expect(await screen.findByText('Finalizado')).toBeInTheDocument()
   expect(within(linha).getByRole('button', { name: 'Reabrir' })).toBeInTheDocument()
-  expect(within(linha).queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
+  expect(within(linha).queryByRole('button', { name: 'Fechar cotação' })).not.toBeInTheDocument()
 })
 
-test('CONVIDADO mostra Finalizar e, ao acionar, a linha passa a mostrar Respondido', async () => {
+test('CONVIDADO com convite enviado mostra "Fechar cotação" e, ao acionar, a linha passa a Finalizado', async () => {
   setup('ABERTA', [participante('e1', 'Mercado A', 'CONVIDADO')])
   const user = userEvent.setup()
 
   await screen.findByText('Enviado')
   const linha = (await screen.findByText('Mercado A')).closest('li')!
-  expect(within(linha).getByRole('button', { name: 'Finalizar' })).toBeInTheDocument()
+  expect(within(linha).getByRole('button', { name: 'Fechar cotação' })).toBeInTheDocument()
   expect(within(linha).queryByRole('button', { name: 'Reabrir' })).not.toBeInTheDocument()
 
-  await user.click(within(linha).getByRole('button', { name: 'Finalizar' }))
-  expect(await screen.findByText('Respondido')).toBeInTheDocument()
+  await user.click(within(linha).getByRole('button', { name: 'Fechar cotação' }))
+  expect(await screen.findByText('Finalizado')).toBeInTheDocument()
 
   expect(within(linha).getByRole('button', { name: 'Reabrir' })).toBeInTheDocument()
-  expect(within(linha).queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
+  expect(within(linha).queryByRole('button', { name: 'Fechar cotação' })).not.toBeInTheDocument()
 })
 
-test('em PEDIDOS_GERADOS, participante RESPONDIDO não mostra o botão "Reabrir"', async () => {
+test('CONVIDADO com convite ainda não enviado exibe badge "Pendente" (neutro, sem falha)', async () => {
+  setup('ABERTA', [participante('e1', 'Mercado A', 'CONVIDADO', null)])
+
+  const badge = await screen.findByText('Pendente')
+  expect(badge).not.toHaveAttribute('title', 'Falha no envio')
+  expect(screen.queryByText('Enviado')).not.toBeInTheDocument()
+  expect(screen.queryByText('Finalizado')).not.toBeInTheDocument()
+})
+
+test('convite com status FALHOU exibe "Pendente" com indicação de falha no envio, distinto do pendente neutro', async () => {
+  setup('ABERTA', [
+    participante('e1', 'Mercado A', 'CONVIDADO', 'FALHOU'),
+    participante('e2', 'Mercado B', 'CONVIDADO', null),
+  ])
+
+  expect(await screen.findByTitle('Falha no envio')).toBeInTheDocument()
+  expect(screen.getAllByText('Pendente')).toHaveLength(2)
+  expect(screen.queryByText('Enviado')).not.toBeInTheDocument()
+  expect(screen.queryByText('Finalizado')).not.toBeInTheDocument()
+})
+
+test('em PEDIDOS_GERADOS, participante RESPONDIDO não mostra os botões "Reabrir"/"Fechar cotação"', async () => {
   setup('PEDIDOS_GERADOS', [participante('e1', 'Mercado A', 'RESPONDIDO')])
 
-  expect(await screen.findByText('Respondido')).toBeInTheDocument()
+  expect(await screen.findByText('Finalizado')).toBeInTheDocument()
 
   const linha = (await screen.findByText('Mercado A')).closest('li')!
   expect(within(linha).queryByRole('button', { name: 'Reabrir' })).not.toBeInTheDocument()
-  expect(within(linha).queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
+  expect(within(linha).queryByRole('button', { name: 'Fechar cotação' })).not.toBeInTheDocument()
 })
 
-test('em CANCELADA, participante VISUALIZOU não mostra o botão "Finalizar"', async () => {
+test('em CANCELADA, participante VISUALIZOU não mostra o botão "Fechar cotação"', async () => {
   setup('CANCELADA', [participante('e1', 'Mercado A', 'VISUALIZOU')])
 
-  expect(await screen.findByText('Visualizou')).toBeInTheDocument()
+  expect(await screen.findByText('Enviado')).toBeInTheDocument()
 
   const linha = (await screen.findByText('Mercado A')).closest('li')!
-  expect(within(linha).queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
+  expect(within(linha).queryByRole('button', { name: 'Fechar cotação' })).not.toBeInTheDocument()
   expect(within(linha).queryByRole('button', { name: 'Reabrir' })).not.toBeInTheDocument()
 })
 
@@ -179,66 +212,38 @@ test('em ENCERRADA, os botões Finalizar/Reabrir continuam sendo exibidos (sem r
   ])
 
   const linhaA = (await screen.findByText('Mercado A')).closest('li')!
-  expect(within(linhaA).getByRole('button', { name: 'Finalizar' })).toBeInTheDocument()
+  expect(within(linhaA).getByRole('button', { name: 'Fechar cotação' })).toBeInTheDocument()
   expect(within(linhaA).queryByRole('button', { name: 'Reabrir' })).not.toBeInTheDocument()
 
   const linhaB = (await screen.findByText('Mercado B')).closest('li')!
   expect(within(linhaB).getByRole('button', { name: 'Reabrir' })).toBeInTheDocument()
-  expect(within(linhaB).queryByRole('button', { name: 'Finalizar' })).not.toBeInTheDocument()
+  expect(within(linhaB).queryByRole('button', { name: 'Fechar cotação' })).not.toBeInTheDocument()
 })
 
-test('participante aberto exibe ícones de ação direto na linha (sem WhatsApp quando não há telefone), e Finalizar/Reabrir como botão visível', async () => {
+test('participante aberto exibe ações na ordem E-mail, WhatsApp e Copiar link (sem WhatsApp quando não há telefone)', async () => {
   setup('ABERTA', [participante('e1', 'Mercado A', 'VISUALIZOU')])
 
   const linha = (await screen.findByText('Mercado A')).closest('li')!
 
-  expect(within(linha).queryByTitle('Enviar por WhatsApp')).not.toBeInTheDocument()
-  expect(within(linha).getByTitle('Copiar link')).toBeInTheDocument()
-  expect(within(linha).getByTitle('Reenviar convite')).toBeInTheDocument()
-  expect(within(linha).getByRole('button', { name: 'Finalizar' })).toBeInTheDocument()
+  expect(within(linha).queryByRole('button', { name: 'Enviar por WhatsApp' })).not.toBeInTheDocument()
+  const emailBtn = within(linha).getByRole('button', { name: 'Reenviar convite' })
+  const copiarBtn = within(linha).getByRole('button', { name: 'Copiar link' })
+  expect(emailBtn.compareDocumentPosition(copiarBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(within(linha).getByRole('button', { name: 'Fechar cotação' })).toBeInTheDocument()
   expect(within(linha).queryByTitle('Mais opções')).not.toBeInTheDocument()
 })
 
-test('participante com WhatsApp cadastrado exibe o ícone de WhatsApp na linha', async () => {
+test('participante com WhatsApp cadastrado exibe o ícone de WhatsApp entre E-mail e Copiar link', async () => {
   setup('ABERTA', [
     { ...participante('e1', 'Mercado A', 'CONVIDADO'), whatsappRepresentante: '11987654321' },
   ])
 
   const linha = (await screen.findByText('Mercado A')).closest('li')!
-  expect(within(linha).getByTitle('Enviar por WhatsApp')).toBeInTheDocument()
-})
-
-test('participante com conviteStatus FALHOU exibe rótulo de erro, distinto do "Não enviado"', async () => {
-  setup('ABERTA', [
-    participante('e1', 'Mercado A', 'CONVIDADO', 'FALHOU'),
-    participante('e2', 'Mercado B', 'CONVIDADO', null),
-  ])
-
-  expect(await screen.findByText('Falha no envio')).toBeInTheDocument()
-  expect(screen.getByText('Não enviado')).toBeInTheDocument()
-  expect(screen.queryByText('Enviado')).not.toBeInTheDocument()
-})
-
-test('participante VISUALIZOU com conviteStatus FALHOU não mostra badge de convite', async () => {
-  setup('ABERTA', [
-    participante('e1', 'Mercado A', 'VISUALIZOU', 'FALHOU'),
-  ])
-
-  expect(await screen.findByText('Visualizou')).toBeInTheDocument()
-  expect(screen.queryByText('Falha no envio')).not.toBeInTheDocument()
-  expect(screen.queryByText('Enviado')).not.toBeInTheDocument()
-  expect(screen.queryByText('Não enviado')).not.toBeInTheDocument()
-})
-
-test('participante RESPONDIDO com conviteStatus FALHOU não mostra badge de convite', async () => {
-  setup('ABERTA', [
-    participante('e1', 'Mercado A', 'RESPONDIDO', 'FALHOU'),
-  ])
-
-  expect(await screen.findByText('Respondido')).toBeInTheDocument()
-  expect(screen.queryByText('Falha no envio')).not.toBeInTheDocument()
-  expect(screen.queryByText('Enviado')).not.toBeInTheDocument()
-  expect(screen.queryByText('Não enviado')).not.toBeInTheDocument()
+  const emailBtn = within(linha).getByRole('button', { name: 'Reenviar convite' })
+  const whatsBtn = within(linha).getByRole('button', { name: 'Enviar por WhatsApp' })
+  const copiarBtn = within(linha).getByRole('button', { name: 'Copiar link' })
+  expect(emailBtn.compareDocumentPosition(whatsBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(whatsBtn.compareDocumentPosition(copiarBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 })
 
 test('linha com repEmail preenchido renderiza link mailto com o e-mail no href e no title', async () => {
@@ -317,7 +322,7 @@ test('linha sem e-mail/telefone não renderiza os indicadores', async () => {
   expect(within(linhaSemRep!).queryByTitle('(11) 98765-4321')).not.toBeInTheDocument()
 })
 
-test('em RASCUNHO, o círculo continua sendo toggle de seleção (sem regressão)', async () => {
+test('em RASCUNHO, o checkbox continua sendo toggle de seleção (sem regressão)', async () => {
   const empresaId = '11111111-1111-4111-8111-111111111111'
   const onToggle = vi.fn()
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -346,7 +351,7 @@ test('em RASCUNHO, o círculo continua sendo toggle de seleção (sem regressão
   expect(onToggle).toHaveBeenCalledWith(empresaId)
 })
 
-test('em cotação aberta, círculo desmarcado convida a empresa ao clicar', async () => {
+test('em cotação aberta, checkbox desmarcado convida a empresa ao clicar', async () => {
   setup('ABERTA', [participante('e1', 'Mercado A', 'CONVIDADO')], {
     empresas: [
       { id: 'e1', nome: 'Mercado A', ativo: true },
@@ -356,23 +361,23 @@ test('em cotação aberta, círculo desmarcado convida a empresa ao clicar', asy
   const user = userEvent.setup()
 
   const linhaB = (await screen.findByText('Mercado B')).closest('li')!
-  await user.click(within(linhaB).getByTitle('Convidar'))
+  await user.click(within(linhaB).getByRole('checkbox', { name: 'Convidar Mercado B' }))
 
-  expect(await within(linhaB).findByTitle('Desconvidar')).toBeInTheDocument()
+  expect(await within(linhaB).findByRole('checkbox', { name: 'Desconvidar Mercado B' })).toBeInTheDocument()
 })
 
-test('círculo marcado abre confirmação; ao confirmar, desconvida e a linha volta a mostrar "Convidar"', async () => {
+test('checkbox marcado abre confirmação; ao confirmar, desconvida e a linha volta a mostrar checkbox de "Convidar"', async () => {
   setup('ABERTA', [participante('e1', 'Mercado A', 'CONVIDADO')])
   const user = userEvent.setup()
 
   const linha = (await screen.findByText('Mercado A')).closest('li')!
-  await user.click(within(linha).getByTitle('Desconvidar'))
+  await user.click(within(linha).getByRole('checkbox', { name: 'Desconvidar Mercado A' }))
 
   const tituloDialogo = await screen.findByText('Desconvidar Mercado A?')
   const dialogo = tituloDialogo.closest<HTMLElement>('[role="dialog"]')!
   await user.click(within(dialogo).getByRole('button', { name: 'Desconvidar' }))
 
-  expect(await within(linha).findByTitle('Convidar')).toBeInTheDocument()
+  expect(await within(linha).findByRole('checkbox', { name: 'Convidar Mercado A' })).toBeInTheDocument()
   expect(screen.queryByText('Desconvidar Mercado A?')).not.toBeInTheDocument()
 })
 
@@ -381,16 +386,31 @@ test('ao cancelar a confirmação, a API não é chamada e a linha permanece con
   const user = userEvent.setup()
 
   const linha = (await screen.findByText('Mercado A')).closest('li')!
-  await user.click(within(linha).getByTitle('Desconvidar'))
+  await user.click(within(linha).getByRole('checkbox', { name: 'Desconvidar Mercado A' }))
   expect(await screen.findByText('Desconvidar Mercado A?')).toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: 'Voltar' }))
 
   expect(screen.queryByText('Desconvidar Mercado A?')).not.toBeInTheDocument()
-  expect(within(linha).getByTitle('Desconvidar')).toBeInTheDocument()
+  expect(within(linha).getByRole('checkbox', { name: 'Desconvidar Mercado A' })).toBeInTheDocument()
 })
 
-test('fora de ABERTA (ex.: ENCERRADA), o círculo de convidar/desconvidar não aparece e o botão "Convidar" continua como estava', async () => {
+test('participante RESPONDIDO pode ser desconvidado: checkbox abre confirmação e, ao confirmar, a linha volta a "Convidar"', async () => {
+  setup('ABERTA', [participante('e1', 'Mercado A', 'RESPONDIDO')])
+  const user = userEvent.setup()
+
+  const linha = (await screen.findByText('Mercado A')).closest('li')!
+  await user.click(within(linha).getByRole('checkbox', { name: 'Desconvidar Mercado A' }))
+
+  const tituloDialogo = await screen.findByText('Desconvidar Mercado A?')
+  const dialogo = tituloDialogo.closest<HTMLElement>('[role="dialog"]')!
+  expect(dialogo).toHaveTextContent('os preços já informados não terão validade nesta cotação')
+  await user.click(within(dialogo).getByRole('button', { name: 'Desconvidar' }))
+
+  expect(await within(linha).findByRole('checkbox', { name: 'Convidar Mercado A' })).toBeInTheDocument()
+})
+
+test('fora de ABERTA (ex.: ENCERRADA), o checkbox de convidar/desconvidar não aparece e o botão "Convidar" continua como estava', async () => {
   setup('ENCERRADA', [participante('e1', 'Mercado A', 'RESPONDIDO')], {
     empresas: [
       { id: 'e1', nome: 'Mercado A', ativo: true },
@@ -399,20 +419,12 @@ test('fora de ABERTA (ex.: ENCERRADA), o círculo de convidar/desconvidar não a
   })
 
   const linhaA = (await screen.findByText('Mercado A')).closest('li')!
-  expect(within(linhaA).queryByTitle('Desconvidar')).not.toBeInTheDocument()
-  expect(within(linhaA).queryByTitle('Convidar')).not.toBeInTheDocument()
+  expect(within(linhaA).queryByRole('checkbox', { name: 'Desconvidar Mercado A' })).not.toBeInTheDocument()
+  expect(within(linhaA).queryByRole('checkbox', { name: 'Convidar Mercado A' })).not.toBeInTheDocument()
 
   const linhaB = (await screen.findByText('Mercado B')).closest('li')!
-  expect(within(linhaB).queryByTitle('Convidar')).not.toBeInTheDocument()
+  expect(within(linhaB).queryByRole('checkbox')).not.toBeInTheDocument()
   expect(within(linhaB).getByRole('button', { name: 'Convidar' })).toBeInTheDocument()
-})
-
-test('participante RESPONDIDO não expõe o círculo como clicável (não é possível desconvidar)', async () => {
-  setup('ABERTA', [participante('e1', 'Mercado A', 'RESPONDIDO')])
-
-  const linha = (await screen.findByText('Mercado A')).closest('li')!
-  expect(within(linha).queryByTitle('Desconvidar')).not.toBeInTheDocument()
-  expect(within(linha).queryByTitle('Convidar')).not.toBeInTheDocument()
 })
 
 test('erro da API ao desconvidar mantém a linha exibindo o participante', async () => {
@@ -421,7 +433,7 @@ test('erro da API ao desconvidar mantém a linha exibindo o participante', async
   const errorSpy = vi.spyOn(toast, 'error')
 
   const linha = (await screen.findByText('Mercado A')).closest('li')!
-  await user.click(within(linha).getByTitle('Desconvidar'))
+  await user.click(within(linha).getByRole('checkbox', { name: 'Desconvidar Mercado A' }))
 
   const tituloDialogo = await screen.findByText('Desconvidar Mercado A?')
   const dialogo = tituloDialogo.closest<HTMLElement>('[role="dialog"]')!
@@ -430,7 +442,7 @@ test('erro da API ao desconvidar mantém a linha exibindo o participante', async
   await waitFor(() =>
     expect(errorSpy).toHaveBeenCalledWith('Não é possível desconvidar um representante que já finalizou a resposta.'),
   )
-  expect(within(linha).getByTitle('Desconvidar')).toBeInTheDocument()
+  expect(within(linha).getByRole('checkbox', { name: 'Desconvidar Mercado A' })).toBeInTheDocument()
 
   errorSpy.mockRestore()
 })
