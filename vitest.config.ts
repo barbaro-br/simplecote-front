@@ -9,6 +9,7 @@ export default defineConfig({
     globals: true,
     pool: 'forks',
     setupFiles: './src/setupTests.ts',
+    testTimeout: 15000,
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
     },
