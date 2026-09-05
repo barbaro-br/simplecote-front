@@ -34,8 +34,8 @@ function renderModal(
 }
 
 describe('AdicionarItemModal — editar produto inline', () => {
-  it('clicar no ícone de editar chama aoEditarProduto/onClose sem marcar o produto', async () => {
-    const { onClose, aoEditarProduto } = renderModal()
+  it('clicar no ícone de editar chama aoEditarProduto sem fechar o modal ou marcar o produto', async () => {
+    const { aoEditarProduto } = renderModal()
     const user = userEvent.setup()
 
     const row = (await screen.findByText('Arroz Tipo 1 5kg')).closest('li')
@@ -45,7 +45,6 @@ describe('AdicionarItemModal — editar produto inline', () => {
 
     await user.click(within(row as HTMLElement).getByRole('button', { name: 'Editar Arroz Tipo 1 5kg' }))
 
-    expect(onClose).toHaveBeenCalledTimes(1)
     expect(aoEditarProduto).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'p-1', nome: 'Arroz Tipo 1 5kg' }),
     )

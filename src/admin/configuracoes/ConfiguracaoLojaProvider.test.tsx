@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConfiguracaoLojaProvider } from './ConfiguracaoLojaProvider'
-import { resetarMock, definirConfiguracaoMock } from './configuracoes.api'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/setupTests'
 
 function renderProvider() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -15,7 +16,6 @@ function renderProvider() {
 }
 
 beforeEach(() => {
-  resetarMock()
   document.documentElement.classList.remove('dark')
 })
 
@@ -24,7 +24,9 @@ afterEach(() => {
 })
 
 test('tema ESCURO adiciona a classe dark ao elemento raiz', async () => {
-  definirConfiguracaoMock({ tema: 'ESCURO' })
+  server.use(
+    http.get('*/api/configuracoes', () => HttpResponse.json({ tema: 'ESCURO' }))
+  )
   renderProvider()
 
   await waitFor(() => {
@@ -33,7 +35,9 @@ test('tema ESCURO adiciona a classe dark ao elemento raiz', async () => {
 })
 
 test('tema CLARO não adiciona a classe dark', async () => {
-  definirConfiguracaoMock({ tema: 'CLARO' })
+  server.use(
+    http.get('*/api/configuracoes', () => HttpResponse.json({ tema: 'CLARO' }))
+  )
   renderProvider()
 
   await screen.findByText('conteúdo')
@@ -43,6 +47,9 @@ test('tema CLARO não adiciona a classe dark', async () => {
 })
 
 test('tema ausente não adiciona a classe dark', async () => {
+  server.use(
+    http.get('*/api/configuracoes', () => HttpResponse.json({}))
+  )
   renderProvider()
 
   await screen.findByText('conteúdo')

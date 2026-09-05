@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { FileText, Plus, RefreshCw, Search, ServerCrash } from 'lucide-react'
-import { dataHoraBr, chaveMes, mesAnoBr } from '@/shared/format/formatters'
+import { dataHoraBr, chaveMes, mesAnoBr, moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 import { StatusBadge } from '@/shared/components/StatusBadge'
@@ -20,91 +20,76 @@ const STATUS: { valor: StatusCotacao; rotulo: string }[] = [
   { valor: 'RASCUNHO', rotulo: 'Rascunho' },
   { valor: 'ABERTA', rotulo: 'Aberta' },
   { valor: 'ENCERRADA', rotulo: 'Encerrada' },
-  { valor: 'PEDIDOS_GERADOS', rotulo: 'Pedidos gerados' },
+  { valor: 'PEDIDOS_GERADOS', rotulo: 'Pedidos Gerados' },
   { valor: 'CANCELADA', rotulo: 'Cancelada' },
 ]
 
-type Filtro = StatusCotacao | 'TODOS'
-
-const FILTROS: { valor: Filtro; rotulo: string }[] = [
-  { valor: 'TODOS', rotulo: 'Todos' },
-  ...STATUS,
-]
+const FILTROS = [{ valor: '', rotulo: 'Todas' }, ...STATUS]
 
 export function CotacoesPage() {
-  const { data: cotacoes, isLoading, error, refetch, isFetching } = useCotacoes()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [busca, setBusca] = useState('')
-
-  // Estado (não ref) porque é lido durante o render, para aplicar o fade-in
-  // só na primeira carga (não em refetches subsequentes).
-  const [primeiraCarga, setPrimeiraCarga] = useState(true)
-  if (primeiraCarga && !isLoading) {
-    setPrimeiraCarga(false)
-  }
-
-  const statusParam = searchParams.get('status')
-  const filtro: Filtro = STATUS.some((s) => s.valor === statusParam)
-    ? (statusParam as StatusCotacao)
-    : 'TODOS'
-
-  function setFiltro(f: Filtro) {
-    const next = new URLSearchParams(searchParams)
-    if (f === 'TODOS') {
-      next.delete('status')
-    } else {
-      next.set('status', f)
-    }
-    setSearchParams(next, { replace: true })
-  }
-
-  // Meses com prazo definido, mais recente primeiro — só cotações abertas/encerradas têm prazo.
-  const mesesDisponiveis = useMemo(() => {
-    const chaves = new Set<string>()
-    for (const c of cotacoes ?? []) {
-      if (c.prazo) chaves.add(chaveMes(c.prazo))
-    }
-    return [...chaves].sort().reverse()
-  }, [cotacoes])
-
-  const mesParam = searchParams.get('mes')
-  const mes = mesesDisponiveis.includes(mesParam ?? '') ? mesParam! : ''
-
-  function setMes(m: string) {
-    const next = new URLSearchParams(searchParams)
-    if (m === '') {
-      next.delete('mes')
-    } else {
-      next.set('mes', m)
-    }
-    setSearchParams(next, { replace: true })
-  }
-
   const navigate = useNavigate()
-  const excluir = useExcluirCotacao()
-  const [erroAcao, setErroAcao] = useState<string | null>(null)
+  const [params, setParams] = useSearchParams()
+  const [busca, setBusca] = useState('')
   const [idAExcluir, setIdAExcluir] = useState<string | null>(null)
+  const [erroAcao, setErroAcao] = useState<string | null>(null)
+  
+  const statusParam = params.get('status') ?? ''
+  const filtro = STATUS.some((s) => s.valor === statusParam) ? statusParam : ''
 
-  function aoExcluirConfirmado() {
-    if (!idAExcluir) return
-    setErroAcao(null)
-    excluir.mutate(idAExcluir, {
-      onSuccess: () => {
-        setIdAExcluir(null)
-      },
-      onError: (e) => {
-        if (e instanceof SessaoExpiradaError) return
-        setErroAcao(
-          e instanceof ApiError ? e.message : 'Não foi possível excluir. Tente novamente.',
-        )
-        setIdAExcluir(null)
-      },
+  function setFiltro(status: string) {
+    setParams((p) => {
+      if (status) p.set('status', status)
+      else p.delete('status')
+      p.delete('mes')
+      return p
     })
   }
 
-  const total = cotacoes?.length ?? 0
-  const lista = (cotacoes ?? [])
-    .filter((c) => filtro === 'TODOS' || c.status === filtro)
+  function setMes(novoMes: string) {
+    setParams((p) => {
+      if (novoMes) p.set('mes', novoMes)
+      else p.delete('mes')
+      return p
+    })
+  }
+
+  const { data, isLoading, error, isFetching, refetch } = useCotacoes()
+  const excluir = useExcluirCotacao()
+
+  // Evita re-animar a tabela se o dado já estava em cache.
+  const primeiraCarga = isLoading
+
+  async function aoExcluirConfirmado() {
+    if (!idAExcluir) return
+    setErroAcao(null)
+    try {
+      await excluir.mutateAsync(idAExcluir)
+      setIdAExcluir(null)
+    } catch (e) {
+      if (e instanceof SessaoExpiradaError) return
+      setErroAcao(e instanceof ApiError ? e.message : 'Falha ao excluir a cotação.')
+      setIdAExcluir(null)
+    }
+  }
+
+  const base = data ?? []
+  const total = base.length
+
+  const mesesDisponiveis = useMemo(() => {
+    const set = new Set<string>()
+    for (const c of base) {
+      if (c.prazo && (!filtro || c.status === filtro)) {
+        set.add(chaveMes(c.prazo))
+      }
+    }
+    return Array.from(set).sort((a, b) => b.localeCompare(a))
+  }, [base, filtro])
+
+  const mesParam = params.get('mes') ?? ''
+  const mes = mesesDisponiveis.includes(mesParam) ? mesParam : ''
+
+  const lista = base
+    .filter((c) => filtro === '' || c.status === filtro)
     .filter((c) => mes === '' || (c.prazo != null && chaveMes(c.prazo) === mes))
     .filter(
       (c) => busca.trim() === '' || c.titulo.toLowerCase().includes(busca.trim().toLowerCase()),
@@ -137,6 +122,8 @@ export function CotacoesPage() {
             aria-hidden
           />
           <Input
+            id="busca-cotacao"
+            name="busca-cotacao"
             type="search"
             aria-label="Buscar cotação"
             placeholder="Buscar cotação…"
@@ -167,6 +154,8 @@ export function CotacoesPage() {
         </div>
         {mesesDisponiveis.length > 0 && (
           <select
+            id="filtro-mes"
+            name="filtro-mes"
             aria-label="Filtrar por mês do prazo"
             value={mes}
             onChange={(e) => setMes(e.target.value)}
@@ -184,13 +173,15 @@ export function CotacoesPage() {
 
       {erroAcao && <ErrorAlert>{erroAcao}</ErrorAlert>}
 
-      <Card>
-        <table className="w-full text-sm">
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-muted/50">
             <tr className="text-left text-muted-foreground">
               <th className="px-4 py-3 font-medium rounded-tl-xl">Título</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Prazo</th>
+              <th className="px-4 py-3 font-medium text-right">Valor Total</th>
               <th className="px-4 py-3 font-medium w-12 rounded-tr-xl">
                 <span className="sr-only">Ações</span>
               </th>
@@ -209,14 +200,17 @@ export function CotacoesPage() {
                   <td className="px-4 py-3">
                     <Skeleton className="h-4 w-28" />
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <Skeleton className="h-4 w-24 ml-auto" />
+                  </td>
                   <td className="px-4 py-3">
-                    <Skeleton className="size-7 rounded-md" />
+                    <Skeleton className="size-7 rounded-md ml-auto" />
                   </td>
                 </tr>
               ))
             ) : error ? (
               <tr>
-                <td colSpan={4} className="px-4 py-12">
+                <td colSpan={5} className="px-4 py-12">
                   <div className="flex flex-col items-center gap-3 text-center">
                     <ServerCrash className="size-8 text-destructive/40" aria-hidden />
                     <div>
@@ -242,7 +236,7 @@ export function CotacoesPage() {
               </tr>
             ) : !lista.length ? (
               <tr>
-                <td colSpan={4} className="px-4 py-12">
+                <td colSpan={5} className="px-4 py-12">
                   <div className="flex flex-col items-center gap-2 text-center">
                     <FileText className="size-8 text-muted-foreground/25" aria-hidden />
                     <p className="text-sm font-medium">
@@ -284,6 +278,9 @@ export function CotacoesPage() {
                     <td className="px-4 py-3 tabular-nums text-muted-foreground">
                       {c.prazo ? dataHoraBr(c.prazo) : '—'}
                     </td>
+                    <td className="px-4 py-3 tabular-nums text-right font-medium">
+                      {c.valorTotalComprado ? moeda(c.valorTotalComprado) : '—'}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <MenuAcoes
                         items={[
@@ -305,6 +302,7 @@ export function CotacoesPage() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
       {idAExcluir && (
         <ConfirmarDialog

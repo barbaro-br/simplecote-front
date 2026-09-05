@@ -73,6 +73,18 @@ export function useAdicionarItem(cotacaoId: string) {
   })
 }
 
+export function useBiparItemCotacao(cotacaoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (codigoBarras: string) =>
+      api.post<any>(`/api/cotacoes/${cotacaoId}/itens/bipar`, { codigoBarras }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: detalheKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+    },
+  })
+}
+
 export function useAtualizarQuantidadeItem(cotacaoId: string) {
   const queryClient = useQueryClient()
   return useMutation({
@@ -166,7 +178,10 @@ export function useConvidarEmpresas(cotacaoId: string) {
   return useMutation({
     mutationFn: (empresaIds: string[]) =>
       api.post<unknown>(`/api/cotacoes/${cotacaoId}/participantes`, { empresaIds }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: participantesKey(cotacaoId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: participantesKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+    },
   })
 }
 

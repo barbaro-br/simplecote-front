@@ -43,12 +43,10 @@ function GradeAoVivoContainer({ id, status, itens }: { id: string; status: strin
   const [produtoParaEditar, setProdutoParaEditar] = useState<Produto | undefined>(undefined)
 
   function abrirCadastro() {
-    setAdicionarItemAberto(false)
     setCadastroAberto(true)
   }
 
   function abrirEdicao(produto: Produto) {
-    setAdicionarItemAberto(false)
     setProdutoParaEditar(produto)
     setCadastroAberto(true)
   }
@@ -56,7 +54,6 @@ function GradeAoVivoContainer({ id, status, itens }: { id: string; status: strin
   function aoCadastrarProduto() {
     setCadastroAberto(false)
     setProdutoParaEditar(undefined)
-    setAdicionarItemAberto(true)
   }
 
   if (isLoading) return <p className="text-sm text-muted-foreground p-4">Carregando grade ao vivo…</p>

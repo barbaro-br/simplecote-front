@@ -73,7 +73,7 @@ export function HoverCard({ trigger, children }: HoverCardProps) {
     <>
       <span
         ref={triggerRef}
-        className="inline-flex items-center gap-1.5"
+        className="inline-flex min-w-0 items-center gap-1.5"
         onMouseEnter={abrirComDelay}
         onMouseLeave={fechar}
         onFocus={abrirJa}

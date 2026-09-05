@@ -1,14 +1,27 @@
 import { render, screen } from '@testing-library/react'
+import { vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/shared/auth/AuthContext'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
-import { resetarMock, definirConfiguracaoMock } from '../configuracoes/configuracoes.api'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/setupTests'
 import { AdminLayout } from './AdminLayout'
 
 function renderLayout(initial = '/admin/produtos', estilo: 'LATERAL' | 'INFERIOR' = 'LATERAL') {
-  definirConfiguracaoMock({ estiloNavegacao: estilo })
+  const mockConfig = {
+    nome: 'Supermercado Sarah',
+    corPrimaria: '#0f766e',
+    telefone: '(11) 4002-8922',
+    layoutEmail: 'Olá...',
+    estiloNavegacao: estilo,
+    tema: 'CLARO',
+    linkColaboradorToken: 'token-real',
+  }
+  server.use(
+    http.get('*/api/configuracoes', () => HttpResponse.json(mockConfig))
+  )
   const router = createMemoryRouter(
     [
       { path: '/login', element: <div>login view</div> },
@@ -39,7 +52,6 @@ function renderLayout(initial = '/admin/produtos', estilo: 'LATERAL' | 'INFERIOR
 }
 
 beforeEach(() => {
-  resetarMock()
   if (!window.localStorage) {
     let store: Record<string, string> = {}
     Object.defineProperty(window, 'localStorage', {
@@ -87,9 +99,9 @@ test('3.3 — o menu tem Dashboard (raiz) e Cotações apontando para /admin/cot
   expect(screen.getByRole('link', { name: 'Cotações' })).toHaveAttribute('href', '/admin/cotacoes')
 })
 
-test('3.4 — o conteúdo fica dentro de um wrapper centralizado (max-w-7xl / mx-auto)', () => {
+test('3.4 — o conteúdo fica dentro de um wrapper responsivo', () => {
   const { container } = renderLayout('/admin/produtos')
-  const wrapper = container.querySelector('main > div.mx-auto.max-w-7xl')
+  const wrapper = container.querySelector('main > div.px-4')
   expect(wrapper).not.toBeNull()
 })
 
@@ -102,7 +114,7 @@ test('4.1 — o shell não rola como documento: root em h-screen e <main> é o c
   expect(main!.parentElement).toHaveClass('overflow-hidden')
 
   expect(main).toHaveClass('flex-1')
-  expect(main).toHaveClass('h-screen')
+  expect(main).toHaveClass('h-full')
   expect(main).toHaveClass('overflow-y-auto')
 })
 
@@ -241,13 +253,54 @@ describe('estilo Inferior (BottomNavBar)', () => {
     expect(await screen.findByText('login view')).toBeInTheDocument()
   })
 
-  test('mantém o conteúdo centralizado e o <main> como container de scroll', async () => {
+  test('mantém o conteúdo responsivo e o <main> como container de scroll', async () => {
     const { container } = renderLayout('/admin/produtos', 'INFERIOR')
 
     await screen.findByRole('button', { name: 'Mais' })
     const main = container.querySelector('main')
     expect(main).not.toBeNull()
     expect(main).toHaveClass('overflow-y-auto')
-    expect(container.querySelector('main > div.mx-auto.max-w-7xl')).not.toBeNull()
+    expect(container.querySelector('main > div.px-4')).not.toBeNull()
+  })
+})
+
+describe('modo mobile (drawer)', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: (query: string) => ({
+        matches: query === '(max-width: 767px)',
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }),
+    })
+  })
+
+  test('renderiza topbar com hamburger e nome da loja, sidebar normal não aparece', async () => {
+    renderLayout('/admin/produtos', 'LATERAL')
+    
+    expect(await screen.findByRole('button', { name: 'Abrir menu' })).toBeInTheDocument()
+    // 2 occurrences of Supermercado Sarah (topbar and drawer)
+    const elements = await screen.findAllByText('Supermercado Sarah')
+    expect(elements.length).toBe(2)
+    // The regular sidebar toggle "Recolher menu" should not exist
+    expect(screen.queryByRole('button', { name: /Recolher menu/i })).not.toBeInTheDocument()
+  })
+
+  test('abre e fecha o drawer pelo hamburger e pelo overlay/botão fechar', async () => {
+    const user = userEvent.setup()
+    renderLayout('/admin/produtos', 'LATERAL')
+    
+    const hamburger = await screen.findByRole('button', { name: 'Abrir menu' })
+    await user.click(hamburger)
+    
+    const drawer = screen.getByRole('button', { name: 'Fechar menu' }).closest('aside')
+    expect(drawer).toHaveClass('translate-x-0')
+    
+    await user.click(screen.getByRole('button', { name: 'Fechar menu' }))
+    expect(drawer).toHaveClass('-translate-x-full')
   })
 })

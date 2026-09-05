@@ -288,3 +288,24 @@ test('sem código de barras: "Buscar" fica desabilitado e o produto salva normal
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
+
+test('mensagens de erro localizadas para quantidadePorEmbalagem (vazio ou fracionado)', async () => {
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  
+  // Limpa o campo pra simular vazio (type_error / required_error)
+  const quantidadeInput = dialog.getByLabelText('Qtd. por embalagem')
+  await user.clear(quantidadeInput)
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
+  expect(await dialog.findByText('Informe a quantidade por embalagem')).toBeInTheDocument()
+  
+  // Digita um número fracionado (int_error)
+  await user.type(quantidadeInput, '1.5')
+  await user.click(dialog.getByRole('button', { name: /Salvar/i }))
+  expect(await dialog.findByText('A quantidade deve ser um número inteiro')).toBeInTheDocument()
+})

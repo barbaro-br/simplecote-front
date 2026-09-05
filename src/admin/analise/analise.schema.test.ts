@@ -56,16 +56,20 @@ describe('analise.schema', () => {
           cotacaoId: '123e4567-e89b-12d3-a456-426614174000',
           empresa: 'Papelaria XYZ',
           representante: 'João',
-          precoUnitario: '15.50',
+          precoUnitario: 15.50,
           data: '2023-10-15T00:00:00Z',
           quantidade: 10,
         },
-        variacaoPct: '-5.2',
-        menorPreco: '14.00',
-        media90d: '15.00',
-        numeroCompras: 5,
-        numeroFornecedores: 3,
-        serie: [15.0, 14.5, 15.5],
+        variacaoPct: -5.2,
+        menorPrecoUnitario: 14.00,
+        precoMedioUnitario90d: 15.00,
+        compras: 5,
+        fornecedoresDistintos: 3,
+        serie: [
+          { data: '2023-08-15T00:00:00Z', precoUnitario: 15.0 },
+          { data: '2023-09-15T00:00:00Z', precoUnitario: 14.5 },
+          { data: '2023-10-15T00:00:00Z', precoUnitario: 15.5 },
+        ],
       }
       expect(() => insightProdutoSchema.parse(data)).not.toThrow()
     })
@@ -74,10 +78,10 @@ describe('analise.schema', () => {
       const data = {
         ultimaCompra: null,
         variacaoPct: null,
-        menorPreco: null,
-        media90d: null,
-        numeroCompras: null,
-        numeroFornecedores: null,
+        menorPrecoUnitario: null,
+        precoMedioUnitario90d: null,
+        compras: 0,
+        fornecedoresDistintos: 0,
         serie: [],
       }
       expect(() => insightProdutoSchema.parse(data)).not.toThrow()
@@ -88,10 +92,10 @@ describe('analise.schema', () => {
         '123e4567-e89b-12d3-a456-426614174000': {
           ultimaCompra: null,
           variacaoPct: null,
-          menorPreco: null,
-          media90d: null,
-          numeroCompras: null,
-          numeroFornecedores: null,
+          menorPrecoUnitario: null,
+          precoMedioUnitario90d: null,
+          compras: 0,
+          fornecedoresDistintos: 0,
           serie: [],
         },
       }
