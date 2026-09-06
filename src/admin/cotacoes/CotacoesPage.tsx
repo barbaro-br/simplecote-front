@@ -273,7 +273,14 @@ export function CotacoesPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={c.status} />
+                      <div className="flex items-center gap-1.5">
+                        <StatusBadge status={c.status} />
+                        {c.prazoVencido && (
+                          <span className="inline-flex items-center rounded-full bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning">
+                            prazo vencido
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground">
                       {c.prazo ? dataHoraBr(c.prazo) : '—'}

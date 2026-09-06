@@ -5,15 +5,16 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
 import { CotacoesPage } from './CotacoesPage'
+import type { CotacaoResumo } from './cotacoes.schema'
 
-const COTACOES = [
-  { id: '1', titulo: 'Compra semanal', status: 'RASCUNHO', prazo: null, criadaEm: '2026-08-01T12:00:00Z', encerradaEm: null },
-  { id: '2', titulo: 'Hortifruti agosto', status: 'ABERTA', prazo: '2026-08-30T12:00:00Z', criadaEm: '2026-08-02T12:00:00Z', encerradaEm: null },
-  { id: '3', titulo: 'Limpeza Q3', status: 'ABERTA', prazo: '2026-08-31T12:00:00Z', criadaEm: '2026-08-03T12:00:00Z', encerradaEm: null },
+const COTACOES: CotacaoResumo[] = [
+  { id: '1', titulo: 'Compra semanal', status: 'RASCUNHO', prazo: null, criadaEm: '2026-08-01T12:00:00Z', encerradaEm: null, prazoVencido: false },
+  { id: '2', titulo: 'Hortifruti agosto', status: 'ABERTA', prazo: '2026-08-30T12:00:00Z', criadaEm: '2026-08-02T12:00:00Z', encerradaEm: null, prazoVencido: false },
+  { id: '3', titulo: 'Limpeza Q3', status: 'ABERTA', prazo: '2026-08-31T12:00:00Z', criadaEm: '2026-08-03T12:00:00Z', encerradaEm: null, prazoVencido: false },
 ]
 
-function renderPage(initial = '/admin/cotacoes') {
-  server.use(http.get('*/api/cotacoes', () => HttpResponse.json(COTACOES)))
+function renderPage(initial = '/admin/cotacoes', cotacoes: CotacaoResumo[] = COTACOES) {
+  server.use(http.get('*/api/cotacoes', () => HttpResponse.json(cotacoes)))
   const router = createMemoryRouter([{ path: '/admin/cotacoes', element: <CotacoesPage /> }], {
     initialEntries: [initial],
   })
@@ -145,4 +146,15 @@ test('mês inválido na URL mostra todos os meses', async () => {
   await screen.findByRole('link', { name: 'Compra semanal' })
   expect(screen.getByRole('link', { name: 'Hortifruti agosto' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Limpeza Q3' })).toBeInTheDocument()
+})
+
+test('selo "prazo vencido" aparece só na linha com prazoVencido', async () => {
+  renderPage('/admin/cotacoes', [
+    { id: '1', titulo: 'Compra semanal', status: 'ABERTA', prazo: '2026-08-20T12:00:00Z', criadaEm: '2026-08-01T12:00:00Z', encerradaEm: null, prazoVencido: true },
+    { id: '2', titulo: 'Hortifruti agosto', status: 'ABERTA', prazo: '2026-08-30T12:00:00Z', criadaEm: '2026-08-02T12:00:00Z', encerradaEm: null, prazoVencido: false },
+  ])
+
+  await screen.findByRole('link', { name: 'Compra semanal' })
+  expect(screen.getByText('prazo vencido')).toBeInTheDocument()
+  expect(screen.getAllByText('prazo vencido')).toHaveLength(1)
 })

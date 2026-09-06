@@ -11,6 +11,8 @@ export type CotacaoResumo = {
   criadaEm: string
   encerradaEm: string | null
   valorTotalComprado?: number | null
+  /** `true` quando a cotação está ABERTA e o prazo já passou (representantes não conseguem mais responder). */
+  prazoVencido: boolean
 }
 
 export type ItemCotacao = {
@@ -32,6 +34,8 @@ export type CotacaoDetalhe = {
   criadaEm: string
   encerradaEm: string | null
   itens: ItemCotacao[]
+  /** `true` quando a cotação está ABERTA e o prazo já passou (representantes não conseguem mais responder). */
+  prazoVencido: boolean
 }
 
 export type ItemOmitido = {

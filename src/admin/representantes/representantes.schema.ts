@@ -13,3 +13,7 @@ export const representanteSchema = z.object({
 export const representanteListaSchema = z.array(representanteSchema)
 
 export type Representante = z.infer<typeof representanteSchema>
+
+// Retorno de `DELETE /api/representantes/{id}` (ExclusaoRepresentanteResponse do back):
+// REMOVIDO = sem histórico, linha apagada; ANONIMIZADO = PII anonimizada, histórico preservado.
+export type ResultadoExclusaoRepresentante = 'REMOVIDO' | 'ANONIMIZADO'

@@ -347,3 +347,144 @@ test('cancelar a confirmação não dispara o DELETE; confirmar dispara uma úni
     expect(deletou).toBe(1)
   })
 })
+
+test('"Excluir contato" só aparece para empresa que tem representante', async () => {
+  server.use(
+    http.get('*/api/empresas', () =>
+      HttpResponse.json([
+        { id: EMPRESA_ID, nome: 'Com Contato', ativo: true, podeExcluir: true },
+        { id: '323e4567-e89b-12d3-a456-426614174000', nome: 'Sem Contato', ativo: true, podeExcluir: true },
+      ])
+    ),
+    http.get('*/api/representantes', () =>
+      HttpResponse.json([
+        { id: REP_ID, empresaId: EMPRESA_ID, nome: 'João', email: 'joao@x.com', whatsapp: null, ativo: true },
+      ])
+    ),
+  )
+
+  renderComQuery(<EmpresasPage />)
+
+  expect(await screen.findByText('Com Contato')).toBeInTheDocument()
+  expect(screen.getByText('Sem Contato')).toBeInTheDocument()
+  expect(screen.getAllByRole('button', { name: 'Excluir contato' })).toHaveLength(1)
+})
+
+test('confirmar "Excluir contato" dispara DELETE com o id certo; cancelar não dispara', async () => {
+  let idExcluido: string | undefined
+  server.use(
+    http.delete('*/api/representantes/:id', ({ params }) => {
+      idExcluido = params.id as string
+      return HttpResponse.json({ resultado: 'REMOVIDO' })
+    }),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Fornecedor A LTDA')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Excluir contato' }))
+  expect(await screen.findByRole('dialog')).toBeInTheDocument()
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Voltar' }))
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(idExcluido).toBeUndefined()
+
+  await user.click(screen.getByRole('button', { name: 'Excluir contato' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Excluir' }))
+  await waitFor(() => {
+    expect(idExcluido).toBe(REP_ID)
+  })
+})
+
+test('toast "Contato removido." quando o back responde REMOVIDO', async () => {
+  const successSpy = vi.spyOn(toast, 'success')
+  server.use(
+    http.delete('*/api/representantes/:id', () => HttpResponse.json({ resultado: 'REMOVIDO' })),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Fornecedor A LTDA')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Excluir contato' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Excluir' }))
+
+  await waitFor(() => {
+    expect(successSpy).toHaveBeenCalledWith('Contato removido.')
+  })
+  successSpy.mockRestore()
+})
+
+test('toast de anonimização quando o back responde ANONIMIZADO', async () => {
+  const successSpy = vi.spyOn(toast, 'success')
+  server.use(
+    http.delete('*/api/representantes/:id', () => HttpResponse.json({ resultado: 'ANONIMIZADO' })),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Fornecedor A LTDA')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Excluir contato' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Excluir' }))
+
+  await waitFor(() => {
+    expect(successSpy).toHaveBeenCalledWith('Dados do contato anonimizados; o histórico foi mantido.')
+  })
+  successSpy.mockRestore()
+})
+
+test('estado otimista: o contato some antes de a resposta chegar', async () => {
+  let resolver!: () => void
+  const trava = new Promise<void>((res) => {
+    resolver = res
+  })
+  server.use(
+    http.delete('*/api/representantes/:id', async () => {
+      await trava
+      return HttpResponse.json({ resultado: 'REMOVIDO' })
+    }),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('João')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Excluir contato' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Excluir' }))
+
+  await waitFor(() => {
+    expect(screen.queryByText('João')).not.toBeInTheDocument()
+  })
+
+  resolver()
+  await waitFor(() => {
+    expect(screen.queryByText('João')).not.toBeInTheDocument()
+  })
+})
+
+test('erro na exclusão restaura o contato (rollback) e exibe a mensagem da API', async () => {
+  const errorSpy = vi.spyOn(toast, 'error')
+  server.use(
+    http.delete('*/api/representantes/:id', () =>
+      HttpResponse.json(
+        { title: 'Conflito', status: 409, detail: 'Não foi possível excluir o contato.' },
+        { status: 409 },
+      )
+    ),
+  )
+
+  renderComQuery(<EmpresasPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('João')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Excluir contato' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Excluir' }))
+
+  await waitFor(() => {
+    expect(screen.getByText('João')).toBeInTheDocument()
+  })
+  expect(errorSpy).toHaveBeenCalledWith('Não foi possível excluir o contato.')
+  errorSpy.mockRestore()
+})

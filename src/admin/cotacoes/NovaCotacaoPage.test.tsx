@@ -23,7 +23,7 @@ function renderPage(cotacoes: unknown[] = []) {
   )
 }
 
-test('criar com título válido navega para o detalhe', async () => {
+test('criar com título válido entra no wizard', async () => {
   server.use(
     http.post('*/api/cotacoes', async ({ request }) => {
       const body = (await request.json()) as { titulo: string }
@@ -32,12 +32,39 @@ test('criar com título válido navega para o detalhe', async () => {
         { status: 201 },
       )
     }),
+    http.get('*/api/cotacoes/nova-1', () =>
+      HttpResponse.json({ id: 'nova-1', titulo: 'Compra semanal', status: 'RASCUNHO', prazo: null, criadaEm: '2026-08-28T12:00:00Z', encerradaEm: null, itens: [] }),
+    ),
+    http.get('*/api/produtos', () => HttpResponse.json([])),
   )
   const user = userEvent.setup()
   renderPage()
 
   await user.type(screen.getByLabelText('Título'), 'Compra semanal')
   await user.click(screen.getByRole('button', { name: /criar cotação/i }))
+
+  expect(await screen.findByRole('heading', { name: 'Montar cotação' })).toBeInTheDocument()
+  expect(screen.queryByText('detalhe')).not.toBeInTheDocument()
+})
+
+test('link "montar direto na tela de detalhe" pula o wizard', async () => {
+  server.use(
+    http.post('*/api/cotacoes', () =>
+      HttpResponse.json({ id: 'nova-1', titulo: 'Compra semanal', status: 'RASCUNHO', prazo: null, criadaEm: '2026-08-28T12:00:00Z', encerradaEm: null, itens: [] }, { status: 201 }),
+    ),
+    http.get('*/api/cotacoes/nova-1', () =>
+      HttpResponse.json({ id: 'nova-1', titulo: 'Compra semanal', status: 'RASCUNHO', prazo: null, criadaEm: '2026-08-28T12:00:00Z', encerradaEm: null, itens: [] }),
+    ),
+    http.get('*/api/produtos', () => HttpResponse.json([])),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Título'), 'Compra semanal')
+  await user.click(screen.getByRole('button', { name: /criar cotação/i }))
+  await screen.findByRole('heading', { name: 'Montar cotação' })
+
+  await user.click(screen.getByRole('button', { name: 'Montar direto na tela de detalhe' }))
 
   expect(await screen.findByText('detalhe')).toBeInTheDocument()
 })

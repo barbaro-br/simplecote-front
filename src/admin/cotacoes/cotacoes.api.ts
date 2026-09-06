@@ -54,6 +54,15 @@ export function useDuplicarCotacao() {
   })
 }
 
+export function useRecotarSemVencedor(cotacaoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      api.post<CotacaoDuplicada>(`/api/cotacoes/${cotacaoId}/recotar-sem-vencedor`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: listaKey }),
+  })
+}
+
 export function useExcluirCotacao() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -141,6 +150,14 @@ export function useResultado(id: string) {
   return useQuery({
     queryKey: resultadoKey(id),
     queryFn: () => api.get<Resultado>(`/api/cotacoes/${id}/resultado`),
+  })
+}
+
+export function usePreviaApuracao(cotacaoId: string, opts: { enabled: boolean }) {
+  return useQuery({
+    queryKey: ['previa-apuracao', cotacaoId] as const,
+    queryFn: () => api.get<Resultado>(`/api/cotacoes/${cotacaoId}/apuracao/previa`),
+    enabled: opts.enabled,
   })
 }
 

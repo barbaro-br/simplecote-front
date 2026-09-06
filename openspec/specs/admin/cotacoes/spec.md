@@ -373,7 +373,7 @@ O modal "Representantes" SHALL reaproveitar, também quando a Cotação está `A
 ### Requirement: Resultado da apuração e pedidos
 O sistema SHALL exibir o resultado de uma Cotação apurada (`GET /api/cotacoes/{id}/resultado`): vencedor por item identificado pelo **nome da Empresa** (não do representante), preço da embalagem e preço unitário derivado que já vêm prontos da API. SHALL listar os pedidos gerados (`GET /api/cotacoes/{id}/pedidos`), permitir enviar um pedido (`POST /api/pedidos/{id}/enviar`), baixar o resultado em XLSX (`GET /api/cotacoes/{id}/resultado.xlsx`) e baixar o PDF de um pedido (`GET /api/pedidos/{id}.pdf`). Quando a API indicar que um item foi `decididoPorDesempate`, a tela SHALL exibir um indicador visual junto ao preço desse item, sem recalcular ou inferir o empate.
 
-A lista de pedidos e o vencedor por item SHALL ser apresentados numa única lista de pedidos (não duas tabelas separadas). Cada linha de pedido (Empresa, status, total, ações) SHALL ter um controle de expandir/recolher; ao expandir, os itens vencidos daquele pedido (produto, preço da embalagem, preço unitário — com o indicador de empate quando aplicável — e subtotal) SHALL aparecer inline, abaixo da linha do pedido, sem navegar para outra tela. Itens sem vencedor (sem lance algum, portanto sem pedido associado) SHALL continuar sendo listados à parte, abaixo da lista de pedidos.
+A lista de pedidos e o vencedor por item SHALL ser apresentados numa única lista de pedidos (não duas tabelas separadas). Cada linha de pedido (Empresa, status, total, ações) SHALL ter um controle de expandir/recolher; ao expandir, os itens vencidos daquele pedido (produto, **quantidade comprada**, preço da embalagem, preço unitário — com o indicador de empate quando aplicável — e subtotal) SHALL aparecer inline, abaixo da linha do pedido, sem navegar para outra tela. A quantidade comprada SHALL vir pronta da API (`quantidade` do item do pedido) — o front não recalcula. Itens sem vencedor (sem lance algum, portanto sem pedido associado) SHALL continuar sendo listados à parte, abaixo da lista de pedidos.
 
 A tela SHALL oferecer um campo de **margem de lucro (%)** global, acima da lista de pedidos. Quando preenchido, cada item exibido nas linhas expandidas SHALL mostrar, além do preço de custo já existente, um **preço de venda sugerido** (`preço de custo × (1 + margem / 100)`), calculado inteiramente no front a partir do preço de custo já apurado pela API — sem alterar, recalcular ou substituir o preço de custo, o vencedor ou qualquer outro dado da apuração. Cada item SHALL permitir sobrescrever a margem global com uma margem própria; um item com margem própria SHALL manter seu valor mesmo que a margem global mude depois. A margem (global e por item) SHALL ser efêmera — mantida só no estado da tela, sem ser persistida no backend, sem ser enviada em nenhuma chamada de API, e sem aparecer no XLSX/PDF exportados (que continuam vindo prontos do backend). A interface SHALL deixar claro que o preço de venda é uma sugestão/prévia, não o preço de custo real do pedido.
 
@@ -400,7 +400,7 @@ A tela SHALL oferecer um campo de **margem de lucro (%)** global, acima da lista
 #### Scenario: Expandir um pedido mostra seus itens vencidos
 
 - **WHEN** o Comprador aciona o controle de expandir na linha de um pedido
-- **THEN** os itens vencidos daquele pedido aparecem inline, abaixo da linha, com produto, preço da embalagem, preço unitário (com indicador de empate quando aplicável) e subtotal — sem navegar para outra tela
+- **THEN** os itens vencidos daquele pedido aparecem inline, abaixo da linha, com produto, quantidade comprada, preço da embalagem, preço unitário (com indicador de empate quando aplicável) e subtotal — sem navegar para outra tela
 
 #### Scenario: Recolher volta a esconder os itens
 
@@ -638,3 +638,105 @@ Com a Cotação `ABERTA`, a grade ao vivo SHALL oferecer, por linha de item, uma
 
 - **WHEN** a Cotação está `ENCERRADA` ou `PEDIDOS_GERADOS`
 - **THEN** a grade ao vivo não mostra a ação de remover item
+
+### Requirement: Prévia do resultado no diálogo de Apurar
+
+Ao abrir o diálogo de "Apurar" de uma Cotação `ENCERRADA`, o sistema SHALL carregar e exibir uma prévia do resultado a partir de `GET /api/cotacoes/{id}/apuracao/previa`: para cada Empresa que venceria, os itens ganhos e o total; e a lista dos itens que ficariam sem vencedor. A prévia SHALL ser carregada só quando o diálogo está aberto. Enquanto carrega, o sistema SHALL mostrar um estado de carregamento; em erro, SHALL exibir `ApiError.message`. O botão "Apurar" SHALL continuar disponível independentemente da prévia (ela é informativa, não bloqueia).
+
+#### Scenario: Prévia aparece ao abrir o diálogo
+
+- **WHEN** o admin aciona "Apurar" numa Cotação `ENCERRADA`
+- **THEN** o diálogo carrega a prévia e mostra as Empresas vencedoras com seus itens/totais e os itens sem vencedor
+
+#### Scenario: Erro na prévia não trava o diálogo
+
+- **WHEN** a chamada da prévia falha
+- **THEN** o diálogo mostra a mensagem de erro e o botão "Apurar" continua clicável
+
+#### Scenario: Prévia só carrega com o diálogo aberto
+
+- **WHEN** a tela de detalhe da Cotação está aberta mas o diálogo de "Apurar" não
+- **THEN** nenhuma chamada à prévia é feita
+
+### Requirement: Aviso de prazo vencido na Cotação
+
+Quando uma Cotação está `ABERTA` e a API indica `prazoVencido` verdadeiro, o sistema SHALL sinalizar isso ao admin: na tela de detalhe, um aviso destacado acima do conteúdo dizendo que os representantes não podem mais responder e que a Cotação precisa ser encerrada para ser apurada, com o botão "Encerrar" em evidência; na lista de Cotações, um indicador na linha correspondente. O aviso e o indicador SHALL sumir quando a Cotação deixa de estar `ABERTA`. As ações (Encerrar/Reabrir) não mudam — o aviso é apenas orientação.
+
+#### Scenario: Detalhe de cotação com prazo vencido
+
+- **WHEN** a tela de detalhe abre uma Cotação `ABERTA` com `prazoVencido` verdadeiro
+- **THEN** um aviso destacado aparece orientando a encerrar, e o botão "Encerrar" fica em evidência
+
+#### Scenario: Cotação aberta dentro do prazo não mostra aviso
+
+- **WHEN** a Cotação está `ABERTA` com `prazoVencido` falso
+- **THEN** nenhum aviso de prazo vencido é exibido
+
+#### Scenario: Indicador some após encerrar
+
+- **WHEN** o admin encerra uma Cotação que estava com prazo vencido
+- **THEN** o aviso da tela de detalhe e o indicador da lista deixam de aparecer para ela
+
+### Requirement: Recotar itens sem vencedor a partir do Resultado
+
+Na tela de Resultado da apuração, quando há itens sem vencedor, o sistema SHALL oferecer a ação "Recotar itens sem vencedor". Ao acioná-la e confirmar, o front SHALL chamar `POST /api/cotacoes/{id}/recotar-sem-vencedor` e, no sucesso, navegar para a nova Cotação (`RASCUNHO`) retornada. Se a resposta trouxer itens omitidos (produto inativado/removido), o sistema SHALL informá-los ao usuário. Erro da API SHALL ser exibido a partir de `ApiError.message`. A ação SHALL aparecer apenas quando a lista de itens sem vencedor não está vazia.
+
+#### Scenario: Ação disponível só com itens sem vencedor
+
+- **WHEN** a tela de Resultado mostra uma apuração com ao menos um item sem vencedor
+- **THEN** o botão "Recotar itens sem vencedor" aparece; numa apuração em que todos os itens tiveram vencedor, não aparece
+
+#### Scenario: Recotar cria e abre a nova cotação
+
+- **WHEN** o admin confirma a recotação
+- **THEN** o front chama o endpoint e navega para a nova Cotação `RASCUNHO` criada
+
+#### Scenario: Itens omitidos são informados
+
+- **WHEN** a resposta traz produtos omitidos por estarem inativos
+- **THEN** o front mostra um aviso listando esses produtos e o motivo, e ainda assim abre a nova cotação
+
+### Requirement: Wizard opcional para criar uma Cotação
+
+Depois de criar uma Cotação (título), o sistema SHALL oferecer um wizard de 3 passos — **Itens**, **Representantes**, **Prazo & revisar** — que guia o admin até "Abrir". Cada passo SHALL permitir voltar sem perder o que já foi feito. O passo 3 SHALL mostrar um resumo (quantidade de itens, de empresas e o prazo formatado) antes da confirmação. "Abrir" SHALL ficar habilitado apenas com ao menos um item e ao menos uma empresa selecionada. O sistema SHALL oferecer um atalho para pular o wizard e montar a Cotação direto na tela de detalhe (fluxo atual). O wizard SHALL usar os endpoints já existentes (criar, adicionar item, convidar empresas, abrir), sem contrato novo.
+
+#### Scenario: Percorrer o wizard até abrir
+
+- **WHEN** o admin cria uma Cotação e percorre os 3 passos adicionando itens, selecionando empresas e escolhendo o prazo, e confirma "Abrir"
+- **THEN** os itens são adicionados, as empresas convidadas e a Cotação é aberta, e o admin vai para a tela de detalhe
+
+#### Scenario: "Abrir" exige item e empresa
+
+- **WHEN** o admin chega ao passo 3 sem nenhum item, ou sem nenhuma empresa selecionada
+- **THEN** o botão "Abrir" fica desabilitado
+
+#### Scenario: Voltar preserva o progresso
+
+- **WHEN** o admin volta do passo 3 para o passo 1 e avança de novo
+- **THEN** os itens, as empresas e o prazo escolhidos continuam lá
+
+#### Scenario: Pular o wizard
+
+- **WHEN** o admin aciona "montar direto na tela de detalhe"
+- **THEN** vai para a tela de detalhe da Cotação recém-criada, sem passar pelos passos do wizard
+
+### Requirement: Resumo da entrega de convites e mensagem de WhatsApp padronizada
+
+Na tela de detalhe da Cotação, quando o status é `ABERTA` ou `ENCERRADA` e há participantes, o sistema SHALL exibir no cabeçalho um resumo "N de M convites entregues" (M = total de participantes, N = participantes com `conviteStatus` igual a `ENVIADO`). Quando N é menor que M, o sistema SHALL oferecer uma ação que abre o modal de Representantes (onde já é possível reenviar). O resumo SHALL NÃO aparecer em `RASCUNHO`.
+
+O botão de compartilhar por WhatsApp (no modal de Representantes) SHALL montar a mensagem pelo helper `montarMensagemConvite` — saudando o representante pelo nome e citando o título da cotação, a empresa e o prazo — em vez de um texto genérico de uma linha.
+
+#### Scenario: Resumo de entrega no cabeçalho
+
+- **WHEN** a tela de detalhe abre uma Cotação `ABERTA` com 4 participantes, 3 com convite `ENVIADO` e 1 com `FALHOU`
+- **THEN** o cabeçalho mostra "3 de 4 convites entregues" e uma ação que abre o modal de Representantes
+
+#### Scenario: Sem resumo em rascunho
+
+- **WHEN** a Cotação está em `RASCUNHO`
+- **THEN** o resumo de entrega de convites não é exibido
+
+#### Scenario: Mensagem de WhatsApp usa o helper
+
+- **WHEN** o admin aciona o botão de WhatsApp de um representante
+- **THEN** o link `wa.me` gerado contém a mensagem do `montarMensagemConvite` — com o nome do representante, o título da cotação e o link mágico

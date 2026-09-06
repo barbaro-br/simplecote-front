@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
-import { dataHoraBr } from '@/shared/format/formatters'
+import { dataHoraBr, moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { StatusBadge } from '@/shared/components/StatusBadge'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { ErrorAlert } from '@/shared/components/ui/error-alert'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { Breadcrumb } from '@/shared/components/ui/breadcrumb'
 import { ItensSection } from './ItensSection'
 import { GradeAoVivoTabela } from './GradeAoVivoTabela'
@@ -29,7 +31,8 @@ import {
   useGradeAoVivo,
   useGradeAoVivoSSE,
   useParticipantes,
-  useFinalizarParticipante
+  useFinalizarParticipante,
+  usePreviaApuracao
 } from './cotacoes.api'
 
 type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | 'encerrar' | null
@@ -118,6 +121,8 @@ export function CotacaoDetalhePage() {
   const [empresasSelecionadas, setEmpresasSelecionadas] = useState<string[]>([])
   const [finalizandoMassa, setFinalizandoMassa] = useState(false)
 
+  const previaApuracao = usePreviaApuracao(id, { enabled: dialog === 'apurar' })
+
   function tratarErro(e: unknown) {
     if (e instanceof SessaoExpiradaError) return
     setErroAcao(e instanceof ApiError ? e.message : 'Erro inesperado ao executar a ação.')
@@ -149,6 +154,11 @@ export function CotacaoDetalhePage() {
   const pendentesVisualizou = (participantes.data ?? []).filter(
     (p) => p.participanteStatus === 'VISUALIZOU',
   )
+
+  const totalParticipantesConvite = (participantes.data ?? []).length
+  const convitesEntregues = (participantes.data ?? []).filter(
+    (p) => p.conviteStatus === 'ENVIADO',
+  ).length
 
   const participantesComLanceCotado = (participantes.data ?? []).filter((p) => {
     if (p.participanteStatus === 'RESPONDIDO') return false
@@ -192,6 +202,21 @@ export function CotacaoDetalhePage() {
           <p className="text-sm text-muted-foreground flex items-center gap-2">
             <StatusBadge status={status} />
             {cotacao.prazo && <span>· Prazo: {dataHoraBr(cotacao.prazo)}</span>}
+            {(status === 'ABERTA' || status === 'ENCERRADA') && totalParticipantesConvite > 0 && (
+              <span className="flex items-center gap-1">
+                · {convitesEntregues} de {totalParticipantesConvite}{' '}
+                {totalParticipantesConvite === 1 ? 'convite entregue' : 'convites entregues'}
+                {convitesEntregues < totalParticipantesConvite && (
+                  <button
+                    type="button"
+                    onClick={() => setModalConviteAberto(true)}
+                    className="text-primary hover:underline"
+                  >
+                    ver
+                  </button>
+                )}
+              </span>
+            )}
           </p>
         </div>
 
@@ -247,6 +272,18 @@ export function CotacaoDetalhePage() {
 
       {erroAcao && <ErrorAlert>{erroAcao}</ErrorAlert>}
 
+      {status === 'ABERTA' && cotacao.prazoVencido && (
+        <div
+          role="alert"
+          className="flex items-center gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm"
+        >
+          <AlertTriangle className="size-5 shrink-0 text-warning" aria-hidden />
+          <span className="font-medium text-warning">
+            Prazo vencido — os representantes não podem mais responder. Encerre para apurar.
+          </span>
+        </div>
+      )}
+
       <div className="space-y-6">
         {(status === 'RASCUNHO' || status === 'CANCELADA' || status === 'PEDIDOS_GERADOS') && (
           <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={status === 'RASCUNHO'} />
@@ -283,6 +320,52 @@ export function CotacaoDetalhePage() {
           onCancelar={() => setDialog(null)}
           onConfirmar={() => executar(() => apurar.mutateAsync())}
         >
+          {previaApuracao.isLoading && (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          )}
+          {previaApuracao.error && <ErrorAlert>{previaApuracao.error.message}</ErrorAlert>}
+          {previaApuracao.data && (
+            <div className="space-y-3 rounded-md border bg-muted/30 p-3 text-sm">
+              {previaApuracao.data.pedidos.length > 0 && (
+                <div className="space-y-2">
+                  <p className="font-medium">Prévia do resultado:</p>
+                  {previaApuracao.data.pedidos.map((pedido) => (
+                    <div key={pedido.id} className="rounded-md border bg-background p-2">
+                      <div className="flex items-center justify-between gap-2 font-medium">
+                        <span>{pedido.empresaNome}</span>
+                        <span className="shrink-0">{moeda(pedido.total)}</span>
+                      </div>
+                      <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+                        {pedido.itens.map((item) => (
+                          <li key={item.id}>
+                            {item.nomeSnapshot} — {item.quantidade} × {moeda(item.precoUnitario)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {previaApuracao.data.itensSemVencedor.length > 0 && (
+                <div>
+                  <p className="font-medium">Itens sem vencedor:</p>
+                  <ul className="mt-1 list-disc pl-5 text-muted-foreground">
+                    {previaApuracao.data.itensSemVencedor.map((item) => (
+                      <li key={item.id}>{item.nomeSnapshot}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {previaApuracao.data.pedidos.length === 0 &&
+                previaApuracao.data.itensSemVencedor.length === 0 && (
+                  <p className="text-muted-foreground">Nenhum item será apurado.</p>
+                )}
+            </div>
+          )}
           {pendentesVisualizou.length > 0 && (
             <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
               <p className="font-medium text-warning">Participantes que não finalizaram a resposta:</p>

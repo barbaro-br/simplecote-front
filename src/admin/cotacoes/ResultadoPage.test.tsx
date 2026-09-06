@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
+import { toast } from 'sonner'
 import { server } from '@/setupTests'
 import { ResultadoPage } from './ResultadoPage'
 
@@ -97,7 +98,10 @@ function setup(
     }),
   )
   const router = createMemoryRouter(
-    [{ path: '/admin/cotacoes/:id/resultado', element: <ResultadoPage /> }],
+    [
+      { path: '/admin/cotacoes/:id/resultado', element: <ResultadoPage /> },
+      { path: '/admin/cotacoes/:id', element: <div>detalhe</div> },
+    ],
     { initialEntries: ['/admin/cotacoes/c-1/resultado'] },
   )
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -286,4 +290,88 @@ test('a margem não é enviada na chamada de enviar pedido', async () => {
 
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Enviar' })).not.toBeInTheDocument())
   expect(getEnviarBody()).not.toContain('margem')
+})
+
+test('botão "Recotar itens sem vencedor" ausente sem itens sem vencedor', async () => {
+  setup()
+  await screen.findByText('Pedidos Gerados')
+  expect(screen.queryByRole('button', { name: 'Recotar itens sem vencedor' })).not.toBeInTheDocument()
+})
+
+test('botão "Recotar itens sem vencedor" presente com itens sem vencedor', async () => {
+  setup(undefined, [{ id: 'isv1', nomeSnapshot: 'Feijão Carioca 1kg' }])
+  await screen.findByText('Itens sem vencedor:')
+  expect(screen.getByRole('button', { name: 'Recotar itens sem vencedor' })).toBeInTheDocument()
+})
+
+test('recotar confirma, chama o endpoint e navega para a nova cotação', async () => {
+  let chamou = false
+  setup(undefined, [{ id: 'isv1', nomeSnapshot: 'Feijão Carioca 1kg' }])
+  server.use(
+    http.post('*/api/cotacoes/c-1/recotar-sem-vencedor', () => {
+      chamou = true
+      return HttpResponse.json({
+        cotacao: { id: 'nova-1', titulo: 'Recotação', status: 'RASCUNHO', prazo: null, criadaEm: '2026-08-28T12:00:00Z', encerradaEm: null, itens: [] },
+        omitidos: [],
+      })
+    }),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('button', { name: 'Recotar itens sem vencedor' })
+
+  await user.click(screen.getByRole('button', { name: 'Recotar itens sem vencedor' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recotar' }))
+
+  await waitFor(() => expect(chamou).toBe(true))
+  expect(await screen.findByText('detalhe')).toBeInTheDocument()
+})
+
+test('recotar com itens omitidos mostra aviso listando produto e motivo', async () => {
+  const warningSpy = vi.spyOn(toast, 'warning')
+  setup(undefined, [{ id: 'isv1', nomeSnapshot: 'Feijão Carioca 1kg' }])
+  server.use(
+    http.post('*/api/cotacoes/c-1/recotar-sem-vencedor', () =>
+      HttpResponse.json({
+        cotacao: { id: 'nova-1', titulo: 'Recotação', status: 'RASCUNHO', prazo: null, criadaEm: '2026-08-28T12:00:00Z', encerradaEm: null, itens: [] },
+        omitidos: [{ produtoId: 'p1', nome: 'Feijão Carioca 1kg', motivo: 'produto inativo' }],
+      }),
+    ),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('button', { name: 'Recotar itens sem vencedor' })
+
+  await user.click(screen.getByRole('button', { name: 'Recotar itens sem vencedor' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recotar' }))
+
+  await waitFor(() => {
+    expect(warningSpy).toHaveBeenCalledWith('Itens omitidos da recotação: Feijão Carioca 1kg (produto inativo)')
+  })
+  warningSpy.mockRestore()
+})
+
+test('erro na recotação mostra a mensagem da API', async () => {
+  setup(undefined, [{ id: 'isv1', nomeSnapshot: 'Feijão Carioca 1kg' }])
+  server.use(
+    http.post('*/api/cotacoes/c-1/recotar-sem-vencedor', () =>
+      HttpResponse.json({ title: 'Erro', status: 400, detail: 'Não é possível recotar.' }, { status: 400 }),
+    ),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('button', { name: 'Recotar itens sem vencedor' })
+
+  await user.click(screen.getByRole('button', { name: 'Recotar itens sem vencedor' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recotar' }))
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não é possível recotar.')
+})
+
+test('expandir um pedido mostra a quantidade comprada de cada item', async () => {
+  setup(undefined, [], [item({ quantidade: 7 })])
+  const user = userEvent.setup()
+
+  await screen.findByText('Atacadão Central')
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
+
+  expect(await screen.findByText('Quantidade')).toBeInTheDocument()
+  expect(screen.getByText('7')).toBeInTheDocument()
 })

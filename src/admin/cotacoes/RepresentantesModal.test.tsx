@@ -46,6 +46,18 @@ function setup(
   server.use(
     http.get('*/api/empresas', () => HttpResponse.json(empresas)),
     http.get('*/api/representantes', () => HttpResponse.json(extras.representantes ?? [])),
+    http.get('*/api/cotacoes/c-1', () =>
+      HttpResponse.json({
+        id: 'c-1',
+        titulo: 'Compra semanal',
+        status,
+        prazo: status === 'ABERTA' ? '2026-08-30T12:00:00Z' : null,
+        criadaEm: '2026-08-01T12:00:00Z',
+        encerradaEm: null,
+        itens: [],
+        prazoVencido: false,
+      }),
+    ),
     http.get('*/api/cotacoes/c-1/participantes', () => HttpResponse.json(lista)),
     http.post('*/api/participantes/:participanteId/finalizar', ({ params }) => {
       const participanteId = params.participanteId as string
@@ -329,6 +341,18 @@ test('em RASCUNHO, o checkbox continua sendo toggle de seleção (sem regressão
   server.use(
     http.get('*/api/empresas', () => HttpResponse.json([{ id: empresaId, nome: 'Mercado A', ativo: true }])),
     http.get('*/api/representantes', () => HttpResponse.json([])),
+    http.get('*/api/cotacoes/c-1', () =>
+      HttpResponse.json({
+        id: 'c-1',
+        titulo: 'Compra semanal',
+        status: 'RASCUNHO',
+        prazo: null,
+        criadaEm: '2026-08-01T12:00:00Z',
+        encerradaEm: null,
+        itens: [],
+        prazoVencido: false,
+      }),
+    ),
     http.get('*/api/cotacoes/c-1/participantes', () => HttpResponse.json([])),
   )
   render(
@@ -445,4 +469,23 @@ test('erro da API ao desconvidar mantém a linha exibindo o participante', async
   expect(within(linha).getByRole('checkbox', { name: 'Desconvidar Mercado A' })).toBeInTheDocument()
 
   errorSpy.mockRestore()
+})
+
+test('botão WhatsApp monta a mensagem pelo helper (nome, título e link)', async () => {
+  const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+  setup('ABERTA', [
+    { ...participante('e1', 'Mercado A', 'CONVIDADO'), whatsappRepresentante: '11987654321' },
+  ])
+  const user = userEvent.setup()
+
+  const linha = (await screen.findByText('Mercado A')).closest('li')!
+  await user.click(within(linha).getByRole('button', { name: 'Enviar por WhatsApp' }))
+
+  const url = openSpy.mock.calls[0][0] as string
+  expect(url).toContain('wa.me/11987654321')
+  const decodificada = decodeURIComponent(url)
+  expect(decodificada).toContain('Rep de Mercado A')
+  expect(decodificada).toContain('Compra semanal')
+  expect(decodificada).toContain('https://exemplo.com/token')
+  openSpy.mockRestore()
 })

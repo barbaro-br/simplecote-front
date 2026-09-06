@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { ChevronRight, FileDown, Send } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { ChevronRight, FileDown, RefreshCw, Send } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
@@ -14,8 +15,10 @@ import {
   useCotacao,
   useEnviarPedido,
   usePedidos,
+  useRecotarSemVencedor,
   useResultado,
 } from './cotacoes.api'
+import { ConfirmarDialog } from './ConfirmarDialog'
 
 const ROTULO_PEDIDO: Record<string, string> = {
   GERADO: 'Gerado',
@@ -43,11 +46,14 @@ function PedidoStatusBadge({ status }: { status: string }) {
 
 export function ResultadoPage() {
   const { id = '' } = useParams()
+  const navigate = useNavigate()
   const resultado = useResultado(id)
   const pedidos = usePedidos(id)
   const cotacao = useCotacao(id)
   const enviar = useEnviarPedido(id)
+  const recotar = useRecotarSemVencedor(id)
   const [erro, setErro] = useState<string | null>(null)
+  const [confirmarRecotar, setConfirmarRecotar] = useState(false)
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set())
   const [margemGlobal, setMargemGlobal] = useState('')
   const [margensPorItem, setMargensPorItem] = useState<Record<string, string>>({})
@@ -71,6 +77,22 @@ export function ResultadoPage() {
   function tratarErro(e: unknown) {
     if (e instanceof SessaoExpiradaError) return
     setErro(e instanceof ApiError ? e.message : 'Erro inesperado.')
+  }
+
+  async function aoRecotar() {
+    setConfirmarRecotar(false)
+    setErro(null)
+    try {
+      const { cotacao: nova, omitidos } = await recotar.mutateAsync()
+      if (omitidos.length > 0) {
+        const resumo = omitidos.map((o) => `${o.nome} (${o.motivo})`).join(', ')
+        toast.warning(`Itens omitidos da recotação: ${resumo}`)
+      }
+      navigate(`/admin/cotacoes/${nova.id}`)
+    } catch (e) {
+      if (e instanceof SessaoExpiradaError) return
+      setErro(e instanceof ApiError ? e.message : 'Erro ao recotar os itens sem vencedor.')
+    }
   }
 
   if (resultado.isLoading) return <p className="p-6 text-muted-foreground">Carregando resultado…</p>
@@ -208,6 +230,7 @@ export function ResultadoPage() {
                             <thead>
                               <tr className="text-left text-muted-foreground">
                                 <th className="py-1.5 font-medium">Produto</th>
+                                <th className="py-1.5 font-medium text-right">Quantidade</th>
                                 <th className="py-1.5 font-medium text-right">Preço embalagem</th>
                                 <th className="py-1.5 font-medium text-right">Preço unitário</th>
                                 <th className="py-1.5 font-medium text-right">Margem (%)</th>
@@ -221,6 +244,7 @@ export function ResultadoPage() {
                                 return (
                                   <tr key={item.id}>
                                     <td className="py-2 font-medium">{item.nomeSnapshot}</td>
+                                    <td className="py-2 text-right tabular-nums text-muted-foreground">{item.quantidade}</td>
                                     <td className="py-2 text-right tabular-nums text-muted-foreground">{moeda(item.precoEmbalagem)}</td>
                                     <td className="py-2 text-right tabular-nums text-muted-foreground">
                                       {moeda(item.precoUnitario)}
@@ -284,9 +308,26 @@ export function ResultadoPage() {
                 </li>
               ))}
             </ul>
+            <div className="mt-3">
+              <Button variant="outline" onClick={() => setConfirmarRecotar(true)}>
+                <RefreshCw className="mr-2 size-4" />
+                Recotar itens sem vencedor
+              </Button>
+            </div>
           </div>
         )}
       </Card>
+
+      {confirmarRecotar && (
+        <ConfirmarDialog
+          titulo="Recotar itens sem vencedor"
+          descricao="Será criada uma nova cotação (rascunho) apenas com os itens que ficaram sem vencedor."
+          rotuloConfirmar="Recotar"
+          pendente={recotar.isPending}
+          onConfirmar={aoRecotar}
+          onCancelar={() => setConfirmarRecotar(false)}
+        />
+      )}
     </PageContainer>
   )
 }

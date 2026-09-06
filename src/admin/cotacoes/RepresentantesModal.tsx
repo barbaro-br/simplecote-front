@@ -11,10 +11,11 @@ import {
   useDesconvidarParticipante,
   useFinalizarParticipante,
   useReabrirParticipante,
+  useCotacao,
 } from './cotacoes.api'
 import { Send, Mail, Phone, Search, X, Info, CheckCircle2, Loader2, Copy, MessageCircle, RotateCcw } from 'lucide-react'
 import { ConfirmarDialog } from './ConfirmarDialog'
-import { urlWhatsApp, urlMailto } from './compartilhar-link'
+import { urlWhatsApp, urlMailto, montarMensagemConvite } from './compartilhar-link'
 import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { toast } from 'sonner'
@@ -47,6 +48,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const finalizar = useFinalizarParticipante(cotacaoId)
   const reabrir = useReabrirParticipante(cotacaoId)
   const desconvidar = useDesconvidarParticipante(cotacaoId)
+  const { data: cotacao } = useCotacao(cotacaoId)
   const { data: empresas } = useEmpresas()
   const { data: reps } = useRepresentantes()
   const [loadingMailId, setLoadingMailId] = useState<string | null>(null)
@@ -397,8 +399,13 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                               className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
                               onClick={(ev) => {
                                 ev.stopPropagation()
-                                const link = e.part!.linkMagico
-                                const msg = `Olá ${e.part!.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação. Acesse: ${link}`
+                                const msg = montarMensagemConvite({
+                                  representanteNome: e.part!.representanteNome || e.repNome || 'Representante',
+                                  titulo: cotacao?.titulo ?? '',
+                                  empresaNome: e.nome,
+                                  prazo: cotacao?.prazo ?? null,
+                                  link: e.part!.linkMagico,
+                                })
                                 const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
                                 window.open(url, '_blank')
                               }}

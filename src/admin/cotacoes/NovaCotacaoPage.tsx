@@ -11,6 +11,7 @@ import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { criarCotacaoSchema, type CriarCotacaoValues } from './cotacoes.schema'
 import { useCotacoes, useCriarCotacao, useDuplicarCotacao } from './cotacoes.api'
+import { NovaCotacaoWizard } from './NovaCotacaoWizard'
 
 export function NovaCotacaoPage() {
   const navigate = useNavigate()
@@ -20,6 +21,7 @@ export function NovaCotacaoPage() {
   const [erroServidor, setErroServidor] = useState<string | null>(null)
   const [origemId, setOrigemId] = useState('')
   const [modo, setModo] = useState<'branco' | 'duplicar'>('branco')
+  const [cotacaoCriadaId, setCotacaoCriadaId] = useState<string | null>(null)
 
   const {
     register,
@@ -37,7 +39,7 @@ export function NovaCotacaoPage() {
     setErroServidor(null)
     try {
       const nova = await criar.mutateAsync(values)
-      navigate(`/admin/cotacoes/${nova.id}`)
+      setCotacaoCriadaId(nova.id)
     } catch (e) {
       tratarErro(e)
     }
@@ -52,6 +54,10 @@ export function NovaCotacaoPage() {
     } catch (e) {
       tratarErro(e)
     }
+  }
+
+  if (cotacaoCriadaId) {
+    return <NovaCotacaoWizard cotacaoId={cotacaoCriadaId} />
   }
 
   return (

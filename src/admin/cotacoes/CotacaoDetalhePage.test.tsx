@@ -47,7 +47,7 @@ function participante(
   }
 }
 
-function setup(status: StatusCotacao, itensIniciais: Item[] = []) {
+function setup(status: StatusCotacao, itensIniciais: Item[] = [], prazoVencido = false) {
   const state = {
     id: 'c-1',
     titulo: 'Compra semanal',
@@ -56,6 +56,7 @@ function setup(status: StatusCotacao, itensIniciais: Item[] = []) {
     criadaEm: '2026-08-01T12:00:00Z',
     encerradaEm: null as string | null,
     itens: [...itensIniciais],
+    prazoVencido,
   }
   const chamadas: Record<string, number> = {}
   let prazoRecebido: string | null = null
@@ -66,6 +67,10 @@ function setup(status: StatusCotacao, itensIniciais: Item[] = []) {
   server.use(
     http.get('*/api/analises/produtos/insight', () => HttpResponse.json({})),
     http.get('*/api/cotacoes/c-1', () => HttpResponse.json(state)),
+    http.get('*/api/cotacoes/c-1/apuracao/previa', () => {
+      chamadas.previa = (chamadas.previa ?? 0) + 1
+      return HttpResponse.json({ pedidos: [], itensSemVencedor: [] })
+    }),
     http.get('*/api/produtos', () => HttpResponse.json(produtos)),
     http.get('*/api/representantes', () => HttpResponse.json([])),
     http.post('*/api/produtos', async ({ request }) => {
@@ -324,7 +329,7 @@ test('3.4 — Abrir envia o prazo em ISO', async () => {
   const dialog = await screen.findByRole('dialog')
   
   // A interface foi atualizada para botões de acesso rápido
-  await user.click(within(dialog).getByRole('button', { name: 'Amanhã 12h' }))
+  await user.click(within(dialog).getByRole('button', { name: '+24h' }))
   await user.click(within(dialog).getByRole('button', { name: 'Abrir Cotação' }))
 
   await waitFor(() => expect(chamadas.abrir).toBe(1))
@@ -359,7 +364,7 @@ test('Caminho Triste: Erro 500 ao tentar Abrir a cotação mantém o modal fecha
   // Tenta abrir
   await user.click(screen.getByRole('button', { name: 'Abrir' }))
   const dialog = await screen.findByRole('dialog')
-  await user.click(within(dialog).getByRole('button', { name: 'Amanhã 12h' }))
+  await user.click(within(dialog).getByRole('button', { name: '+24h' }))
   await user.click(within(dialog).getByRole('button', { name: 'Abrir Cotação' }))
 
   // Verifica se o alerta apareceu e a tela não ficou branca
@@ -491,4 +496,177 @@ test('Encerrar continua funcionando normalmente mesmo com o aviso visível', asy
 
   await user.click(within(dialog).getByRole('button', { name: 'Encerrar' }))
   await waitFor(() => expect(chamadas.encerrar).toBe(1))
+})
+
+const previaMock = {
+  pedidos: [
+    {
+      id: 'ped-1',
+      cotacaoId: 'c-1',
+      participanteId: 'p1',
+      empresaNome: 'Mercado A',
+      status: 'GERADO',
+      observacao: null,
+      geradoEm: '2026-08-01T12:00:00Z',
+      enviadoEm: null,
+      confirmadoEm: null,
+      itens: [
+        {
+          id: 'ipi-1',
+          itemCotacaoId: 'item-1',
+          lanceId: 'lance-1',
+          nomeSnapshot: 'Arroz Tipo 1 5kg',
+          unidadeSnapshot: 'Fardo',
+          quantidadePorEmbalagemSnapshot: 1,
+          quantidade: 5,
+          precoEmbalagem: 50,
+          precoUnitario: 10,
+          subtotal: 50,
+        },
+      ],
+      total: 50,
+    },
+  ],
+  itensSemVencedor: [
+    {
+      id: 'item-2',
+      produtoId: 'p-2',
+      nomeSnapshot: 'Feijão Carioca 1kg',
+      codigoBarrasSnapshot: null,
+      unidadeSnapshot: 'Pacote',
+      quantidadeSolicitada: 3,
+      quantidadePorEmbalagemSnapshot: 1,
+    },
+  ],
+}
+
+test('prévia só é carregada quando o diálogo de Apurar abre', async () => {
+  const { chamadas } = setup('ENCERRADA')
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  expect(chamadas.previa ?? 0).toBe(0)
+
+  await user.click(screen.getByRole('button', { name: 'Apurar' }))
+
+  await waitFor(() => expect(chamadas.previa).toBe(1))
+})
+
+test('prévia renderiza empresas, itens ganhos, totais e itens sem vencedor', async () => {
+  setup('ENCERRADA')
+  server.use(
+    http.get('*/api/cotacoes/c-1/apuracao/previa', () => HttpResponse.json(previaMock)),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Apurar' }))
+
+  const dialog = await screen.findByRole('dialog')
+  expect(await within(dialog).findByText('Mercado A')).toBeInTheDocument()
+  expect(within(dialog).getByText('R$ 50,00')).toBeInTheDocument()
+  expect(within(dialog).getByText(/Arroz Tipo 1 5kg/)).toBeInTheDocument()
+  expect(within(dialog).getByText('Itens sem vencedor:')).toBeInTheDocument()
+  expect(within(dialog).getByText('Feijão Carioca 1kg')).toBeInTheDocument()
+})
+
+test('erro na prévia mostra a mensagem e o botão Apurar segue disponível', async () => {
+  setup('ENCERRADA')
+  server.use(
+    http.get('*/api/cotacoes/c-1/apuracao/previa', () =>
+      HttpResponse.json({ title: 'Erro', status: 500, detail: 'Falha ao montar a prévia' }, { status: 500 }),
+    ),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Apurar' }))
+
+  const dialog = await screen.findByRole('dialog')
+  expect(await within(dialog).findByText('Falha ao montar a prévia')).toBeInTheDocument()
+  expect(within(dialog).getByRole('button', { name: 'Apurar' })).toBeEnabled()
+})
+
+test('fechar e reabrir o diálogo de Apurar não quebra a prévia', async () => {
+  setup('ENCERRADA')
+  server.use(
+    http.get('*/api/cotacoes/c-1/apuracao/previa', () => HttpResponse.json(previaMock)),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: 'Apurar' }))
+  const dialog1 = await screen.findByRole('dialog')
+  expect(await within(dialog1).findByText('Mercado A')).toBeInTheDocument()
+
+  await user.click(within(dialog1).getByRole('button', { name: 'Voltar' }))
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Apurar' }))
+  const dialog2 = await screen.findByRole('dialog')
+  expect(await within(dialog2).findByText('Mercado A')).toBeInTheDocument()
+})
+
+test('banner de prazo vencido aparece com ABERTA + prazoVencido', async () => {
+  setup('ABERTA', [], true)
+
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(screen.getByText(/Prazo vencido/)).toBeInTheDocument()
+})
+
+test('banner de prazo vencido ausente com ABERTA dentro do prazo', async () => {
+  setup('ABERTA')
+
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(screen.queryByText(/Prazo vencido/)).not.toBeInTheDocument()
+})
+
+test('banner de prazo vencido ausente quando status não é ABERTA', async () => {
+  setup('ENCERRADA', [], true)
+
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(screen.queryByText(/Prazo vencido/)).not.toBeInTheDocument()
+})
+
+test('cabeçalho mostra "3 de 4 convites entregues" com participantes mistos', async () => {
+  setup('ABERTA')
+  server.use(
+    http.get('*/api/cotacoes/c-1/participantes', () =>
+      HttpResponse.json([
+        participante('p1', 'Mercado A', 'CONVIDADO'),
+        participante('p2', 'Mercado B', 'CONVIDADO'),
+        participante('p3', 'Mercado C', 'CONVIDADO'),
+        { ...participante('p4', 'Mercado D', 'CONVIDADO'), conviteStatus: 'FALHOU' },
+      ]),
+    ),
+  )
+
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(await screen.findByText(/3 de 4 convites entregues/)).toBeInTheDocument()
+})
+
+test('resumo de convites entregues ausente em RASCUNHO', async () => {
+  setup('RASCUNHO')
+
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(screen.queryByText(/convites entregues/)).not.toBeInTheDocument()
+})
+
+test('ação "ver" no resumo abre o modal de Representantes', async () => {
+  setup('ABERTA')
+  server.use(
+    http.get('*/api/cotacoes/c-1/participantes', () =>
+      HttpResponse.json([
+        participante('p1', 'Mercado A', 'CONVIDADO'),
+        { ...participante('p2', 'Mercado B', 'CONVIDADO'), conviteStatus: 'FALHOU' },
+      ]),
+    ),
+  )
+  const user = userEvent.setup()
+
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  await screen.findByText(/1 de 2 convites entregues/)
+  await user.click(screen.getByRole('button', { name: 'ver' }))
+
+  expect(await screen.findByRole('dialog')).toBeInTheDocument()
 })

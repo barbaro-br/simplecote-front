@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Eye, EyeOff, Pencil, PlusCircle, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, Pencil, PlusCircle, Trash2, UserX } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
@@ -10,7 +10,7 @@ import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { ConfirmarDialog } from '../cotacoes/ConfirmarDialog'
 import { useEmpresas, useInativarEmpresa, useAtivarEmpresa, useExcluirEmpresa } from './empresas.api'
-import { useRepresentantes } from '../representantes/representantes.api'
+import { useRepresentantes, useExcluirRepresentante } from '../representantes/representantes.api'
 import { EmpresaForm } from './EmpresaForm'
 import type { Empresa } from './empresas.schema'
 import type { Representante } from '../representantes/representantes.schema'
@@ -21,9 +21,11 @@ export function EmpresasPage() {
   const inativar = useInativarEmpresa()
   const ativar = useAtivarEmpresa()
   const excluir = useExcluirEmpresa()
+  const excluirRepresentante = useExcluirRepresentante()
   const [mostrarForm, setMostrarForm] = useState(false)
   const [empresaEditando, setEmpresaEditando] = useState<Empresa | undefined>(undefined)
   const [empresaParaExcluir, setEmpresaParaExcluir] = useState<Empresa | null>(null)
+  const [representanteParaExcluir, setRepresentanteParaExcluir] = useState<Representante | null>(null)
 
   const representantePorEmpresa = useMemo(
     () => new Map((representantes ?? []).map((r) => [r.empresaId, r] as const)),
@@ -66,6 +68,22 @@ export function EmpresasPage() {
     }
   }
 
+  async function confirmarExclusaoRepresentante() {
+    if (!representanteParaExcluir) return
+    try {
+      const { resultado } = await excluirRepresentante.mutateAsync(representanteParaExcluir.id)
+      if (resultado === 'REMOVIDO') {
+        toast.success('Contato removido.')
+      } else {
+        toast.success('Dados do contato anonimizados; o histórico foi mantido.')
+      }
+      setRepresentanteParaExcluir(null)
+    } catch (e) {
+      if (e instanceof SessaoExpiradaError) return
+      toast.error(e instanceof ApiError ? e.message : 'Erro ao excluir o contato.')
+    }
+  }
+
   return (
     <PageContainer maxWidth="5xl" className="space-y-6">
       <div className="flex items-start justify-between">
@@ -102,6 +120,17 @@ export function EmpresasPage() {
           pendente={excluir.isPending}
           onConfirmar={confirmarExclusao}
           onCancelar={() => setEmpresaParaExcluir(null)}
+        />
+      )}
+
+      {representanteParaExcluir && (
+        <ConfirmarDialog
+          titulo="Excluir contato"
+          descricao={`Excluir o contato "${representanteParaExcluir.nome}"? Se ele nunca participou de uma cotação, os dados serão apagados e a empresa ficará sem contato. Se já participou, os dados pessoais (nome, e-mail e WhatsApp) serão anonimizados e o histórico de cotações será preservado.`}
+          rotuloConfirmar="Excluir"
+          pendente={excluirRepresentante.isPending}
+          onConfirmar={confirmarExclusaoRepresentante}
+          onCancelar={() => setRepresentanteParaExcluir(null)}
         />
       )}
 
@@ -170,6 +199,14 @@ export function EmpresasPage() {
                               label="Ativar"
                               onClick={() => ativar.mutate(empresa.id)}
                               disabled={ativar.isPending}
+                            />
+                          )}
+                          {rep && (
+                            <IconButton
+                              icon={UserX}
+                              label="Excluir contato"
+                              tone="destructive"
+                              onClick={() => setRepresentanteParaExcluir(rep)}
                             />
                           )}
                           {empresa.podeExcluir ? (
