@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { vi, expect, test } from 'vitest'
+import { afterEach, vi, expect, test } from 'vitest'
 import * as Sentry from '@sentry/react'
 import { iniciarSentry } from './sentry'
 import { FallbackErro } from './FallbackErro'
@@ -11,9 +11,23 @@ vi.mock('@sentry/react', async (importOriginal) => {
   return { ...actual, init: vi.fn() }
 })
 
+afterEach(() => {
+  vi.unstubAllEnvs()
+  vi.mocked(Sentry.init).mockClear()
+})
+
 test('iniciarSentry sem VITE_SENTRY_DSN não chama Sentry.init', () => {
+  vi.stubEnv('VITE_SENTRY_DSN', '')
   iniciarSentry()
   expect(Sentry.init).not.toHaveBeenCalled()
+})
+
+test('iniciarSentry com VITE_SENTRY_DSN chama Sentry.init com o dsn', () => {
+  vi.stubEnv('VITE_SENTRY_DSN', 'https://exemplo@o0.ingest.sentry.io/1')
+  iniciarSentry()
+  expect(Sentry.init).toHaveBeenCalledWith(
+    expect.objectContaining({ dsn: 'https://exemplo@o0.ingest.sentry.io/1' }),
+  )
 })
 
 function FilhoQueLanca(): never {
