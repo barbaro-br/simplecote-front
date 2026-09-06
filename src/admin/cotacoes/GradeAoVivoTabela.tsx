@@ -1,12 +1,13 @@
 import { memo, useState } from 'react'
-import { Minus, Plus } from 'lucide-react'
+import { Minus, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { CelulaGrid, GridAoVivo, ItemGrid } from './cotacoes.schema'
-import { useCorrigirLance, useAtualizarQuantidadeItem } from './cotacoes.api'
+import { useCorrigirLance, useAtualizarQuantidadeItem, useRemoverItem } from './cotacoes.api'
+import { ConfirmarDialog } from './ConfirmarDialog'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
 import { useHighlightOnUpdate } from '@/shared/hooks/useHighlightOnUpdate'
 
@@ -151,6 +152,8 @@ type LinhaProps = {
   quantidadePendente: boolean
   aoAtualizarQuantidade: (itemId: string, quantidade: number) => void
   destacarMenorPreco: boolean
+  removerHabilitado: boolean
+  aoRemover: (item: ItemGrid) => void
 }
 
 // `memo` por linha (spec.md §14): o poll não deve re-renderizar linhas iguais.
@@ -162,6 +165,8 @@ const LinhaItem = memo(function LinhaItem({
   quantidadePendente,
   aoAtualizarQuantidade,
   destacarMenorPreco,
+  removerHabilitado,
+  aoRemover,
 }: LinhaProps) {
   return (
     <tr className="group transition-colors hover:bg-muted/40">
@@ -204,6 +209,16 @@ const LinhaItem = memo(function LinhaItem({
           ) : (
             <span className="shrink-0 text-xs text-muted-foreground">qtd {item.quantidadeSolicitada}</span>
           )}
+          {removerHabilitado && (
+            <button
+              type="button"
+              aria-label={`Remover item ${item.nome}`}
+              onClick={() => aoRemover(item)}
+              className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          )}
         </div>
       </td>
       {colunas.map((col) => {
@@ -240,16 +255,20 @@ type Alvo = { item: ItemGrid; celula: CelulaGrid }
 export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; grade: GridAoVivo }) {
   const corrigir = useCorrigirLance(cotacaoId)
   const atualizarQuantidade = useAtualizarQuantidadeItem(cotacaoId)
+  const remover = useRemoverItem(cotacaoId)
   const [alvo, setAlvo] = useState<Alvo | null>(null)
   const [preco, setPreco] = useState('')
   const [naoCotado, setNaoCotado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [erroQuantidade, setErroQuantidade] = useState<string | null>(null)
+  const [itemParaRemover, setItemParaRemover] = useState<ItemGrid | null>(null)
+  const [erroRemocao, setErroRemocao] = useState<string | null>(null)
 
   // Destaque do menor preço é sempre ligado por padrão
   const destacarMenorPreco = true
 
   const quantidadeEditavel = grade.status === 'ABERTA' || grade.status === 'ENCERRADA'
+  const removerHabilitado = grade.status === 'ABERTA'
 
   function aoAtualizarQuantidade(itemId: string, quantidade: number) {
     setErroQuantidade(null)
@@ -264,6 +283,23 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
         },
       },
     )
+  }
+
+  function abrirRemocao(item: ItemGrid) {
+    setItemParaRemover(item)
+    setErroRemocao(null)
+  }
+
+  async function confirmarRemocao() {
+    if (!itemParaRemover) return
+    setErroRemocao(null)
+    try {
+      await remover.mutateAsync(itemParaRemover.itemCotacaoId)
+      setItemParaRemover(null)
+    } catch (e) {
+      if (e instanceof SessaoExpiradaError) return
+      setErroRemocao(e instanceof ApiError ? e.message : 'Não foi possível remover o item.')
+    }
   }
 
   const colunas = colunasDe(grade)
@@ -331,6 +367,8 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
                   quantidadePendente={atualizarQuantidade.isPending}
                   aoAtualizarQuantidade={aoAtualizarQuantidade}
                   destacarMenorPreco={destacarMenorPreco}
+                  removerHabilitado={removerHabilitado}
+                  aoRemover={abrirRemocao}
                 />
               ))}
             </tbody>
@@ -389,6 +427,23 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
           </div>
         )}
       </Dialog>
+
+      {itemParaRemover && (
+        <ConfirmarDialog
+          titulo="Remover item"
+          descricao={`Remover "${itemParaRemover.nome}"? Os lances já dados para este item serão descartados.`}
+          rotuloConfirmar="Remover item"
+          pendente={remover.isPending}
+          onConfirmar={confirmarRemocao}
+          onCancelar={() => setItemParaRemover(null)}
+        >
+          {erroRemocao && (
+            <p role="alert" className="text-sm font-medium text-destructive">
+              {erroRemocao}
+            </p>
+          )}
+        </ConfirmarDialog>
+      )}
     </>
   )
 }

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
@@ -406,4 +406,59 @@ test('mudança de liderança também dispara o flash na célula que assumiu o me
   } finally {
     vi.useRealTimers()
   }
+})
+
+test('em ABERTA, a ação de remover item aparece na linha', () => {
+  renderGrade(gradeBase)
+  expect(screen.getByRole('button', { name: /Remover item Arroz/i })).toBeInTheDocument()
+})
+
+test('em ENCERRADA, a ação de remover item não aparece', () => {
+  renderGrade({ ...gradeBase, status: 'ENCERRADA' })
+  expect(screen.queryByRole('button', { name: /Remover item Arroz/i })).not.toBeInTheDocument()
+})
+
+test('cancelar a remoção não dispara o DELETE; confirmar dispara com o itemId certo', async () => {
+  const deletados: string[] = []
+  server.use(
+    http.delete('*/api/cotacoes/c-1/itens/:itemId', ({ params }) => {
+      deletados.push(String(params.itemId))
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+  renderGrade(gradeBase)
+  await screen.findByText('Arroz')
+
+  const user = userEvent.setup()
+  await user.click(screen.getByRole('button', { name: /Remover item Arroz/i }))
+
+  // cancelar: botão "Voltar"
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Voltar' }))
+  expect(deletados).toHaveLength(0)
+
+  // reabrir e confirmar
+  await user.click(screen.getByRole('button', { name: /Remover item Arroz/i }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Remover item' }))
+
+  await waitFor(() => expect(deletados).toEqual(['item-1']))
+})
+
+test('erro ao remover exibe ApiError.message e mantém o diálogo aberto', async () => {
+  server.use(
+    http.delete('*/api/cotacoes/c-1/itens/:itemId', () =>
+      HttpResponse.json(
+        { type: 'about:blank', title: 'Conflito', status: 409, detail: 'Não é possível remover este item.' },
+        { status: 409 },
+      ),
+    ),
+  )
+  renderGrade(gradeBase)
+  await screen.findByText('Arroz')
+
+  const user = userEvent.setup()
+  await user.click(screen.getByRole('button', { name: /Remover item Arroz/i }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Remover item' }))
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não é possível remover este item.')
+  expect(screen.getByText('Arroz')).toBeInTheDocument()
 })

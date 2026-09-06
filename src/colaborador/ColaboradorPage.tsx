@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Search, PackageOpen, ScanLine } from 'lucide-react'
+import { Search, PackageOpen, ScanLine, Plus } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { ApiError } from '@/shared/api/api-client'
 import { toast } from 'sonner'
@@ -33,6 +33,81 @@ function Skeleton() {
   )
 }
 
+type FormularioNovoProdutoProps = {
+  nome: string
+  unidade: string
+  qtdEmb: string
+  quantidade: string
+  onChangeNome: (v: string) => void
+  onChangeUnidade: (v: string) => void
+  onChangeQtdEmb: (v: string) => void
+  onChangeQuantidade: (v: string) => void
+}
+
+// Campos do cadastro de um produto ainda não catalogado — usados tanto no fluxo
+// de bipagem (lookup 404) quanto no cadastro manual sem bipar.
+function FormularioNovoProduto({
+  nome,
+  unidade,
+  qtdEmb,
+  quantidade,
+  onChangeNome,
+  onChangeUnidade,
+  onChangeQtdEmb,
+  onChangeQuantidade,
+}: FormularioNovoProdutoProps) {
+  return (
+    <>
+      <div className="space-y-2">
+        <label htmlFor="novoNome" className="text-sm font-medium">Nome</label>
+        <input
+          id="novoNome"
+          type="text"
+          value={nome}
+          onChange={(e) => onChangeNome(e.target.value)}
+          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <label htmlFor="novoUnidade" className="text-sm font-medium">Unidade</label>
+          <input
+            id="novoUnidade"
+            type="text"
+            value={unidade}
+            onChange={(e) => onChangeUnidade(e.target.value)}
+            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="novoQtdEmb" className="text-sm font-medium">Qtd/Emb</label>
+          <input
+            id="novoQtdEmb"
+            type="number"
+            min={1}
+            inputMode="numeric"
+            value={qtdEmb}
+            onChange={(e) => onChangeQtdEmb(e.target.value)}
+            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="quantidadeNovo" className="text-sm font-medium">Quantidade</label>
+        <input
+          id="quantidadeNovo"
+          type="number"
+          min={1}
+          inputMode="numeric"
+          value={quantidade}
+          onChange={(e) => onChangeQuantidade(e.target.value)}
+          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+      </div>
+    </>
+  )
+}
+
 export function ColaboradorPage() {
   const { token = '' } = useParams()
   const estado = useEstadoColaborador(token)
@@ -47,6 +122,7 @@ export function ColaboradorPage() {
   const [cotacaoSelecionadaId, setCotacaoSelecionadaId] = useState<string | null>(null)
 
   const [modoBipador, setModoBipador] = useState(false)
+  const [modoCadastro, setModoCadastro] = useState(false)
   const [gtinBipado, setGtinBipado] = useState<string | null>(null)
   const lookup = useLookupProdutoColaborador(token, gtinBipado ?? '')
 
@@ -100,6 +176,15 @@ export function ColaboradorPage() {
 
   function cancelarBipado() {
     setGtinBipado(null)
+    setNovoNome('')
+    setNovoUnidade('Unidade')
+    setNovoQtdEmb('1')
+    setQuantidade('1')
+    setErro(null)
+  }
+
+  function cancelarCadastro() {
+    setModoCadastro(false)
     setNovoNome('')
     setNovoUnidade('Unidade')
     setNovoQtdEmb('1')
@@ -166,6 +251,38 @@ export function ColaboradorPage() {
     }
   }
 
+  async function aoCadastrarManual() {
+    const qtd = Number.parseInt(quantidade, 10)
+    if (!Number.isInteger(qtd) || qtd < 1) {
+      setErro('Informe uma quantidade válida (mínimo 1).')
+      return
+    }
+    const nome = novoNome.trim()
+    if (!nome) {
+      setErro('Informe o nome do produto.')
+      return
+    }
+    const qtdEmb = Number.parseInt(novoQtdEmb, 10)
+    if (!Number.isInteger(qtdEmb) || qtdEmb < 1) {
+      setErro('Informe uma quantidade por embalagem válida (mínimo 1).')
+      return
+    }
+    setErro(null)
+    try {
+      await cadastrarBipado.mutateAsync({
+        cotacaoId: cotacaoAtualId,
+        nome,
+        unidade: novoUnidade,
+        quantidadePorEmbalagem: qtdEmb,
+        quantidade: qtd,
+      })
+      toast.success('Item adicionado à cotação!')
+      cancelarCadastro()
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível cadastrar o item.')
+    }
+  }
+
   if (modoBipador) {
     return (
       <Suspense fallback={<div className="fixed inset-0 z-50 bg-black" />}>
@@ -183,7 +300,10 @@ export function ColaboradorPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-4 px-4 pb-10 pt-6">
-      <div className="space-y-3">
+      <div
+        data-testid="cabecalho-colaborador"
+        className="sticky top-0 z-10 -mx-4 border-b border-border bg-background px-4 pb-3 pt-4"
+      >
         <div>
           {cotacoesAbertas.length === 1 ? (
             <h1 className="text-xl font-semibold tracking-tight">{cotacoesAbertas[0].titulo}</h1>
@@ -209,7 +329,7 @@ export function ColaboradorPage() {
         </div>
       </div>
 
-      {!selecionado && !gtinBipado && (
+      {!selecionado && !gtinBipado && !modoCadastro && (
         <>
           <Button
             type="button"
@@ -219,6 +339,16 @@ export function ColaboradorPage() {
           >
             <ScanLine className="size-4" />
             Bipar código de barras
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2"
+            onClick={() => setModoCadastro(true)}
+          >
+            <Plus className="size-4" />
+            Cadastrar produto
           </Button>
 
           <div className="relative">
@@ -313,52 +443,16 @@ export function ColaboradorPage() {
               <p className="text-sm text-muted-foreground">
                 Produto não encontrado. Preencha os dados abaixo:
               </p>
-              <div className="space-y-2">
-                <label htmlFor="novoNome" className="text-sm font-medium">Nome</label>
-                <input
-                  id="novoNome"
-                  type="text"
-                  value={novoNome}
-                  onChange={(e) => setNovoNome(e.target.value)}
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label htmlFor="novoUnidade" className="text-sm font-medium">Unidade</label>
-                  <input
-                    id="novoUnidade"
-                    type="text"
-                    value={novoUnidade}
-                    onChange={(e) => setNovoUnidade(e.target.value)}
-                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="novoQtdEmb" className="text-sm font-medium">Qtd/Emb</label>
-                  <input
-                    id="novoQtdEmb"
-                    type="number"
-                    min={1}
-                    inputMode="numeric"
-                    value={novoQtdEmb}
-                    onChange={(e) => setNovoQtdEmb(e.target.value)}
-                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="quantidadeNovo" className="text-sm font-medium">Quantidade</label>
-                <input
-                  id="quantidadeNovo"
-                  type="number"
-                  min={1}
-                  inputMode="numeric"
-                  value={quantidade}
-                  onChange={(e) => setQuantidade(e.target.value)}
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
+              <FormularioNovoProduto
+                nome={novoNome}
+                unidade={novoUnidade}
+                qtdEmb={novoQtdEmb}
+                quantidade={quantidade}
+                onChangeNome={setNovoNome}
+                onChangeUnidade={setNovoUnidade}
+                onChangeQtdEmb={setNovoQtdEmb}
+                onChangeQuantidade={setQuantidade}
+              />
             </div>
           ) : null}
 
@@ -378,6 +472,50 @@ export function ColaboradorPage() {
               {cadastrarBipado.isPending ? 'Adicionando…' : 'Adicionar'}
             </Button>
           )}
+        </div>
+      )}
+
+      {modoCadastro && !gtinBipado && (
+        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="text-sm font-semibold text-foreground">Cadastrar produto</div>
+              <div className="text-xs text-muted-foreground">Produto novo, fora do catálogo.</div>
+            </div>
+            <button
+              type="button"
+              onClick={cancelarCadastro}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Cancelar
+            </button>
+          </div>
+
+          <FormularioNovoProduto
+            nome={novoNome}
+            unidade={novoUnidade}
+            qtdEmb={novoQtdEmb}
+            quantidade={quantidade}
+            onChangeNome={setNovoNome}
+            onChangeUnidade={setNovoUnidade}
+            onChangeQtdEmb={setNovoQtdEmb}
+            onChangeQuantidade={setQuantidade}
+          />
+
+          {erro && (
+            <p role="alert" className="text-[13px] font-medium text-destructive">
+              {erro}
+            </p>
+          )}
+
+          <Button
+            type="button"
+            className="w-full"
+            disabled={cadastrarBipado.isPending}
+            onClick={aoCadastrarManual}
+          >
+            {cadastrarBipado.isPending ? 'Adicionando…' : 'Adicionar'}
+          </Button>
         </div>
       )}
 

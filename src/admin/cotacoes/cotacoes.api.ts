@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { api, baixarArquivo } from '@/shared/api/api-client'
 import type {
   AbrirCotacaoValues,
@@ -101,7 +102,10 @@ export function useRemoverItem(cotacaoId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (itemId: string) => api.delete<void>(`/api/cotacoes/${cotacaoId}/itens/${itemId}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: detalheKey(cotacaoId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: detalheKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+    },
   })
 }
 
@@ -226,6 +230,12 @@ export function useGradeAoVivoSSE(cotacaoId: string, status?: string) {
     
     eventSource.addEventListener('Conectado', () => {
       // Ignorar
+    })
+
+    // Item adicionado pelo colaborador (link público) — avisa o Comprador em
+    // tempo real sem exigir refresh.
+    eventSource.addEventListener('ItemAdicionado', () => {
+      toast.success('Colaborador adicionou um item à cotação.')
     })
 
     eventSource.onerror = () => {

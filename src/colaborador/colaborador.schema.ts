@@ -14,7 +14,8 @@ export type ProdutoExternoLookup = {
 
 export type CadastrarItemBipadoValores = {
   cotacaoId: string
-  gtin: string
+  /** Opcional: ausente no cadastro manual (sem bipar). */
+  gtin?: string
   nome: string
   unidade: string
   quantidadePorEmbalagem: number

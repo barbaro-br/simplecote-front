@@ -17,6 +17,11 @@ on:
 # (que roda `npm run build`) e o `deploy` (build + smoke) precisam da mesma var.
 env:
   VITE_API_BASE_URL: https://immense-badlands-31311-934249812234.herokuapp.com
+  # Sentry (observabilidade de erros): DSN vem de secret do repositório — vazio em
+  # PRs de fork, e sem DSN o `iniciarSentry()` é no-op (nenhuma chamada a serviço
+  # externo). `release` = SHA do commit para casar o erro com o build exato.
+  VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+  VITE_SENTRY_RELEASE: ${{ github.sha }}
 
 jobs:
   ci:

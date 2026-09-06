@@ -244,4 +244,73 @@ test('erro ao adicionar exibe a mensagem sem perder a seleção e a quantidade',
   expect(screen.getByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
 })
 
+test('cabeçalho (título + loja) permanece fixo (sticky)', async () => {
+  server.use(
+    http.get(`*/public/colaborador/${TOKEN}`, () => HttpResponse.json(estado())),
+    http.get(`*/public/colaborador/${TOKEN}/produtos`, () => HttpResponse.json(produtos)),
+  )
+  renderPage()
+
+  expect(await screen.findByText('Compra semanal')).toBeInTheDocument()
+  expect(screen.getByTestId('cabecalho-colaborador').className).toContain('sticky')
+})
+
+test('cadastrar produto sem bipar cria e adiciona o item', async () => {
+  const posts: unknown[] = []
+  server.use(
+    http.get(`*/public/colaborador/${TOKEN}`, () => HttpResponse.json(estado())),
+    http.get(`*/public/colaborador/${TOKEN}/produtos`, () => HttpResponse.json(produtos)),
+    http.post(`*/public/colaborador/${TOKEN}/produtos/bipado`, async ({ request }) => {
+      posts.push(await request.json())
+      return HttpResponse.json({})
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.click(await screen.findByRole('button', { name: /cadastrar produto/i }))
+
+  await user.type(screen.getByLabelText('Nome'), 'Detergente 500ml')
+  const unidade = screen.getByLabelText('Unidade')
+  await user.clear(unidade)
+  await user.type(unidade, 'Caixa')
+  const qtdEmb = screen.getByLabelText('Qtd/Emb')
+  await user.clear(qtdEmb)
+  await user.type(qtdEmb, '12')
+  const quantidade = screen.getByLabelText('Quantidade')
+  await user.clear(quantidade)
+  await user.type(quantidade, '4')
+
+  await user.click(screen.getByRole('button', { name: 'Adicionar' }))
+
+  await waitFor(() => expect(posts).toHaveLength(1))
+  expect(posts[0]).toEqual({
+    cotacaoId: 'c-1',
+    nome: 'Detergente 500ml',
+    unidade: 'Caixa',
+    quantidadePorEmbalagem: 12,
+    quantidade: 4,
+  })
+})
+
+test('cadastrar sem bipar com nome vazio bloqueia e não cria', async () => {
+  let posts = 0
+  server.use(
+    http.get(`*/public/colaborador/${TOKEN}`, () => HttpResponse.json(estado())),
+    http.get(`*/public/colaborador/${TOKEN}/produtos`, () => HttpResponse.json(produtos)),
+    http.post(`*/public/colaborador/${TOKEN}/produtos/bipado`, () => {
+      posts += 1
+      return HttpResponse.json({})
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.click(await screen.findByRole('button', { name: /cadastrar produto/i }))
+  await user.click(screen.getByRole('button', { name: 'Adicionar' }))
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Informe o nome do produto.')
+  expect(posts).toBe(0)
+})
+
 
