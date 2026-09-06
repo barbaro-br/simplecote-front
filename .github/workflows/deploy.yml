@@ -10,13 +10,14 @@ on:
   pull_request:
 
 # Base da API embutida no bundle em build time (api-client: import.meta.env.VITE_API_BASE_URL).
-# Fixada aqui, e não como env var de Production na Vercel, porque a URL do Heroku é pública
-# (está no README) e assim o deploy não depende de config no painel. Sem isto a base vira ''
-# e o front chama /api/** no próprio domínio da Vercel -> 405 no POST /api/auth/login; o
-# guard em vite.config.ts falha o build de produção nesse caso. Nível de workflow: o `ci`
-# (que roda `npm run build`) e o `deploy` (build + smoke) precisam da mesma var.
+# Fixada aqui, e não como env var de Production na Vercel, porque a URL é pública e assim o
+# deploy não depende de config no painel. Sem isto a base vira '' e o front chama /api/** no
+# próprio domínio da Vercel -> 405 no POST /api/auth/login; o guard em vite.config.ts falha o
+# build de produção nesse caso. Nível de workflow: o `ci` (que roda `npm run build`) e o
+# `deploy` (build + smoke) precisam da mesma var.
+# Domínio custom: api.simplecote.com.br (CNAME -> Heroku app immense-badlands-31311).
 env:
-  VITE_API_BASE_URL: https://immense-badlands-31311-934249812234.herokuapp.com
+  VITE_API_BASE_URL: https://api.simplecote.com.br
 
 jobs:
   ci:
