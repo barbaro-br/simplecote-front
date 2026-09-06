@@ -101,10 +101,8 @@ app `immense-badlands-31311`. Nenhum dos dois é push manual pro provider — os
 
 ## Mocks e pendências conhecidas
 
-- `src/admin/configuracoes/configuracoes.api.ts` é mock em memória (comentário no próprio arquivo:
-  "substituir pelas chamadas reais... task 4.1"). A tela de Configurações não persiste nada de
-  verdade hoje — `GET/PUT /api/configuracoes` já existe e funciona no back, o front só nunca chama.
-  Se for mexer nessa tela, isso é o bug a resolver antes de qualquer feature nova em cima dele.
+- (nada crítico no momento — `configuracoes.api.ts` já chama o `GET/PUT /api/configuracoes` real
+  desde a change `corrigir-contratos-e-responsividade-admin`.)
 
 ## OpenSpec
 
