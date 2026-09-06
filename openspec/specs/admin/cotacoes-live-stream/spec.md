@@ -40,3 +40,15 @@ A grade ao vivo SHALL aplicar um efeito visual transiente (*flash* ou *highlight
 #### Scenario: Mudança de liderança (Menor Preço)
 - **WHEN** uma atualização de preço faz com que uma célula passe a ser o menor preço daquele item
 - **THEN** o destaque visual de menor preço é aplicado não apenas de forma estática, mas acompanhado de uma leve transição para evidenciar a nova liderança
+
+### Requirement: Feedback de item adicionado pelo colaborador
+
+O sistema SHALL notificar o Comprador, em tempo real, quando um colaborador adiciona um item a uma cotação aberta, exibindo uma notificação transiente (toast) na tela de acompanhamento, sem exigir refresh manual — em complemento ao destaque visual de lances já existente.
+
+#### Scenario: Colaborador adiciona item com a grade aberta
+- **WHEN** um colaborador adiciona um item via link e o Comprador está com a grade ao vivo (ou o detalhe) daquela cotação aberto
+- **THEN** o Comprador recebe um toast transiente informando a inclusão (ex.: "Colaborador adicionou um item"), e a grade passa a refletir o novo item
+
+#### Scenario: Item adicionado em outra aba
+- **WHEN** o colaborador adiciona um item enquanto a tela do Comprador está aberta mas em segundo plano (aba inativa)
+- **THEN** a notificação é exibida quando a aba volta a ficar ativa, sem perder o item da grade

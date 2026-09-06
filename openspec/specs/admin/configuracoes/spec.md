@@ -16,12 +16,12 @@ O sistema SHALL exibir um item de menu identificado por um ícone de engrenagem 
 
 ### Requirement: Editar dados da loja
 
-A tela de Configurações SHALL permitir editar nome da loja, cor de marca, telefone da loja, o layout de e-mail usado nas comunicações aos representantes e o tema do painel (`Claro`/`Escuro`), e SHALL persistir essas alterações via API. A tela SHALL exibir os valores atuais ao carregar, indicar o estado de salvamento em andamento, e exibir a mensagem de erro do backend quando a gravação falhar. A tela SHALL também exibir, em modo somente leitura, a URL completa do link do colaborador (montada a partir de `linkColaboradorToken`), com um botão para copiá-la à área de transferência.
+A tela de Configurações SHALL permitir editar nome da loja, cor de marca, telefone da loja, o layout de e-mail usado nas comunicações aos representantes e o tema do painel (`Claro`/`Escuro`), e SHALL persistir essas alterações via `PUT /api/configuracoes` (contrato real do backend; `linkColaboradorToken` NÃO é enviado no corpo — é somente leitura). A tela SHALL carregar os valores atuais de `GET /api/configuracoes`, indicar o estado de salvamento em andamento, e exibir a mensagem de erro do backend quando a gravação falhar. A tela SHALL também exibir, em modo somente leitura, a URL completa do link do colaborador, montada a partir do `linkColaboradorToken` retornado pelo `GET` (nunca um placeholder fixo), com um botão para copiá-la à área de transferência.
 
 #### Scenario: Salvar alteração com sucesso
 
 - **WHEN** o admin altera o nome da loja e confirma o salvamento
-- **THEN** a alteração é persistida e a tela reflete o novo valor
+- **THEN** a alteração é persistida no backend e a tela reflete o novo valor (e sobrevive a um recarregamento)
 
 #### Scenario: Falha ao salvar
 
@@ -37,6 +37,16 @@ A tela de Configurações SHALL permitir editar nome da loja, cor de marca, tele
 
 - **WHEN** o admin clica no botão de copiar ao lado do link do colaborador
 - **THEN** a URL completa (`{origin}/colaborador/{linkColaboradorToken}`) é escrita na área de transferência, com retorno visual temporário de confirmação
+
+#### Scenario: Link do colaborador vem da API
+
+- **WHEN** o admin abre a tela de Configurações de uma loja com token real no backend
+- **THEN** o link exibido usa o `linkColaboradorToken` retornado pelo `GET /api/configuracoes` — não um valor de exemplo embutido no front
+
+#### Scenario: Sem preferência de destaque de menor preço no formulário
+
+- **WHEN** o admin abre a tela de Configurações
+- **THEN** não existe a opção "Destacar menor preço na grade ao vivo" no formulário (a grade mantém o destaque ligado por padrão, conforme o requirement da grade em `admin/cotacoes`)
 
 ### Requirement: Nome e cor da loja aplicados em toda a interface
 
@@ -65,18 +75,3 @@ A tela de Configurações SHALL permitir escolher o estilo de navegação do pai
 
 - **WHEN** o admin seleciona "Lateral" nas Configurações e salva
 - **THEN** o painel volta a exibir a sidebar lateral, com o comportamento de expandir/recolher já existente
-
-### Requirement: Alternar destaque do menor preço na grade ao vivo
-A tela de Configurações SHALL oferecer uma opção "Destacar menor preço na grade ao vivo" (ligado/desligado), com "ligado" como valor padrão para uma loja nova. A escolha SHALL se aplicar à Grade de Respostas (Ao Vivo) de todas as Cotações da loja, para todos os usuários, seguindo o mesmo padrão de persistência já usado pelas demais preferências desta tela (`tema`, `estiloNavegacao`).
-
-#### Scenario: Desligar o destaque
-- **WHEN** o admin desliga "Destacar menor preço na grade ao vivo" e salva
-- **THEN** a preferência é persistida e a Grade ao Vivo de qualquer Cotação passa a não exibir destaque de menor preço em nenhuma célula
-
-#### Scenario: Ligar o destaque de volta
-- **WHEN** o admin liga "Destacar menor preço na grade ao vivo" e salva
-- **THEN** a preferência é persistida e a Grade ao Vivo volta a destacar o menor preço unitário de cada item
-
-#### Scenario: Loja nova nasce com o destaque ligado
-- **WHEN** uma loja é criada sem essa preferência explicitamente definida
-- **THEN** o valor padrão "ligado" é aplicado
