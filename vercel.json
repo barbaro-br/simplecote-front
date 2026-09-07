@@ -7,6 +7,14 @@
       "main": false
     }
   },
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "app.simplecote.com.br" }],
+      "destination": "https://app.simplecote.app/:path*",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
