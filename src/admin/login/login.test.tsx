@@ -8,8 +8,6 @@ import { AuthProvider } from '@/shared/auth/AuthContext'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { LoginPage } from './LoginPage'
 
-const SESSION_KEY = 'simplecote_token'
-
 function renderLogin() {
   const router = createMemoryRouter(
     [
@@ -44,7 +42,6 @@ test('caminho feliz: credenciais válidas logam e navegam para /admin', async ()
   await user.click(screen.getByRole('button', { name: 'Entrar' }))
 
   expect(await screen.findByText('dashboard')).toBeInTheDocument()
-  expect(sessionStorage.getItem(SESSION_KEY)).toBe('jwt-ok')
 })
 
 test('validação: submeter vazio mostra os erros inline e não chama a API', async () => {

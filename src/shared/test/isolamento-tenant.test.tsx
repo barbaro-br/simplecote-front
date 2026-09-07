@@ -15,6 +15,7 @@ import {
 import { useAdicionarItemColaborador } from '@/colaborador/colaborador.api'
 import { useFinalizar } from '@/representante/cotacao/cotacao-token.api'
 import { useConfirmarPedido } from '@/representante/pedido/pedido-token.api'
+import { definirToken } from '@/shared/api/api-client'
 
 /**
  * Teste-guarda de contrato do isolamento multitenant (change
@@ -22,7 +23,6 @@ import { useConfirmarPedido } from '@/representante/pedido/pedido-token.api'
  * do inquilino. Intercepta a requisição REAL serializada pelas mutations do
  * admin via MSW — não é grep estático, é a prova do contrato na rede.
  */
-const SESSION_KEY = 'simplecote_token'
 
 const PADROES_IDENTIFICADOR_INQUILINO = [/comprador/i, /tenant/i]
 
@@ -93,10 +93,12 @@ function wrapperFactory() {
 beforeEach(() => {
   capturas = []
   sessionStorage.clear()
+  definirToken(null)
 })
 
 afterEach(() => {
   sessionStorage.clear()
+  definirToken(null)
 })
 
 test('criar produto não transporta identificador de inquilino', async () => {
@@ -205,8 +207,8 @@ test('criar e editar representante não transportam identificador de inquilino',
 })
 
 test('chamadas /public/** saem sem Authorization mesmo com sessão de admin na origem', async () => {
-  // Simula o cenário da spec: mesma aba/sessionStorage onde antes houve sessão de admin.
-  sessionStorage.setItem(SESSION_KEY, 'jwt-de-admin-herdado')
+  // Simula o cenário da spec: mesma aplicação onde há uma sessão de admin em memória.
+  definirToken('jwt-de-admin-herdado')
 
   capturar('*/public/colaborador/token-colab/itens')
   capturar('*/public/cotacoes/token-cot/finalizar')

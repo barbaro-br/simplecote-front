@@ -104,3 +104,7 @@ Não começar uma antes da(s) sua(s) dependência(s):
 - `observabilidade-e-lgpd-por-tenant` **depois de** `auth-refresh-token` (revoga `refresh_token` no encerramento).
 - `tenant-por-subdominio` (front) **bloqueada** até o domínio `.app` estar registrado e o wildcard no ar (fase 4).
 - `papeis-e-convites` / `backoffice-do-saas` (front) dependem da decisão §E (decode do JWT).
+
+## §K. O pointcut do `TenantSessionAspect` é por TIPO, nunca `bean(*Repository)`
+
+(Back.) O ramo de repositório do `@Around` do `TenantSessionAspect` **SHALL** ser `this(org.springframework.data.repository.Repository) && execution(* *(..))` — match por tipo. `bean(*Repository)` casa pelo **nome do bean sendo proxyado no momento**, e o AspectJ cacheia o shadow-match por `(pointcut, método)` num cache de processo: métodos de ciclo de vida de `FactoryBean` (`isSingleton` no `LocalContainerEntityManagerFactoryBean`, no `RepositoryFragmentsFactoryBean`) herdam um "match" cacheado, o `EntityManagerFactory` acaba embrulhado pelo aspecto e dá ciclo de criação de bean (`BeanCurrentlyInCreationException`). O ciclo só **detona quando se soma mais um repositório** — travou `auth-refresh-token`. Toda change que adiciona um `*Repository` reexercita isto (rodar `IsolamentoCompradorIT` + `TenantSessionAspectTest` + `TenantHibernateFilterTest` + suíte completa). Corrigido fora do escopo da RLS durante `auth-refresh-token`.

@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
-import { api, ApiError, SessaoExpiradaError, configurarSessaoExpirada } from './api-client'
+import {
+  api,
+  ApiError,
+  SessaoExpiradaError,
+  configurarSessaoExpirada,
+  definirToken,
+} from './api-client'
 
 describe('api-client', () => {
   it('traduz falhas 400 ProblemDetail para ApiError', async () => {
@@ -32,26 +38,78 @@ describe('api-client', () => {
   })
 })
 
-describe('api-client — 401 / sessão expirada', () => {
+describe('api-client — 401 / sessão expirada com refresh', () => {
   const handler = vi.fn()
 
   beforeEach(() => {
-    sessionStorage.setItem('simplecote_token', 'tok-123')
     handler.mockClear()
     configurarSessaoExpirada(handler)
+    definirToken(null)
   })
 
   afterEach(() => {
     configurarSessaoExpirada(() => {})
-    sessionStorage.clear()
+    definirToken(null)
   })
 
-  it('401 numa chamada autenticada → limpa sessão, chama o handler 1x e rejeita com SessaoExpiradaError', async () => {
-    server.use(http.get('*/api/produtos', () => new HttpResponse(null, { status: 401 })))
+  it('401 numa chamada autenticada → refresh ok → repete a requisição original e resolve', async () => {
+    definirToken('tok-expirado')
+    let chamadas = 0
+    server.use(
+      http.get('*/api/produtos', ({ request }) => {
+        chamadas += 1
+        return request.headers.get('authorization') === 'Bearer tok-novo'
+          ? HttpResponse.json([{ nome: 'Arroz' }])
+          : new HttpResponse(null, { status: 401 })
+      }),
+      http.post('*/api/auth/refresh', () => HttpResponse.json({ token: 'tok-novo' }))
+    )
+
+    const resultado = await api.get('/api/produtos')
+
+    expect(resultado).toEqual([{ nome: 'Arroz' }])
+    expect(chamadas).toBe(2)
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('401 → refresh falha → SessaoExpiradaError e handler acionado 1x', async () => {
+    definirToken('tok-expirado')
+    server.use(
+      http.get('*/api/produtos', () => new HttpResponse(null, { status: 401 })),
+      http.post('*/api/auth/refresh', () => new HttpResponse(null, { status: 401 }))
+    )
 
     await expect(api.get('/api/produtos')).rejects.toBeInstanceOf(SessaoExpiradaError)
-    expect(sessionStorage.getItem('simplecote_token')).toBeNull()
     expect(handler).toHaveBeenCalledTimes(1)
+  })
+
+  it('dois 401 concorrentes → um único hit em /api/auth/refresh e ambas resolvem', async () => {
+    definirToken('tok-expirado')
+    let hitsRefresh = 0
+    server.use(
+      http.get('*/api/a', ({ request }) =>
+        request.headers.get('authorization') === 'Bearer tok-novo'
+          ? HttpResponse.json({ a: 1 })
+          : new HttpResponse(null, { status: 401 })
+      ),
+      http.get('*/api/b', ({ request }) =>
+        request.headers.get('authorization') === 'Bearer tok-novo'
+          ? HttpResponse.json({ b: 2 })
+          : new HttpResponse(null, { status: 401 })
+      ),
+      http.post('*/api/auth/refresh', async () => {
+        hitsRefresh += 1
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        return HttpResponse.json({ token: 'tok-novo' })
+      })
+    )
+
+    const [a, b] = await Promise.all([api.get('/api/a'), api.get('/api/b')])
+
+    expect(a).toEqual({ a: 1 })
+    expect(b).toEqual({ b: 2 })
+    expect(hitsRefresh).toBe(1)
+    expect(handler).not.toHaveBeenCalled()
   })
 
   it('401 numa chamada SEM token enviado → ApiError normal, não chama o handler', async () => {
@@ -59,7 +117,6 @@ describe('api-client — 401 / sessão expirada', () => {
     // endpoint /api/** (ex: /api/configuracoes do provider global): 401 aqui é
     // "precisa logar pra este recurso", não "sessão expirada" — não pode jogar o
     // visitante pro /login.
-    sessionStorage.removeItem('simplecote_token')
     server.use(http.get('*/api/configuracoes', () => new HttpResponse(null, { status: 401 })))
 
     await expect(api.get('/api/configuracoes')).rejects.toBeInstanceOf(ApiError)

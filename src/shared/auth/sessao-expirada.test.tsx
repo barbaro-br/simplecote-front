@@ -7,7 +7,7 @@ import { server } from '@/setupTests'
 import { AuthProvider } from './AuthContext'
 import { useAuth } from './useAuth'
 import { SessaoExpiradaBridge } from './SessaoExpiradaBridge'
-import { api, configurarSessaoExpirada } from '@/shared/api/api-client'
+import { api, configurarSessaoExpirada, definirToken } from '@/shared/api/api-client'
 import { routes } from '@/routes'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 
@@ -16,15 +16,29 @@ function SondaAuth() {
   return <div data-testid="auth">{isAutenticado ? 'sim' : 'nao'}</div>
 }
 
+// Boot restaura a sessão (refresh #1 → token) e, numa chamada autenticada que
+// recebe `401`, o refresh seguinte falha → sessão expirada.
+function semearSessaoComRefreshQueDepoisFalha() {
+  let refreshCount = 0
+  server.use(
+    http.post('*/api/auth/refresh', () => {
+      refreshCount += 1
+      return refreshCount === 1
+        ? HttpResponse.json({ token: 'tok' })
+        : new HttpResponse(null, { status: 401 })
+    })
+  )
+}
+
 afterEach(async () => {
   configurarSessaoExpirada(() => {})
-  sessionStorage.clear()
+  definirToken(null)
   await routes.navigate('/login')
 })
 
 describe('SessaoExpiradaBridge — fiação do 401 ao AuthContext + router', () => {
   it('401 numa chamada autenticada leva o usuário para /login e desloga', async () => {
-    sessionStorage.setItem('simplecote_token', 'tok')
+    semearSessaoComRefreshQueDepoisFalha()
     await routes.navigate('/admin')
     server.use(http.get('*/api/produtos', () => new HttpResponse(null, { status: 401 })))
 
@@ -35,7 +49,9 @@ describe('SessaoExpiradaBridge — fiação do 401 ao AuthContext + router', () 
       </AuthProvider>
     )
 
-    expect(screen.getByTestId('auth')).toHaveTextContent('sim')
+    await waitFor(() => {
+      expect(screen.getByTestId('auth')).toHaveTextContent('sim')
+    })
 
     await expect(api.get('/api/produtos')).rejects.toBeTruthy()
 
@@ -48,7 +64,7 @@ describe('SessaoExpiradaBridge — fiação do 401 ao AuthContext + router', () 
 
 describe('UI não exibe a mensagem de SessaoExpiradaError', () => {
   it('mutation de formulário que recebe 401 → sem erro inline e rota em /login', async () => {
-    sessionStorage.setItem('simplecote_token', 'tok')
+    semearSessaoComRefreshQueDepoisFalha()
     await routes.navigate('/admin')
     server.use(http.post('*/api/produtos', () => new HttpResponse(null, { status: 401 })))
 
@@ -58,10 +74,15 @@ describe('UI não exibe a mensagem de SessaoExpiradaError', () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SessaoExpiradaBridge />
+          <SondaAuth />
           <ProdutoForm aoSalvar={() => {}} />
         </AuthProvider>
       </QueryClientProvider>
     )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth')).toHaveTextContent('sim')
+    })
 
     const user = userEvent.setup()
     await user.type(screen.getByLabelText(/Código de barras/i), '7891234567890')

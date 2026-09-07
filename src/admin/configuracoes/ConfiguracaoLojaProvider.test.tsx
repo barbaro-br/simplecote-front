@@ -4,11 +4,10 @@ import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/shared/auth/AuthContext'
 import { useAuth } from '@/shared/auth/useAuth'
+import { definirToken } from '@/shared/api/api-client'
 import { ConfiguracaoLojaProvider } from './ConfiguracaoLojaProvider'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
-
-const TOKEN = 'simplecote_token'
 
 function BotaoLogout() {
   const { logout } = useAuth()
@@ -21,9 +20,7 @@ function BotaoLogout() {
 
 function renderProvider(autenticado = false, children: ReactNode = <span>conteúdo</span>) {
   if (autenticado) {
-    sessionStorage.setItem(TOKEN, 'token-teste')
-  } else {
-    sessionStorage.removeItem(TOKEN)
+    server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: 'token-teste' })))
   }
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
@@ -37,13 +34,13 @@ function renderProvider(autenticado = false, children: ReactNode = <span>conteú
 
 beforeEach(() => {
   document.documentElement.classList.remove('dark')
-  sessionStorage.removeItem(TOKEN)
+  definirToken(null)
   document.title = 'SimpleCote'
 })
 
 afterEach(() => {
   document.documentElement.classList.remove('dark')
-  sessionStorage.removeItem(TOKEN)
+  definirToken(null)
   document.title = 'SimpleCote'
 })
 
@@ -136,5 +133,4 @@ test('logout volta o título da aba para "SimpleCote"', async () => {
   await waitFor(() => {
     expect(document.title).toBe('SimpleCote')
   })
-  expect(sessionStorage.getItem(TOKEN)).toBeNull()
 })

@@ -22,10 +22,18 @@ export class SessaoExpiradaError extends Error {
   }
 }
 
-const SESSION_KEY = 'simplecote_token'
 const LOGIN_PATH = '/api/auth/login'
+const REFRESH_PATH = '/api/auth/refresh'
 
 let sessaoExpiradaHandler: (() => void) | null = null
+
+// Access token em memória (não em `sessionStorage`). Setter injetável pelo
+// `AuthContext`; o refresh também grava aqui o token novo.
+let accessToken: string | null = null
+
+// Single-flight do refresh: um único `Promise` compartilhado enquanto houver um
+// refresh em voo, para que chamadas concorrentes não disparem N refreshes.
+let refreshEmVoo: Promise<string | null> | null = null
 
 /**
  * Registra o handler chamado quando uma chamada autenticada recebe `401`.
@@ -37,22 +45,51 @@ export function configurarSessaoExpirada(handler: () => void): void {
   sessaoExpiradaHandler = handler
 }
 
-const getBaseUrl = () => import.meta.env.VITE_API_BASE_URL || ''
-
-const getToken = (): string | null => {
-  try {
-    return sessionStorage.getItem(SESSION_KEY)
-  } catch {
-    return null
-  }
+/**
+ * Setter injetável do access token em memória. O `AuthContext` chama no `login`
+ * e no `logout`; o `renovarSessao` também grava o token novo por aqui.
+ */
+export function definirToken(token: string | null): void {
+  accessToken = token
 }
 
+const getBaseUrl = () => import.meta.env.VITE_API_BASE_URL || ''
+
+const getToken = (): string | null => accessToken
+
 const limparToken = (): void => {
-  try {
-    sessionStorage.removeItem(SESSION_KEY)
-  } catch {
-    // sessionStorage indisponível — nada a limpar
+  accessToken = null
+}
+
+type TokenResponse = { token: string }
+
+/**
+ * Renova a sessão via `POST /api/auth/refresh` (reapresenta o cookie `httpOnly`
+ * do refresh token). Em caso de sucesso grava o novo access token em memória e
+ * devolve o token; em qualquer falha devolve `null` (sem lançar — quem chama
+ * decide entre repetir a requisição ou sinalizar sessão expirada).
+ */
+export async function renovarSessao(): Promise<string | null> {
+  if (!refreshEmVoo) {
+    refreshEmVoo = (async () => {
+      try {
+        const response = await fetch(`${getBaseUrl()}${REFRESH_PATH}`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        if (!response.ok) return null
+        const { token } = (await response.json()) as TokenResponse
+        accessToken = token
+        return token
+      } catch {
+        return null
+      } finally {
+        refreshEmVoo = null
+      }
+    })()
   }
+  return refreshEmVoo
 }
 
 type RequestOptions = RequestInit & { lookup?: boolean }
@@ -63,42 +100,65 @@ function isLoginRequest(endpoint: string, method?: string): boolean {
 }
 
 // Rotas /public/** (colaborador, representante por token) são anônimas por
-// design — nunca devem carregar o JWT do admin (ex: mesma aba/sessionStorage
-// herdado de uma aba de admin aberta antes) nem redirecionar pra /login num 401.
+// design — nunca devem carregar o JWT do admin nem redirecionar pra /login num 401.
 function isPublicRequest(endpoint: string): boolean {
   return endpoint.split('?')[0].startsWith('/public/')
 }
 
+function montarHeaders(token: string | null, headersIniciais: HeadersInit | undefined): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(headersIniciais as Record<string, string>),
+  }
+}
+
+function sessaoExpirada(): never {
+  limparToken()
+  if (sessaoExpiradaHandler) {
+    sessaoExpiradaHandler()
+  } else {
+    window.location.assign('/login')
+  }
+  throw new SessaoExpiradaError()
+}
+
 async function fetchWrapper<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { lookup, ...init } = options
+  return processarRequisicao<T>(endpoint, init, lookup, false)
+}
+
+async function processarRequisicao<T>(
+  endpoint: string,
+  init: RequestInit,
+  lookup: boolean | undefined,
+  jaTentouRefresh: boolean,
+): Promise<T> {
   const url = `${getBaseUrl()}${endpoint}`
   const publico = isPublicRequest(endpoint)
   const token = publico ? null : getToken()
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(init.headers as Record<string, string>),
-  }
+  const headers = montarHeaders(token, init.headers)
 
   const response = await fetch(url, { ...init, headers })
 
-  if (!response.ok) {
-    // 401 em chamada autenticada → sessão expirada. O 401 de `POST /api/auth/login`
-    // (credencial inválida) e de rotas /public/** segue virando ApiError normal.
-    // O `token` no teste garante que só é "sessão expirada" quando a chamada de fato
-    // mandou credencial: um 401 numa chamada anônima (ex: página pública que encostou
-    // num endpoint /api/**, como o /api/configuracoes do provider global) é só "precisa
-    // logar pra este recurso" — não sequestra a navegação do visitante pro /login.
-    if (response.status === 401 && !isLoginRequest(endpoint, init.method) && !publico && token) {
-      limparToken()
-      if (sessaoExpiradaHandler) {
-        sessaoExpiradaHandler()
-      } else {
-        window.location.assign('/login')
-      }
-      throw new SessaoExpiradaError()
+  // 401 em chamada autenticada → tenta renovar a sessão e repete a requisição
+  // UMA única vez. O 401 de `POST /api/auth/login` (credencial inválida) e de
+  // rotas /public/** segue virando ApiError normal. O `token` garante que só é
+  // "sessão expirada" quando a chamada de fato mandou credencial: um 401 numa
+  // chamada anônima (ex: página pública que encostou num endpoint /api/**, como
+  // o /api/configuracoes do provider global) é só "precisa logar pra este recurso".
+  if (response.status === 401 && !isLoginRequest(endpoint, init.method) && !publico && token) {
+    if (jaTentouRefresh) {
+      return sessaoExpirada()
     }
+    const novoToken = await renovarSessao()
+    if (!novoToken) {
+      return sessaoExpirada()
+    }
+    return processarRequisicao<T>(endpoint, init, lookup, true)
+  }
 
+  if (!response.ok) {
     // 404 sem ProblemDetail só é "recurso ausente" (null) quando a chamada é um lookup.
     if (
       lookup &&

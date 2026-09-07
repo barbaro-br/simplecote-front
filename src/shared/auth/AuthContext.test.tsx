@@ -5,13 +5,12 @@ import { server } from '@/setupTests'
 import { AuthProvider } from './AuthContext'
 import { useAuth } from './useAuth'
 
-const SESSION_KEY = 'simplecote_token'
-
 function Sonda() {
-  const { token, isAutenticado, login, logout } = useAuth()
+  const { token, isAutenticado, carregando, login, logout } = useAuth()
   return (
     <div>
       <span data-testid="autenticado">{isAutenticado ? 'sim' : 'nao'}</span>
+      <span data-testid="carregando">{carregando ? 'sim' : 'nao'}</span>
       <span data-testid="token">{token ?? ''}</span>
       <button onClick={() => login('admin@simplecote.com', 'senha123')}>entrar</button>
       <button onClick={() => logout()}>sair</button>
@@ -27,24 +26,39 @@ function renderComProvider() {
   )
 }
 
-beforeEach(() => {
-  sessionStorage.clear()
-})
-
-test('hidrata o token de sessionStorage no mount', () => {
-  sessionStorage.setItem(SESSION_KEY, 'jwt-semeado')
+test('boot com refresh ok restaura a sessão sem passar pelo login', async () => {
+  server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: 'jwt-refresh' })))
 
   renderComProvider()
 
+  expect(screen.getByTestId('carregando')).toHaveTextContent('sim')
+
+  await waitFor(() => {
+    expect(screen.getByTestId('carregando')).toHaveTextContent('nao')
+  })
   expect(screen.getByTestId('autenticado')).toHaveTextContent('sim')
-  expect(screen.getByTestId('token')).toHaveTextContent('jwt-semeado')
+  expect(screen.getByTestId('token')).toHaveTextContent('jwt-refresh')
 })
 
-test('login() persiste o token na sessão e liga isAutenticado', async () => {
+test('boot sem cookie de refresh → estado deslogado após carregando', async () => {
+  // default handler em setupTests.ts: refresh → 401 (sem cookie)
+  renderComProvider()
+
+  await waitFor(() => {
+    expect(screen.getByTestId('carregando')).toHaveTextContent('nao')
+  })
+  expect(screen.getByTestId('autenticado')).toHaveTextContent('nao')
+  expect(screen.getByTestId('token')).toHaveTextContent('')
+})
+
+test('login() guarda o access token em memória e liga isAutenticado', async () => {
   server.use(http.post('*/api/auth/login', () => HttpResponse.json({ token: 'jwt-x' })))
   const user = userEvent.setup()
 
   renderComProvider()
+  await waitFor(() => {
+    expect(screen.getByTestId('carregando')).toHaveTextContent('nao')
+  })
   expect(screen.getByTestId('autenticado')).toHaveTextContent('nao')
 
   await user.click(screen.getByRole('button', { name: 'entrar' }))
@@ -53,15 +67,23 @@ test('login() persiste o token na sessão e liga isAutenticado', async () => {
     expect(screen.getByTestId('autenticado')).toHaveTextContent('sim')
   })
   expect(screen.getByTestId('token')).toHaveTextContent('jwt-x')
-  expect(sessionStorage.getItem(SESSION_KEY)).toBe('jwt-x')
 })
 
-test('logout() limpa a memória e o sessionStorage', async () => {
-  sessionStorage.setItem(SESSION_KEY, 'jwt-semeado')
+test('logout() chama POST /api/auth/logout e limpa o estado local', async () => {
+  server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: 'jwt-refresh' })))
+  let hitsLogout = 0
+  server.use(
+    http.post('*/api/auth/logout', () => {
+      hitsLogout += 1
+      return new HttpResponse(null, { status: 204 })
+    })
+  )
   const user = userEvent.setup()
 
   renderComProvider()
-  expect(screen.getByTestId('autenticado')).toHaveTextContent('sim')
+  await waitFor(() => {
+    expect(screen.getByTestId('autenticado')).toHaveTextContent('sim')
+  })
 
   await user.click(screen.getByRole('button', { name: 'sair' }))
 
@@ -69,7 +91,7 @@ test('logout() limpa a memória e o sessionStorage', async () => {
     expect(screen.getByTestId('autenticado')).toHaveTextContent('nao')
   })
   expect(screen.getByTestId('token')).toHaveTextContent('')
-  expect(sessionStorage.getItem(SESSION_KEY)).toBeNull()
+  expect(hitsLogout).toBe(1)
 })
 
 test('useAuth() fora do <AuthProvider> lança erro explicativo', () => {
