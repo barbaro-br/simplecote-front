@@ -15,7 +15,7 @@ export function StatusBadge({ status }: { status: StatusCotacao }) {
   const { label, cls } = MAPA[status]
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ui-uppercase ${cls}`}
     >
       {label}
     </span>

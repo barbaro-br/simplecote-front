@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, Link } from 'react-router-dom'
-import { Copy, PlusCircle } from 'lucide-react'
+import { Copy, PlusCircle } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Card } from '@/shared/components/ui/card'
@@ -63,7 +63,7 @@ export function NovaCotacaoPage() {
   return (
     <PageContainer maxWidth="lg" className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Nova cotação</h1>
+        <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Nova cotação</h1>
         <Link to="/admin/cotacoes" className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors">
           ← Cancelar
         </Link>
@@ -113,7 +113,7 @@ export function NovaCotacaoPage() {
           {modo === 'branco' ? (
             <form onSubmit={handleSubmit(aoCriar)} noValidate className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="titulo" className="text-sm font-medium">
+                <label htmlFor="titulo" className="text-sm font-medium ui-uppercase">
                   Título
                 </label>
                 <Input 
@@ -134,7 +134,7 @@ export function NovaCotacaoPage() {
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="origem" className="text-sm font-medium">
+                <label htmlFor="origem" className="text-sm font-medium ui-uppercase">
                   Cotação de origem
                 </label>
                 <Combobox

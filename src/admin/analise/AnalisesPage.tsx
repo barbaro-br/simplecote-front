@@ -43,7 +43,7 @@ export function AnalisesPage() {
     <PageContainer maxWidth="5xl" className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Análises</h1>
+          <h1 className="text-2xl font-semibold ui-uppercase">Análises</h1>
           <p className="text-sm text-muted-foreground">Histórico de compras apuradas por período.</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -85,7 +85,7 @@ export function AnalisesPage() {
       ) : (
         <>
           <Card className="p-4">
-            <h2 className="text-sm font-medium text-muted-foreground">Total gasto no período</h2>
+            <h2 className="text-sm font-medium text-muted-foreground ui-uppercase">Total gasto no período</h2>
             <div className="mt-2 text-3xl font-bold tabular-nums">{moeda(totalGasto)}</div>
           </Card>
 
@@ -114,7 +114,7 @@ export function AnalisesPage() {
 
             <div className="space-y-4">
               <Card className="p-4">
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Item mais comprado</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2 ui-uppercase">Item mais comprado</h3>
                 {data.itemMaisComprado ? (
                   <p className="text-sm">
                     <span className="font-semibold">{data.itemMaisComprado.nome}</span>
@@ -125,7 +125,7 @@ export function AnalisesPage() {
                 )}
               </Card>
               <Card className="p-4">
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Item menos comprado</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2 ui-uppercase">Item menos comprado</h3>
                 {data.itemMenosComprado ? (
                   <p className="text-sm">
                     <span className="font-semibold">{data.itemMenosComprado.nome}</span>
@@ -146,10 +146,10 @@ export function AnalisesPage() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr className="text-left text-muted-foreground">
-                    <th className="px-4 py-3 font-medium">Produto</th>
-                    <th className="px-4 py-3 font-medium text-right">Preço unitário</th>
-                    <th className="px-4 py-3 font-medium">Empresa</th>
-                    <th className="px-4 py-3 font-medium">Data</th>
+                    <th className="px-4 py-3 font-medium ui-uppercase">Produto</th>
+                    <th className="px-4 py-3 font-medium ui-uppercase text-right">Preço unitário</th>
+                    <th className="px-4 py-3 font-medium ui-uppercase">Empresa</th>
+                    <th className="px-4 py-3 font-medium ui-uppercase">Data</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">

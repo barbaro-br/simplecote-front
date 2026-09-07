@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { CaretDown } from '@phosphor-icons/react'
 import { Popover } from '@base-ui/react'
 import { cn } from '@/shared/lib/utils'
 
@@ -79,7 +79,7 @@ export function Combobox({
         <span className={cn('truncate', !selecionada && 'text-muted-foreground')}>
           {selecionada ? selecionada.label : placeholder}
         </span>
-        <ChevronDown className="size-4 shrink-0 opacity-50" />
+        <CaretDown className="size-4 shrink-0 opacity-50" />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner sideOffset={4} className="z-50">

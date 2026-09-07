@@ -1,40 +1,31 @@
 import { useMutation } from '@tanstack/react-query'
-import { ApiError } from '@/shared/api/api-client'
+import { api } from '@/shared/api/api-client'
 
-// ---- MOCK local (substituir pelas chamadas reais aos endpoints na task 3.1) ----
-// POST /api/auth/esqueci-senha  → sempre 200 genérico (anti-enumeration)
-// POST /api/auth/redefinir-senha → 200 em sucesso, 4xx se o token for inválido/expirado
+// Endpoints reais em /api/auth/** (liberados no SecurityConfig do back).
+// - POST /api/auth/esqueci-senha  → 200 com mensagem genérica, exista ou não o
+//   e-mail (anti-enumeration é responsabilidade do back; o front nunca distingue).
+// - POST /api/auth/redefinir-senha → 200 em sucesso; 422 (ApiError) quando o
+//   código está errado/expirou/estourou tentativas (mesma resposta para e-mail
+//   inexistente). O contrato com `{ email, codigo, novaSenha }` é da change
+//   `recuperar-senha-por-codigo` do back.
 
-const TOKEN_VALIDO = 'token-valido'
+type MensagemResponse = { mensagem: string }
 
-function aguardar(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 50))
-}
-
-export async function solicitarRecuperacao(_email: string): Promise<void> {
-  await aguardar()
-  // Sempre retorna sucesso genérico: o front NÃO deve distinguir e-mail
-  // existente de inexistente (a distinção é responsabilidade do back, que
-  // não deve expô-la).
+export async function solicitarRecuperacao(email: string): Promise<void> {
+  await api.post<MensagemResponse>('/api/auth/esqueci-senha', { email })
 }
 
 export async function redefinirSenha({
-  token,
+  email,
+  codigo,
+  novaSenha,
 }: {
-  token: string
+  email: string
+  codigo: string
   novaSenha: string
 }): Promise<void> {
-  await aguardar()
-  if (token !== TOKEN_VALIDO) {
-    throw new ApiError({
-      type: 'about:blank',
-      title: 'Link inválido',
-      status: 400,
-      detail: 'O link de redefinição é inválido ou expirou. Solicite um novo link.',
-    })
-  }
+  await api.post<MensagemResponse>('/api/auth/redefinir-senha', { email, codigo, novaSenha })
 }
-// ------------------------------------------------------------------------------------------------
 
 export function useSolicitarRecuperacao() {
   return useMutation({

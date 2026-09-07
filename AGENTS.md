@@ -47,7 +47,7 @@ Duas áreas, dois públicos:
 
 ## Stack e comandos
 
-- React 19 + Vite + TypeScript (`strict`), react-router-dom v7, TanStack Query (todo fetch/mutation — inclusive grid ao vivo por polling e autosave), react-hook-form + zod, Tailwind v4 + componentes hand-rolled estilo shadcn em `src/shared/components/ui/` (@base-ui/react), Recharts (análises), @zxing/browser (bipagem), @sentry/react (rastreamento de erros de runtime — só inicializa com `VITE_SENTRY_DSN`), Intl pt-BR, localStorage (fila de rascunhos), sonner, lucide-react.
+- React 19 + Vite + TypeScript (`strict`), react-router-dom v7, TanStack Query (todo fetch/mutation — inclusive grid ao vivo por polling e autosave), react-hook-form + zod, Tailwind v4 + componentes hand-rolled estilo shadcn em `src/shared/components/ui/` (@base-ui/react), Recharts (análises), @zxing/browser (bipagem), @sentry/react (rastreamento de erros de runtime — só inicializa com `VITE_SENTRY_DSN`), Intl pt-BR, localStorage (fila de rascunhos), sonner, @phosphor-icons/react.
 - `npm run dev` · `npm test` (vitest run) · `npm run build` (`tsc -b && vite build`) · `npm run lint` (oxlint).
 - **Zero dependência nova** (ex: `shadcn add`) sem aprovação explícita.
 

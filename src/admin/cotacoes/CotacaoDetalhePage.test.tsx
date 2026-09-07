@@ -7,6 +7,8 @@ import { server } from '@/setupTests'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 import { CotacaoDetalhePage } from './CotacaoDetalhePage'
 
+afterEach(() => vi.useRealTimers())
+
 type Item = {
   id: string
   produtoId: string
@@ -227,6 +229,9 @@ test('3.5 — cadastra Produto novo no modal aninhado, volta pré-selecionado e 
   await user.type(qtd, '10')
   await user.click(within(cadastro()).getByRole('button', { name: /Salvar/i }))
 
+  // código de barras vazio → confirmação antes do POST
+  await user.click(await screen.findByRole('button', { name: 'Salvar sem código' }))
+
   // 2º modal fecha; o 1º reabre
   await waitFor(() =>
     expect(screen.queryByRole('dialog', { name: 'Cadastrar novo produto' })).not.toBeInTheDocument(),
@@ -272,6 +277,9 @@ test('editar produto existente no modal de adicionar abre o form pré-preenchido
   await user.clear(nome)
   await user.type(nome, 'Arroz Integral 5kg')
   await user.click(within(form).getByRole('button', { name: /salvar/i }))
+
+  // código de barras vazio → confirmação antes do POST
+  await user.click(await screen.findByRole('button', { name: 'Salvar sem código' }))
 
   const listaReaberta = await screen.findByRole('dialog', { name: 'Adicionar Itens' })
   expect(await within(listaReaberta).findByText('Arroz Integral 5kg')).toBeInTheDocument()
@@ -321,15 +329,17 @@ test('4.3 — Encerrar abre diálogo de confirmação e só chama a API após co
 })
 
 test('3.4 — Abrir envia o prazo em ISO', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-09-03T12:00:00Z'))
   const { chamadas, getPrazoRecebido } = setup('RASCUNHO')
   const user = userEvent.setup()
   await screen.findByRole('heading', { name: 'Compra semanal' })
 
   await user.click(screen.getByRole('button', { name: 'Abrir' }))
   const dialog = await screen.findByRole('dialog')
-  
-  // A interface foi atualizada para botões de acesso rápido
-  await user.click(within(dialog).getByRole('button', { name: '+24h' }))
+
+  await user.click(within(dialog).getByRole('gridcell', { name: '15' }))
+  await user.selectOptions(within(dialog).getByLabelText('Hora'), '10')
   await user.click(within(dialog).getByRole('button', { name: 'Abrir Cotação' }))
 
   await waitFor(() => expect(chamadas.abrir).toBe(1))
@@ -353,6 +363,8 @@ test('Caminho Triste: Erro 500 ao carregar a cotação exibe mensagem de erro e 
 })
 
 test('Caminho Triste: Erro 500 ao tentar Abrir a cotação mantém o modal fechado e exibe alerta de erro', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-09-03T12:00:00Z'))
   setup('RASCUNHO')
   server.use(
     http.post('*/api/cotacoes/c-1/abrir', () => HttpResponse.json({ message: 'Falha no banco de dados' }, { status: 500 }))
@@ -364,7 +376,7 @@ test('Caminho Triste: Erro 500 ao tentar Abrir a cotação mantém o modal fecha
   // Tenta abrir
   await user.click(screen.getByRole('button', { name: 'Abrir' }))
   const dialog = await screen.findByRole('dialog')
-  await user.click(within(dialog).getByRole('button', { name: '+24h' }))
+  await user.click(within(dialog).getByRole('gridcell', { name: '15' }))
   await user.click(within(dialog).getByRole('button', { name: 'Abrir Cotação' }))
 
   // Verifica se o alerta apareceu e a tela não ficou branca

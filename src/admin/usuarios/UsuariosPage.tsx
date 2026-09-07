@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { KeyRound, Pencil, PlusCircle, UserX } from 'lucide-react'
+import { Key, Pencil, PlusCircle, UserMinus } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
@@ -31,7 +31,7 @@ export function UsuariosPage() {
     <PageContainer maxWidth="5xl" className="space-y-6">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Usuários</h1>
+          <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Usuários</h1>
           <p className="text-sm text-muted-foreground">Quem acessa o painel administrativo.</p>
         </div>
         <Button onClick={() => setModal({ tipo: 'criar' })}>
@@ -80,10 +80,10 @@ export function UsuariosPage() {
           <table className="w-full text-sm min-w-[500px]">
             <thead className="bg-muted/50 border-b">
               <tr className="text-left text-muted-foreground">
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">E-mail</th>
-                <th className="px-4 py-3 font-medium">Papel</th>
-                <th className="px-4 py-3 font-medium text-right">Ações</th>
+                <th className="px-4 py-3 font-medium ui-uppercase">Nome</th>
+                <th className="px-4 py-3 font-medium ui-uppercase">E-mail</th>
+                <th className="px-4 py-3 font-medium ui-uppercase">Papel</th>
+                <th className="px-4 py-3 font-medium ui-uppercase text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -121,13 +121,13 @@ export function UsuariosPage() {
                           onClick={() => setModal({ tipo: 'editar', usuario: u })}
                         />
                         <IconButton
-                          icon={KeyRound}
+                          icon={Key}
                           label="Trocar senha"
                           onClick={() => setModal({ tipo: 'senha', usuario: u })}
                         />
                         {u.ativo && (
                           <IconButton
-                            icon={UserX}
+                            icon={UserMinus}
                             label="Inativar"
                             onClick={() => setConfirmar(u)}
                           />

@@ -101,7 +101,7 @@ export function EmpresaForm({
   return (
     <form onSubmit={form.handleSubmit(aoEnviar)} className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold tracking-tight">
+        <h2 className="text-lg font-semibold tracking-tight ui-uppercase">
           {isEdit ? 'Editar Fornecedor' : 'Novo Fornecedor'}
         </h2>
         <p className="text-sm text-muted-foreground">
@@ -113,7 +113,7 @@ export function EmpresaForm({
 
       <div className="space-y-6">
         <div className="space-y-2">
-          <label htmlFor="nome" className="text-sm font-medium">
+          <label htmlFor="nome" className="text-sm font-medium ui-uppercase">
             Nome da empresa
           </label>
           <Input
@@ -129,12 +129,12 @@ export function EmpresaForm({
 
         <div className="space-y-4 rounded-md border p-4 bg-muted/10">
           <div>
-            <h3 className="font-medium">Representante Principal</h3>
+            <h3 className="font-medium ui-uppercase">Representante Principal</h3>
             <p className="text-xs text-muted-foreground">Quem responderá pelas cotações desta empresa.</p>
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="nomeRepresentante" className="text-sm font-medium">
+            <label htmlFor="nomeRepresentante" className="text-sm font-medium ui-uppercase">
               Nome do representante
             </label>
             <Input
@@ -150,7 +150,7 @@ export function EmpresaForm({
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="emailRepresentante" className="text-sm font-medium">
+              <label htmlFor="emailRepresentante" className="text-sm font-medium ui-uppercase">
                 E-mail
               </label>
               <Input
@@ -165,7 +165,7 @@ export function EmpresaForm({
               )}
             </div>
             <div className="space-y-2">
-              <label htmlFor="whatsappRepresentante" className="text-sm font-medium">
+              <label htmlFor="whatsappRepresentante" className="text-sm font-medium ui-uppercase">
                 WhatsApp <span className="text-muted-foreground font-normal">(opcional)</span>
               </label>
               <Input

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { FileDown, CheckCircle2 } from 'lucide-react'
+import { FileArrowDown, CheckCircle } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { moeda } from '@/shared/format/formatters'
@@ -46,7 +46,7 @@ export function PedidoPorTokenPage() {
           {p.empresaNome}
         </p>
         <p className={`text-sm pt-1 font-medium ${confirmado ? 'text-success flex items-center gap-1.5' : 'text-muted-foreground'}`}>
-          {confirmado && <CheckCircle2 className="size-4" />}
+          {confirmado && <CheckCircle className="size-4" />}
           {confirmado ? 'Pedido confirmado' : 'Confira os itens e confirme o pedido'}
         </p>
       </header>
@@ -60,9 +60,9 @@ export function PedidoPorTokenPage() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-t">
                 <tr className="text-left text-muted-foreground">
-                  <th className="px-3 py-2 font-medium">Item</th>
-                  <th className="px-3 py-2 font-medium text-right">Qtd.</th>
-                  <th className="px-3 py-2 font-medium text-right">Subtotal</th>
+                  <th className="px-3 py-2 font-medium ui-uppercase">Item</th>
+                  <th className="px-3 py-2 font-medium ui-uppercase text-right">Qtd.</th>
+                  <th className="px-3 py-2 font-medium ui-uppercase text-right">Subtotal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -109,7 +109,7 @@ export function PedidoPorTokenPage() {
 
         {!aguardandoEnvio && !confirmado && (
           <div className="space-y-2 mb-3">
-            <label htmlFor="obs" className="text-sm font-medium text-foreground">
+            <label htmlFor="obs" className="text-sm font-medium text-foreground ui-uppercase">
               Observação <span className="text-muted-foreground font-normal">(opcional)</span>
             </label>
             <textarea
@@ -133,7 +133,7 @@ export function PedidoPorTokenPage() {
               baixarPedidoPdfPublico(token).catch(() => setErro('Não foi possível baixar o PDF.'))
             }}
           >
-            <FileDown className="mr-2 size-4" />
+            <FileArrowDown className="mr-2 size-4" />
             Baixar PDF
           </Button>
 

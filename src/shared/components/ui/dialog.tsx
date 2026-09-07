@@ -103,7 +103,7 @@ export function Dialog({ open, onClose, title, ariaLabel, size = 'md', className
       >
         {title && (
           <div className="flex items-start justify-between">
-            <h2 id={tituloId} className="text-lg font-semibold">
+            <h2 id={tituloId} className="text-lg font-semibold ui-uppercase">
               {title}
             </h2>
             <button

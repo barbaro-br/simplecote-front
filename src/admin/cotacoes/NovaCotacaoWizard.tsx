@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Package, Users, CalendarClock, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Package, Users, CalendarCheck, ArrowLeft, ArrowRight } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
@@ -16,7 +16,7 @@ type Passo = 1 | 2 | 3
 const PASSOS: { n: Passo; titulo: string; icon: typeof Package }[] = [
   { n: 1, titulo: 'Itens', icon: Package },
   { n: 2, titulo: 'Representantes', icon: Users },
-  { n: 3, titulo: 'Prazo & revisar', icon: CalendarClock },
+  { n: 3, titulo: 'Prazo & revisar', icon: CalendarCheck },
 ]
 
 export function NovaCotacaoWizard({ cotacaoId }: { cotacaoId: string }) {
@@ -62,7 +62,7 @@ export function NovaCotacaoWizard({ cotacaoId }: { cotacaoId: string }) {
   return (
     <PageContainer maxWidth="4xl" className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Montar cotação</h1>
+        <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Montar cotação</h1>
         <button
           type="button"
           onClick={() => navigate(`/admin/cotacoes/${cotacaoId}`)}
@@ -139,7 +139,7 @@ export function NovaCotacaoWizard({ cotacaoId }: { cotacaoId: string }) {
             {prazoIso ? dataHoraBr(prazoIso) : '—'}
           </p>
           <Button variant="outline" onClick={() => setPrazoAberto(true)}>
-            <CalendarClock className="mr-2 size-4" />
+            <CalendarCheck className="mr-2 size-4" />
             {prazoIso ? 'Alterar prazo' : 'Escolher prazo'}
           </Button>
           {prazoAberto && (

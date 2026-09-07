@@ -185,6 +185,16 @@
 }
 
 /*
+ * Design-system (change uppercase-na-casca-da-interface): caixa alta puramente
+ * visual na casca da interface e nos nomes de catálogo, sem tocar no texto do
+ * DOM (buscas por texto e leitores de tela seguem lendo o texto original).
+ * Locale-aware: o navegador converte acentos pt-BR corretamente (ç→Ç, ã→Ã).
+ */
+.ui-uppercase {
+  text-transform: uppercase;
+}
+
+/*
  * Scrollbar fina para contêineres de rolagem pontuais (ex.: tabela do
  * Catálogo de Produtos). Usa tokens de tema (--border/--muted-foreground),
  * funcionando automaticamente nos temas claro e escuro.

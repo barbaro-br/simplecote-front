@@ -2,18 +2,18 @@ import { useEffect, useState } from 'react'
 import { NavLink, ScrollRestoration, useNavigate } from 'react-router-dom'
 import { RouteTransition } from '@/shared/components/ui/route-transition'
 import {
-  BarChart3,
-  Building2,
+  ChartBar,
+  Buildings,
   FileText,
-  LayoutDashboard,
-  LogOut,
+  SquaresFour,
+  SignOut,
   Package,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Settings,
+  Sidebar as SidebarIcon,
+  SidebarSimple,
+  Gear,
   ShoppingBag,
-  UserCog,
-} from 'lucide-react'
+  UserGear,
+} from '@phosphor-icons/react'
 import { useAuth } from '@/shared/auth/useAuth'
 import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
@@ -23,13 +23,13 @@ import { BotaoAjudaFlutuante } from '../ajuda/BotaoAjudaFlutuante'
 const SIDEBAR_KEY = 'simplecote:sidebar'
 
 const ITENS = [
-  { to: '/admin', label: 'Dashboard', Icon: LayoutDashboard, end: true },
+  { to: '/admin', label: 'Dashboard', Icon: SquaresFour, end: true },
   { to: '/admin/cotacoes', label: 'Cotações', Icon: FileText, end: false },
   { to: '/admin/produtos', label: 'Produtos', Icon: Package, end: false },
-  { to: '/admin/empresas', label: 'Empresas', Icon: Building2, end: false },
-  { to: '/admin/usuarios', label: 'Usuários', Icon: UserCog, end: false },
-  { to: '/admin/analises', label: 'Análises', Icon: BarChart3, end: false },
-  { to: '/admin/configuracoes', label: 'Configurações', Icon: Settings, end: false },
+  { to: '/admin/empresas', label: 'Empresas', Icon: Buildings, end: false },
+  { to: '/admin/usuarios', label: 'Usuários', Icon: UserGear, end: false },
+  { to: '/admin/analises', label: 'Análises', Icon: ChartBar, end: false },
+  { to: '/admin/configuracoes', label: 'Configurações', Icon: Gear, end: false },
 ] as const
 
 function lerColapsada(): boolean {
@@ -103,9 +103,9 @@ function Sidebar({ nome, onLogout }: { nome: string; onLogout: () => void }) {
             }`}
           >
             {colapsada ? (
-              <PanelLeftOpen className="size-5" aria-hidden />
+              <SidebarSimple className="size-5" aria-hidden />
             ) : (
-              <PanelLeftClose className="size-5" aria-hidden />
+              <SidebarIcon className="size-5" aria-hidden />
             )}
           </button>
         )}
@@ -129,7 +129,7 @@ function Sidebar({ nome, onLogout }: { nome: string; onLogout: () => void }) {
           >
             <Icon className="size-6 shrink-0" aria-hidden />
             <span
-              className={`whitespace-nowrap transition-all duration-300 ${
+              className={`ui-uppercase whitespace-nowrap transition-all duration-300 ${
                 isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
               }`}
             >
@@ -148,9 +148,9 @@ function Sidebar({ nome, onLogout }: { nome: string; onLogout: () => void }) {
           !isExpanded ? 'justify-center px-0' : ''
         }`}
       >
-        <LogOut className="size-6 shrink-0" aria-hidden />
+        <SignOut className="size-6 shrink-0" aria-hidden />
         <span
-          className={`whitespace-nowrap transition-all duration-300 ${
+          className={`ui-uppercase whitespace-nowrap transition-all duration-300 ${
             isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 w-0'
           }`}
         >
@@ -175,7 +175,7 @@ function Sidebar({ nome, onLogout }: { nome: string; onLogout: () => void }) {
   )
 }
 
-import { Menu, X } from 'lucide-react'
+import { List, X } from '@phosphor-icons/react'
 
 // ... (keep the same imports and initial setup) ...
 
@@ -227,7 +227,7 @@ function SidebarMobile({ nome, onLogout, aberta, aoFechar }: { nome: string; onL
               }
             >
               <Icon className="size-6 shrink-0" aria-hidden />
-              <span>{label}</span>
+              <span className="ui-uppercase">{label}</span>
             </NavLink>
           ))}
         </nav>
@@ -239,8 +239,8 @@ function SidebarMobile({ nome, onLogout, aberta, aoFechar }: { nome: string; onL
           }}
           className="flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium text-muted-foreground hover:text-destructive transition-colors mt-4 pt-4 border-t"
         >
-          <LogOut className="size-6 shrink-0" aria-hidden />
-          <span>Sair</span>
+          <SignOut className="size-6 shrink-0" aria-hidden />
+          <span className="ui-uppercase">Sair</span>
         </button>
       </aside>
     </>
@@ -293,7 +293,7 @@ export function AdminLayout() {
             className="inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted p-2 -ml-2"
             aria-label="Abrir menu"
           >
-            <Menu className="size-6" />
+            <List className="size-6" />
           </button>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="flex size-7 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground">

@@ -30,3 +30,13 @@ export function useAtualizarConfiguracao() {
     },
   })
 }
+
+export async function enviarLinkColaborador({ email }: { email: string }): Promise<void> {
+  return api.post<void>('/api/configuracoes/colaborador/enviar-link', { email })
+}
+
+export function useEnviarLinkColaborador() {
+  return useMutation({
+    mutationFn: enviarLinkColaborador,
+  })
+}

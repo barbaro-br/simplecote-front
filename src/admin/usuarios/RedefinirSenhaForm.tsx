@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
-import { Check, Eye, EyeOff } from 'lucide-react'
+import { Check, Eye, EyeSlash } from '@phosphor-icons/react'
 import {
   SENHA_MIN,
   redefinirSenhaFormSchema,
@@ -50,13 +50,13 @@ export function RedefinirSenhaForm({ usuarioId, usuarioNome, aoSalvar }: Props) 
   return (
     <form onSubmit={form.handleSubmit(aoEnviar)} noValidate className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold tracking-tight">Trocar senha</h2>
+        <h2 className="text-lg font-semibold tracking-tight ui-uppercase">Trocar senha</h2>
         <p className="text-sm text-muted-foreground">{usuarioNome}</p>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="nova-senha" className="text-sm font-medium">
+          <label htmlFor="nova-senha" className="text-sm font-medium ui-uppercase">
             Nova senha
           </label>
           <div className="relative">
@@ -76,7 +76,7 @@ export function RedefinirSenhaForm({ usuarioId, usuarioNome, aoSalvar }: Props) 
               disabled={redefinir.isPending}
             >
               {mostrarNovaSenha ? (
-                <EyeOff className="size-4" aria-hidden />
+                <EyeSlash className="size-4" aria-hidden />
               ) : (
                 <Eye className="size-4" aria-hidden />
               )}
@@ -93,7 +93,7 @@ export function RedefinirSenhaForm({ usuarioId, usuarioNome, aoSalvar }: Props) 
           </p>
         </div>
         <div className="space-y-2">
-          <label htmlFor="confirmar-senha" className="text-sm font-medium">
+          <label htmlFor="confirmar-senha" className="text-sm font-medium ui-uppercase">
             Confirmar senha
           </label>
           <div className="relative">
@@ -112,7 +112,7 @@ export function RedefinirSenhaForm({ usuarioId, usuarioNome, aoSalvar }: Props) 
               disabled={redefinir.isPending}
             >
               {mostrarConfirmarSenha ? (
-                <EyeOff className="size-4" aria-hidden />
+                <EyeSlash className="size-4" aria-hidden />
               ) : (
                 <Eye className="size-4" aria-hidden />
               )}

@@ -5,6 +5,7 @@ import { AuthProvider } from './shared/auth/AuthContext'
 import { SessaoExpiradaBridge } from './shared/auth/SessaoExpiradaBridge'
 import { ConfiguracaoLojaProvider } from './admin/configuracoes/ConfiguracaoLojaProvider'
 import { Toaster } from 'sonner'
+import { IconProvider } from './shared/components/ui/icon'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,14 +17,16 @@ const queryClient = new QueryClient({
 
 export function App() {
   return (
-    <AuthProvider>
-      <SessaoExpiradaBridge />
-      <QueryClientProvider client={queryClient}>
-        <ConfiguracaoLojaProvider>
-          <RouterProvider router={routes} />
-        </ConfiguracaoLojaProvider>
-        <Toaster richColors position="bottom-right" />
-      </QueryClientProvider>
-    </AuthProvider>
+    <IconProvider>
+      <AuthProvider>
+        <SessaoExpiradaBridge />
+        <QueryClientProvider client={queryClient}>
+          <ConfiguracaoLojaProvider>
+            <RouterProvider router={routes} />
+          </ConfiguracaoLojaProvider>
+          <Toaster richColors position="bottom-right" />
+        </QueryClientProvider>
+      </AuthProvider>
+    </IconProvider>
   )
 }

@@ -4,7 +4,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { AdicionarItemModal } from './AdicionarItemModal'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { PackageX, Trash2, Plus, Minus } from 'lucide-react'
+import { Package, Trash, Plus, Minus } from '@phosphor-icons/react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import { type Produto } from '@/admin/produtos/produtos.schema'
@@ -163,10 +163,10 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr className="text-left text-muted-foreground">
-              <th className="px-4 py-2 font-medium">Produto</th>
-              <th className="px-4 py-2 font-medium">Embalagem</th>
-              <th className="px-4 py-2 font-medium">Qtd. solicitada</th>
-              {editavel && <th className="px-4 py-2 font-medium text-right">Ações</th>}
+              <th className="px-4 py-2 font-medium ui-uppercase">Produto</th>
+              <th className="px-4 py-2 font-medium ui-uppercase">Embalagem</th>
+              <th className="px-4 py-2 font-medium ui-uppercase">Qtd. solicitada</th>
+              {editavel && <th className="px-4 py-2 font-medium ui-uppercase text-right">Ações</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -174,7 +174,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
               <tr>
                 <td colSpan={editavel ? 4 : 3} className="px-4 py-8 text-center text-muted-foreground">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <PackageX className="size-8 text-muted-foreground/50" />
+                    <Package className="size-8 text-muted-foreground/50" />
                     <p>Nenhum item adicionado.</p>
                   </div>
                 </td>
@@ -222,7 +222,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
                           disabled={remover.isPending}
                           aria-label="Remover"
                         >
-                          <Trash2 className="size-4" />
+                          <Trash className="size-4" />
                         </Button>
                       </td>
                     )}

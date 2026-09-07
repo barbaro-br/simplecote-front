@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react'
+import { Info } from '@phosphor-icons/react'
 import type { ItemGrid } from './cotacoes.schema'
 import { InsightProdutoCard } from '../analise/InsightProdutoCard'
 import type { InsightProduto } from '../analise/analise.schema'
@@ -36,7 +36,7 @@ export function UltimaCompraPopover({ item, insight }: { item?: ItemGrid; insigh
     <HoverCard
       trigger={
         <>
-          <span className="font-normal truncate" title={item?.nome}>{item?.nome ?? 'Produto'}</span>
+          <span className="font-normal truncate ui-uppercase" title={item?.nome}>{item?.nome ?? 'Produto'}</span>
           <Info className="size-3.5 shrink-0 text-muted-foreground/50" />
         </>
       }

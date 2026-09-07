@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Eye, EyeOff, Pencil, PlusCircle, Trash2, UserX } from 'lucide-react'
+import { Eye, EyeSlash, Pencil, PlusCircle, Trash, UserMinus } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
@@ -88,7 +88,7 @@ export function EmpresasPage() {
     <PageContainer maxWidth="5xl" className="space-y-6">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Fornecedores (Empresas)</h1>
+          <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Fornecedores (Empresas)</h1>
           <p className="text-sm text-muted-foreground">Gerencie as empresas e seus respectivos representantes.</p>
         </div>
         <Button onClick={abrirNovo}>
@@ -139,9 +139,9 @@ export function EmpresasPage() {
           <table className="w-full text-sm min-w-[500px]">
             <thead className="bg-muted/50 border-b">
               <tr className="text-left text-muted-foreground">
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Representante</th>
-                <th className="px-4 py-3 font-medium text-right">Ações</th>
+                <th className="px-4 py-3 font-medium ui-uppercase">Nome</th>
+                <th className="px-4 py-3 font-medium ui-uppercase">Representante</th>
+                <th className="px-4 py-3 font-medium ui-uppercase text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -159,7 +159,7 @@ export function EmpresasPage() {
                       key={empresa.id}
                       className={`transition-colors hover:bg-muted/50 ${empresa.ativo ? '' : 'opacity-60 bg-muted/10'}`}
                     >
-                      <td className="px-4 py-3 font-medium">
+                      <td className="px-4 py-3 font-medium ui-uppercase">
                         {empresa.nome}
                         {!empresa.ativo && (
                           <span className="ml-2 inline-flex items-center rounded-full bg-muted-foreground/10 px-2 py-0.5 text-xs font-medium text-muted-foreground">
@@ -187,7 +187,7 @@ export function EmpresasPage() {
                                 onClick={() => abrirEditar(empresa)}
                               />
                               <IconButton
-                                icon={EyeOff}
+                                icon={EyeSlash}
                                 label="Inativar"
                                 onClick={() => inativar.mutate(empresa.id)}
                                 disabled={inativar.isPending}
@@ -203,7 +203,7 @@ export function EmpresasPage() {
                           )}
                           {rep && (
                             <IconButton
-                              icon={UserX}
+                              icon={UserMinus}
                               label="Excluir contato"
                               tone="destructive"
                               onClick={() => setRepresentanteParaExcluir(rep)}
@@ -211,7 +211,7 @@ export function EmpresasPage() {
                           )}
                           {empresa.podeExcluir ? (
                             <IconButton
-                              icon={Trash2}
+                              icon={Trash}
                               label="Excluir"
                               tone="destructive"
                               onClick={() => setEmpresaParaExcluir(empresa)}
@@ -219,7 +219,7 @@ export function EmpresasPage() {
                           ) : (
                             <Tooltip content="Não é possível excluir: a empresa já participou de uma cotação. Use Inativar.">
                               <IconButton
-                                icon={Trash2}
+                                icon={Trash}
                                 label="Excluir"
                                 tone="destructive"
                                 disabled

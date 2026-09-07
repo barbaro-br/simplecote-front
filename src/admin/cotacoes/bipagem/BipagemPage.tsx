@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, Package, Check, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Package, Check, WarningCircle } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { useBarcodeScanner } from '@/shared/hooks/useBarcodeScanner'
 import { useBiparItemCotacao, useCotacao } from '../cotacoes.api'
@@ -164,7 +164,7 @@ export function BipagemPage() {
           <span className="sr-only">Voltar</span>
         </Button>
         <div className="flex-1">
-          <h1 className="text-lg font-semibold tracking-tight">Bipar Produtos</h1>
+          <h1 className="text-lg font-semibold tracking-tight ui-uppercase">Bipar Produtos</h1>
           {cotacaoQuery.data && (
             <p className="text-xs text-muted-foreground truncate max-w-[200px] sm:max-w-md">
               {cotacaoQuery.data.titulo}
@@ -178,7 +178,7 @@ export function BipagemPage() {
         <div className="relative flex-none bg-black flex items-center justify-center w-full max-h-[50vh] overflow-hidden aspect-video sm:aspect-auto">
           {scannerError ? (
             <div className="text-white p-4 text-center">
-              <AlertCircle className="w-8 h-8 mx-auto mb-2 text-destructive" />
+              <WarningCircle className="w-8 h-8 mx-auto mb-2 text-destructive" />
               <p className="text-sm">{scannerError}</p>
             </div>
           ) : (
@@ -230,7 +230,7 @@ export function BipagemPage() {
                   className={`flex items-center gap-3 p-3 rounded-md border ${item.status === 'erro' ? 'bg-destructive/5 border-destructive/20' : 'bg-card'}`}
                 >
                   <div className={`p-2 rounded-full ${item.status === 'erro' ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'}`}>
-                    {item.status === 'erro' ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                    {item.status === 'erro' ? <WarningCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{item.nome}</p>
@@ -250,7 +250,7 @@ export function BipagemPage() {
       <Dialog open={!!sugestao202} onClose={handleCancel202}>
           <form onSubmit={handleSalvar202} className="space-y-6">
             <div>
-              <h2 className="text-lg font-semibold tracking-tight">Completar Cadastro</h2>
+              <h2 className="text-lg font-semibold tracking-tight ui-uppercase">Completar Cadastro</h2>
               <p className="text-sm text-muted-foreground mt-1">
                 O código <strong>{sugestao202?.codigoBarras}</strong> foi encontrado na rede com o nome:
               </p>
@@ -261,7 +261,7 @@ export function BipagemPage() {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="unidade-202" className="text-sm font-medium">Embalagem</label>
+                <label htmlFor="unidade-202" className="text-sm font-medium ui-uppercase">Embalagem</label>
                 <select 
                   id="unidade-202"
                   value={unidade}
@@ -272,7 +272,7 @@ export function BipagemPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label htmlFor="qtd-202" className="text-sm font-medium">Qtd. por embalagem</label>
+                <label htmlFor="qtd-202" className="text-sm font-medium ui-uppercase">Qtd. por embalagem</label>
                 <Input
                   id="qtd-202"
                   type="number"

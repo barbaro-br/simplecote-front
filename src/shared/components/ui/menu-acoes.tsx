@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { MoreVertical } from 'lucide-react'
+import { DotsThreeVertical } from '@phosphor-icons/react'
 import { Button } from './button'
 
 type MenuItem = {
@@ -87,7 +87,7 @@ export function MenuAcoes({ items }: MenuAcoesProps) {
         aria-expanded={aberto}
         title="Mais opções"
       >
-        <MoreVertical className="h-4 w-4" />
+        <DotsThreeVertical className="h-4 w-4" />
       </Button>
 
       {aberto &&
@@ -105,7 +105,7 @@ export function MenuAcoes({ items }: MenuAcoesProps) {
                   key={index}
                   role="menuitem"
                   disabled={item.disabled}
-                  className={`flex w-full items-center px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`flex w-full items-center px-4 py-2 text-sm ui-uppercase disabled:opacity-50 disabled:cursor-not-allowed ${
                     item.variant === 'destructive'
                       ? 'text-destructive hover:bg-destructive/10'
                       : 'hover:bg-accent hover:text-accent-foreground'

@@ -11,7 +11,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
-import { AlertTriangle } from 'lucide-react'
+import { Warning } from '@phosphor-icons/react'
 
 const loginSchema = z.object({
   email: z.string().min(1, 'E-mail obrigatório').email('E-mail inválido'),
@@ -67,7 +67,7 @@ export function LoginPage() {
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
             {/* E-mail */}
             <div className="space-y-1.5">
-              <label htmlFor="login-email" className="text-sm font-medium text-foreground">
+              <label htmlFor="login-email" className="text-sm font-medium text-foreground ui-uppercase">
                 E-mail
               </label>
               <Input
@@ -85,7 +85,7 @@ export function LoginPage() {
 
             {/* Senha */}
             <div className="space-y-1.5">
-              <label htmlFor="login-senha" className="text-sm font-medium text-foreground">
+              <label htmlFor="login-senha" className="text-sm font-medium text-foreground ui-uppercase">
                 Senha
               </label>
               <Input
@@ -107,7 +107,7 @@ export function LoginPage() {
                 role="alert"
                 className="flex items-center gap-2 rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive"
               >
-                <AlertTriangle className="size-4 shrink-0" />
+                <Warning className="size-4 shrink-0" />
                 {erroServidor}
               </div>
             )}

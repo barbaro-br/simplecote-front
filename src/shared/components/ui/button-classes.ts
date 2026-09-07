@@ -17,7 +17,7 @@ const SIZE_CLASSES: Record<NonNullable<ButtonProps['size']>, string> = {
 }
 
 const BASE_CLASSES =
-  'inline-flex items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50'
+  'inline-flex items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 ui-uppercase'
 
 export function buttonClasses(opts: {
   variant?: ButtonProps['variant']

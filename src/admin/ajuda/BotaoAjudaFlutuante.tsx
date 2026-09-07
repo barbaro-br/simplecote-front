@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { HelpCircle } from 'lucide-react'
+import { Question } from '@phosphor-icons/react'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { PERGUNTAS_FREQUENTES } from './faq'
 
@@ -14,7 +14,7 @@ export function BotaoAjudaFlutuante() {
         onClick={() => setAberto(true)}
         className="fixed bottom-6 right-6 z-40 inline-flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
       >
-        <HelpCircle className="size-6" aria-hidden />
+        <Question className="size-6" aria-hidden />
       </button>
 
       <Dialog open={aberto} onClose={() => setAberto(false)} title="Ajuda">

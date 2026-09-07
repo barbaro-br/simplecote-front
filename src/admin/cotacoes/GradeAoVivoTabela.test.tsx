@@ -6,6 +6,16 @@ import { server } from '@/setupTests'
 import { GradeAoVivoTabela } from './GradeAoVivoTabela'
 import type { GridAoVivo } from './cotacoes.schema'
 
+const mockStore: Record<string, string> = {}
+Object.defineProperty(globalThis, 'localStorage', {
+  value: {
+    getItem: (k: string) => mockStore[k] ?? null,
+    setItem: (k: string, v: string) => { mockStore[k] = String(v) },
+    removeItem: (k: string) => delete mockStore[k],
+    clear: () => { for (const k in mockStore) delete mockStore[k] },
+  },
+  configurable: true,
+})
 
 const gradeBase: GridAoVivo = {
   status: 'ABERTA',
@@ -461,4 +471,87 @@ test('erro ao remover exibe ApiError.message e mantém o diálogo aberto', async
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Não é possível remover este item.')
   expect(screen.getByText('Arroz')).toBeInTheDocument()
+})
+
+function alca(): HTMLElement {
+  const handle = screen.getByTestId('grade-resize-handle')
+  handle.setPointerCapture = vi.fn()
+  handle.releasePointerCapture = vi.fn()
+  return handle
+}
+
+function larguraAplicada(): string {
+  return screen.getByRole('table').style.getPropertyValue('--w-item')
+}
+
+function arrastar(handle: HTMLElement, de: number, para: number) {
+  fireEvent.pointerDown(handle, { pointerId: 1, clientX: de })
+  fireEvent.pointerMove(handle, { pointerId: 1, clientX: para })
+  fireEvent.pointerUp(handle, { pointerId: 1, clientX: para })
+}
+
+test('arrastar a alça muda a largura aplicada no DOM', () => {
+  localStorage.clear()
+  renderGrade(gradeBase)
+  expect(larguraAplicada()).toBe('240px')
+
+  arrastar(alca(), 200, 300)
+
+  expect(larguraAplicada()).toBe('340px')
+})
+
+test('a largura respeita o mínimo e o máximo ao arrastar', () => {
+  localStorage.clear()
+  renderGrade(gradeBase)
+
+  // puxa bem para a direita → capped em 520
+  arrastar(alca(), 0, 2000)
+  expect(larguraAplicada()).toBe('520px')
+
+  // puxa bem para a esquerda → floor em 140
+  arrastar(alca(), 2000, 0)
+  expect(larguraAplicada()).toBe('140px')
+})
+
+test('a largura é persistida no localStorage e um novo render parte dela', () => {
+  localStorage.clear()
+  const primeira = renderGrade(gradeBase)
+  arrastar(alca(), 200, 300)
+  expect(localStorage.getItem('grade-largura-coluna-item')).toBe('340')
+
+  // um novo render lê a largura salva (340), não o padrão
+  primeira.unmount()
+  renderGrade(gradeBase)
+  expect(larguraAplicada()).toBe('340px')
+})
+
+test('duplo-clique na alça restaura a largura padrão e limpa a chave', () => {
+  localStorage.setItem('grade-largura-coluna-item', '300')
+  renderGrade(gradeBase)
+  expect(larguraAplicada()).toBe('300px')
+
+  fireEvent.doubleClick(alca())
+
+  expect(larguraAplicada()).toBe('240px')
+  expect(localStorage.getItem('grade-largura-coluna-item')).toBeNull()
+})
+
+test('localStorage indisponível usa o padrão sem quebrar e o arrasto segue funcionando', () => {
+  localStorage.clear()
+  const getItem = vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
+    throw new Error('acesso negado')
+  })
+  const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+    throw new Error('acesso negado')
+  })
+  try {
+    renderGrade(gradeBase)
+    expect(larguraAplicada()).toBe('240px')
+
+    arrastar(alca(), 200, 300)
+    expect(larguraAplicada()).toBe('340px')
+  } finally {
+    getItem.mockRestore()
+    setItem.mockRestore()
+  }
 })

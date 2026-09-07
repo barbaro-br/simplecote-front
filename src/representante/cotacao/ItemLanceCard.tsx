@@ -74,6 +74,10 @@ export function ItemLanceCard({
     const n = Number(valorDebounced.replace(',', '.'))
     const parsed = precoSchema.safeParse(n)
     if (!parsed.success) {
+      // Validação roda no efeito de debounce de propósito: derivar no render
+      // mostraria o erro enquanto o usuário ainda digita (antes do debounce),
+      // não o valor que já foi assentado.
+      // eslint-disable-next-line react/set-state-in-effect
       setErroLocal(parsed.error.issues[0]?.message ?? 'Preço inválido')
       return
     }

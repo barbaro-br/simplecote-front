@@ -1,7 +1,7 @@
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
-import { Check, Copy, Store, Palette, Sliders } from 'lucide-react'
+import { Check, Copy, Storefront, Palette, Sliders } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -39,7 +39,7 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
     <form onSubmit={form.handleSubmit(aoEnviar)} noValidate className="flex flex-col h-full">
       <Tabs defaultValue="geral" className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="geral" className="flex gap-2"><Store className="size-4" /> Geral</TabsTrigger>
+          <TabsTrigger value="geral" className="flex gap-2"><Storefront className="size-4" /> Geral</TabsTrigger>
           <TabsTrigger value="aparencia" className="flex gap-2"><Palette className="size-4" /> Aparência</TabsTrigger>
           <TabsTrigger value="avancado" className="flex gap-2"><Sliders className="size-4" /> Avançado</TabsTrigger>
         </TabsList>
@@ -49,13 +49,13 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
           <TabsContent value="geral" className="space-y-6 mt-0">
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
-                <label htmlFor="nome" className="text-sm font-medium">Nome da loja</label>
+                <label htmlFor="nome" className="text-sm font-medium ui-uppercase">Nome da loja</label>
                 <Input id="nome" {...form.register('nome')} placeholder="Ex: Sara Supermercado" className={errors.nome ? 'border-destructive' : ''} />
                 {errors.nome && <p className="text-[13px] text-destructive">{errors.nome.message}</p>}
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="telefone" className="text-sm font-medium">Telefone da loja</label>
+                <label htmlFor="telefone" className="text-sm font-medium ui-uppercase">Telefone da loja</label>
                 <Input
                   id="telefone"
                   {...form.register('telefone', {
@@ -77,7 +77,7 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
           <TabsContent value="aparencia" className="space-y-6 mt-0">
             <div className="grid gap-8 md:grid-cols-2">
               <div className="space-y-3">
-                <label htmlFor="corPrimaria" className="text-sm font-medium">Cor de marca</label>
+                <label htmlFor="corPrimaria" className="text-sm font-medium ui-uppercase">Cor de marca</label>
                 <div className="flex items-center gap-3">
                   <Input id="corPrimaria" type="color" {...form.register('corPrimaria')} className="h-9 w-16 cursor-pointer p-1" />
                   <span className="text-sm text-muted-foreground font-mono">{corPrimaria}</span>
@@ -85,18 +85,18 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
               </div>
 
               <div className="space-y-3">
-                <span className="text-sm font-medium">Tema do Painel</span>
+                <span className="text-sm font-medium ui-uppercase">Tema do Painel</span>
                 <div className="flex gap-6">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" value="CLARO" {...form.register('tema')} /> Claro</label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" value="ESCURO" {...form.register('tema')} /> Escuro</label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer ui-uppercase"><input type="radio" value="CLARO" {...form.register('tema')} /> Claro</label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer ui-uppercase"><input type="radio" value="ESCURO" {...form.register('tema')} /> Escuro</label>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <span className="text-sm font-medium">Estilo de navegação</span>
+                <span className="text-sm font-medium ui-uppercase">Estilo de navegação</span>
                 <div className="flex gap-6">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" value="LATERAL" {...form.register('estiloNavegacao')} /> Lateral</label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" value="INFERIOR" {...form.register('estiloNavegacao')} /> Inferior</label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer ui-uppercase"><input type="radio" value="LATERAL" {...form.register('estiloNavegacao')} /> Lateral</label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer ui-uppercase"><input type="radio" value="INFERIOR" {...form.register('estiloNavegacao')} /> Inferior</label>
                 </div>
               </div>
             </div>
@@ -105,7 +105,7 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
           {/* ABA AVANÇADO */}
           <TabsContent value="avancado" className="space-y-6 mt-0">
             <div className="space-y-3">
-              <label htmlFor="layoutEmail" className="text-sm font-medium">Layout de e-mail</label>
+              <label htmlFor="layoutEmail" className="text-sm font-medium ui-uppercase">Layout de e-mail</label>
               <textarea
                 id="layoutEmail"
                 {...form.register('layoutEmail')}
@@ -147,7 +147,7 @@ function LinkColaboradorSection({ token }: { token: string }) {
   return (
     <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
       <div>
-        <label htmlFor="link-colaborador" className="text-sm font-medium">Link do colaborador</label>
+        <label htmlFor="link-colaborador" className="text-sm font-medium ui-uppercase">Link do colaborador</label>
         <p className="text-xs text-muted-foreground mt-1">
           Compartilhe este link com o time para adicionarem itens à cotação.
         </p>
@@ -173,7 +173,7 @@ export function ConfiguracoesPage() {
   return (
     <PageContainer maxWidth="md" className="h-[calc(100vh-80px)] overflow-hidden">
       <div className="mb-6 space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">Configurações</h1>
+        <h1 className="text-2xl font-bold tracking-tight ui-uppercase">Configurações</h1>
         <p className="text-sm text-muted-foreground">Gerencie as preferências da sua loja.</p>
       </div>
 

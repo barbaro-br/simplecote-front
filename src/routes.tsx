@@ -4,7 +4,6 @@ import { AuthGuard } from './shared/auth/AuthGuard'
 
 import { LoginPage } from './admin/login/LoginPage'
 import { EsqueciSenhaPage } from './admin/recuperar-senha/EsqueciSenhaPage'
-import { RedefinirSenhaPage } from './admin/recuperar-senha/RedefinirSenhaPage'
 import { TemaClaro } from './representante/TemaClaro'
 import { RouteLoadingFallback } from './shared/components/ui/route-loading'
 
@@ -20,10 +19,6 @@ export const routes = createBrowserRouter([
   {
     path: '/esqueci-senha',
     element: <EsqueciSenhaPage />,
-  },
-  {
-    path: '/redefinir-senha/:token',
-    element: <RedefinirSenhaPage />,
   },
   {
     path: '/admin',

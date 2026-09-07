@@ -5,3 +5,5 @@ export const esqueciSenhaSchema = z.object({
 })
 
 export type EsqueciSenhaFormValues = z.infer<typeof esqueciSenhaSchema>
+
+export const codigoSchema = z.string().regex(/^\d{6}$/, 'O código tem 6 dígitos')

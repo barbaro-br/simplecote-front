@@ -1,28 +1,28 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
-  BarChart3,
-  Building2,
+  ChartBar,
+  Buildings,
   FileText,
-  LayoutDashboard,
-  LogOut,
-  MoreHorizontal,
+  SquaresFour,
+  SignOut,
+  DotsThree,
   Package,
-  Settings,
-  UserCog,
-} from 'lucide-react'
+  Gear,
+  UserGear,
+} from '@phosphor-icons/react'
 
 const ITENS_FIXOS = [
-  { to: '/admin', label: 'Dashboard', Icon: LayoutDashboard, end: true },
+  { to: '/admin', label: 'Dashboard', Icon: SquaresFour, end: true },
   { to: '/admin/cotacoes', label: 'Cotações', Icon: FileText, end: false },
   { to: '/admin/produtos', label: 'Produtos', Icon: Package, end: false },
 ] as const
 
 const ITENS_MAIS = [
-  { to: '/admin/empresas', label: 'Empresas', Icon: Building2, end: false },
-  { to: '/admin/usuarios', label: 'Usuários', Icon: UserCog, end: false },
-  { to: '/admin/analises', label: 'Análises', Icon: BarChart3, end: false },
-  { to: '/admin/configuracoes', label: 'Configurações', Icon: Settings, end: false },
+  { to: '/admin/empresas', label: 'Empresas', Icon: Buildings, end: false },
+  { to: '/admin/usuarios', label: 'Usuários', Icon: UserGear, end: false },
+  { to: '/admin/analises', label: 'Análises', Icon: ChartBar, end: false },
+  { to: '/admin/configuracoes', label: 'Configurações', Icon: Gear, end: false },
 ] as const
 
 const TODOS_ITENS = [...ITENS_FIXOS, ...ITENS_MAIS]
@@ -66,7 +66,7 @@ export function BottomNavBar({ onLogout }: { onLogout: () => void }) {
             }
           >
             <Icon className="size-6 shrink-0" aria-hidden />
-            <span className="whitespace-nowrap">{label}</span>
+            <span className="whitespace-nowrap ui-uppercase">{label}</span>
           </NavLink>
         ))}
 
@@ -81,8 +81,8 @@ export function BottomNavBar({ onLogout }: { onLogout: () => void }) {
               maisAberto ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <MoreHorizontal className="size-6 shrink-0" aria-hidden />
-            <span className="whitespace-nowrap">Mais</span>
+            <DotsThree className="size-6 shrink-0" aria-hidden />
+            <span className="whitespace-nowrap ui-uppercase">Mais</span>
           </button>
         )}
       </nav>
@@ -121,7 +121,7 @@ export function BottomNavBar({ onLogout }: { onLogout: () => void }) {
                 onClick={onLogout}
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
               >
-                <LogOut className="size-5 shrink-0" aria-hidden />
+                <SignOut className="size-5 shrink-0" aria-hidden />
                 Sair
               </button>
             </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { AlertTriangle } from 'lucide-react'
+import { Warning } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
@@ -66,7 +66,7 @@ function GradeAoVivoContainer({ id, status, itens }: { id: string; status: strin
   return (
     <div className="space-y-4 mt-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold tracking-tight">Grade de Respostas (Ao Vivo)</h2>
+        <h2 className="text-lg font-semibold tracking-tight ui-uppercase">Grade de Respostas (Ao Vivo)</h2>
         <div className="flex items-center gap-2">
           {status === 'ABERTA' && (
             <Button size="sm" onClick={() => setAdicionarItemAberto(true)}>
@@ -277,7 +277,7 @@ export function CotacaoDetalhePage() {
           role="alert"
           className="flex items-center gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm"
         >
-          <AlertTriangle className="size-5 shrink-0 text-warning" aria-hidden />
+          <Warning className="size-5 shrink-0 text-warning" aria-hidden />
           <span className="font-medium text-warning">
             Prazo vencido — os representantes não podem mais responder. Encerre para apurar.
           </span>

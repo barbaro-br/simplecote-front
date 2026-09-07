@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Pencil } from 'lucide-react'
+import { Pencil } from '@phosphor-icons/react'
 import { IconButton } from './icon-button'
 
 test('renderiza o aria-label e dispara onClick', async () => {

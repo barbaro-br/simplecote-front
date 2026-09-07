@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'
+import { CircleNotch } from '@phosphor-icons/react'
 
 /**
  * Fallback exibido enquanto o chunk da rota (lazy) ainda está baixando.
@@ -12,7 +12,7 @@ export function RouteLoadingFallback() {
       aria-label="Carregando"
       className="min-h-screen flex items-center justify-center bg-background"
     >
-      <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      <CircleNotch className="size-8 animate-spin text-muted-foreground" />
     </div>
   )
 }

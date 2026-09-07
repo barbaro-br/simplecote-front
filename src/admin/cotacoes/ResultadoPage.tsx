@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronRight, FileDown, RefreshCw, Send } from 'lucide-react'
+import { CaretRight, FileArrowDown, ArrowsClockwise, PaperPlaneRight } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
@@ -113,7 +113,7 @@ export function ResultadoPage() {
       />
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Resultado da apuração</h1>
+          <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Resultado da apuração</h1>
           <p className="text-sm text-muted-foreground">Consulte os vencedores por item e acompanhe os pedidos.</p>
         </div>
         <div className="flex items-center gap-4">
@@ -124,7 +124,7 @@ export function ResultadoPage() {
               baixarResultadoXlsx(id).catch(tratarErro)
             }}
           >
-            <FileDown className="mr-2 size-4" />
+            <FileArrowDown className="mr-2 size-4" />
             Baixar XLSX
           </Button>
         </div>
@@ -141,7 +141,7 @@ export function ResultadoPage() {
           <CardTitle>Pedidos Gerados</CardTitle>
         </CardHeader>
         <div className="px-4 py-3">
-          <label htmlFor="margem-global" className="text-sm font-medium">
+          <label htmlFor="margem-global" className="text-sm font-medium ui-uppercase">
             Margem de lucro (%)
           </label>
           <div className="mt-1 flex items-center gap-2">
@@ -164,10 +164,10 @@ export function ResultadoPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr className="text-left text-muted-foreground">
-                <th className="px-4 py-3 font-medium">Empresa</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium text-right">Total</th>
-                <th className="px-4 py-3 font-medium text-right">Ações</th>
+                <th className="px-4 py-3 font-medium ui-uppercase">Empresa</th>
+                <th className="px-4 py-3 font-medium ui-uppercase">Status</th>
+                <th className="px-4 py-3 font-medium ui-uppercase text-right">Total</th>
+                <th className="px-4 py-3 font-medium ui-uppercase text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -176,7 +176,7 @@ export function ResultadoPage() {
                 return (
                   <Fragment key={pedido.id}>
                     <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="px-4 py-3 font-medium">
+                      <td className="px-4 py-3 font-medium ui-uppercase">
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -185,7 +185,7 @@ export function ResultadoPage() {
                             aria-label={`${expandido ? 'Recolher' : 'Expandir'} itens de ${pedido.empresaNome}`}
                             className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                           >
-                            <ChevronRight className={`size-4 transition-transform ${expandido ? 'rotate-90' : ''}`} />
+                            <CaretRight className={`size-4 transition-transform ${expandido ? 'rotate-90' : ''}`} />
                           </button>
                           {pedido.empresaNome}
                         </div>
@@ -204,7 +204,7 @@ export function ResultadoPage() {
                               baixarPedidoPdf(pedido.id).catch(tratarErro)
                             }}
                           >
-                            <FileDown className="mr-2 size-4 text-muted-foreground" />
+                            <FileArrowDown className="mr-2 size-4 text-muted-foreground" />
                             PDF
                           </Button>
                           {pedido.status === 'GERADO' && (
@@ -216,7 +216,7 @@ export function ResultadoPage() {
                               }}
                               disabled={enviar.isPending}
                             >
-                              <Send className="mr-2 size-3.5" />
+                              <PaperPlaneRight className="mr-2 size-3.5" />
                               Enviar
                             </Button>
                           )}
@@ -229,13 +229,13 @@ export function ResultadoPage() {
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="text-left text-muted-foreground">
-                                <th className="py-1.5 font-medium">Produto</th>
-                                <th className="py-1.5 font-medium text-right">Quantidade</th>
-                                <th className="py-1.5 font-medium text-right">Preço embalagem</th>
-                                <th className="py-1.5 font-medium text-right">Preço unitário</th>
-                                <th className="py-1.5 font-medium text-right">Margem (%)</th>
-                                <th className="py-1.5 font-medium text-right">Preço de venda</th>
-                                <th className="py-1.5 font-medium text-right">Subtotal</th>
+                                <th className="py-1.5 font-medium ui-uppercase">Produto</th>
+                                <th className="py-1.5 font-medium ui-uppercase text-right">Quantidade</th>
+                                <th className="py-1.5 font-medium ui-uppercase text-right">Preço embalagem</th>
+                                <th className="py-1.5 font-medium ui-uppercase text-right">Preço unitário</th>
+                                <th className="py-1.5 font-medium ui-uppercase text-right">Margem (%)</th>
+                                <th className="py-1.5 font-medium ui-uppercase text-right">Preço de venda</th>
+                                <th className="py-1.5 font-medium ui-uppercase text-right">Subtotal</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
@@ -243,7 +243,7 @@ export function ResultadoPage() {
                                 const precoVenda = precoDeVenda(item.precoUnitario, margemEfetiva(item.id))
                                 return (
                                   <tr key={item.id}>
-                                    <td className="py-2 font-medium">{item.nomeSnapshot}</td>
+                                    <td className="py-2 font-medium ui-uppercase">{item.nomeSnapshot}</td>
                                     <td className="py-2 text-right tabular-nums text-muted-foreground">{item.quantidade}</td>
                                     <td className="py-2 text-right tabular-nums text-muted-foreground">{moeda(item.precoEmbalagem)}</td>
                                     <td className="py-2 text-right tabular-nums text-muted-foreground">
@@ -302,7 +302,7 @@ export function ResultadoPage() {
             </p>
             <ul className="grid gap-1 sm:grid-cols-2 text-sm text-muted-foreground">
               {resultado.data.itensSemVencedor.map((item) => (
-                <li key={item.id} className="flex items-center gap-2">
+                <li key={item.id} className="flex items-center gap-2 ui-uppercase">
                   <span className="size-1 rounded-full bg-muted-foreground/40" />
                   {item.nomeSnapshot}
                 </li>
@@ -310,7 +310,7 @@ export function ResultadoPage() {
             </ul>
             <div className="mt-3">
               <Button variant="outline" onClick={() => setConfirmarRecotar(true)}>
-                <RefreshCw className="mr-2 size-4" />
+                <ArrowsClockwise className="mr-2 size-4" />
                 Recotar itens sem vencedor
               </Button>
             </div>

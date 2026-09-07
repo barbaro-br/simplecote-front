@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { TrendingDown, TrendingUp, Minus } from 'lucide-react'
+import { TrendDown, TrendUp, Minus } from '@phosphor-icons/react'
 import { moeda, dataBr } from '@/shared/format/formatters'
 import { Sparkline } from './Sparkline'
 import type { InsightProduto } from './analise.schema'
@@ -54,9 +54,9 @@ export function InsightProdutoCard({ insight }: Props) {
           data-testid="badge-variacao"
         >
           {subiu ? (
-            <TrendingUp className="size-3" />
+            <TrendUp className="size-3" />
           ) : desceu ? (
-            <TrendingDown className="size-3" />
+            <TrendDown className="size-3" />
           ) : (
             <Minus className="size-3" />
           )}

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
-import { Check, Eye, EyeOff } from 'lucide-react'
+import { Check, Eye, EyeSlash } from '@phosphor-icons/react'
 import {
   ROTULO_PAPEL,
   SENHA_MIN,
@@ -74,13 +74,13 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
 
   return (
     <form onSubmit={form.handleSubmit(aoEnviar)} noValidate className="space-y-6">
-      <h2 className="text-lg font-semibold tracking-tight">
+      <h2 className="text-lg font-semibold tracking-tight ui-uppercase">
         {isEdit ? 'Editar usuário' : 'Novo usuário'}
       </h2>
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="user-nome" className="text-sm font-medium">
+          <label htmlFor="user-nome" className="text-sm font-medium ui-uppercase">
             Nome
           </label>
           <Input id="user-nome" {...form.register('nome')} disabled={isPending} />
@@ -89,7 +89,7 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <label htmlFor="user-email" className="text-sm font-medium">
+            <label htmlFor="user-email" className="text-sm font-medium ui-uppercase">
               E-mail
             </label>
             <Input id="user-email" type="email" {...form.register('email')} disabled={isPending} />
@@ -98,7 +98,7 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
             )}
           </div>
           <div className="space-y-2">
-            <label htmlFor="user-papel" className="text-sm font-medium">
+            <label htmlFor="user-papel" className="text-sm font-medium ui-uppercase">
               Papel
             </label>
             <select id="user-papel" {...form.register('papel')} className={inputCls} disabled={isPending}>
@@ -110,7 +110,7 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
 
         {!isEdit && (
           <div className="space-y-2">
-            <label htmlFor="user-senha" className="text-sm font-medium">
+            <label htmlFor="user-senha" className="text-sm font-medium ui-uppercase">
               Senha inicial
             </label>
             <div className="relative">
@@ -130,7 +130,7 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
                 disabled={isPending}
               >
                 {mostrarSenha ? (
-                  <EyeOff className="size-4" aria-hidden />
+                  <EyeSlash className="size-4" aria-hidden />
                 ) : (
                   <Eye className="size-4" aria-hidden />
                 )}

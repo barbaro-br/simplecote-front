@@ -1,5 +1,5 @@
-import { memo, useState } from 'react'
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { memo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { Minus, Plus, Trash } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
@@ -10,6 +10,25 @@ import { useCorrigirLance, useAtualizarQuantidadeItem, useRemoverItem } from './
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
 import { useHighlightOnUpdate } from '@/shared/hooks/useHighlightOnUpdate'
+
+const LARGURA_ITEM_PADRAO = 240
+const LARGURA_ITEM_MIN = 140
+const LARGURA_ITEM_MAX = 520
+const LARGURA_ITEM_KEY = 'grade-largura-coluna-item'
+
+function clampLargura(valor: number): number {
+  return Math.round(Math.min(LARGURA_ITEM_MAX, Math.max(LARGURA_ITEM_MIN, valor)))
+}
+
+function larguraItemInicial(): number {
+  try {
+    const salva = localStorage.getItem(LARGURA_ITEM_KEY)
+    const numero = salva == null ? Number.NaN : Number(salva)
+    return Number.isFinite(numero) ? clampLargura(numero) : LARGURA_ITEM_PADRAO
+  } catch {
+    return LARGURA_ITEM_PADRAO
+  }
+}
 
 type Coluna = { participanteId: string; empresa: string }
 
@@ -170,7 +189,7 @@ const LinhaItem = memo(function LinhaItem({
 }: LinhaProps) {
   return (
     <tr className="group transition-colors hover:bg-muted/40">
-      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-2 border-b border-r shadow-[1px_1px_0_0_var(--border)] w-[340px] min-w-[340px] max-w-[340px]">
+      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-2 border-b border-r shadow-[1px_1px_0_0_var(--border)]" style={{ width: 'var(--w-item)' }}>
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <UltimaCompraPopover item={item} />
@@ -216,7 +235,7 @@ const LinhaItem = memo(function LinhaItem({
               onClick={() => aoRemover(item)}
               className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <Trash2 className="size-4" />
+              <Trash className="size-4" />
             </button>
           )}
         </div>
@@ -263,6 +282,46 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
   const [erroQuantidade, setErroQuantidade] = useState<string | null>(null)
   const [itemParaRemover, setItemParaRemover] = useState<ItemGrid | null>(null)
   const [erroRemocao, setErroRemocao] = useState<string | null>(null)
+
+  const [larguraItem, setLarguraItem] = useState<number>(larguraItemInicial)
+  const arrasteRef = useRef<{ inicioX: number; inicioLargura: number } | null>(null)
+
+  function aoPointerDown(e: ReactPointerEvent<HTMLSpanElement>) {
+    e.preventDefault()
+    arrasteRef.current = { inicioX: e.clientX, inicioLargura: larguraItem }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  function aoPointerMove(e: ReactPointerEvent<HTMLSpanElement>) {
+    if (!arrasteRef.current) return
+    setLarguraItem(clampLargura(arrasteRef.current.inicioLargura + (e.clientX - arrasteRef.current.inicioX)))
+  }
+
+  function aoPointerUp(e: ReactPointerEvent<HTMLSpanElement>) {
+    if (!arrasteRef.current) return
+    const final = clampLargura(arrasteRef.current.inicioLargura + (e.clientX - arrasteRef.current.inicioX))
+    arrasteRef.current = null
+    setLarguraItem(final)
+    try {
+      localStorage.setItem(LARGURA_ITEM_KEY, String(final))
+    } catch {
+      // localStorage indisponível — segue sem persistir
+    }
+  }
+
+  function aoPointerCancelar() {
+    arrasteRef.current = null
+  }
+
+  function resetarLarguraItem() {
+    arrasteRef.current = null
+    setLarguraItem(LARGURA_ITEM_PADRAO)
+    try {
+      localStorage.removeItem(LARGURA_ITEM_KEY)
+    } catch {
+      // localStorage indisponível — segue sem persistir
+    }
+  }
 
   // Destaque do menor preço é sempre ligado por padrão
   const destacarMenorPreco = true
@@ -340,16 +399,29 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
       )}
       <div className="rounded-md border bg-card text-card-foreground shadow-sm flex flex-col">
         <div className="overflow-x-auto overflow-y-auto max-h-[65vh]">
-          <table className="w-full text-sm border-separate border-spacing-0">
+          <table
+            className="w-full text-sm border-separate border-spacing-0 table-fixed"
+            style={{ '--w-item': `${larguraItem}px` } as CSSProperties}
+          >
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="sticky top-0 left-0 z-30 bg-muted px-4 py-2 font-medium border-b border-r shadow-[1px_0_0_0_var(--border)] whitespace-nowrap w-[340px] min-w-[340px] max-w-[340px]">
+                <th className="sticky top-0 left-0 z-30 bg-muted px-4 py-2 font-medium ui-uppercase border-b border-r shadow-[1px_0_0_0_var(--border)] whitespace-nowrap" style={{ width: 'var(--w-item)' }}>
                   Item
+                  <span
+                    data-testid="grade-resize-handle"
+                    aria-hidden
+                    onPointerDown={aoPointerDown}
+                    onPointerMove={aoPointerMove}
+                    onPointerUp={aoPointerUp}
+                    onPointerCancel={aoPointerCancelar}
+                    onDoubleClick={resetarLarguraItem}
+                    className="absolute inset-y-0 right-0 w-2 cursor-col-resize touch-none select-none transition-colors hover:bg-primary/40"
+                  />
                 </th>
                 {colunas.map((c) => (
                   <th
                     key={c.participanteId}
-                    className="sticky top-0 z-20 bg-muted px-2 py-2 font-medium min-w-[140px] border-b border-l shadow-[0_1px_0_0_var(--border)] text-right whitespace-nowrap"
+                    className="sticky top-0 z-20 bg-muted px-2 py-2 font-medium ui-uppercase min-w-[140px] border-b border-l shadow-[0_1px_0_0_var(--border)] text-right whitespace-nowrap"
                   >
                     {c.empresa}
                   </th>
@@ -385,7 +457,7 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
             </div>
             
             <div className="space-y-1.5">
-              <label htmlFor="corr-preco" className="text-sm font-medium">
+              <label htmlFor="corr-preco" className="text-sm font-medium ui-uppercase">
                 Preço da embalagem
               </label>
               <Input
@@ -400,7 +472,7 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
               />
             </div>
             
-            <label className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-muted cursor-pointer transition-colors">
+            <label className="flex items-center gap-2 text-sm ui-uppercase p-2 rounded-md hover:bg-muted cursor-pointer transition-colors">
               <input
                 type="checkbox"
                 checked={naoCotado}

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { FileText, Plus, RefreshCw, Search, ServerCrash } from 'lucide-react'
+import { FileText, Plus, ArrowsClockwise, MagnifyingGlass, CloudSlash } from '@phosphor-icons/react'
 import { dataHoraBr, chaveMes, mesAnoBr, moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
@@ -72,7 +72,7 @@ export function CotacoesPage() {
     }
   }
 
-  const base = data ?? []
+  const base = useMemo(() => data ?? [], [data])
   const total = base.length
 
   const mesesDisponiveis = useMemo(() => {
@@ -99,7 +99,7 @@ export function CotacoesPage() {
     <PageContainer maxWidth="5xl" className="space-y-5">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Cotações</h1>
+          <h1 className="text-2xl font-semibold ui-uppercase">Cotações</h1>
           <p className="text-sm text-muted-foreground">
             {isLoading
               ? 'Carregando…'
@@ -117,7 +117,7 @@ export function CotacoesPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-56 flex-1 max-w-xs">
-          <Search
+          <MagnifyingGlass
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden
           />
@@ -178,11 +178,11 @@ export function CotacoesPage() {
           <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-muted/50">
             <tr className="text-left text-muted-foreground">
-              <th className="px-4 py-3 font-medium rounded-tl-xl">Título</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Prazo</th>
-              <th className="px-4 py-3 font-medium text-right">Valor Total</th>
-              <th className="px-4 py-3 font-medium w-12 rounded-tr-xl">
+              <th className="px-4 py-3 font-medium ui-uppercase rounded-tl-xl">Título</th>
+              <th className="px-4 py-3 font-medium ui-uppercase">Status</th>
+              <th className="px-4 py-3 font-medium ui-uppercase">Prazo</th>
+              <th className="px-4 py-3 font-medium ui-uppercase text-right">Valor Total</th>
+              <th className="px-4 py-3 font-medium ui-uppercase w-12 rounded-tr-xl">
                 <span className="sr-only">Ações</span>
               </th>
             </tr>
@@ -212,7 +212,7 @@ export function CotacoesPage() {
               <tr>
                 <td colSpan={5} className="px-4 py-12">
                   <div className="flex flex-col items-center gap-3 text-center">
-                    <ServerCrash className="size-8 text-destructive/40" aria-hidden />
+                    <CloudSlash className="size-8 text-destructive/40" aria-hidden />
                     <div>
                       <p className="text-sm font-medium">Falha ao carregar as cotações</p>
                       <p className="text-xs text-muted-foreground">
@@ -225,7 +225,7 @@ export function CotacoesPage() {
                       onClick={() => refetch()}
                       disabled={isFetching}
                     >
-                      <RefreshCw
+                      <ArrowsClockwise
                         className={`size-3.5 ${isFetching ? 'animate-spin' : ''}`}
                         aria-hidden
                       />

@@ -94,7 +94,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
       <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">
         {/* Hero: economia */}
         <Card className="p-4 md:col-span-1">
-          <h2 className="text-sm font-medium text-muted-foreground">Economia estimada (90 dias)</h2>
+          <h2 className="text-sm font-medium text-muted-foreground ui-uppercase">Economia estimada (90 dias)</h2>
           <div className="mt-2 text-3xl font-bold text-success-foreground tabular-nums">
             <AnimatedNumber value={data.economiaEstimada90d} formatter={moeda} />
           </div>
@@ -102,7 +102,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
 
         {/* Gastos */}
         <Card className="p-4">
-          <h2 className="text-sm font-medium text-muted-foreground">Gastos</h2>
+          <h2 className="text-sm font-medium text-muted-foreground ui-uppercase">Gastos</h2>
           <div className="mt-2 flex items-baseline gap-3">
             <div>
               <div className="text-xs text-muted-foreground">Mês atual</div>
@@ -121,7 +121,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
 
         {/* Próximos prazos */}
         <Card className="p-4">
-          <h2 className="text-sm font-medium text-muted-foreground mb-3">Próximos prazos</h2>
+          <h2 className="text-sm font-medium text-muted-foreground mb-3 ui-uppercase">Próximos prazos</h2>
           {data.proximosPrazos.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nada por aqui</p>
           ) : (
@@ -153,7 +153,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
 
       {/* Precisa de ação */}
       <Card className="p-4">
-        <h2 className="text-sm font-medium text-muted-foreground mb-3">Precisa de ação</h2>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3 ui-uppercase">Precisa de ação</h2>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => onStatusClick('ENCERRADA')}
@@ -174,7 +174,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
 
       {/* Pipeline de status */}
       <Card className="p-4">
-        <h2 className="text-sm font-medium text-muted-foreground mb-3">Cotações por status</h2>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3 ui-uppercase">Cotações por status</h2>
         <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted">
           {STATUS_PIPELINE.map((s) => {
             const count = data.porStatus[s.chave]
@@ -208,7 +208,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
       {/* Top 5 */}
       <div className="grid grid-cols-1 @md:grid-cols-2 gap-4">
         <Card className="p-4">
-          <h2 className="text-sm font-medium text-muted-foreground mb-3">Top 5 Produtos</h2>
+          <h2 className="text-sm font-medium text-muted-foreground mb-3 ui-uppercase">Top 5 Produtos</h2>
           {data.topProdutos.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nada por aqui</p>
           ) : (
@@ -232,7 +232,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
         </Card>
 
         <Card className="p-4">
-          <h2 className="text-sm font-medium text-muted-foreground mb-3">Top 5 Empresas</h2>
+          <h2 className="text-sm font-medium text-muted-foreground mb-3 ui-uppercase">Top 5 Empresas</h2>
           {data.topEmpresas.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nada por aqui</p>
           ) : (

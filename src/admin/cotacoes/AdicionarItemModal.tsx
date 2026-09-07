@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
 import { useProdutos } from '@/admin/produtos/produtos.api'
-import { Search, X, PackageOpen, Loader2, Plus, Minus, Pencil } from 'lucide-react'
+import { MagnifyingGlass, X, Package, CircleNotch, Plus, Minus, Pencil } from '@phosphor-icons/react'
 import { useAdicionarItem, useRemoverItem, useAtualizarQuantidadeItem } from './cotacoes.api'
 import type { ItemCotacao } from './cotacoes.schema'
 import type { Produto } from '@/admin/produtos/produtos.schema'
@@ -183,11 +183,11 @@ export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastra
           </Button>
         </div>
 
-        {/* Search */}
+        {/* MagnifyingGlass */}
         <div className="px-6 py-3 border-b border-muted shrink-0">
           <div className="relative">
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 pointer-events-none">
-              <Search className="size-4" />
+              <MagnifyingGlass className="size-4" />
             </span>
             <input
               ref={searchRef}
@@ -237,13 +237,13 @@ export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastra
                   <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center transition-colors ${
                     isChecked ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
                   }`}>
-                    <PackageOpen className="size-4" />
+                    <Package className="size-4" />
                   </div>
 
                   {/* Product Info */}
                   <div className="flex-1 min-w-0 flex items-center justify-between pr-2">
                     <div className="flex flex-col flex-1 min-w-0 mr-2">
-                      <div className={`text-[13px] ${isChecked ? 'font-semibold' : 'font-medium'} text-foreground truncate`}>
+                      <div className={`text-[13px] ${isChecked ? 'font-semibold' : 'font-medium'} text-foreground truncate ui-uppercase`}>
                         {p.nome}
                       </div>
                       <div className="text-[11px] text-muted-foreground truncate mt-0.5">
@@ -340,7 +340,7 @@ export function AdicionarItemModal({ cotacaoId, itens, open, onClose, aoCadastra
         {/* Footer */}
         <div className="p-3 px-5 border-t border-border bg-muted/20 shrink-0 flex justify-end">
           <Button disabled={isSubmitting} onClick={handleSave} variant="default" className="h-8 text-xs px-5 bg-primary hover:bg-primary/90 text-primary-foreground">
-            {isSubmitting && <Loader2 className="mr-2 size-3 animate-spin" />}
+            {isSubmitting && <CircleNotch className="mr-2 size-3 animate-spin" />}
             {isSubmitting ? 'Salvando...' : 'Concluído'}
           </Button>
         </div>

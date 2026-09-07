@@ -6,6 +6,8 @@ import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
 import { NovaCotacaoWizard } from './NovaCotacaoWizard'
 
+afterEach(() => vi.useRealTimers())
+
 type Item = {
   id: string
   produtoId: string
@@ -94,6 +96,8 @@ function setupWizard(itensIniciais: Item[] = []) {
 }
 
 test('fluxo completo: cria item, seleciona empresa, escolhe prazo e abre', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-09-03T12:00:00Z'))
   const { chamadas } = setupWizard()
   const user = userEvent.setup()
 
@@ -119,7 +123,8 @@ test('fluxo completo: cria item, seleciona empresa, escolhe prazo e abre', async
 
   await user.click(screen.getByRole('button', { name: 'Escolher prazo' }))
   const modalPrazo = await screen.findByRole('dialog')
-  await user.click(within(modalPrazo).getByRole('button', { name: '+24h' }))
+  await user.click(within(modalPrazo).getByRole('gridcell', { name: '15' }))
+  await user.selectOptions(within(modalPrazo).getByLabelText('Hora'), '10')
   await user.click(within(modalPrazo).getByRole('button', { name: 'Abrir Cotação' }))
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
@@ -156,6 +161,8 @@ test('"Abrir" desabilitado com item mas sem empresa', async () => {
 })
 
 test('voltar entre passos preserva itens, empresas e prazo', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-09-03T12:00:00Z'))
   setupWizard()
   const user = userEvent.setup()
 
@@ -178,7 +185,8 @@ test('voltar entre passos preserva itens, empresas e prazo', async () => {
   await user.click(screen.getByRole('button', { name: 'Avançar' }))
   await user.click(screen.getByRole('button', { name: 'Escolher prazo' }))
   const modalPrazo = await screen.findByRole('dialog')
-  await user.click(within(modalPrazo).getByRole('button', { name: '+24h' }))
+  await user.click(within(modalPrazo).getByRole('gridcell', { name: '15' }))
+  await user.selectOptions(within(modalPrazo).getByLabelText('Hora'), '10')
   await user.click(within(modalPrazo).getByRole('button', { name: 'Abrir Cotação' }))
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   expect(screen.getByText(/1 item · 1 empresa · expira/)).toBeInTheDocument()

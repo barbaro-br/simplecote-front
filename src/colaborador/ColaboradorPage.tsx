@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Search, PackageOpen, ScanLine, Plus } from 'lucide-react'
+import { MagnifyingGlass, Package, Barcode, Plus } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { ApiError } from '@/shared/api/api-client'
 import { toast } from 'sonner'
@@ -16,7 +16,7 @@ import type { Produto } from './colaborador.schema'
 
 // Lazy: @zxing/browser só é baixado quando o colaborador realmente abre a câmera.
 const LeitorCodigoBarras = lazy(() =>
-  import('./LeitorCodigoBarras').then((m) => ({ default: m.LeitorCodigoBarras })),
+  import('@/shared/components/LeitorCodigoBarras').then((m) => ({ default: m.LeitorCodigoBarras })),
 )
 
 function Skeleton() {
@@ -59,7 +59,7 @@ function FormularioNovoProduto({
   return (
     <>
       <div className="space-y-2">
-        <label htmlFor="novoNome" className="text-sm font-medium">Nome</label>
+        <label htmlFor="novoNome" className="text-sm font-medium ui-uppercase">Nome</label>
         <input
           id="novoNome"
           type="text"
@@ -70,7 +70,7 @@ function FormularioNovoProduto({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <label htmlFor="novoUnidade" className="text-sm font-medium">Unidade</label>
+          <label htmlFor="novoUnidade" className="text-sm font-medium ui-uppercase">Unidade</label>
           <input
             id="novoUnidade"
             type="text"
@@ -80,7 +80,7 @@ function FormularioNovoProduto({
           />
         </div>
         <div className="space-y-2">
-          <label htmlFor="novoQtdEmb" className="text-sm font-medium">Qtd/Emb</label>
+          <label htmlFor="novoQtdEmb" className="text-sm font-medium ui-uppercase">Qtd/Emb</label>
           <input
             id="novoQtdEmb"
             type="number"
@@ -93,7 +93,7 @@ function FormularioNovoProduto({
         </div>
       </div>
       <div className="space-y-2">
-        <label htmlFor="quantidadeNovo" className="text-sm font-medium">Quantidade</label>
+        <label htmlFor="quantidadeNovo" className="text-sm font-medium ui-uppercase">Quantidade</label>
         <input
           id="quantidadeNovo"
           type="number"
@@ -337,7 +337,7 @@ export function ColaboradorPage() {
             className="w-full gap-2"
             onClick={() => setModoBipador(true)}
           >
-            <ScanLine className="size-4" />
+            <Barcode className="size-4" />
             Bipar código de barras
           </Button>
 
@@ -353,7 +353,7 @@ export function ColaboradorPage() {
 
           <div className="relative">
             <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70">
-              <Search className="size-4" />
+              <MagnifyingGlass className="size-4" />
             </span>
             <input
               type="text"
@@ -374,7 +374,7 @@ export function ColaboradorPage() {
                   className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent"
                 >
                   <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    <PackageOpen className="size-4" />
+                    <Package className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-foreground">{p.nome}</div>
@@ -426,7 +426,7 @@ export function ColaboradorPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <label htmlFor="quantidadeBipado" className="text-sm font-medium">Quantidade</label>
+                <label htmlFor="quantidadeBipado" className="text-sm font-medium ui-uppercase">Quantidade</label>
                 <input
                   id="quantidadeBipado"
                   type="number"
@@ -543,7 +543,7 @@ export function ColaboradorPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="quantidade" className="text-sm font-medium">
+            <label htmlFor="quantidade" className="text-sm font-medium ui-uppercase">
               Quantidade
             </label>
             <input

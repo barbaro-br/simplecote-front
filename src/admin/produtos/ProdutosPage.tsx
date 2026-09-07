@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Archive, ArchiveRestore, Pencil, PlusCircle, Search } from 'lucide-react'
+import { Archive, BoxArrowUp, Pencil, PlusCircle, MagnifyingGlass } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
@@ -57,7 +57,7 @@ export function ProdutosPage() {
       <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border space-y-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Catálogo de produtos</h1>
+            <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Catálogo de produtos</h1>
             <p className="text-sm text-muted-foreground">Gerencie os produtos, códigos de barra e configurações de embalagem.</p>
           </div>
           <Button onClick={abrirNovo}>
@@ -66,7 +66,7 @@ export function ProdutosPage() {
           </Button>
         </div>
         <div className="relative max-w-xs">
-          <Search
+          <MagnifyingGlass
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden
           />
@@ -95,11 +95,11 @@ export function ProdutosPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium border-b">Nome</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium border-b">Código de barras</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium border-b">Embalagem</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium text-right border-b">Qtd.</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium text-right border-b border-l border-border">Ações</th>
+                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase border-b">Nome</th>
+                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase border-b">Código de barras</th>
+                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase border-b">Embalagem</th>
+                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase text-right border-b">Qtd.</th>
+                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase text-right border-b border-l border-border">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -121,7 +121,7 @@ export function ProdutosPage() {
                     key={produto.id}
                     className={`transition-colors hover:bg-muted/50 ${produto.ativo ? '' : 'opacity-60 bg-muted/10'}`}
                   >
-                    <td className="px-4 py-3 font-medium">
+                    <td className="px-4 py-3 font-medium ui-uppercase">
                       {produto.nome}
                       {!produto.ativo && <span className="ml-2 inline-flex items-center rounded-full bg-muted-foreground/10 px-2 py-0.5 text-xs font-medium text-muted-foreground">Inativo</span>}
                     </td>
@@ -147,7 +147,7 @@ export function ProdutosPage() {
                           </>
                         ) : (
                           <IconButton
-                            icon={ArchiveRestore}
+                            icon={BoxArrowUp}
                             label="Ativar"
                             onClick={() => ativar.mutate(produto.id)}
                             disabled={ativar.isPending}

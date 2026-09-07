@@ -13,7 +13,7 @@ import {
   useReabrirParticipante,
   useCotacao,
 } from './cotacoes.api'
-import { Send, Mail, Phone, Search, X, Info, CheckCircle2, Loader2, Copy, MessageCircle, RotateCcw } from 'lucide-react'
+import { PaperPlaneRight, Envelope, Phone, MagnifyingGlass, X, Info, CheckCircle, CircleNotch, Copy, ChatCircle, ArrowCounterClockwise } from '@phosphor-icons/react'
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { urlWhatsApp, urlMailto, montarMensagemConvite } from './compartilhar-link'
 import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
@@ -146,7 +146,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
         {/* Header Fixo */}
         <div className="p-4 px-6 border-b border-border/50 bg-background/50 backdrop-blur-md shrink-0 flex items-center justify-between rounded-t-xl z-20">
           <div className="space-y-1">
-            <h2 className="text-base font-semibold tracking-tight text-foreground">
+            <h2 className="text-base font-semibold tracking-tight text-foreground ui-uppercase">
               {isAberta ? 'Representantes Convidados' : 'Convidar Empresas'}
             </h2>
             <div className="text-[13px] text-muted-foreground/80 flex items-center gap-1.5 font-medium">
@@ -176,7 +176,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
         {/* Busca */}
         <div className="px-4 py-3 shrink-0 bg-background/30 backdrop-blur-sm z-10 flex gap-2">
           <div className="relative group flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+            <MagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
             <input
               ref={searchRef}
               type="text"
@@ -282,7 +282,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                                 }
                               }}
                             >
-                              <RotateCcw className="size-3 mr-1.5" /> Reabrir
+                              <ArrowCounterClockwise className="size-3 mr-1.5" /> Reabrir
                             </Button>
                           ) : (
                             <Button
@@ -301,7 +301,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                                 }
                               }}
                             >
-                              <CheckCircle2 className="size-3 mr-1.5" /> Fechar cotação
+                              <CheckCircle className="size-3 mr-1.5" /> Fechar cotação
                             </Button>
                           )
                         )}
@@ -323,7 +323,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                             rel="noopener noreferrer"
                             onClick={(ev) => ev.stopPropagation()}
                           >
-                            <Mail className="size-5" />
+                            <Envelope className="size-5" />
                           </a>
                         )}
                         {e.repWhatsapp && (
@@ -388,7 +388,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                               }
                             }}
                           >
-                            {loadingMailId === e.id ? <Loader2 className="size-5 animate-spin" /> : <Mail className="size-5" />}
+                            {loadingMailId === e.id ? <CircleNotch className="size-5 animate-spin" /> : <Envelope className="size-5" />}
                           </button>
                         </Tooltip>
                         {e.part.whatsappRepresentante && (
@@ -410,7 +410,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                                 window.open(url, '_blank')
                               }}
                             >
-                              <MessageCircle className="size-5" />
+                              <ChatCircle className="size-5" />
                             </button>
                           </Tooltip>
                         )}
@@ -452,13 +452,13 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                   <strong className="text-foreground">{naoEnviadoCount}</strong> {naoEnviadoCount === 1 ? 'convite pendente' : 'convites pendentes'}
                 </span>
                 <Button disabled={isEnviando} onClick={handleDispararTodosEmail} className="h-9 px-4 text-[13px] rounded-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow transition-all">
-                  {isEnviando ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+                  {isEnviando ? <CircleNotch className="size-3.5 animate-spin" /> : <PaperPlaneRight className="size-3.5" />}
                   {isEnviando ? 'Enviando...' : 'Enviar Restantes'}
                 </Button>
               </div>
             ) : (
               <div className="text-[13px] text-success-foreground font-medium py-1.5 flex items-center gap-2">
-                <CheckCircle2 className="size-4" />
+                <CheckCircle className="size-4" />
                 Todos os convites foram enviados.
               </div>
             )

@@ -16,75 +16,66 @@ afterEach(() => {
 // quinta-feira, 2026-09-03 09:00 em São Paulo (UTC-3)
 const QUINTA = '2026-09-03T12:00:00Z'
 
-function abrir(preset: string) {
-  fireEvent.click(screen.getByRole('button', { name: preset }))
-  fireEvent.click(screen.getByRole('button', { name: 'Abrir Cotação' }))
-}
+describe('AbrirCotacaoDialog — seleção de prazo por calendário', () => {
+  it('abre com data padrão (amanhã) às 18:00 e mostra a prévia formatada', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(QUINTA))
 
-describe('AbrirCotacaoDialog — presets de prazo', () => {
-  it('gera o ISO de cada preset ancorado em America/Sao_Paulo', () => {
+    renderDialog()
+
+    expect(screen.getByLabelText('Hora')).toHaveValue('18')
+    expect(screen.getByLabelText('Minuto')).toHaveValue('00')
+    expect(screen.getByText(/Expira/)).toHaveTextContent('04/09/2026, 18:00')
+  })
+
+  it('trocar a hora atualiza a prévia do prazo', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(QUINTA))
+
+    renderDialog()
+
+    fireEvent.change(screen.getByLabelText('Hora'), { target: { value: '10' } })
+
+    expect(screen.getByText(/Expira/)).toHaveTextContent('04/09/2026, 10:00')
+  })
+
+  it('trocar o dia no calendário atualiza a prévia do prazo', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(QUINTA))
+
+    renderDialog()
+
+    // 15 é um dia único no grid (sem repetição de dias externos)
+    fireEvent.click(screen.getByRole('gridcell', { name: '15' }))
+
+    expect(screen.getByText(/Expira/)).toHaveTextContent('15/09/2026, 18:00')
+  })
+
+  it('confirmar chama onAbrir com o ISO esperado, ancorado em America/Sao_Paulo', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(QUINTA))
 
     const { onAbrir } = renderDialog()
 
-    abrir('+24h')
-    expect(onAbrir).toHaveBeenLastCalledWith('2026-09-04T12:00:00.000Z')
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Cotação' }))
 
-    abrir('+48h')
-    expect(onAbrir).toHaveBeenLastCalledWith('2026-09-05T12:00:00.000Z')
-
-    abrir('Hoje às 18h')
-    expect(onAbrir).toHaveBeenLastCalledWith('2026-09-03T21:00:00.000Z')
-
-    abrir('Amanhã às 18h')
-    expect(onAbrir).toHaveBeenLastCalledWith('2026-09-04T21:00:00.000Z')
-
-    abrir('Sexta às 12h')
-    expect(onAbrir).toHaveBeenLastCalledWith('2026-09-04T15:00:00.000Z')
+    expect(onAbrir).toHaveBeenCalledWith('2026-09-04T21:00:00.000Z')
   })
 
-  it('presets vencidos ficam desabilitados e "Sexta às 12h" some na sexta-feira', () => {
-    vi.useFakeTimers()
-    // sexta-feira, 2026-09-04 18:30 em São Paulo
-    vi.setSystemTime(new Date('2026-09-04T21:30:00Z'))
-
-    renderDialog()
-
-    expect(screen.getByRole('button', { name: 'Hoje às 18h' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Amanhã às 18h' })).not.toBeDisabled()
-    expect(screen.queryByRole('button', { name: 'Sexta às 12h' })).not.toBeInTheDocument()
-  })
-
-  it('"Sexta às 12h" está ausente no fim de semana', () => {
-    vi.useFakeTimers()
-    // sábado, 2026-09-05
-    vi.setSystemTime(new Date('2026-09-05T12:00:00Z'))
-
-    renderDialog()
-
-    expect(screen.queryByRole('button', { name: 'Sexta às 12h' })).not.toBeInTheDocument()
-  })
-
-  it('"Sexta às 12h" aparece de segunda a quinta', () => {
+  it('prazo no passado bloqueia com mensagem e não chama onAbrir', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(QUINTA))
 
-    renderDialog()
+    const { onAbrir } = renderDialog()
 
-    expect(screen.getByRole('button', { name: 'Sexta às 12h' })).toBeInTheDocument()
-  })
+    // seleciona hoje (3) e uma hora já passada (08:00 < 09:00)
+    const hoje = screen.getAllByRole('gridcell', { name: '3' })[0]
+    fireEvent.click(hoje)
+    fireEvent.change(screen.getByLabelText('Hora'), { target: { value: '08' } })
 
-  it('a prévia mostra o prazo formatado e muda ao trocar de preset', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(QUINTA))
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Cotação' }))
 
-    renderDialog()
-
-    expect(screen.getByText(/Expira/)).toHaveTextContent('04/09/2026, 09:00')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Hoje às 18h' }))
-
-    expect(screen.getByText(/Expira/)).toHaveTextContent('03/09/2026, 18:00')
+    expect(screen.getByText('O prazo precisa ser no futuro.')).toBeInTheDocument()
+    expect(onAbrir).not.toHaveBeenCalled()
   })
 })

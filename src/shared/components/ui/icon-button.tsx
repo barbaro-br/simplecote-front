@@ -1,7 +1,7 @@
-import type { LucideIcon } from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
 
 type Props = {
-  icon: LucideIcon
+  icon: Icon
   /** Vira `title` (tooltip nativo no hover pausado) e `aria-label`. */
   label: string
   onClick: () => void

@@ -7,7 +7,7 @@ import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
 import { ColaboradorPage } from './ColaboradorPage'
 
-vi.mock('./LeitorCodigoBarras', () => ({
+vi.mock('@/shared/components/LeitorCodigoBarras', () => ({
   LeitorCodigoBarras: ({ onRead, onClose }: any) => (
     <div>
       <button onClick={() => onRead('1234567890123')}>Simular Leitura 1234567890123</button>

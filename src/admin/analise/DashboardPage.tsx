@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { PainelDashboard } from './PainelDashboard'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { LinkColaboradorCard } from '@/admin/configuracoes/LinkColaboradorCard'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 
 export function DashboardPage() {
@@ -13,12 +14,13 @@ export function DashboardPage() {
   return (
     <PageContainer maxWidth="5xl" className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-2xl font-semibold ui-uppercase">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
           Visão geral das suas cotações, gastos e economia.
         </p>
       </div>
       <PainelDashboard onStatusClick={irParaStatus} />
+      <LinkColaboradorCard />
     </PageContainer>
   )
 }

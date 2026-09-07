@@ -22,7 +22,7 @@ Tailwind + tema shadcn (um PR focado) e depois segue tela a tela.
   header sticky + barra de ação sticky, toque ≥ 48px, estados de sync por campo.
 - pt-BR em tudo; R$ (pt-BR); datas `dd/mm/aaaa hh:mm` (America/Sao_Paulo).
 - Front não recalcula nada — preço unitário, vencedor e menor preço vêm da API.
-- Stack alvo: React + TS, Tailwind v4, shadcn/ui, lucide-react, fonte Geist.
+- Stack alvo: React + TS, Tailwind v4, shadcn/ui, @phosphor-icons/react, fonte Geist.
 
 ---
 
@@ -42,7 +42,7 @@ funcionalidades além das descritas abaixo.
 
 STACK ALVO (pra o código sair fácil de adaptar aqui)
 - React + TypeScript, Tailwind CSS v4, componentes no estilo shadcn/ui
-- Ícones: lucide-react
+- Ícones: @phosphor-icons/react
 - Fonte: Geist Variable (sans) para título e corpo
 - Tudo em português do Brasil. Moeda R$ (pt-BR). Datas dd/mm/aaaa hh:mm.
 

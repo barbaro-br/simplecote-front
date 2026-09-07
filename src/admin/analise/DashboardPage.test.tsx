@@ -41,6 +41,17 @@ test('renderiza o monitor e o atalho navega para a lista filtrada', async () => 
         topProdutos: [],
         topEmpresas: [],
       })
+    ),
+    http.get('*/api/configuracoes', () =>
+      HttpResponse.json({
+        nome: 'Supermercado Sarah',
+        corPrimaria: '#0f766e',
+        telefone: '(11) 4002-8922',
+        layoutEmail: 'Olá...',
+        estiloNavegacao: 'LATERAL',
+        tema: 'CLARO',
+        linkColaboradorToken: 'token-dashboard',
+      })
     )
   )
 
