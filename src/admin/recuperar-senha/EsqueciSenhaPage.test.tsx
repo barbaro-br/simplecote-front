@@ -179,3 +179,21 @@ test('e-mail gmail.com mostra "Abrir Gmail" na etapa do código', async () => {
   expect(link).toHaveAttribute('href', 'https://mail.google.com/mail/u/0/#search/in%3Ainbox')
   expect(link).toHaveAttribute('target', '_blank')
 })
+
+test('não referencia dado de loja nem chama /api/configuracoes', async () => {
+  let chamadasConfiguracoes = 0
+  server.use(
+    http.get('*/api/configuracoes', () => {
+      chamadasConfiguracoes += 1
+      return HttpResponse.json({ nome: 'Loja X' })
+    })
+  )
+
+  renderPage()
+
+  expect(await screen.findByRole('heading', { name: 'Recuperar senha' })).toBeInTheDocument()
+  expect(screen.queryByText('Loja X')).not.toBeInTheDocument()
+
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  expect(chamadasConfiguracoes).toBe(0)
+})

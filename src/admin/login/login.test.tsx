@@ -96,3 +96,22 @@ test('renderiza o crédito de desenvolvedor abaixo de "Esqueci minha senha"', ()
 
   expect(screen.getByText(CREDITO_DESENVOLVEDOR.texto)).toBeInTheDocument()
 })
+
+test('identidade fixa "SimpleCote" / "Cotações simplificadas" sem chamar /api/configuracoes', async () => {
+  let chamadasConfiguracoes = 0
+  server.use(
+    http.get('*/api/configuracoes', () => {
+      chamadasConfiguracoes += 1
+      return HttpResponse.json({ nome: 'Loja Vazada' })
+    })
+  )
+
+  renderLogin()
+
+  expect(screen.getByRole('heading', { name: 'SimpleCote' })).toBeInTheDocument()
+  expect(screen.getByText('Cotações simplificadas')).toBeInTheDocument()
+  expect(screen.queryByText('Loja Vazada')).not.toBeInTheDocument()
+
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  expect(chamadasConfiguracoes).toBe(0)
+})

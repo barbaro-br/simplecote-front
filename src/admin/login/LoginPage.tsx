@@ -5,11 +5,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/shared/auth/useAuth'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
-import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
 import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
-import { Skeleton } from '@/shared/components/ui/skeleton'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { Warning } from '@phosphor-icons/react'
 
@@ -22,7 +20,6 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export function LoginPage() {
   const { login } = useAuth()
-  const { data: configuracao, isLoading: carregandoConfiguracao } = useConfiguracaoLoja()
   const navigate = useNavigate()
   const [erroServidor, setErroServidor] = useState<string | null>(null)
 
@@ -52,14 +49,10 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-8 px-4">
-        {/* Logo / título */}
+        {/* Logo / título — identidade do produto, igual para qualquer visitante */}
         <div className="text-center space-y-2">
-          {carregandoConfiguracao ? (
-            <Skeleton className="mx-auto h-9 w-48" />
-          ) : (
-            <h1 className="text-3xl font-bold tracking-tight text-primary">{configuracao?.nome ?? ''}</h1>
-          )}
-          <p className="text-sm text-muted-foreground">Painel administrativo</p>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">SimpleCote</h1>
+          <p className="text-sm text-muted-foreground">Cotações simplificadas</p>
         </div>
 
         {/* Card do formulário */}
