@@ -23,7 +23,7 @@ Porquê `.app` e não `.com.br` para o app: domínio wildcard na Vercel exige os
 
 **Consequências para as changes:**
 - Parser de hostname (`tenant-por-subdominio`): sufixo do app = `.simplecote.app` (não `.simplecote.com.br`). `app`, `www`, `backoffice` = hosts sem slug.
-- Redirect pós-verificação de e-mail (`cadastro-publico-*`): `https://<slug>.simplecote.app/login`. Atrás de env/flag — o wildcard só existe na fase 4.
+- Redirect pós-verificação de e-mail (`cadastro-publico-*`): `https://<slug>.simplecote.app/login`. **Wildcard já no ar** (07/set/2026 — `*.simplecote.app` + `app.simplecote.app` no projeto `simplecote-front`). Follow-up: `urlLoginDaLoja` no front ainda está hardcoded; devia ler o sufixo de env pra não vazar `.simplecote.app` em preview/local.
 - **Cookie do refresh** (`auth-refresh-token`): setado **pela API** (`api.simplecote.com.br`) → `Domain` é da própria API (`.simplecote.com.br` ou host-only). Não muda com o app em `.app`. O app em `<slug>.simplecote.app` só precisa de `credentials: 'include'`; o browser envia o cookie para a API via `SameSite=None` independentemente da origem. O que muda é o **CORS**: `allowedOriginPatterns` tem que aceitar `https://*.simplecote.app` **e** `https://simplecote.com.br` (marketing) — padrão `^https://([a-z0-9-]+\.)?simplecote\.(com\.br|app)$`.
 - `backoffice-*`: host `backoffice.simplecote.app`; impersonar redireciona para `<slug-do-alvo>.simplecote.app/admin`.
 - **Infra (fase 4, não antes):** `simplecote.app` JÁ COMPRADO via Vercel (set/2026, NS da Vercel). Falta só adicionar `*.simplecote.app` + `app.simplecote.app` + `backoffice.simplecote.app` ao projeto `simplecote-front`. Até lá tudo serve de `app.simplecote.com.br` como hoje e o slug fica inerte.

@@ -67,7 +67,7 @@ Dentro de cada linha: **back primeiro, depois o front**. **Uma change por sessã
 | `simplecote.com.br` (apex) + `www` → Vercel, projeto `simplecote-front` | ✅ (apex 308→www) |
 | `app.simplecote.com.br` → Vercel (app hoje) | ✅ — vira redirect pro `.app` na fase 4 |
 | **`simplecote.app` — domínio comprado via Vercel** | ✅ **comprado** (set/2026). NS já são da Vercel. |
-| `*.simplecote.app` + `app.simplecote.app` + `backoffice.simplecote.app` no projeto | ⬜ adicionar na **fase 4** (Add Domain → "Connect to environment: Production", sem redirect) |
+| `*.simplecote.app` + `app.simplecote.app` no projeto | ✅ **feito** (07/set/2026, via `vercel domains add ... simplecote-front`). `backoffice.simplecote.app` já responde pelo wildcard; vira host reservado no parser em `tenant-por-subdominio`. |
 | Provisionar o cliente da semana via `--bootstrap-admin` | ⬜ (não depende de nenhuma change) |
 
 ---
