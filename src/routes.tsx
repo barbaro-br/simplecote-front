@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AdminLayout } from './admin/layout/AdminLayout'
 import { AuthGuard } from './shared/auth/AuthGuard'
 import { RoleGuard } from './shared/auth/RoleGuard'
+import { SiteLayout } from './site/SiteLayout'
 
 import { LoginPage } from './admin/login/LoginPage'
 import { EsqueciSenhaPage } from './admin/recuperar-senha/EsqueciSenhaPage'
@@ -14,7 +15,20 @@ import { RouteLoadingFallback } from './shared/components/ui/route-loading'
 export const routes = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/admin" replace />,
+    lazy: () => import('./site/Raiz').then((m) => ({ Component: m.Raiz })),
+  },
+  {
+    element: <SiteLayout />,
+    children: [
+      {
+        path: '/precos',
+        lazy: () => import('./site/PrecosPage').then((m) => ({ Component: m.PrecosPage })),
+      },
+      {
+        path: '/ajuda',
+        lazy: () => import('./site/AjudaPage').then((m) => ({ Component: m.AjudaPage })),
+      },
+    ],
   },
   {
     path: '/login',
@@ -122,6 +136,6 @@ export const routes = createBrowserRouter([
   },
   {
     path: '*',
-    element: <Navigate to="/admin" replace />,
+    element: <Navigate to="/" replace />,
   },
 ])
