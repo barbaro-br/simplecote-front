@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
@@ -7,6 +8,17 @@ import { server } from '@/setupTests'
 import { AuthProvider } from '@/shared/auth/AuthContext'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { LoginPage } from './LoginPage'
+
+const tenantMock = vi.hoisted(() => ({
+  slug: null as string | null,
+  existe: null as boolean | null,
+  verificando: false,
+  ehHostDoApp: false,
+}))
+
+vi.mock('@/shared/tenant/useTenant', () => ({
+  useTenant: () => ({ ...tenantMock }),
+}))
 
 function renderLogin() {
   const router = createMemoryRouter(
@@ -30,6 +42,10 @@ function renderLogin() {
 
 beforeEach(() => {
   sessionStorage.clear()
+  tenantMock.slug = null
+  tenantMock.existe = null
+  tenantMock.verificando = false
+  tenantMock.ehHostDoApp = false
 })
 
 test('caminho feliz: credenciais válidas logam e navegam para /admin', async () => {
@@ -97,6 +113,20 @@ test('link "Criar conta" navega para /cadastro', async () => {
   await user.click(screen.getByRole('link', { name: 'Criar conta' }))
 
   expect(await screen.findByText('cadastro view')).toBeInTheDocument()
+})
+
+test('subdomínio de loja inexistente mostra "esse endereço de loja não existe"', () => {
+  tenantMock.slug = 'loja-que-nao-existe'
+  tenantMock.existe = false
+
+  renderLogin()
+
+  expect(screen.getByText(/esse endereço de loja não existe/i)).toBeInTheDocument()
+  expect(screen.queryByLabelText('E-mail')).toBeNull()
+  expect(screen.getByRole('link', { name: 'Ir para o site' })).toHaveAttribute(
+    'href',
+    'https://simplecote.com.br'
+  )
 })
 
 test('renderiza o crédito de desenvolvedor abaixo de "Esqueci minha senha"', () => {

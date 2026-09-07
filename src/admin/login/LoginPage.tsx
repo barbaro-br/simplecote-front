@@ -4,10 +4,12 @@ import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/shared/auth/useAuth'
+import { useTenant } from '@/shared/tenant/useTenant'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
+import { RouteLoadingFallback } from '@/shared/components/ui/route-loading'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { Warning } from '@phosphor-icons/react'
 
@@ -20,6 +22,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export function LoginPage() {
   const { login } = useAuth()
+  const { slug, existe, verificando } = useTenant()
   const navigate = useNavigate()
   const [erroServidor, setErroServidor] = useState<string | null>(null)
 
@@ -44,6 +47,35 @@ export function LoginPage() {
         setErroServidor('Erro inesperado. Tente novamente.')
       }
     }
+  }
+
+  // Enquanto o slug do hostname está sendo validado, mostra o loading.
+  if (verificando) {
+    return <RouteLoadingFallback />
+  }
+
+  // Subdomínio de loja que não existe → mensagem clara (identidade SimpleCote),
+  // sem um formulário de login que só falharia.
+  if (slug !== null && existe === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-full max-w-sm space-y-8 px-4">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight text-primary">SimpleCote</h1>
+            <p className="text-sm text-muted-foreground">Cotações simplificadas</p>
+          </div>
+          <Card className="p-8 text-center space-y-4">
+            <p className="text-sm text-muted-foreground">Esse endereço de loja não existe.</p>
+            <a
+              href="https://simplecote.com.br"
+              className="inline-block text-sm font-medium text-primary hover:underline"
+            >
+              Ir para o site
+            </a>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (

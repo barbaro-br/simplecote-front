@@ -1,4 +1,4 @@
-> **BLOQUEADA** — fase 4. Não começar antes de: `simplecote.app` registrado + delegado à Vercel + wildcard `*.simplecote.app` "Valid Configuration"; e `sessao-longa-com-refresh-token` + `cadastro-publico-self-service` aplicadas. Ver `RISCOS-TRANSVERSAIS.md` §0 e §J.
+> **Pré-requisitos no ar** (07/set/2026): wildcard `*.simplecote.app` + `app.simplecote.app` no projeto `simplecote-front`; `GET /public/compradores/{slug}/existe`; CORS de `*.simplecote.app`; claim `slug` no JWT; cookie de refresh. Ver `RISCOS-TRANSVERSAIS.md` §0 e §J.
 
 ## Why
 

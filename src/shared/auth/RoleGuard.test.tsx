@@ -6,6 +6,11 @@ import { AuthProvider } from './AuthContext'
 import { AuthGuard } from './AuthGuard'
 import { RoleGuard } from './RoleGuard'
 
+// Tenant neutro (host sem loja): este arquivo testa o papel, não o slug.
+vi.mock('@/shared/tenant/useTenant', () => ({
+  useTenant: () => ({ slug: null, existe: null, verificando: false, ehHostDoApp: false }),
+}))
+
 function jwt(papel: string): string {
   const payload = btoa(JSON.stringify({ papel, slug: 'loja', compradorId: 'c1' }))
     .replace(/\+/g, '-')

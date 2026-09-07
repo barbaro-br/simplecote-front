@@ -4,6 +4,7 @@ import { routes } from './routes'
 import { AuthProvider } from './shared/auth/AuthContext'
 import { SessaoExpiradaBridge } from './shared/auth/SessaoExpiradaBridge'
 import { ConfiguracaoLojaProvider } from './admin/configuracoes/ConfiguracaoLojaProvider'
+import { TenantProvider } from './shared/tenant/TenantContext'
 import { Toaster } from 'sonner'
 import { IconProvider } from './shared/components/ui/icon'
 
@@ -21,10 +22,12 @@ export function App() {
       <AuthProvider>
         <SessaoExpiradaBridge />
         <QueryClientProvider client={queryClient}>
-          <ConfiguracaoLojaProvider>
-            <RouterProvider router={routes} />
-          </ConfiguracaoLojaProvider>
-          <Toaster richColors position="bottom-right" />
+          <TenantProvider>
+            <ConfiguracaoLojaProvider>
+              <RouterProvider router={routes} />
+            </ConfiguracaoLojaProvider>
+            <Toaster richColors position="bottom-right" />
+          </TenantProvider>
         </QueryClientProvider>
       </AuthProvider>
     </IconProvider>

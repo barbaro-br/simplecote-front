@@ -5,6 +5,11 @@ import { server } from '@/setupTests'
 import { AuthProvider } from './AuthContext'
 import { AuthGuard } from './AuthGuard'
 
+// Tenant neutro (host sem loja): este arquivo testa só a sessão, não o slug.
+vi.mock('@/shared/tenant/useTenant', () => ({
+  useTenant: () => ({ slug: null, existe: null, verificando: false, ehHostDoApp: false }),
+}))
+
 function renderEm(initialEntries: string[]) {
   const router = createMemoryRouter(
     [
