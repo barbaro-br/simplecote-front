@@ -110,8 +110,11 @@ test('4.1 — o shell não rola como documento: root em h-screen e <main> é o c
 
   const main = container.querySelector('main')
   expect(main).not.toBeNull()
-  expect(main!.parentElement).toHaveClass('h-screen')
+  // o shell ganhou um wrapper (tarja de modo suporte + container); a raiz
+  // continua h-screen/overflow-hidden e o <main> é o container de scroll.
   expect(main!.parentElement).toHaveClass('overflow-hidden')
+  expect(main!.parentElement!.parentElement).toHaveClass('h-screen')
+  expect(main!.parentElement!.parentElement).toHaveClass('overflow-hidden')
 
   expect(main).toHaveClass('flex-1')
   expect(main).toHaveClass('h-full')

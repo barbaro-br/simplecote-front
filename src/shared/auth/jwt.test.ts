@@ -6,10 +6,26 @@ function payloadBase64Url(json: unknown): string {
 }
 
 describe('decodificarClaims', () => {
-  it('decodifica papel, slug e compradorId do token (base64url)', () => {
+  it('decodifica papel, slug, compradorId e impersonatedBy (base64url)', () => {
+    const token = `x.${payloadBase64Url({ papel: 'ADMIN', slug: 'loja-1', compradorId: 'c1', impersonatedBy: 'sa-1' })}.sig`
+
+    expect(decodificarClaims(token)).toEqual({
+      papel: 'ADMIN',
+      slug: 'loja-1',
+      compradorId: 'c1',
+      impersonatedBy: 'sa-1',
+    })
+  })
+
+  it('impersonatedBy ausente vira null (sessão normal)', () => {
     const token = `x.${payloadBase64Url({ papel: 'ADMIN', slug: 'loja-1', compradorId: 'c1' })}.sig`
 
-    expect(decodificarClaims(token)).toEqual({ papel: 'ADMIN', slug: 'loja-1', compradorId: 'c1' })
+    expect(decodificarClaims(token)).toEqual({
+      papel: 'ADMIN',
+      slug: 'loja-1',
+      compradorId: 'c1',
+      impersonatedBy: null,
+    })
   })
 
   it('retorna null para token vazio ou lixo', () => {
@@ -22,6 +38,11 @@ describe('decodificarClaims', () => {
   it('papel desconhecido vira null sem derrubar os demais claims', () => {
     const token = `x.${payloadBase64Url({ papel: 'ROOT', slug: 'loja-1' })}.sig`
 
-    expect(decodificarClaims(token)).toEqual({ papel: null, slug: 'loja-1', compradorId: null })
+    expect(decodificarClaims(token)).toEqual({
+      papel: null,
+      slug: 'loja-1',
+      compradorId: null,
+      impersonatedBy: null,
+    })
   })
 })

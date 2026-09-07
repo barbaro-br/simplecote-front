@@ -3,6 +3,8 @@ import { AdminLayout } from './admin/layout/AdminLayout'
 import { AuthGuard } from './shared/auth/AuthGuard'
 import { RoleGuard } from './shared/auth/RoleGuard'
 import { SiteLayout } from './site/SiteLayout'
+import { BackofficeGuard } from './backoffice/BackofficeGuard'
+import { BackofficeLayout } from './backoffice/BackofficeLayout'
 
 import { LoginPage } from './admin/login/LoginPage'
 import { EsqueciSenhaPage } from './admin/recuperar-senha/EsqueciSenhaPage'
@@ -131,6 +133,25 @@ export const routes = createBrowserRouter([
       {
         path: '/colaborador/:token',
         lazy: () => import('./colaborador/ColaboradorPage').then(m => ({ Component: m.ColaboradorPage })),
+      },
+    ],
+  },
+  {
+    path: '/backoffice',
+    element: <BackofficeGuard />,
+    children: [
+      {
+        element: <BackofficeLayout />,
+        children: [
+          {
+            index: true,
+            lazy: () => import('./backoffice/CompradoresPage').then(m => ({ Component: m.CompradoresPage })),
+          },
+          {
+            path: 'compradores/:id',
+            lazy: () => import('./backoffice/CompradorDetalhePage').then(m => ({ Component: m.CompradorDetalhePage })),
+          },
+        ],
       },
     ],
   },

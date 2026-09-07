@@ -1,0 +1,42 @@
+import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { ShoppingBag } from '@phosphor-icons/react'
+import { useAuth } from '@/shared/auth/useAuth'
+
+/**
+ * Casca do backoffice — identidade SimpleCote (§I), sem tema/cor de loja.
+ * Separada do `AdminLayout` do painel do cliente.
+ */
+export function BackofficeLayout() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
+        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
+          <Link to="/backoffice" className="flex items-center gap-2.5">
+            <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <ShoppingBag className="size-5" aria-hidden />
+            </div>
+            <span className="font-bold tracking-tight">SimpleCote</span>
+            <span className="text-sm text-muted-foreground">· Backoffice</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              logout()
+              navigate('/login', { replace: true })
+            }}
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Sair
+          </button>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+        <Outlet />
+      </main>
+    </div>
+  )
+}

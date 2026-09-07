@@ -1,4 +1,5 @@
 import type { ProblemDetail } from '../domain/tipos-base'
+import { decodificarClaims } from '../auth/jwt'
 
 export class ApiError extends Error {
   public problem: ProblemDetail
@@ -70,6 +71,12 @@ type TokenResponse = { token: string }
  * decide entre repetir a requisição ou sinalizar sessão expirada).
  */
 export async function renovarSessao(): Promise<string | null> {
+  // Token de suporte (impersonação) não é renovável: o refresh pelo cookie
+  // devolveria o token do SUPER_ADMIN (só ROLE_SUPER_ADMIN → tudo 403 no /admin).
+  // Recusa aqui e deixa o chamador tratar como sessão de suporte expirada.
+  if (decodificarClaims(accessToken)?.impersonatedBy) {
+    return null
+  }
   if (!refreshEmVoo) {
     refreshEmVoo = (async () => {
       try {

@@ -12,6 +12,9 @@ interface AuthState {
   token: string | null
 }
 
+// Token do SUPER_ADMIN guardado ao entrar no modo suporte, para restaurar ao sair.
+let tokenSuperAdminGuardado: string | null = null
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthState>({ token: null })
   const [carregando, setCarregando] = useState(true)
@@ -48,14 +51,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // best effort — o estado local é limpo mesmo se o servidor falhar
     }
+    tokenSuperAdminGuardado = null
     definirToken(null)
     setAuth({ token: null })
   }, [])
 
-  // `papel` deriva do token atual (decodificado em memória) e é recomputado a
-  // cada render — logo, quando `login`/`renovarSessao` trocam o token, o papel
-  // acompanha.
-  const papel = decodificarClaims(auth.token)?.papel ?? null
+  const entrarComoSuporte = useCallback(
+    (tokenSuporte: string) => {
+      // guarda o token de SUPER_ADMIN (para restaurar) e assume o de suporte.
+      if (auth.token) tokenSuperAdminGuardado = auth.token
+      definirToken(tokenSuporte)
+      setAuth({ token: tokenSuporte })
+    },
+    [auth.token],
+  )
+
+  const sairModoSuporte = useCallback(async () => {
+    const anterior = tokenSuperAdminGuardado
+    tokenSuperAdminGuardado = null
+    let token: string | null = anterior
+    if (!token) {
+      // token guardado perdido (reload) → renova pelo cookie do SUPER_ADMIN,
+      // que continua válido (o cookie não é do token de suporte).
+      token = await renovarSessao()
+    }
+    definirToken(token)
+    setAuth({ token })
+  }, [])
+
+  // `papel`/`modoSuporte` derivam do token atual (decodificado em memória) e são
+  // recomputados a cada render — quando `login`/`renovarSessao`/`entrarComoSuporte`
+  // trocam o token, acompanham.
+  const claims = decodificarClaims(auth.token)
+  const papel = claims?.papel ?? null
+  const modoSuporte = claims?.impersonatedBy != null
   const podeVer = useCallback((area: AreaSensivel) => podeVerArea(papel, area), [papel])
 
   return (
@@ -65,9 +94,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAutenticado: auth.token !== null,
         carregando,
         papel,
+        modoSuporte,
         podeVer,
         login,
         logout,
+        entrarComoSuporte,
+        sairModoSuporte,
       }}
     >
       {children}

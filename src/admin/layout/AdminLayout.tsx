@@ -20,6 +20,7 @@ import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { BottomNavBar } from './BottomNavBar'
 import { BotaoAjudaFlutuante } from '../ajuda/BotaoAjudaFlutuante'
+import { ModoSuporteBanner } from '@/backoffice/ModoSuporteBanner'
 
 const SIDEBAR_KEY = 'simplecote:sidebar'
 
@@ -289,53 +290,56 @@ export function AdminLayout() {
   const nomeLoja = configuracao?.nome ?? ''
 
   return (
-    <div className="flex h-screen overflow-hidden bg-card text-foreground flex-col md:flex-row">
-      <ScrollRestoration />
-      
-      {/* Mobile Topbar */}
-      {ehEstreita && !ehInferior && (
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 shadow-sm md:hidden shrink-0">
-          <button
-            type="button"
-            onClick={() => setDrawerAberto(true)}
-            className="inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted p-2 -ml-2"
-            aria-label="Abrir menu"
-          >
-            <List className="size-6" />
-          </button>
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground">
-              <ShoppingBag className="size-4" aria-hidden />
+    <div className="flex h-screen flex-col overflow-hidden bg-card text-foreground">
+      <ModoSuporteBanner nomeComprador={nomeLoja} />
+      <div className="flex min-h-0 flex-1 overflow-hidden flex-col md:flex-row">
+        <ScrollRestoration />
+        
+        {/* Mobile Topbar */}
+        {ehEstreita && !ehInferior && (
+          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 shadow-sm md:hidden shrink-0">
+            <button
+              type="button"
+              onClick={() => setDrawerAberto(true)}
+              className="inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted p-2 -ml-2"
+              aria-label="Abrir menu"
+            >
+              <List className="size-6" />
+            </button>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground">
+                <ShoppingBag className="size-4" aria-hidden />
+              </div>
+              <span className="truncate font-bold tracking-tight">{nomeLoja}</span>
             </div>
-            <span className="truncate font-bold tracking-tight">{nomeLoja}</span>
+          </header>
+        )}
+
+        {/* Drawer Mobile */}
+        {ehEstreita && !ehInferior && (
+          <SidebarMobile
+            nome={nomeLoja}
+            onLogout={handleLogout}
+            aberta={drawerAberto}
+            aoFechar={() => setDrawerAberto(false)}
+            itens={itens}
+          />
+        )}
+
+        {/* Navegação */}
+        {ehInferior ? (
+          <BottomNavBar onLogout={handleLogout} mostrarMembros={mostrarMembros} />
+        ) : !ehEstreita ? (
+          <Sidebar nome={nomeLoja} onLogout={handleLogout} itens={itens} />
+        ) : null}
+
+        <main className={`flex-1 min-w-0 h-full overflow-y-auto ${ehInferior ? 'pb-20' : ''}`}>
+          <div className="mx-auto w-full px-4 md:px-6 py-6 max-w-full">
+            <RouteTransition />
           </div>
-        </header>
-      )}
-
-      {/* Drawer Mobile */}
-      {ehEstreita && !ehInferior && (
-        <SidebarMobile
-          nome={nomeLoja}
-          onLogout={handleLogout}
-          aberta={drawerAberto}
-          aoFechar={() => setDrawerAberto(false)}
-          itens={itens}
-        />
-      )}
-
-      {/* Navegação */}
-      {ehInferior ? (
-        <BottomNavBar onLogout={handleLogout} mostrarMembros={mostrarMembros} />
-      ) : !ehEstreita ? (
-        <Sidebar nome={nomeLoja} onLogout={handleLogout} itens={itens} />
-      ) : null}
-
-      <main className={`flex-1 min-w-0 h-full overflow-y-auto ${ehInferior ? 'pb-20' : ''}`}>
-        <div className="mx-auto w-full px-4 md:px-6 py-6 max-w-full">
-          <RouteTransition />
-        </div>
-      </main>
-      <BotaoAjudaFlutuante />
+        </main>
+        <BotaoAjudaFlutuante />
+      </div>
     </div>
   )
 }
