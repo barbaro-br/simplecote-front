@@ -108,6 +108,16 @@ app `immense-badlands-31311`. Nenhum dos dois é push manual pro provider — os
 
 Mudanças planejadas usam OpenSpec (`openspec/`): `propose` → `apply` → `archive` (skills/commands em `.claude/` e `.agents/`). Specs canônicas em `openspec/specs/**`. Nunca arquive uma change sem o diff correspondente.
 
+**Implementar uma change (`apply`):**
+
+0. Se a change faz parte da transformação em SaaS, leia **`openspec/RISCOS-TRANSVERSAIS.md`** primeiro — decisões já tomadas (mapa de domínios) e acoplamentos entre changes. Onde o texto da change conflitar com a §0 (domínios), a §0 vence.
+1. Leia `openspec/changes/<nome>/proposal.md`, `design.md` (se houver) e `tasks.md` **inteiros**, mais as seções de `spec.md` que a proposal cita (arquitetura §5, regras §4, contrato de API).
+2. Faça as tarefas de `tasks.md` **na ordem**, uma por vez — não pule, não agrupe, não marque `[x]` sem o diff correspondente.
+3. Depois de cada tarefa: `npm test` + `npm run build` + `npm run lint`. Vermelho = pare (regra 3).
+4. Só toque nos arquivos que a change nomeia (regra 1). Arquivo não-nomeado no diff = diga qual e por quê antes.
+5. **Uma change por sessão.** Se `tasks.md` for grande, encerre ao fim de uma seção numerada e retome numa sessão nova.
+6. Ao terminar: escreva o Handoff (abaixo) e rode `openspec validate <nome> --strict`.
+
 ## Handoff — ao terminar a change OU ao parar
 
 Escreva um resumo com:
