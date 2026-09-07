@@ -44,6 +44,7 @@ Duas áreas, dois públicos:
 7. **Mobile-first literal** na árvore do representante: 375px primeiro; desktop é o enhancement, não o padrão.
 8. Operação irreversível (apurar, cancelar, duplicar) sempre passa por diálogo de confirmação nomeando a consequência.
 9. A **fila de sincronização** (`representante/cotacao/fila-sincronizacao.ts`) nunca é opcional — todo formulário de preço do representante passa por ela.
+10. **`compradorId` vem sempre do JWT, resolvido no servidor** — o front nunca envia, nunca deixa escolher, nunca deriva (guarda: `src/shared/test/isolamento-tenant.test.tsx`).
 
 ## Stack e comandos
 

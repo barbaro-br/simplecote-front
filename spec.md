@@ -60,6 +60,7 @@ Reaproveita **todos** os termos de `simplecote-back/spec.md` §2 (Comprador, Pro
 7. **Mobile-first é literal na tela do representante**: todo componente daquela árvore de rota é desenhado pra 375px de largura primeiro; desktop é o *enhancement*, não o padrão.
 8. **Nenhuma tela do admin bloqueia numa operação irreversível sem confirmação explícita** — `apurar`, `cancelar`, `duplicar` (que já existe no backend) sempre passam por um diálogo de confirmação nomeando a consequência (ex.: "Apurar não pode ser desfeito. X itens sem nenhum lance ficarão sem vencedor.").
 9. **A fila de sincronização (seção 10.2) nunca é opcional** — todo formulário de preço do representante passa por ela, mesmo em rede boa. É a mesma linha de código sempre; "rede boa" só significa que a fila esvazia rápido.
+10. **O `compradorId` vem sempre do JWT, resolvido no servidor** — o front nunca envia, nunca deixa escolher, nunca deriva. Nenhuma chamada a `/api/**` transporta identificador de inquilino (corpo, query ou path); rotas públicas por token resolvem o inquilino pelo próprio token, sem `Authorization`.
 
 ---
 
