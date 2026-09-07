@@ -63,6 +63,32 @@ test('lista usuários com papel (badge) e status', async () => {
   expect(screen.getByText('Inativo')).toBeInTheDocument()
 })
 
+test('OWNER aparece com papel marcado e sem ações', async () => {
+  usuarios = [
+    { id: U1, nome: 'Dona Loja', email: 'dona@x.com', papel: 'OWNER', ativo: true },
+    { id: U2, nome: 'Ana', email: 'ana@x.com', papel: 'ADMIN', ativo: true },
+  ]
+  renderPage()
+
+  await screen.findByText('Dona Loja')
+  expect(screen.getByText('Dono')).toBeInTheDocument()
+
+  const linhaOwner = screen.getByText('Dona Loja').closest('tr') as HTMLElement
+  expect(within(linhaOwner).queryByRole('button')).toBeNull()
+})
+
+test('cadastro não oferece OWNER como papel', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('Ana Admin')
+
+  await user.click(screen.getByRole('button', { name: /Novo usuário/i }))
+  const dialog = within(screen.getByRole('dialog'))
+  const select = dialog.getByLabelText('Papel') as HTMLSelectElement
+
+  expect(Array.from(select.options).map((o) => o.value)).toEqual(['ADMIN', 'OPERADOR'])
+})
+
 test('estado vazio', async () => {
   usuarios = []
   renderPage()

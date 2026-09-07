@@ -19,6 +19,11 @@ describe('usuarioSchema', () => {
     expect(() => usuarioSchema.parse(data)).not.toThrow()
   })
 
+  it('aceita papel OWNER na leitura (usuário do cadastro público)', () => {
+    const data = { id: UUID, nome: 'Dono', email: 'dono@x.com', papel: 'OWNER', ativo: true }
+    expect(() => usuarioSchema.parse(data)).not.toThrow()
+  })
+
   it('rejeita papel fora do enum', () => {
     const data = { id: UUID, nome: 'Ana', email: 'ana@x.com', papel: 'ROOT', ativo: true }
     expect(() => usuarioSchema.parse(data)).toThrow()
@@ -48,6 +53,11 @@ describe('usuarioFormSchema', () => {
       papel: 'ADMIN',
     })
     expect(r.success).toBe(true)
+  })
+
+  it('rejeita OWNER no formulário (não é papel criável)', () => {
+    const r = usuarioFormSchema.safeParse({ nome: 'Dono', email: 'dono@x.com', papel: 'OWNER' })
+    expect(r.success).toBe(false)
   })
 })
 

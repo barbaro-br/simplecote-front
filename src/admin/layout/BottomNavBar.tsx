@@ -10,6 +10,7 @@ import {
   Package,
   Gear,
   UserGear,
+  Users,
 } from '@phosphor-icons/react'
 
 const ITENS_FIXOS = [
@@ -21,18 +22,23 @@ const ITENS_FIXOS = [
 const ITENS_MAIS = [
   { to: '/admin/empresas', label: 'Empresas', Icon: Buildings, end: false },
   { to: '/admin/usuarios', label: 'Usuários', Icon: UserGear, end: false },
+  { to: '/admin/membros', label: 'Membros', Icon: Users, end: false },
   { to: '/admin/analises', label: 'Análises', Icon: ChartBar, end: false },
   { to: '/admin/configuracoes', label: 'Configurações', Icon: Gear, end: false },
 ] as const
-
-const TODOS_ITENS = [...ITENS_FIXOS, ...ITENS_MAIS]
 
 function lerTelaLarga(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
   return window.matchMedia('(min-width: 768px)').matches
 }
 
-export function BottomNavBar({ onLogout }: { onLogout: () => void }) {
+export function BottomNavBar({
+  onLogout,
+  mostrarMembros,
+}: {
+  onLogout: () => void
+  mostrarMembros: boolean
+}) {
   const [maisAberto, setMaisAberto] = useState(false)
   const [ehLarga, setEhLarga] = useState<boolean>(lerTelaLarga)
 
@@ -46,7 +52,10 @@ export function BottomNavBar({ onLogout }: { onLogout: () => void }) {
     return () => mql.removeEventListener('change', aoMudar)
   }, [])
 
-  const itensVisiveis = ehLarga ? TODOS_ITENS : ITENS_FIXOS
+  const itensMais = mostrarMembros ? ITENS_MAIS : ITENS_MAIS.filter((i) => i.to !== '/admin/membros')
+  const todosItens = [...ITENS_FIXOS, ...itensMais]
+
+  const itensVisiveis = ehLarga ? todosItens : ITENS_FIXOS
 
   return (
     <>
@@ -96,7 +105,7 @@ export function BottomNavBar({ onLogout }: { onLogout: () => void }) {
           />
           <div className="fixed inset-x-0 bottom-20 z-40 px-4">
             <div role="menu" className="mx-auto w-full max-w-sm rounded-xl border bg-popover text-popover-foreground shadow-lg p-2">
-              {ITENS_MAIS.map(({ to, label, Icon, end }) => (
+              {itensMais.map(({ to, label, Icon, end }) => (
                 <NavLink
                   key={to}
                   to={to}

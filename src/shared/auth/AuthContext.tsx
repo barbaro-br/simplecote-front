@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, type ReactNode } from 'react'
 import { api, definirToken, renovarSessao } from '@/shared/api/api-client'
+import { podeVerArea, type AreaSensivel } from '@/shared/domain/papel'
+import { decodificarClaims } from './jwt'
 import { AuthContext } from './auth-context'
 
 interface TokenResponse {
@@ -50,12 +52,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuth({ token: null })
   }, [])
 
+  // `papel` deriva do token atual (decodificado em memória) e é recomputado a
+  // cada render — logo, quando `login`/`renovarSessao` trocam o token, o papel
+  // acompanha.
+  const papel = decodificarClaims(auth.token)?.papel ?? null
+  const podeVer = useCallback((area: AreaSensivel) => podeVerArea(papel, area), [papel])
+
   return (
     <AuthContext.Provider
       value={{
         token: auth.token,
         isAutenticado: auth.token !== null,
         carregando,
+        papel,
+        podeVer,
         login,
         logout,
       }}

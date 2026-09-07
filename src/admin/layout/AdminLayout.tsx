@@ -13,6 +13,7 @@ import {
   Gear,
   ShoppingBag,
   UserGear,
+  Users,
 } from '@phosphor-icons/react'
 import { useAuth } from '@/shared/auth/useAuth'
 import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
@@ -28,9 +29,12 @@ const ITENS = [
   { to: '/admin/produtos', label: 'Produtos', Icon: Package, end: false },
   { to: '/admin/empresas', label: 'Empresas', Icon: Buildings, end: false },
   { to: '/admin/usuarios', label: 'Usuários', Icon: UserGear, end: false },
+  { to: '/admin/membros', label: 'Membros', Icon: Users, end: false },
   { to: '/admin/analises', label: 'Análises', Icon: ChartBar, end: false },
   { to: '/admin/configuracoes', label: 'Configurações', Icon: Gear, end: false },
 ] as const
+
+type ItemNav = (typeof ITENS)[number]
 
 function lerColapsada(): boolean {
   try {
@@ -45,7 +49,7 @@ function lerTelaEstreita(): boolean {
   return window.matchMedia('(max-width: 767px)').matches
 }
 
-function Sidebar({ nome, onLogout }: { nome: string; onLogout: () => void }) {
+function Sidebar({ nome, onLogout, itens }: { nome: string; onLogout: () => void; itens: readonly ItemNav[] }) {
   const [colapsada, setColapsada] = useState<boolean>(lerColapsada)
   const [isHovered, setIsHovered] = useState(false)
   const [ehEstreita, setEhEstreita] = useState<boolean>(lerTelaEstreita)
@@ -112,7 +116,7 @@ function Sidebar({ nome, onLogout }: { nome: string; onLogout: () => void }) {
       </div>
 
       <nav className="space-y-2 flex flex-col flex-1 mt-4">
-        {ITENS.map(({ to, label, Icon, end }) => (
+        {itens.map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -179,7 +183,7 @@ import { List, X } from '@phosphor-icons/react'
 
 // ... (keep the same imports and initial setup) ...
 
-function SidebarMobile({ nome, onLogout, aberta, aoFechar }: { nome: string; onLogout: () => void; aberta: boolean; aoFechar: () => void }) {
+function SidebarMobile({ nome, onLogout, aberta, aoFechar, itens }: { nome: string; onLogout: () => void; aberta: boolean; aoFechar: () => void; itens: readonly ItemNav[] }) {
   return (
     <>
       {aberta && (
@@ -212,7 +216,7 @@ function SidebarMobile({ nome, onLogout, aberta, aoFechar }: { nome: string; onL
         </div>
 
         <nav className="space-y-2 flex flex-col flex-1">
-          {ITENS.map(({ to, label, Icon, end }) => (
+          {itens.map(({ to, label, Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -248,12 +252,16 @@ function SidebarMobile({ nome, onLogout, aberta, aoFechar }: { nome: string; onL
 }
 
 export function AdminLayout() {
-  const { logout } = useAuth()
+  const { logout, podeVer } = useAuth()
   const { data: configuracao } = useConfiguracaoLoja()
   const navigate = useNavigate()
 
   const [ehEstreita, setEhEstreita] = useState<boolean>(lerTelaEstreita)
   const [drawerAberto, setDrawerAberto] = useState(false)
+
+  // Membros é área sensível: OPERADOR não vê o item no menu (o back barra a rota).
+  const mostrarMembros = podeVer('membros')
+  const itens = mostrarMembros ? ITENS : ITENS.filter((i) => i.to !== '/admin/membros')
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
@@ -311,14 +319,15 @@ export function AdminLayout() {
           onLogout={handleLogout}
           aberta={drawerAberto}
           aoFechar={() => setDrawerAberto(false)}
+          itens={itens}
         />
       )}
 
       {/* Navegação */}
       {ehInferior ? (
-        <BottomNavBar onLogout={handleLogout} />
+        <BottomNavBar onLogout={handleLogout} mostrarMembros={mostrarMembros} />
       ) : !ehEstreita ? (
-        <Sidebar nome={nomeLoja} onLogout={handleLogout} />
+        <Sidebar nome={nomeLoja} onLogout={handleLogout} itens={itens} />
       ) : null}
 
       <main className={`flex-1 min-w-0 h-full overflow-y-auto ${ehInferior ? 'pb-20' : ''}`}>

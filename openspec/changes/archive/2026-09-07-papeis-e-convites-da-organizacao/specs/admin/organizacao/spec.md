@@ -55,9 +55,9 @@ O sistema SHALL expor uma rota pública `/convite/:token` onde a pessoa convidad
 - **WHEN** a pessoa abre um link de convite inválido ou expirado
 - **THEN** a tela exibe uma mensagem clara, sem expor o formulário de senha
 
-### Requirement: Reenviar, revogar e remover
+### Requirement: Reenviar, revogar e inativar
 
-A tela SHALL permitir reenviar e revogar um convite pendente, e inativar/remover um membro que não seja o `OWNER`. Cada ação destrutiva (revogar, remover) SHALL passar por confirmação que nomeia a consequência, e SHALL refletir o novo estado na lista ao concluir.
+A tela SHALL permitir reenviar e revogar um convite pendente, e inativar um membro `ATIVO` que não seja o `OWNER` (reusa `POST /api/usuarios/{id}/inativar`). Cada ação destrutiva (revogar, inativar) SHALL passar por confirmação que nomeia a consequência, e SHALL refletir o novo estado na lista ao concluir.
 
 #### Scenario: Revogar um convite pendente
 

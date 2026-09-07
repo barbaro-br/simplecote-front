@@ -34,7 +34,9 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
     defaultValues: {
       nome: usuarioParaEditar?.nome ?? '',
       email: usuarioParaEditar?.email ?? '',
-      papel: usuarioParaEditar?.papel ?? 'OPERADOR',
+      // OWNER nunca é editável por esta tela (não há botão de editar); o fallback
+      // cobre o tipo, já que `usuarioParaEditar.papel` pode ser OWNER.
+      papel: usuarioParaEditar?.papel === 'OWNER' ? 'OPERADOR' : (usuarioParaEditar?.papel ?? 'OPERADOR'),
       senha: '',
     },
   })

@@ -26,9 +26,9 @@ function matchMediaMock(query: string): MediaQueryList {
   } as unknown as MediaQueryList
 }
 
-function renderBarra() {
+function renderBarra(mostrarMembros = true) {
   const router = createMemoryRouter(
-    [{ path: '/', element: <BottomNavBar onLogout={() => {}} /> }],
+    [{ path: '/', element: <BottomNavBar onLogout={() => {}} mostrarMembros={mostrarMembros} /> }],
     { initialEntries: ['/'] },
   )
   return render(<RouterProvider router={router} />)
@@ -55,7 +55,7 @@ test('largura estreita: 3 itens fixos + botão Mais', () => {
   expect(screen.queryByRole('link', { name: 'Empresas' })).not.toBeInTheDocument()
 })
 
-test('largura larga: 7 itens direto, sem botão Mais', () => {
+test('largura larga: itens direto, sem botão Mais', () => {
   telaLarga = true
   renderBarra()
 
@@ -64,9 +64,18 @@ test('largura larga: 7 itens direto, sem botão Mais', () => {
   expect(screen.getByRole('link', { name: 'Produtos' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Empresas' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Usuários' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Membros' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Análises' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Configurações' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Mais' })).not.toBeInTheDocument()
+})
+
+test('mostrarMembros=false esconde o item Membros', () => {
+  telaLarga = true
+  renderBarra(false)
+
+  expect(screen.getByRole('link', { name: 'Usuários' })).toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: 'Membros' })).not.toBeInTheDocument()
 })
 
 test('alterna entre os modos em tempo real ao cruzar 768px', () => {

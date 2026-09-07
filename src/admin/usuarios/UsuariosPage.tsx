@@ -115,22 +115,26 @@ export function UsuariosPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1">
-                        <IconButton
-                          icon={Pencil}
-                          label="Editar"
-                          onClick={() => setModal({ tipo: 'editar', usuario: u })}
-                        />
-                        <IconButton
-                          icon={Key}
-                          label="Trocar senha"
-                          onClick={() => setModal({ tipo: 'senha', usuario: u })}
-                        />
-                        {u.ativo && (
-                          <IconButton
-                            icon={UserMinus}
-                            label="Inativar"
-                            onClick={() => setConfirmar(u)}
-                          />
+                        {u.papel !== 'OWNER' && (
+                          <>
+                            <IconButton
+                              icon={Pencil}
+                              label="Editar"
+                              onClick={() => setModal({ tipo: 'editar', usuario: u })}
+                            />
+                            <IconButton
+                              icon={Key}
+                              label="Trocar senha"
+                              onClick={() => setModal({ tipo: 'senha', usuario: u })}
+                            />
+                            {u.ativo && (
+                              <IconButton
+                                icon={UserMinus}
+                                label="Inativar"
+                                onClick={() => setConfirmar(u)}
+                              />
+                            )}
+                          </>
                         )}
                       </div>
                     </td>

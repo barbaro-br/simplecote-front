@@ -1,11 +1,13 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AdminLayout } from './admin/layout/AdminLayout'
 import { AuthGuard } from './shared/auth/AuthGuard'
+import { RoleGuard } from './shared/auth/RoleGuard'
 
 import { LoginPage } from './admin/login/LoginPage'
 import { EsqueciSenhaPage } from './admin/recuperar-senha/EsqueciSenhaPage'
 import { CadastroPage } from './admin/cadastro/CadastroPage'
 import { VerificarEmailPage } from './admin/cadastro/VerificarEmailPage'
+import { AceitarConvitePage } from './admin/organizacao/AceitarConvitePage'
 import { TemaClaro } from './representante/TemaClaro'
 import { RouteLoadingFallback } from './shared/components/ui/route-loading'
 
@@ -29,6 +31,10 @@ export const routes = createBrowserRouter([
   {
     path: '/verificar-email',
     element: <VerificarEmailPage />,
+  },
+  {
+    path: '/convite/:token',
+    element: <AceitarConvitePage />,
   },
   {
     path: '/admin',
@@ -73,6 +79,16 @@ export const routes = createBrowserRouter([
           {
             path: 'usuarios',
             lazy: () => import('./admin/usuarios/UsuariosPage').then(m => ({ Component: m.UsuariosPage })),
+          },
+          {
+            path: 'membros',
+            element: <RoleGuard area="membros" />,
+            children: [
+              {
+                index: true,
+                lazy: () => import('./admin/organizacao/MembrosPage').then(m => ({ Component: m.MembrosPage })),
+              },
+            ],
           },
           {
             path: 'analises',

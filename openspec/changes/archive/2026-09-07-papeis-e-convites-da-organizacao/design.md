@@ -32,3 +32,7 @@ Ver `proposal.md` — Why. Já existem `admin/usuarios` (cria usuário com senha
 1. Back: papel `OWNER` (backfill: o usuário mais antigo / o do bootstrap de cada `Comprador` vira `OWNER`), rotas de convite e de membros, enforcement de papel.
 2. Front: `useAuth.role` + `podeVer` (inócuo) → tela de Membros + convite → esconder menus e `RoleGuard`.
 3. Rollback: remover `/admin/membros` e o `RoleGuard`; `admin/usuarios` volta a ser a única gestão de acesso.
+
+## Fora do escopo / follow-up
+
+- **Remoção (hard delete) de membro não existe** — o modelo é soft-deactivate: um `Usuario` tem histórico (cotações etc.). Na `MembrosPage`, o membro `ATIVO` não-OWNER ganha "inativar" (reusa `POST /api/usuarios/{id}/inativar`, que já barra `OWNER`); o membro `INATIVO` aparece com o status e **sem** ação — a reativação continua via `UsuariosPage` (edição). Follow-up: expor "reativar" na `MembrosPage` quando/se o back tiver `POST /api/usuarios/{id}/ativar`.

@@ -304,3 +304,28 @@ describe('modo mobile (drawer)', () => {
     expect(drawer).toHaveClass('-translate-x-full')
   })
 })
+
+function jwt(papel: string): string {
+  const payload = btoa(JSON.stringify({ papel, slug: 'loja', compradorId: 'c1' }))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+  return `eyJhbGciOiJIUzI1NiJ9.${payload}.sig`
+}
+
+describe('visibilidade por papel na navegação', () => {
+  test('OPERADOR não vê o item Membros', async () => {
+    server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: jwt('OPERADOR') })))
+    renderLayout('/admin/produtos')
+
+    await screen.findByRole('link', { name: 'Usuários' })
+    expect(screen.queryByRole('link', { name: 'Membros' })).not.toBeInTheDocument()
+  })
+
+  test('ADMIN vê o item Membros', async () => {
+    server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: jwt('ADMIN') })))
+    renderLayout('/admin/produtos')
+
+    expect(await screen.findByRole('link', { name: 'Membros' })).toBeInTheDocument()
+  })
+})
