@@ -4,6 +4,8 @@ import { AuthGuard } from './shared/auth/AuthGuard'
 
 import { LoginPage } from './admin/login/LoginPage'
 import { EsqueciSenhaPage } from './admin/recuperar-senha/EsqueciSenhaPage'
+import { CadastroPage } from './admin/cadastro/CadastroPage'
+import { VerificarEmailPage } from './admin/cadastro/VerificarEmailPage'
 import { TemaClaro } from './representante/TemaClaro'
 import { RouteLoadingFallback } from './shared/components/ui/route-loading'
 
@@ -19,6 +21,14 @@ export const routes = createBrowserRouter([
   {
     path: '/esqueci-senha',
     element: <EsqueciSenhaPage />,
+  },
+  {
+    path: '/cadastro',
+    element: <CadastroPage />,
+  },
+  {
+    path: '/verificar-email',
+    element: <VerificarEmailPage />,
   },
   {
     path: '/admin',

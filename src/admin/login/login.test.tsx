@@ -14,6 +14,7 @@ function renderLogin() {
       { path: '/login', element: <LoginPage /> },
       { path: '/admin', element: <div>dashboard</div> },
       { path: '/esqueci-senha', element: <div>esqueci senha view</div> },
+      { path: '/cadastro', element: <div>cadastro view</div> },
     ],
     { initialEntries: ['/login'] }
   )
@@ -86,6 +87,16 @@ test('link "Esqueci minha senha" navega para /esqueci-senha', async () => {
   await user.click(screen.getByRole('link', { name: 'Esqueci minha senha' }))
 
   expect(await screen.findByText('esqueci senha view')).toBeInTheDocument()
+})
+
+test('link "Criar conta" navega para /cadastro', async () => {
+  const user = userEvent.setup()
+
+  renderLogin()
+
+  await user.click(screen.getByRole('link', { name: 'Criar conta' }))
+
+  expect(await screen.findByText('cadastro view')).toBeInTheDocument()
 })
 
 test('renderiza o crédito de desenvolvedor abaixo de "Esqueci minha senha"', () => {

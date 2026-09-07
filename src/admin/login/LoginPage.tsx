@@ -124,6 +124,14 @@ export function LoginPage() {
             Esqueci minha senha
           </Link>
 
+          {/* Entrada para o cadastro público */}
+          <Link
+            to="/cadastro"
+            className="block text-center text-sm text-muted-foreground hover:text-foreground hover:underline"
+          >
+            Criar conta
+          </Link>
+
           {CREDITO_DESENVOLVEDOR.href ? (
             <a
               href={CREDITO_DESENVOLVEDOR.href}

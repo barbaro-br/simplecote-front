@@ -1,8 +1,9 @@
-## Purpose
+# admin/cadastro Specification
 
+## Purpose
 Fluxo público pelo qual o dono de um supermercado cria sua própria conta no SimpleCote sem intervenção do time: um formulário anônimo em `/cadastro` que provisiona um `Comprador` novo e isolado, com um slug único (o endereço `<slug>.simplecote.app` da loja), em modo de teste e com um usuário `OWNER`, seguido da verificação de e-mail.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Formulário público de cadastro
 
@@ -63,7 +64,7 @@ Ao concluir o cadastro, o novo supermercado SHALL corresponder a um `Comprador` 
 
 ### Requirement: Verificação de e-mail
 
-O sistema SHALL expor uma rota pública `/verificar-email` acessada pelo link enviado no e-mail de cadastro (com um token). Ao abrir, o sistema SHALL confirmar o e-mail via API. Em sucesso, SHALL levar o dono ao login da própria loja — `https://<slug>.simplecote.app/login` — com uma mensagem de conta ativada. Quando o token for inválido ou expirado, SHALL exibir uma mensagem clara em pt-BR, sem expor um formulário quebrado, e SHALL oferecer um caminho para solicitar novo e-mail de verificação.
+O sistema SHALL expor uma rota pública `/verificar-email` acessada pelo link enviado no e-mail de cadastro (com um token). Ao abrir, o sistema SHALL confirmar o e-mail via API. Em sucesso, SHALL levar o dono ao login da própria loja — `https://<slug>.simplecote.app/login` — com uma mensagem de conta ativada. Quando o token for inválido ou expirado, SHALL exibir uma mensagem clara em pt-BR e um caminho para o login, sem expor um formulário quebrado. O reenvio do e-mail de verificação é follow-up do back (fora do escopo desta change).
 
 #### Scenario: Token de verificação válido
 
@@ -73,7 +74,7 @@ O sistema SHALL expor uma rota pública `/verificar-email` acessada pelo link en
 #### Scenario: Token inválido ou expirado
 
 - **WHEN** o dono abre um link de verificação inválido ou expirado
-- **THEN** a tela exibe uma mensagem clara e oferece reenviar a verificação, sem mostrar formulário de senha ou de login quebrado
+- **THEN** a tela exibe uma mensagem clara ("Este link é inválido ou expirou") e um caminho para o login, sem mostrar formulário de senha ou de login quebrado (o reenvio da verificação é follow-up do back)
 
 ### Requirement: Entrada para o cadastro a partir do login
 

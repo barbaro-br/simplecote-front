@@ -38,3 +38,7 @@ Ver `proposal.md` — Why. Já existem os padrões necessários: rotas públicas
 2. Front adiciona as rotas, o campo de slug e as telas.
 3. O `BootstrapAdminRunner` continua existindo para casos internos; os dois caminhos coexistem (o bootstrap também passa a definir um `slug`).
 4. Rollback: remover as rotas `/cadastro` e `/verificar-email` do `routes.tsx` e o link no `LoginPage`; a coluna `slug` no back é inócua sem o cadastro.
+
+## Fora do escopo / follow-up
+
+- **Reenvio do e-mail de verificação.** A tela de token inválido/expirado é um beco sem saída até o back expor `POST /public/cadastro/reenviar-verificacao`. Hoje ela mostra "Este link é inválido ou expirou" + "Ir para o login": se o token já foi usado (conta verificada) o login funciona direto; se expirou, o usuário cai no `403` "confirme seu e-mail" do login. O par (front + back) fecha o reenvio numa change futura.

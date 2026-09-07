@@ -186,7 +186,10 @@ async function processarRequisicao<T>(
     return undefined as T
   }
 
-  return response.json()
+  // Sucesso com corpo vazio (ex.: `201` do `POST /public/cadastro`) devolve
+  // `undefined`; com corpo, parseia o JSON.
+  const texto = await response.text()
+  return texto ? (JSON.parse(texto) as T) : (undefined as T)
 }
 
 function apiGet<T>(endpoint: string, options: RequestInit & { lookup: true }): Promise<T | null>
