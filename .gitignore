@@ -25,3 +25,7 @@ dist-ssr
 .vercel
 .env*
 .aider*
+
+# notas de trabalho — não versionar
+scratch.md
+handoff*.md
