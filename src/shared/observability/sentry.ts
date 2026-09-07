@@ -26,3 +26,15 @@ export function iniciarSentry(): void {
     },
   })
 }
+
+/**
+ * Tag de inquilino nos eventos: apenas o id técnico do `Comprador` — nunca
+ * nome, e-mail ou telefone (rule de "nenhum dado pessoal"). Inócuo sem DSN.
+ */
+export function definirCompradorTag(compradorId: string): void {
+  Sentry.setTag('comprador', compradorId)
+}
+
+export function limparCompradorTag(): void {
+  Sentry.setTag('comprador', '')
+}

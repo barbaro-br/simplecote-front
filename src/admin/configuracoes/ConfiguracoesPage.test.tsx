@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi, test, expect, beforeEach } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
+import { AuthProvider } from '@/shared/auth/AuthContext'
 import { ConfiguracoesPage } from './ConfiguracoesPage'
 import { Toaster } from 'sonner'
 import type { Configuracao } from './configuracoes.schema'
@@ -35,8 +36,10 @@ function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <ConfiguracoesPage />
+      <AuthProvider>
+        <Toaster />
+        <ConfiguracoesPage />
+      </AuthProvider>
     </QueryClientProvider>,
   )
 }

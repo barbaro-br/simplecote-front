@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, type ReactNode } from 'react'
 import { api, definirToken, renovarSessao } from '@/shared/api/api-client'
 import { podeVerArea, type AreaSensivel } from '@/shared/domain/papel'
+import { definirCompradorTag, limparCompradorTag } from '@/shared/observability/sentry'
 import { decodificarClaims } from './jwt'
 import { AuthContext } from './auth-context'
 
@@ -86,6 +87,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const papel = claims?.papel ?? null
   const modoSuporte = claims?.impersonatedBy != null
   const podeVer = useCallback((area: AreaSensivel) => podeVerArea(papel, area), [papel])
+
+  // Tag de inquilino no Sentry: reflete o `compradorId` da sessão corrente. Vazio
+  // (sem sessão, SUPER_ADMIN) limpa — rotas públicas por token nunca setam.
+  const compradorId = claims?.compradorId ?? null
+  useEffect(() => {
+    if (compradorId) {
+      definirCompradorTag(compradorId)
+    } else {
+      limparCompradorTag()
+    }
+  }, [compradorId])
 
   return (
     <AuthContext.Provider

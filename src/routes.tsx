@@ -11,6 +11,7 @@ import { EsqueciSenhaPage } from './admin/recuperar-senha/EsqueciSenhaPage'
 import { CadastroPage } from './admin/cadastro/CadastroPage'
 import { VerificarEmailPage } from './admin/cadastro/VerificarEmailPage'
 import { AceitarConvitePage } from './admin/organizacao/AceitarConvitePage'
+import { ContaEncerradaPage } from './admin/configuracoes/ContaEncerradaPage'
 import { TemaClaro } from './representante/TemaClaro'
 import { RouteLoadingFallback } from './shared/components/ui/route-loading'
 
@@ -51,6 +52,10 @@ export const routes = createBrowserRouter([
   {
     path: '/convite/:token',
     element: <AceitarConvitePage />,
+  },
+  {
+    path: '/conta-encerrada',
+    element: <ContaEncerradaPage />,
   },
   {
     path: '/admin',

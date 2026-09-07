@@ -221,7 +221,9 @@ export const api = {
  * Não é `useQuery` — é uma ação imperativa por clique. Mantém a mesma política de
  * `401` do `fetchWrapper` (sessão expirada → handler / redirect).
  */
-export async function baixarArquivo(endpoint: string, nomeArquivo: string): Promise<void> {
+export type ResultadoBaixarArquivo = 'baixado' | 'assincrono'
+
+export async function baixarArquivo(endpoint: string, nomeArquivo: string): Promise<ResultadoBaixarArquivo> {
   const token = getToken()
   const response = await fetch(`${getBaseUrl()}${endpoint}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -237,12 +239,26 @@ export async function baixarArquivo(endpoint: string, nomeArquivo: string): Prom
       }
       throw new SessaoExpiradaError()
     }
-    throw new ApiError({
-      type: 'about:blank',
-      title: 'Erro no download',
-      status: response.status,
-      detail: 'Não foi possível baixar o arquivo.',
-    })
+    // tenta ler o ProblemDetail para exibir a mensagem pt-BR do back; sem corpo,
+    // cai na mensagem genérica.
+    try {
+      const problem = (await response.json()) as ProblemDetail
+      throw new ApiError(problem)
+    } catch (e) {
+      if (e instanceof ApiError) throw e
+      throw new ApiError({
+        type: 'about:blank',
+        title: 'Erro no download',
+        status: response.status,
+        detail: 'Não foi possível baixar o arquivo.',
+      })
+    }
+  }
+
+  // 202 = o servidor aceitou mas vai gerar assíncrono (ex.: exportação grande,
+  // enviada por e-mail quando pronta) — não há arquivo para baixar agora.
+  if (response.status === 202) {
+    return 'assincrono'
   }
 
   const blob = await response.blob()
@@ -254,4 +270,5 @@ export async function baixarArquivo(endpoint: string, nomeArquivo: string): Prom
   link.click()
   link.remove()
   URL.revokeObjectURL(url)
+  return 'baixado'
 }

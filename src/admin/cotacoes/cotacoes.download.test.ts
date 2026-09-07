@@ -28,7 +28,7 @@ test('baixarArquivo resolve quando o backend devolve um Blob e dispara o downloa
 
   await expect(
     baixarArquivo('/api/cotacoes/abc/resultado.xlsx', 'resultado.xlsx'),
-  ).resolves.toBeUndefined()
+  ).resolves.toBe('baixado')
 
   expect(criarObjectURL).toHaveBeenCalled()
   expect(clickSpy).toHaveBeenCalled()

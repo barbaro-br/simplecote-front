@@ -1,7 +1,7 @@
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
-import { Check, Copy, Storefront, Palette, Sliders } from '@phosphor-icons/react'
+import { Check, Copy, Storefront, Palette, Sliders, ShieldCheck } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -9,11 +9,16 @@ import { Card } from '@/shared/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
+import { useAuth } from '@/shared/auth/useAuth'
 import { configuracaoSchema, type Configuracao, type ConfiguracaoFormValues } from './configuracoes.schema'
 import { useConfiguracaoLoja, useAtualizarConfiguracao } from './configuracoes.api'
+import { ExportarDadosCard } from './ExportarDadosCard'
+import { EncerrarContaCard } from './EncerrarContaCard'
 
 function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Configuracao }) {
   const atualizar = useAtualizarConfiguracao()
+  const { papel } = useAuth()
+  const mostrarDados = papel === 'OWNER' || papel === 'ADMIN'
 
   const form = useForm<ConfiguracaoFormValues>({
     resolver: zodResolver(configuracaoSchema),
@@ -38,10 +43,13 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
   return (
     <form onSubmit={form.handleSubmit(aoEnviar)} noValidate className="flex flex-col h-full">
       <Tabs defaultValue="geral" className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className={`grid w-full mb-6 ${mostrarDados ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <TabsTrigger value="geral" className="flex gap-2"><Storefront className="size-4" /> Geral</TabsTrigger>
           <TabsTrigger value="aparencia" className="flex gap-2"><Palette className="size-4" /> Aparência</TabsTrigger>
           <TabsTrigger value="avancado" className="flex gap-2"><Sliders className="size-4" /> Avançado</TabsTrigger>
+          {mostrarDados && (
+            <TabsTrigger value="dados" className="flex gap-2"><ShieldCheck className="size-4" /> Dados</TabsTrigger>
+          )}
         </TabsList>
 
         <div className="flex-1 min-h-[320px]">
@@ -116,6 +124,18 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
               {errors.layoutEmail && <p className="text-[13px] text-destructive">{errors.layoutEmail.message}</p>}
             </div>
           </TabsContent>
+
+          {/* ABA DADOS & PRIVACIDADE */}
+          {mostrarDados && (
+            <TabsContent value="dados" className="space-y-4 mt-0">
+              <div className="space-y-1">
+                <h3 className="text-sm font-medium ui-uppercase">Dados & privacidade</h3>
+                <p className="text-xs text-muted-foreground">Gerencie os dados da sua organização.</p>
+              </div>
+              <ExportarDadosCard />
+              <EncerrarContaCard />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
 

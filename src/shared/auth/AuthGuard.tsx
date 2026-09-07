@@ -25,7 +25,15 @@ export function AuthGuard() {
     return <Navigate to="/login" replace />
   }
 
-  const jwtSlug = decodificarClaims(token)?.slug ?? null
+  const claims = decodificarClaims(token)
+
+  // SUPER_ADMIN não tem Comprador — o painel do lojista dá 403 em tudo. Manda pro
+  // backoffice. (Em modo suporte o token tem papel=ADMIN, então não cai aqui.)
+  if (claims?.papel === 'SUPER_ADMIN') {
+    return <Navigate to="/backoffice" replace />
+  }
+
+  const jwtSlug = claims?.slug ?? null
   const decisao = decidirRedirectTenant(hostnameSlug, jwtSlug, ehHostDoApp)
 
   if (decisao.tipo === 'redirecionar') {
