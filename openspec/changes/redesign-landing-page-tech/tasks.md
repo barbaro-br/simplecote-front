@@ -1,27 +1,50 @@
-## 1. Setup e Dependências
+## 1. Setup, marca e infraestrutura de motion
 
-- [x] 1.1 Instalar o `framer-motion` no projeto e verificar se a instalação ocorreu sem erros rodando `npm run build`.
-- [ ] 1.2 Converter a logo fornecida (`.jpg`) para um componente React puro (usando um SVG otimizado com a mesma estrutura) e verificar a renderização renderizando-o em um layout de teste.
-- [ ] 1.3 Adicionar as variáveis de cores (`brand-navy` e `brand-mint`) na configuração CSS/Tailwind (v4) e verificar se o compilador reconhece as classes (ex: `text-brand-navy`).
+- [x] 1.1 Instalar `motion` (framer-motion). *(pré-existente do primeiro rascunho — revalidar com `npm run build`.)*
+- [ ] 1.2 Instalar `gsap` (usar `ScrollTrigger` e `SplitText` de `gsap/*` — gratuitos) + `lenis` + `three` + `@react-three/fiber`. `npm run build` verde.
+- [x] 1.3 Tokens da marca no `index.css`: `--brand-navy/-deep`, `--brand-mint/-bright` em `:root` + `--color-brand-*` em `@theme inline`. *(feito — validar que `bg-brand-navy` / `text-brand-mint` compilam.)*
+- [x] 1.4 `src/site/BrandLogo.tsx` (SVG vetorial, `variant` full/mark, `size`). *(feito — só wire.)*
+- [ ] 1.5 `src/site/tech/useReduzirMovimento.ts` — `true` sob `prefers-reduced-motion` OU `navigator.connection?.saveData`; export `useDeveAnimar()` = negação. Teste com `matchMedia` mockado.
+- [ ] 1.6 `src/site/tech/useSmoothScroll.ts` — Lenis global amarrado ao `gsap.ticker`; no-op (scroll nativo) sob `useReduzirMovimento`. Montado uma vez no `SiteChrome`.
 
-## 2. Redesign da Casca Pública (Header/Footer)
+## 2. Casca pública (Header/Footer)
 
-- [ ] 2.1 Atualizar o componente de Header público para exibir o novo SVG da logo e o novo estilo com glassmorphism (fundo borrado) e verificar rodando `npm run dev`.
-- [ ] 2.2 Atualizar o Footer público com as novas cores e a logo nova e verificar a visualização visual.
+- [ ] 2.1 `SiteLayout.tsx`: trocar `Logo` por `BrandLogo`; header com glassmorphism (`backdrop-blur-md bg-background/70 supports-[backdrop-filter]:bg-background/60`, borda sutil, sombra ao rolar via estado de scroll). `overflow-x: clip` no wrapper raiz do site.
+- [ ] 2.2 Footer com `BrandLogo`, cores da marca, e — se fizer sentido — um `GridAnimado` discreto de fundo. Sem overflow horizontal.
+- [ ] 2.3 Aposentar `src/site/Logo.tsx` (e ajustar `Logo.test.tsx` → `BrandLogo.test.tsx`).
 
-## 3. Redesign da Home Institucional (Hero e Vídeo)
+## 3. Componentes "tech" (`src/site/tech/`)
 
-- [ ] 3.1 Refatorar a `HomePage` (`src/site/HomePage.tsx`) adicionando a estrutura de vídeo em autoplay como *background cover* (usando um vídeo ou div placeholder por enquanto) e verificar se o vídeo ocupa a tela inteira atrás do conteúdo.
-- [ ] 3.2 Implementar os textos sobrepostos e os CTAs ("Criar conta" e "Entrar") com `framer-motion` para fade-in e verificar no navegador se eles animam ao carregar.
-- [ ] 3.3 Adicionar o hook `useReducedMotion` do Framer Motion para desativar a reprodução do vídeo e as animações se o sistema operacional pedir, e verificar via DevTools (emulando preferência de redução de movimento).
+- [ ] 3.1 `CursorMais.tsx` — segue o mouse com spring do `motion`; vira "+" sobre `[data-cursor="mais"]`; só monta com `matchMedia('(pointer: fine)')` e `useDeveAnimar()`.
+- [ ] 3.2 `BotaoMagnetico.tsx` — atrai o filho na direção do mouse (raio limitado, spring); degrada pra render normal sem `pointer: fine`. Aplicar nos CTAs do hero e da seção final.
+- [ ] 3.3 `SpotlightCard.tsx` — brilho radial seguindo o mouse sob blur. `BorderBeam.tsx` — borda com brilho girando (CSS `@property`/keyframes), desligável.
+- [ ] 3.4 `GridAnimado.tsx` (grid/dots com máscara radial + drift), `Marquee.tsx` (faixa infinita; estática sob reduced-motion), `TextoGradiente.tsx` (`bg-clip-text` navy→mint + shimmer).
+- [ ] 3.5 `EmbedYouTube.tsx` — recebe `videoId?`; sem id mostra um placeholder "tutorial em breve" no mesmo formato (aspect-video, moldura glass).
+- [ ] 3.6 Todos os componentes acima respeitam `useDeveAnimar()` e ficam dentro de containers `overflow-hidden`.
 
-## 4. Redesign das Seções de Planos e Demonstração
+## 4. Hero da Home (vídeo + 3D + fallback)
 
-- [ ] 4.1 Refatorar a seção de planos da Home e a `/precos` para exibir os cards com o efeito "glass" e animação hover com `framer-motion`. Verificar a legibilidade do texto.
-- [ ] 4.2 Reestruturar a seção "veja em ação" para integrar o player de vídeo do produto de forma orgânica ao layout novo e verificar se os controles do player aparecem.
-- [ ] 4.3 Implementar a animação de scroll (fade-up ou reveal) nas seções usando `whileInView` do `framer-motion`, checando a fluidez ao descer a barra de rolagem.
+- [ ] 4.1 `src/site/HeroShader.tsx` — `@react-three/fiber` `<Canvas>` com um plano + fragment shader (ruído + gradiente navy→mint animado). Default export para `React.lazy`.
+- [ ] 4.2 `src/site/HeroFundo.tsx` — orquestra as camadas: (a) gradiente CSS `--brand-navy-deep→--brand-navy` sempre presente; (b) `<video autoPlay muted loop playsInline poster preload="metadata">` de `/midia/animacao-marca.mp4` como cover, só se `useDeveAnimar()` e `>= md`; (c) `<Suspense>` + `lazy(HeroShader)` só se `useDeveAnimar()`, `>= md`, sem `saveData` e WebGL ok (`onCreated`/`onError` → estado `sem3d`). Se o vídeo ficar ruim como fundo, remover a camada (b) — anotar no handoff o que ficou.
+- [ ] 4.3 `HomePage.tsx` hero: `HeroFundo` atrás; `<h1>` com `SplitText` + stagger (`gsap`), subtítulo e CTAs (`BotaoMagnetico`) com fade do `motion`. `<h1>` é o LCP — texto, nunca mídia. `data-cursor="mais"` nos CTAs.
 
-## 5. Revisão Final e Testes
+## 5. Corpo da Home e /precos
 
-- [ ] 5.1 Atualizar os testes unitários do RTL para `HomePage` e componentes relacionados caso classes essenciais ou textos tenham mudado (executar `npm test`).
-- [ ] 5.2 Executar o Health Gate (`npm test`, `npm run build`, `npm run lint`) garantindo que nenhuma mudança visual quebrou os testes ou gerou erros de lint.
+- [ ] 5.1 Reescrever as seções da Home (Como funciona, Veja em ação, Por que, Planos, Comece grátis) com reveal via `gsap`+`ScrollTrigger` (stagger por seção, parallax leve das camadas) atrás de `useDeveAnimar()`; substituir `SecaoRevelavel`/`useRevelarAoRolar` de forma consistente.
+- [ ] 5.2 "Como funciona" e "Por que o SimpleCote": bento grid com `SpotlightCard`. "Veja em ação": `demo-produto.mp4` emoldurado (glass) + `EmbedYouTube` (placeholder) lado a lado ou em abas.
+- [ ] 5.3 Seção de planos (Home) e `PrecosPage.tsx`: cards glass com `BorderBeam` no plano em destaque, hover tilt (`motion` `rotateX/rotateY` por mouse), `Marquee` de benefícios/logos. Legibilidade do texto sobre glass conferida (contraste AA).
+- [ ] 5.4 `EmbedYouTube` (placeholder) também na `AjudaPage.tsx`.
+
+## 6. Mobile / degradação (requisito explícito)
+
+- [ ] 6.1 `< md`: sem `HeroShader`, sem `<video>` de fundo (só gradiente), sem `CursorMais`, sem parallax, blur no máximo `sm`; cards em 1 coluna; animações viram fade curto.
+- [ ] 6.2 Nenhum scroll horizontal em nenhuma rota do site: `overflow-x: clip` no wrapper + toda seção de efeito dentro de `overflow-hidden`; conferir a 360 / 390 / 768 / 1280 px.
+- [ ] 6.3 `prefers-reduced-motion` e `Save-Data`: sem 3D, sem vídeo em autoplay (poster), sem marquee/beam/parallax; a página fica estática e completa.
+
+## 7. Testes e health gate
+
+- [ ] 7.1 `useReduzirMovimento` — `matchMedia` mockado (reduce on/off) e `saveData`.
+- [ ] 7.2 `HomePage` / `PrecosPage` RTL: revisar seletores; a Home renderiza em jsdom (sem WebGL) **sem lançar** e mostra o fallback (headline, CTAs "Criar conta"/"Entrar", headings de seção, "Planos").
+- [ ] 7.3 `BrandLogo.test.tsx` (substitui `Logo.test.tsx`): renderiza `full` e `mark`, tem `aria-label`.
+- [ ] 7.4 Health gate: `npx vitest run` + `npm run build` (com `VITE_API_BASE_URL=http://localhost:8080`) + `npx oxlint` verdes. **Não commitar.**
+- [ ] 7.5 (manual, no handoff) print/observação em 360, 390, 768 e 1280 px, e com reduced-motion ligado.
