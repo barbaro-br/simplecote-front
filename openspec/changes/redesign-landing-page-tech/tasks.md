@@ -48,3 +48,16 @@
 - [x] 7.3 `BrandLogo.test.tsx` (substitui `Logo.test.tsx`): renderiza `full` e `mark`, tem `aria-label`.
 - [x] 7.4 Health gate: `npx vitest run` + `npm run build` (com `VITE_API_BASE_URL=http://localhost:8080`) + `npx oxlint` verdes. **Não commitar.**
 - [ ] 7.5 (manual, no handoff) print/observação em 360, 390, 768 e 1280 px, e com reduced-motion ligado.
+
+## 8. Refinamento do hero: fundo de marca FIXO na página toda + scroll-snap
+
+Feedback pós-entrega: o hero tinha só altura de conteúdo (o "Como funciona" espiava por baixo, parecendo cortado) e o vídeo cobria só o hero. Objetivo: vídeo da marca **fixo atrás da página inteira**, seções passando por cima como painéis translúcidos, com "setorização" nítida.
+
+- [ ] 8.1 `HeroFundo` vira **camada fixa da página** (só na home de marketing): `fixed inset-0 -z-10 pointer-events-none`, montada uma vez no topo da `HomePage`. Camadas: (a) gradiente `--brand-navy-deep→--brand-navy` sempre; (b) `<video>` `/midia/animacao-marca.mp4` cover, dimmed (~55–60%), só `useDeveAnimar() && >= md`; (c) `HeroShader` lazy (condições atuais: WebGL ok, `>= md`, `!saveData`); (d) scrim `bg-brand-navy-deep/50` por cima pra contraste do texto. `< md` **ou** reduced-motion/Save-Data → só o gradiente fixo (sem decode de vídeo rolando).
+- [ ] 8.2 Conteúdo da home num wrapper `relative z-10`. Cada seção (`Como funciona`, `Por que`, `Planos`, `Comece grátis`) num **painel glass**: container centralizado `rounded-3xl border border-white/10 bg-background/70 backdrop-blur-2xl` (blur `sm` no `< md`), com padding generoso, deixando o vídeo aparecer nas bordas/entre painéis. Contraste do texto sobre o painel conferido (AA).
+- [ ] 8.3 Hero em tela cheia: `min-h-[100svh]` (`svh`, não `vh` — não pula com a barra do mobile), conteúdo centralizado; a `Marquee` ("sem planilha", "histórico"…) fica na **base do hero** como faixa glass sobre o vídeo. Nenhuma seção seguinte pode espiar antes do fim do hero.
+- [ ] 8.4 Scroll-snap suave: no `<html>` `scroll-snap-type: y proximity` + `scroll-padding-top` = altura do header; cada seção `snap-start` e `min-h-[100svh]` (ou `scroll-snap-align: start` no topo do painel). `scroll-behavior: smooth`. **Desligado** sob `prefers-reduced-motion` (sem classes de snap).
+- [ ] 8.5 Header do site some ao rolar pra baixo e volta ao rolar pra cima (`translateY(-100%)` via estado de scroll no `SiteChrome`), pra liberar o vídeo; fixo (sempre visível) sob reduced-motion. No mobile, a barra do navegador some sozinha por conta do `100svh` + scroll.
+- [ ] 8.6 `PrecosPage` herda o mesmo fundo fixo? **Não** nesta iteração — só a home (`/`). `PrecosPage`/`AjudaPage` seguem como estão.
+- [ ] 8.7 Testes: `HomePage` RTL segue verde em jsdom (sem WebGL, sem lançar); ajustar seletores se a marcação das seções mudar. Health gate completo (7.4). **Não commitar.**
+- [ ] 8.8 (manual, handoff) conferir em 1280/1440 (desktop): hero preenche a tela, nada cortado, vídeo fixo visível entre os painéis ao rolar, snap suave, header some/volta. E em 390px: sem overflow, sem vídeo rolando, painéis legíveis.
