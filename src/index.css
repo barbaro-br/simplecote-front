@@ -340,3 +340,30 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Animação de entrada das seções do site institucional (change
+ * repaginar-site-institucional): começa transladada/transparente e faz a
+ * transição quando `useRevelarAoRolar` adiciona `.revelado`. Com
+ * prefers-reduced-motion, permanece visível sem animação.
+ */
+.secao-revelavel {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+
+.secao-revelavel.revelado {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secao-revelavel {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
