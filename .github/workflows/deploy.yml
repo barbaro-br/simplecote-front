@@ -78,7 +78,11 @@ jobs:
       # rollback`), mas a pipeline fica vermelha e você sabe na hora, não pelo cliente.
       - name: Smoke — bundle publicado fala com o back
         run: |
-          alias_url="https://simplecote-front.vercel.app"
+          # Domínio canônico de produção. `app.simplecote.com.br` NÃO serve aqui:
+          # o vercel.json faz 307 de todo sub-path dele pra `app.simplecote.app`,
+          # então `/assets/*.js` não volta 200. O `<projeto>.vercel.app` (URL
+          # gerada) fica pra proteção de deploy — não usar em CI.
+          alias_url="https://app.simplecote.app"
           host="${VITE_API_BASE_URL#https://}"
           ok=""
           for i in 1 2 3 4 5; do
