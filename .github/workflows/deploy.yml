@@ -78,11 +78,11 @@ jobs:
       # rollback`), mas a pipeline fica vermelha e você sabe na hora, não pelo cliente.
       - name: Smoke — bundle publicado fala com o back
         run: |
-          # Domínio canônico de produção. `app.simplecote.com.br` NÃO serve aqui:
-          # o vercel.json faz 307 de todo sub-path dele pra `app.simplecote.app`,
-          # então `/assets/*.js` não volta 200. O `<projeto>.vercel.app` (URL
-          # gerada) fica pra proteção de deploy — não usar em CI.
-          alias_url="https://app.simplecote.app"
+          # Domínio canônico de produção (apex). `app.simplecote.app` e
+          # `app.simplecote.com.br` fazem 307 pra cá (vercel.json), então servem
+          # `/assets/*.js` como redirect, não 200 — não usar em CI. O
+          # `<projeto>.vercel.app` fica pra proteção de deploy.
+          alias_url="https://simplecote.app"
           host="${VITE_API_BASE_URL#https://}"
           ok=""
           for i in 1 2 3 4 5; do
