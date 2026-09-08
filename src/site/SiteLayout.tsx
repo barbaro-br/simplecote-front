@@ -1,10 +1,11 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import { buttonClasses } from '@/shared/components/ui/button-classes'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { BrandLogo } from './BrandLogo'
 import { CursorMais } from './tech/CursorMais'
 import { useSmoothScroll } from './tech/useSmoothScroll'
+import { useDeveAnimar } from './tech/useReduzirMovimento'
 
 /**
  * Casca pública do site (cabeçalho + rodapé), reusável com `children` — para
@@ -16,22 +17,35 @@ import { useSmoothScroll } from './tech/useSmoothScroll'
  * para nunca haver scroll horizontal.
  */
 export function SiteChrome({ children }: { children: ReactNode }) {
+  const deveAnimar = useDeveAnimar()
   const [noTopo, setNoTopo] = useState(true)
+  const [escondido, setEscondido] = useState(false)
+  const ultimoY = useRef(0)
 
   useEffect(() => {
-    const aoRolar = () => setNoTopo(window.scrollY < 8)
+    const aoRolar = () => {
+      const y = window.scrollY
+      setNoTopo(y < 8)
+      if (deveAnimar) {
+        if (y > ultimoY.current && y > 96) setEscondido(true)
+        else if (y < ultimoY.current) setEscondido(false)
+      }
+      ultimoY.current = y
+    }
     aoRolar()
     window.addEventListener('scroll', aoRolar, { passive: true })
     return () => window.removeEventListener('scroll', aoRolar)
-  }, [])
+  }, [deveAnimar])
 
   useSmoothScroll()
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-clip bg-background text-foreground">
+    <div className="flex min-h-screen flex-col overflow-x-clip text-foreground">
       <CursorMais />
       <header
-        className={`sticky top-0 z-30 border-b backdrop-blur-md transition-shadow ${
+        className={`sticky top-0 z-30 border-b backdrop-blur-md transition-all duration-300 ${
+          escondido ? '-translate-y-full' : 'translate-y-0'
+        } ${
           noTopo
             ? 'border-transparent bg-background/70 supports-[backdrop-filter]:bg-background/60'
             : 'border-border bg-background/80 shadow-sm supports-[backdrop-filter]:bg-background/70'
@@ -60,7 +74,7 @@ export function SiteChrome({ children }: { children: ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
-      <footer className="relative overflow-hidden border-t bg-muted/40">
+      <footer className="relative overflow-hidden border-t bg-background">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
             <BrandLogo />

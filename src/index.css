@@ -428,3 +428,15 @@
     animation: none !important;
   }
 }
+
+/*
+ * Scroll-snap suave da home (change redesign-landing-page-tech §8). A classe é
+ * adicionada ao `<html>` por `useScrollSnap` — só na home, só quando anima
+ * (nunca sob prefers-reduced-motion/Save-Data). `proximity` (não `mandatory`)
+ * deixa o scroll livre, apenas assentando perto dos limites das seções.
+ */
+.scroll-snap-home {
+  scroll-snap-type: y proximity;
+  scroll-padding-top: 4rem;
+  scroll-behavior: smooth;
+}

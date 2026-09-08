@@ -32,13 +32,16 @@ function webglDisponivel(): boolean {
 }
 
 /**
- * Camadas de fundo do hero, em ordem de robustez:
- * (a) gradiente CSS `--brand-navy-deep → --brand-navy` SEMPRE presente — o
- *     layout do hero nunca depende de mídia/3D;
- * (b) `<video>` de marca (`/midia/animacao-marca.mp4`) como cover, só com
+ * Camada FIXA de fundo da home — montada uma vez no topo da `HomePage`,
+ * atrás da página inteira (`fixed inset-0 -z-10`), deixando o vídeo da marca
+ * aparecer entre os painéis de conteúdo. Em ordem de robustez:
+ * (a) gradiente CSS `--brand-navy-deep → --brand-navy` SEMPRE presente;
+ * (b) `<video>` de marca (`/midia/animacao-marca.mp4`) cover, dimmed, só com
  *     `useDeveAnimar()` e `>= md`;
- * (c) `HeroShader` (R3F, lazy) só com `useDeveAnimar()`, `>= md` e WebGL ok.
- *     Sem WebGL (jsdom/teste) ou erro de contexto → cai fora sem lançar.
+ * (c) `HeroShader` (R3F, lazy) só com `useDeveAnimar()`, `>= md` e WebGL ok
+ *     (erro de contexto → `sem3d`, sem lançar);
+ * (d) scrim `bg-brand-navy-deep/50` por cima pro contraste do texto.
+ * `< md` ou reduced-motion/Save-Data → só o gradiente fixo (sem vídeo).
  */
 export function HeroFundo() {
   const deveAnimar = useDeveAnimar()
@@ -50,14 +53,14 @@ export function HeroFundo() {
   const pode3d = podeVideo && webglOk && !sem3d
 
   return (
-    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
       <div
         className="absolute inset-0"
         style={{ background: 'linear-gradient(160deg, var(--brand-navy-deep), var(--brand-navy))' }}
       />
       {podeVideo && (
         <video
-          className="h-full w-full object-cover opacity-70"
+          className="h-full w-full object-cover opacity-60"
           src="/midia/animacao-marca.mp4"
           poster={hero}
           muted
@@ -76,7 +79,7 @@ export function HeroFundo() {
           </Suspense>
         </LimiteShader>
       )}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand-navy/20 to-background" />
+      <div className="absolute inset-0 bg-brand-navy-deep/50" />
     </div>
   )
 }

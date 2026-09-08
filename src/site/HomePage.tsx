@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, CheckCircle, Package, Storefront, TrendDown, Users } from '@phosphor-icons/react'
 import { buttonClasses } from '@/shared/components/ui/button-classes'
@@ -11,13 +11,13 @@ import { BotaoMagnetico } from './tech/BotaoMagnetico'
 import { BorderBeam } from './tech/BorderBeam'
 import { CardTilt } from './tech/CardTilt'
 import { EmbedYouTube } from './tech/EmbedYouTube'
-import { GridAnimado } from './tech/GridAnimado'
 import { Marquee } from './tech/Marquee'
 import { RevealSecao } from './tech/RevealSecao'
 import { SpotlightCard } from './tech/SpotlightCard'
 import { TextoGradiente } from './tech/TextoGradiente'
 import { gsap, SplitText } from './tech/gsap-scroll'
 import { useDeveAnimar } from './tech/useReduzirMovimento'
+import { useScrollSnap } from './tech/useScrollSnap'
 
 const COMO_FUNCIONA = [
   {
@@ -69,9 +69,25 @@ function HeroTitulo() {
   }, [deveAnimar])
 
   return (
-    <h1 ref={ref} className="max-w-2xl text-4xl font-bold tracking-tight text-white sm:text-5xl">
+    <h1
+      ref={ref}
+      className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl"
+    >
       Cotações competitivas, sem planilha.
     </h1>
+  )
+}
+
+/** Painel glass de seção: conteúdo legível por cima do vídeo fixo. */
+function Painel({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={`mx-auto w-full max-w-6xl rounded-3xl border border-white/10 bg-background/70 backdrop-blur-sm md:backdrop-blur-2xl ${
+        className ?? ''
+      }`}
+    >
+      {children}
+    </div>
   )
 }
 
@@ -81,63 +97,61 @@ export function HomePage() {
     'SimpleCote: leilão reverso para supermercados cotarem e economizarem com fornecedores, sem planilha.',
     logo,
   )
+  useScrollSnap()
 
   return (
     <div className="overflow-x-clip">
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0" aria-hidden="true">
-          <HeroFundo />
-        </div>
-        <div className="relative mx-auto flex w-full max-w-6xl flex-col items-start gap-6 px-4 py-24 sm:py-32">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-sm">
-            <Storefront className="size-4" aria-hidden />
-            Leilão reverso para supermercados
-          </span>
-          <HeroTitulo />
-          <p className="max-w-xl text-lg text-white/80">
-            Você abre a cotação, os fornecedores disputam preço item a item e você economiza em
-            cada compra — com a grade ao vivo mostrando tudo em tempo real.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <BotaoMagnetico>
-              <Link to="/cadastro" className={buttonClasses({ size: 'lg' })} data-cursor="mais">
-                Criar conta
-              </Link>
-            </BotaoMagnetico>
-            <BotaoMagnetico>
-              <Link
-                to="/login"
-                className={buttonClasses({ variant: 'outline', size: 'lg', className: 'border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white' })}
-                data-cursor="mais"
-              >
-                Entrar
-              </Link>
-            </BotaoMagnetico>
-          </div>
-        </div>
-      </section>
+      {/* Fundo de marca fixo atrás da página inteira (só na home) */}
+      <HeroFundo />
 
-      {/* MARQUEE DE BENEFÍCIOS */}
-      <section className="border-b bg-background py-6">
-        <Marquee className="max-w-6xl mx-auto">
-          {BENEFICIOS.map((beneficio) => (
-            <span
-              key={beneficio}
-              className="mx-6 flex items-center gap-2 text-sm font-medium text-muted-foreground"
-            >
-              <span className="size-1.5 rounded-full bg-brand-mint" aria-hidden="true" />
-              {beneficio}
+      {/* Conteúdo por cima do fundo fixo */}
+      <div className="relative z-10">
+        {/* HERO */}
+        <section className="snap-start flex min-h-[100svh] flex-col overflow-hidden">
+          <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-24 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-sm">
+              <Storefront className="size-4" aria-hidden />
+              Leilão reverso para supermercados
             </span>
-          ))}
-        </Marquee>
-      </section>
+            <HeroTitulo />
+            <p className="mx-auto max-w-xl text-lg text-white/80">
+              Você abre a cotação, os fornecedores disputam preço item a item e você economiza em
+              cada compra — com a grade ao vivo mostrando tudo em tempo real.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <BotaoMagnetico>
+                <Link to="/cadastro" className={buttonClasses({ size: 'lg' })} data-cursor="mais">
+                  Criar conta
+                </Link>
+              </BotaoMagnetico>
+              <BotaoMagnetico>
+                <Link
+                  to="/login"
+                  className={buttonClasses({ variant: 'outline', size: 'lg', className: 'border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white' })}
+                  data-cursor="mais"
+                >
+                  Entrar
+                </Link>
+              </BotaoMagnetico>
+            </div>
+          </div>
 
-      {/* COMO FUNCIONA (bento) */}
-      <RevealSecao className="relative border-b">
-        <GridAnimado />
-        <section>
-          <div className="relative mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
+          {/* Marquee de benefícios na base do hero, como faixa glass */}
+          <div className="relative border-t border-white/10 bg-white/10 py-4 backdrop-blur-md">
+            <Marquee className="mx-auto max-w-6xl">
+              {BENEFICIOS.map((beneficio) => (
+                <span key={beneficio} className="mx-6 flex items-center gap-2 text-sm font-medium text-white/90">
+                  <span className="size-1.5 rounded-full bg-brand-mint" aria-hidden="true" />
+                  {beneficio}
+                </span>
+              ))}
+            </Marquee>
+          </div>
+        </section>
+
+        {/* COMO FUNCIONA */}
+        <RevealSecao className="snap-start flex min-h-[100svh] items-center px-4 py-12">
+          <Painel className="p-6 sm:p-10 md:p-14">
             <div data-reveal className="mb-10 text-center">
               <h2 className="mb-3 text-3xl font-bold tracking-tight">Como funciona</h2>
               <p className="text-muted-foreground">Da abertura à economia em três passos.</p>
@@ -161,14 +175,12 @@ export function HomePage() {
                 )
               })}
             </div>
-          </div>
-        </section>
-      </RevealSecao>
+          </Painel>
+        </RevealSecao>
 
-      {/* VEJA EM AÇÃO */}
-      <RevealSecao className="border-b">
-        <section>
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
+        {/* VEJA EM AÇÃO */}
+        <RevealSecao className="snap-start flex min-h-[100svh] items-center px-4 py-12">
+          <Painel className="p-6 sm:p-10 md:p-14">
             <div data-reveal className="mb-10 text-center">
               <h2 className="mb-3 text-3xl font-bold tracking-tight">
                 Veja o <TextoGradiente>SimpleCote</TextoGradiente> em ação
@@ -190,15 +202,12 @@ export function HomePage() {
               </div>
               <EmbedYouTube />
             </div>
-          </div>
-        </section>
-      </RevealSecao>
+          </Painel>
+        </RevealSecao>
 
-      {/* POR QUE O SIMPLECOTE (bento) */}
-      <RevealSecao className="relative border-b">
-        <GridAnimado />
-        <section>
-          <div className="relative mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
+        {/* POR QUE O SIMPLECOTE */}
+        <RevealSecao className="snap-start flex min-h-[100svh] items-center px-4 py-12">
+          <Painel className="p-6 sm:p-10 md:p-14">
             <div data-reveal className="mb-10 text-center">
               <h2 className="mb-3 text-3xl font-bold tracking-tight">Por que o SimpleCote</h2>
               <p className="text-muted-foreground">Menos planilha, mais margem — item a item.</p>
@@ -215,14 +224,12 @@ export function HomePage() {
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
-      </RevealSecao>
+          </Painel>
+        </RevealSecao>
 
-      {/* PLANOS (resumo da fonte única) */}
-      <RevealSecao className="relative border-b">
-        <section>
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:py-20">
+        {/* PLANOS (resumo da fonte única) */}
+        <RevealSecao className="snap-start flex min-h-[100svh] items-center px-4 py-12">
+          <Painel className="p-6 sm:p-10 md:p-14">
             <div data-reveal className="mb-10 text-center">
               <h2 className="mb-3 text-3xl font-bold tracking-tight">Planos</h2>
               <p className="text-muted-foreground">Comece grátis e evolua quando o volume pedir.</p>
@@ -260,39 +267,39 @@ export function HomePage() {
                 <ArrowRight className="size-4" aria-hidden />
               </Link>
             </div>
-          </div>
-        </section>
-      </RevealSecao>
+          </Painel>
+        </RevealSecao>
 
-      {/* CTA FINAL */}
-      <RevealSecao className="relative">
-        <section className="overflow-hidden bg-brand-navy text-white">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4 py-16 text-center sm:py-20">
-            <h2 data-reveal className="text-3xl font-bold tracking-tight">
-              Comece grátis
-            </h2>
-            <p data-reveal className="max-w-lg text-white/80">
-              Crie sua conta em minutos, monte sua primeira cotação e veja o produto funcionando —
-              sem cartão de crédito.
-            </p>
-            <ul data-reveal className="flex flex-wrap justify-center gap-6 text-sm text-white/80">
-              {['Teste grátis', 'Sem cartão', 'Cancele quando quiser'].map((item) => (
-                <li key={item} className="flex items-center gap-2">
-                  <CheckCircle className="size-4 text-brand-mint" aria-hidden />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <div data-reveal>
-              <BotaoMagnetico>
-                <Link to="/cadastro" className={buttonClasses({ size: 'lg' })} data-cursor="mais">
-                  Criar conta
-                </Link>
-              </BotaoMagnetico>
+        {/* CTA FINAL */}
+        <RevealSecao className="snap-start flex min-h-[100svh] items-center px-4 py-12">
+          <Painel className="p-6 sm:p-10 md:p-14">
+            <div className="flex flex-col items-center gap-6 text-center">
+              <h2 data-reveal className="text-3xl font-bold tracking-tight">
+                Comece grátis
+              </h2>
+              <p data-reveal className="max-w-lg text-muted-foreground">
+                Crie sua conta em minutos, monte sua primeira cotação e veja o produto funcionando —
+                sem cartão de crédito.
+              </p>
+              <ul data-reveal className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+                {['Teste grátis', 'Sem cartão', 'Cancele quando quiser'].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <CheckCircle className="size-4 text-brand-mint" aria-hidden />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div data-reveal>
+                <BotaoMagnetico>
+                  <Link to="/cadastro" className={buttonClasses({ size: 'lg' })} data-cursor="mais">
+                    Criar conta
+                  </Link>
+                </BotaoMagnetico>
+              </div>
             </div>
-          </div>
-        </section>
-      </RevealSecao>
+          </Painel>
+        </RevealSecao>
+      </div>
     </div>
   )
 }
