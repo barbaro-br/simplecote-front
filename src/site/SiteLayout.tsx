@@ -1,21 +1,45 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import { buttonClasses } from '@/shared/components/ui/button-classes'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
-import { Logo } from './Logo'
+import { BrandLogo } from './BrandLogo'
+import { CursorMais } from './tech/CursorMais'
+import { useSmoothScroll } from './tech/useSmoothScroll'
 
 /**
  * Casca pública do site (cabeçalho + rodapé), reusável com `children` — para
  * que a raiz `/` só monte a casca quando realmente for exibir a home, nunca
  * durante um redirect (o `Raiz` renderiza `<SiteChrome>` só no caso marketing).
+ *
+ * É aqui que o smooth-scroll (Lenis) e o cursor custom vivem: só no site, nunca
+ * no `/admin` nem nas rotas por token. O wrapper raiz usa `overflow-x: clip`
+ * para nunca haver scroll horizontal.
  */
 export function SiteChrome({ children }: { children: ReactNode }) {
+  const [noTopo, setNoTopo] = useState(true)
+
+  useEffect(() => {
+    const aoRolar = () => setNoTopo(window.scrollY < 8)
+    aoRolar()
+    window.addEventListener('scroll', aoRolar, { passive: true })
+    return () => window.removeEventListener('scroll', aoRolar)
+  }, [])
+
+  useSmoothScroll()
+
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
+    <div className="flex min-h-screen flex-col overflow-x-clip bg-background text-foreground">
+      <CursorMais />
+      <header
+        className={`sticky top-0 z-30 border-b backdrop-blur-md transition-shadow ${
+          noTopo
+            ? 'border-transparent bg-background/70 supports-[backdrop-filter]:bg-background/60'
+            : 'border-border bg-background/80 shadow-sm supports-[backdrop-filter]:bg-background/70'
+        }`}
+      >
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
-          <Link to="/" aria-label="SimpleCote — página inicial">
-            <Logo />
+          <Link to="/" aria-label="SimpleCote — página inicial" data-cursor="mais">
+            <BrandLogo />
           </Link>
           <nav className="flex items-center gap-4 sm:gap-6">
             <Link to="/precos" className="text-sm text-muted-foreground hover:text-foreground">
@@ -24,10 +48,10 @@ export function SiteChrome({ children }: { children: ReactNode }) {
             <Link to="/ajuda" className="text-sm text-muted-foreground hover:text-foreground">
               Ajuda
             </Link>
-            <Link to="/login" className="text-sm font-medium hover:underline">
+            <Link to="/login" className="text-sm font-medium hover:underline" data-cursor="mais">
               Entrar
             </Link>
-            <Link to="/cadastro" className={buttonClasses({})}>
+            <Link to="/cadastro" className={buttonClasses({})} data-cursor="mais">
               Criar conta
             </Link>
           </nav>
@@ -36,10 +60,10 @@ export function SiteChrome({ children }: { children: ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t">
+      <footer className="relative overflow-hidden border-t bg-muted/40">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
-            <Logo />
+            <BrandLogo />
             <p className="max-w-xs text-sm text-muted-foreground">
               Cotações competitivas simplificadas para supermercados.
             </p>

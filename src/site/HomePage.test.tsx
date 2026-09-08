@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { vi, expect, test, afterEach } from 'vitest'
 import { HomePage } from './HomePage'
@@ -40,10 +40,21 @@ test('hero tem os CTAs "Criar conta" e "Entrar"', () => {
   expect(screen.getAllByRole('link', { name: 'Entrar' }).length).toBeGreaterThan(0)
 })
 
-test('o vídeo do hero tem muted, loop, playsinline e um poster', () => {
+test('renderiza em jsdom (sem WebGL) sem lançar, com headline e headings das seções', () => {
   const { container } = renderHome()
 
-  const video = container.querySelector('video[poster]') as HTMLVideoElement
+  expect(screen.getByRole('heading', { name: /Cotações competitivas, sem planilha/i })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Como funciona' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Planos' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Comece grátis' })).toBeInTheDocument()
+  // sem WebGL no jsdom → a camada 3D não monta (fallback gradiente)
+  expect(container.querySelector('canvas')).toBeNull()
+})
+
+test('o vídeo de fundo do hero tem muted, loop, playsinline e um poster', () => {
+  const { container } = renderHome()
+
+  const video = container.querySelector('video[src="/midia/animacao-marca.mp4"]') as HTMLVideoElement
   expect(video).not.toBeNull()
   expect(video.muted).toBe(true)
   expect(video.loop).toBe(true)
@@ -60,10 +71,10 @@ test('a seção de planos lista os planos de planos.ts e tem link para /precos',
   expect(screen.getByRole('link', { name: /Ver todos os planos/i })).toHaveAttribute('href', '/precos')
 })
 
-test('prefers-reduced-motion: reduce → o vídeo do hero não dá play', async () => {
+test('prefers-reduced-motion: reduce → sem vídeo de fundo no hero (só gradiente)', () => {
   mockMatchMedia(true)
   const { container } = renderHome()
 
-  const video = container.querySelector('video[poster]') as HTMLVideoElement
-  await waitFor(() => expect(video.autoplay).toBe(false))
+  expect(container.querySelector('video[src="/midia/animacao-marca.mp4"]')).toBeNull()
+  expect(screen.getByRole('heading', { name: /Cotações competitivas, sem planilha/i })).toBeInTheDocument()
 })
