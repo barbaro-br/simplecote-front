@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'path'
 
 // https://vite.dev/config/
@@ -32,9 +33,39 @@ export default defineConfig(({ mode }) => {
     proxy.on('proxyReq', (proxyReq) => proxyReq.removeHeader('origin'))
   }
 
+  // Upload de sourcemaps pro Sentry: só no build do deploy, quando
+  // `SENTRY_AUTH_TOKEN` está no ambiente (workflow `deploy`). Sem token
+  // (dev, job `ci`) o plugin nem entra — o build segue igual, só sem upload.
+  // `release` casa com o `VITE_SENTRY_RELEASE` do `Sentry.init` (SHA do commit),
+  // para o Sentry ligar o stacktrace minificado ao código-fonte. Os `.map` são
+  // apagados após o upload — não vão pro bundle público na Vercel.
+  const enviarSourcemaps = Boolean(env.SENTRY_AUTH_TOKEN)
+  const sentryUpload = enviarSourcemaps
+    ? [
+        sentryVitePlugin({
+          org: env.SENTRY_ORG,
+          project: env.SENTRY_PROJECT,
+          authToken: env.SENTRY_AUTH_TOKEN,
+          release: { name: env.VITE_SENTRY_RELEASE },
+          sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+          telemetry: false,
+          // Upload de sourcemap é best-effort: falha do Sentry (rede, token,
+          // rate limit) não pode derrubar o deploy.
+          errorHandler: () => {},
+        }),
+      ]
+    : []
+
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), ...sentryUpload],
     build: {
+      // `.map` só no build que envia pro Sentry; o plugin os apaga do `dist/`
+      // logo após o upload (`filesToDeleteAfterUpload`), então nada de fonte no
+      // bundle público. Mantido `true` (e não `'hidden'`) de propósito: o
+      // pareamento no Sentry é por *release* (mesmo SHA do `Sentry.init`) +
+      // caminho do artefato, e o comentário `//# sourceMappingURL` ajuda a ligar
+      // `.js`↔`.js.map`. Em dev o Vite serve sourcemap normalmente.
+      sourcemap: enviarSourcemaps,
       rollupOptions: {
         output: {
           // Isola as libs grandes num chunk `vendor` estável — casa com o

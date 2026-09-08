@@ -51,6 +51,12 @@ jobs:
       # `release` = SHA do commit para casar o erro com o build exato.
       VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
       VITE_SENTRY_RELEASE: ${{ github.sha }}
+      # Upload de sourcemaps no `vercel build --prod` (@sentry/vite-plugin):
+      # sem o token o plugin é pulado e o stacktrace de produção fica minificado.
+      # `release` = `VITE_SENTRY_RELEASE` (mesmo SHA) para casar mapa e evento.
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: francisco-montalvao
+      SENTRY_PROJECT: simple-cote-front
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
