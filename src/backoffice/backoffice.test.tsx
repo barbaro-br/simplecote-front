@@ -10,6 +10,7 @@ import { BackofficeGuard } from './BackofficeGuard'
 import { CompradoresPage } from './CompradoresPage'
 import { CompradorDetalhePage } from './CompradorDetalhePage'
 import { ModoSuporteBanner } from './ModoSuporteBanner'
+import { ResumoPage } from './ResumoPage'
 
 function jwt(claims: Record<string, unknown>): string {
   const payload = btoa(JSON.stringify(claims)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -30,6 +31,7 @@ const DETALHE = {
   statusAssinatura: 'TESTE',
   criadoEm: '2026-09-01T10:00:00Z',
   ultimoAcessoEm: null,
+  trialExpiraEm: null,
   cotacoes: 3,
   usuarios: 2,
   representantes: 5,
@@ -45,6 +47,19 @@ const DETALHE = {
 
 const COTACAO_1 = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001'
 const COTACAO_2 = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'
+
+const RESUMO = {
+  lojas: { total: 12, emTeste: 5, prazoVencido: 2, suspensas: 1 },
+  lojasAtivas30d: 8,
+  cotacoesNoMes: 34,
+  gmvTotal: 150000,
+  cadastros30d: [
+    { data: '2026-08-01', qtd: 1 },
+    { data: '2026-08-02', qtd: 0 },
+    { data: '2026-08-03', qtd: 3 },
+  ],
+  funil: { cadastraram: 20, verificaram: 15, criaramCotacao: 10, apuraram: 6 },
+}
 
 function createQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -105,8 +120,8 @@ describe('BackofficeGuard', () => {
 describe('CompradoresPage', () => {
   function renderLista() {
     server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: TOKEN_SUPER_ADMIN })))
-    const router = createMemoryRouter([{ path: '/backoffice', element: <CompradoresPage /> }], {
-      initialEntries: ['/backoffice'],
+    const router = createMemoryRouter([{ path: '/backoffice/lojas', element: <CompradoresPage /> }], {
+      initialEntries: ['/backoffice/lojas'],
     })
     return render(
       <QueryClientProvider client={createQueryClient()}>
@@ -173,6 +188,65 @@ describe('CompradoresPage', () => {
     expect(screen.getByText('R$ 1.250,75')).toBeInTheDocument()
     expect(screen.getByText('R$ 3.200,00')).toBeInTheDocument()
   })
+
+  test('lista mostra badge de prazo vencido para loja com trialExpiraEm no passado', async () => {
+    server.use(
+      http.get('*/api/admin/compradores', () =>
+        HttpResponse.json([
+          { ...DETALHE, trialExpiraEm: '2020-01-01T00:00:00Z' },
+          { ...DETALHE, id: '22222222-2222-4222-8222-222222222222', nome: 'Mercado da Maria', slug: 'mercado-da-maria' },
+        ])
+      )
+    )
+    renderLista()
+
+    expect(await screen.findByText(/Expirou há/)).toBeInTheDocument()
+    expect(screen.getByText('Sem prazo')).toBeInTheDocument()
+  })
+})
+
+describe('ResumoPage', () => {
+  function renderResumo() {
+    server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: TOKEN_SUPER_ADMIN })))
+    server.use(http.get('*/api/admin/resumo', () => HttpResponse.json(RESUMO)))
+    const router = createMemoryRouter(
+      [
+        { path: '/backoffice', element: <ResumoPage /> },
+        { path: '/backoffice/lojas', element: <div>lista de lojas view</div> },
+      ],
+      { initialEntries: ['/backoffice'] }
+    )
+    return render(
+      <QueryClientProvider client={createQueryClient()}>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </QueryClientProvider>
+    )
+  }
+
+  test('dashboard mostra os KPIs do resumo e o funil', async () => {
+    renderResumo()
+
+    expect(await screen.findByText('R$ 150.000,00')).toBeInTheDocument()
+    expect(screen.getByText('12')).toBeInTheDocument()
+    expect(screen.getByText('8')).toBeInTheDocument()
+    expect(screen.getByText('34')).toBeInTheDocument()
+    expect(screen.getByText('Cadastraram')).toBeInTheDocument()
+    expect(screen.getByText('Verificaram e-mail')).toBeInTheDocument()
+    expect(screen.getByText('20')).toBeInTheDocument()
+    expect(screen.getByText('6')).toBeInTheDocument()
+  })
+
+  test('o link "Ver todas as lojas" leva a /backoffice/lojas', async () => {
+    const user = userEvent.setup()
+    renderResumo()
+
+    await screen.findByText('R$ 150.000,00')
+    await user.click(screen.getByRole('link', { name: /Ver todas as lojas/ }))
+
+    expect(await screen.findByText('lista de lojas view')).toBeInTheDocument()
+  })
 })
 
 describe('CompradorDetalhePage', () => {
@@ -182,7 +256,7 @@ describe('CompradorDetalhePage', () => {
     server.use(http.get('*/api/admin/compradores/:id/cotacoes', () => HttpResponse.json(cotacoes)))
     const router = createMemoryRouter(
       [
-        { path: '/backoffice', element: <div>backoffice lista view</div> },
+        { path: '/backoffice/lojas', element: <div>backoffice lista view</div> },
         { path: '/backoffice/compradores/:id', element: <CompradorDetalhePage /> },
       ],
       { initialEntries: [`/backoffice/compradores/${C1}`] }
@@ -273,7 +347,7 @@ describe('CompradorDetalhePage', () => {
     expect(confirmar).not.toBeDisabled()
   })
 
-  test('excluir loja com slug exato chama a API e navega para /backoffice', async () => {
+  test('excluir loja com slug exato chama a API e navega para a lista', async () => {
     let chamou = false
     server.use(
       http.post('*/api/admin/compradores/:id/excluir', ({ params }) => {
@@ -373,6 +447,44 @@ describe('CompradorDetalhePage', () => {
     await waitFor(() => expect(urlRelatorio).toContain(`/api/admin/compradores/${C1}/relatorio`))
     expect(clickSpy).toHaveBeenCalled()
     clickSpy.mockRestore()
+  })
+
+  test('+30 dias chama POST prazo com data ~30 dias à frente', async () => {
+    let corpo: { expiraEm: string | null } | null = null
+    server.use(
+      http.post('*/api/admin/compradores/:id/prazo', async ({ request }) => {
+        corpo = (await request.json()) as { expiraEm: string | null }
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+    const user = userEvent.setup()
+    renderDetalhe()
+
+    await screen.findByText('Mercado do Zé')
+    await user.click(screen.getByRole('button', { name: '+30 dias' }))
+
+    await waitFor(() => expect(corpo).not.toBeNull())
+    const expiraMs = new Date(corpo!.expiraEm as string).getTime()
+    const esperadoMs = Date.now() + 30 * 24 * 60 * 60 * 1000
+    expect(Math.abs(expiraMs - esperadoMs)).toBeLessThan(60_000)
+  })
+
+  test('remover prazo manda expiraEm nulo', async () => {
+    let corpo: { expiraEm: string | null } | null = null
+    server.use(
+      http.post('*/api/admin/compradores/:id/prazo', async ({ request }) => {
+        corpo = (await request.json()) as { expiraEm: string | null }
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+    const user = userEvent.setup()
+    renderDetalhe()
+
+    await screen.findByText('Mercado do Zé')
+    await user.click(screen.getByRole('button', { name: 'Remover prazo' }))
+
+    await waitFor(() => expect(corpo).not.toBeNull())
+    expect(corpo!.expiraEm).toBeNull()
   })
 })
 

@@ -4,8 +4,10 @@ import { server } from '@/setupTests'
 import {
   api,
   ApiError,
+  AcessoBloqueadoError,
   SessaoExpiradaError,
   configurarSessaoExpirada,
+  configurarAcessoBloqueado,
   definirToken,
 } from './api-client'
 
@@ -134,6 +136,112 @@ describe('api-client — 401 / sessão expirada com refresh', () => {
     )
 
     await expect(api.post('/api/auth/login', { email: 'a@b.c', senha: 'x' })).rejects.toBeInstanceOf(ApiError)
+    expect(handler).not.toHaveBeenCalled()
+  })
+})
+
+describe('api-client — 403 de bloqueio', () => {
+  const handler = vi.fn()
+
+  beforeEach(() => {
+    handler.mockClear()
+    configurarAcessoBloqueado(handler)
+    definirToken('tok-cliente')
+  })
+
+  afterEach(() => {
+    configurarAcessoBloqueado(() => {})
+    definirToken(null)
+  })
+
+  it('403 com type de teste-encerrado → AcessoBloqueadoError (motivo prazo) e handler acionado', async () => {
+    server.use(
+      http.get('*/api/produtos', () =>
+        HttpResponse.json(
+          {
+            type: 'https://simplecote.com.br/problemas/teste-encerrado',
+            title: 'Período de teste encerrado',
+            status: 403,
+            detail: 'Seu período de teste terminou. Fale com o suporte para continuar.',
+          },
+          { status: 403, headers: { 'Content-Type': 'application/problem+json' } }
+        )
+      )
+    )
+
+    await expect(api.get('/api/produtos')).rejects.toBeInstanceOf(AcessoBloqueadoError)
+
+    try {
+      await api.get('/api/produtos')
+    } catch (e) {
+      const erro = e as AcessoBloqueadoError
+      expect(erro.motivo).toBe('prazo')
+      expect(erro.detail).toBe('Seu período de teste terminou. Fale com o suporte para continuar.')
+    }
+    expect(handler).toHaveBeenCalledWith({
+      motivo: 'prazo',
+      detail: 'Seu período de teste terminou. Fale com o suporte para continuar.',
+    })
+  })
+
+  it('403 com title "Conta suspensa" → motivo suspensao', async () => {
+    server.use(
+      http.get('*/api/produtos', () =>
+        HttpResponse.json(
+          {
+            type: 'about:blank',
+            title: 'Conta suspensa',
+            status: 403,
+            detail: 'Esta conta está suspensa. Entre em contato com o suporte.',
+          },
+          { status: 403, headers: { 'Content-Type': 'application/problem+json' } }
+        )
+      )
+    )
+
+    await expect(api.get('/api/produtos')).rejects.toBeInstanceOf(AcessoBloqueadoError)
+
+    try {
+      await api.get('/api/produtos')
+    } catch (e) {
+      expect((e as AcessoBloqueadoError).motivo).toBe('suspensao')
+    }
+    expect(handler).toHaveBeenCalledWith({
+      motivo: 'suspensao',
+      detail: 'Esta conta está suspensa. Entre em contato com o suporte.',
+    })
+  })
+
+  it('403 comum (autorização de papel) → ApiError, sem disparar o bridge', async () => {
+    server.use(
+      http.get('*/api/produtos', () =>
+        HttpResponse.json(
+          { type: 'about:blank', title: 'Acesso negado', status: 403, detail: 'Sem permissão para esta ação.' },
+          { status: 403, headers: { 'Content-Type': 'application/problem+json' } }
+        )
+      )
+    )
+
+    await expect(api.get('/api/produtos')).rejects.toBeInstanceOf(ApiError)
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('403 de bloqueio em /api/auth/** → ApiError, sem disparar o bridge', async () => {
+    server.use(
+      http.get('*/api/auth/qualquer', () =>
+        HttpResponse.json(
+          {
+            type: 'https://simplecote.com.br/problemas/teste-encerrado',
+            title: 'Período de teste encerrado',
+            status: 403,
+            detail: 'x',
+          },
+          { status: 403, headers: { 'Content-Type': 'application/problem+json' } }
+        )
+      )
+    )
+
+    await expect(api.get('/api/auth/qualquer')).rejects.toBeInstanceOf(ApiError)
     expect(handler).not.toHaveBeenCalled()
   })
 })

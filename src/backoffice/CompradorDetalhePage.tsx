@@ -18,13 +18,14 @@ import {
   baixarRelatorio,
   useComprador,
   useCotacoesDaLoja,
+  useDefinirPrazo,
   useEntrarComoSuporte,
   useExcluirComprador,
   useReativarComprador,
   useResetarSenhaAdmin,
   useSuspenderComprador,
 } from './backoffice.api'
-import { rotuloStatus, type AdminComprador } from './backoffice.schema'
+import { prazoLabel, rotuloStatus, type AdminComprador, type NivelPrazo } from './backoffice.schema'
 
 const CLASSE_STATUS: Record<string, string> = {
   TESTE: 'bg-muted text-muted-foreground',
@@ -47,6 +48,12 @@ const CLASSE_STATUS_COTACAO: Record<string, string> = {
   ENCERRADA: 'bg-warning/10 text-warning',
   PEDIDOS_GERADOS: 'bg-success/10 text-success',
   CANCELADA: 'bg-destructive/10 text-destructive',
+}
+
+const CLASSE_PRAZO_TEXTO: Record<NivelPrazo, string> = {
+  ok: 'text-muted-foreground',
+  atencao: 'text-warning',
+  vencido: 'text-destructive',
 }
 
 type Acao =
@@ -72,12 +79,15 @@ export function CompradorDetalhePage() {
   const resetarSenha = useResetarSenhaAdmin(id)
   const entrarComoSuporte = useEntrarComoSuporte()
   const excluir = useExcluirComprador(id)
+  const definirPrazo = useDefinirPrazo(id)
 
   const [acao, setAcao] = useState<Acao>(null)
   const [motivo, setMotivo] = useState('')
   const [slugDigitado, setSlugDigitado] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [baixando, setBaixando] = useState(false)
+  const [dataPrazo, setDataPrazo] = useState('')
+  const [erroPrazo, setErroPrazo] = useState<string | null>(null)
 
   if (isLoading) return <p className="p-6 text-muted-foreground">Carregando comprador…</p>
   if (error || !comprador) return <p className="p-6 text-destructive">Erro ao carregar comprador: {error?.message}</p>
@@ -133,7 +143,7 @@ export function CompradorDetalhePage() {
     setErro(null)
     try {
       await excluir.mutateAsync()
-      navigate('/backoffice', { replace: true })
+      navigate('/backoffice/lojas', { replace: true })
       toast.success('Loja excluída.')
     } catch (e) {
       if (e instanceof SessaoExpiradaError) return
@@ -159,12 +169,36 @@ export function CompradorDetalhePage() {
     }
   }
 
+  function aplicarPrazo(expiraEm: string | null) {
+    setErroPrazo(null)
+    definirPrazo.mutate(expiraEm, {
+      onError: (e) => {
+        if (e instanceof SessaoExpiradaError) return
+        setErroPrazo(mensagemDeErro(e))
+      },
+    })
+  }
+
+  function estenderPrazo(dias: number) {
+    aplicarPrazo(new Date(Date.now() + dias * 24 * 60 * 60 * 1000).toISOString())
+  }
+
+  function definirPrazoPorData() {
+    if (!dataPrazo) return
+    aplicarPrazo(new Date(`${dataPrazo}T00:00:00Z`).toISOString())
+  }
+
+  function removerPrazo() {
+    aplicarPrazo(null)
+  }
+
   const slugConfere = slugDigitado.trim() === comprador.slug
+  const prazo = prazoLabel(comprador.trialExpiraEm)
 
   return (
     <PageContainer maxWidth="4xl" className="space-y-6">
       <div>
-        <Link to="/backoffice" className="text-sm text-muted-foreground hover:text-foreground">
+        <Link to="/backoffice/lojas" className="text-sm text-muted-foreground hover:text-foreground">
           ← Compradores
         </Link>
         <div className="mt-2 flex items-center gap-3">
@@ -212,6 +246,43 @@ export function CompradorDetalhePage() {
         <MetricaCard rotulo="Primeira cotação" valor={comprador.primeiraCotacaoEm ? dataBr(comprador.primeiraCotacaoEm) : '—'} />
         <MetricaCard rotulo="Última atividade" valor={comprador.ultimaAtividadeEm ? dataHoraBr(comprador.ultimaAtividadeEm) : '—'} />
       </div>
+
+      <Card className="p-6">
+        <h2 className="mb-4 text-lg font-semibold ui-uppercase">Prazo de teste</h2>
+        <div className="space-y-4">
+          <p className={`text-sm font-medium ${CLASSE_PRAZO_TEXTO[prazo.nivel]}`}>{prazo.texto}</p>
+
+          {erroPrazo && (
+            <div role="alert" className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-[13px] font-medium text-destructive">
+              {erroPrazo}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-end gap-2">
+            <Button variant="outline" size="sm" disabled={definirPrazo.isPending} onClick={() => estenderPrazo(7)}>
+              +7 dias
+            </Button>
+            <Button variant="outline" size="sm" disabled={definirPrazo.isPending} onClick={() => estenderPrazo(30)}>
+              +30 dias
+            </Button>
+            <div className="flex items-end gap-2">
+              <Input
+                aria-label="Escolher data do prazo"
+                type="date"
+                value={dataPrazo}
+                onChange={(e) => setDataPrazo(e.target.value)}
+                className="w-auto"
+              />
+              <Button variant="outline" size="sm" disabled={!dataPrazo || definirPrazo.isPending} onClick={definirPrazoPorData}>
+                Definir
+              </Button>
+            </div>
+            <Button variant="ghost" size="sm" disabled={definirPrazo.isPending} onClick={removerPrazo}>
+              Remover prazo
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       <Card className="p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

@@ -4,9 +4,11 @@ import {
   compradorAdminDetalheSchema,
   compradorAdminListaSchema,
   cotacaoResumoListaSchema,
+  resumoSaasSchema,
   type CompradorAdmin,
   type CompradorAdminDetalhe,
   type CotacaoResumo,
+  type ResumoSaas,
 } from './backoffice.schema'
 
 // Contrato da change backoffice-super-admin do back. Todas as rotas
@@ -29,6 +31,13 @@ export function useCompradores(opts?: { status?: string; busca?: string }) {
       api
         .get<CompradorAdmin[]>(`/api/admin/compradores${qs ? `?${qs}` : ''}`)
         .then((d) => compradorAdminListaSchema.parse(d)),
+  })
+}
+
+export function useResumoSaas() {
+  return useQuery({
+    queryKey: ['admin', 'resumo'],
+    queryFn: () => api.get<ResumoSaas>('/api/admin/resumo').then((d) => resumoSaasSchema.parse(d)),
   })
 }
 
@@ -91,6 +100,15 @@ export function useExcluirComprador(id: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: () => api.post<void>(`/api/admin/compradores/${id}/excluir`),
+    onSuccess: () => invalidar(queryClient),
+  })
+}
+
+// Define (ou remove) o prazo de teste de uma loja — `expiraEm` nulo = sem prazo.
+export function useDefinirPrazo(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (expiraEm: string | null) => api.post<void>(`/api/admin/compradores/${id}/prazo`, { expiraEm }),
     onSuccess: () => invalidar(queryClient),
   })
 }

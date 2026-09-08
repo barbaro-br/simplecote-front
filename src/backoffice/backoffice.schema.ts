@@ -9,6 +9,7 @@ export const compradorAdminSchema = z.object({
   statusAssinatura: z.string(),
   criadoEm: z.string(),
   ultimoAcessoEm: z.string().nullable(),
+  trialExpiraEm: z.string().nullable(),
   cotacoes: z.number(),
   usuarios: z.number(),
   representantes: z.number(),
@@ -65,3 +66,56 @@ export const ROTULO_STATUS_ASSINATURA: Record<string, string> = {
 export function rotuloStatus(status: string): string {
   return ROTULO_STATUS_ASSINATURA[status] ?? status
 }
+
+// Prazo de teste (change backoffice-prazo-de-teste). `trialExpiraEm` nulo = sem
+// prazo. `atencao` = vence em até 7 dias; `vencido` = já passou.
+export type NivelPrazo = 'ok' | 'atencao' | 'vencido'
+
+const UM_DIA_MS = 24 * 60 * 60 * 1000
+
+export function prazoLabel(trialExpiraEm: string | null): { texto: string; nivel: NivelPrazo } {
+  if (!trialExpiraEm) return { texto: 'Sem prazo', nivel: 'ok' }
+  const dias = Math.ceil((new Date(trialExpiraEm).getTime() - Date.now()) / UM_DIA_MS)
+  if (dias < 0) {
+    const n = -dias
+    return { texto: `Expirou há ${n} ${n === 1 ? 'dia' : 'dias'}`, nivel: 'vencido' }
+  }
+  if (dias <= 7) {
+    if (dias === 0) return { texto: 'Expira hoje', nivel: 'atencao' }
+    return { texto: `Expira em ${dias} ${dias === 1 ? 'dia' : 'dias'}`, nivel: 'atencao' }
+  }
+  return { texto: `Expira em ${dias} dias`, nivel: 'ok' }
+}
+
+// Resumo do SaaS (change backoffice-resumo-do-saas) — GET /api/admin/resumo.
+export const lojasResumoSchema = z.object({
+  total: z.number(),
+  emTeste: z.number(),
+  prazoVencido: z.number(),
+  suspensas: z.number(),
+})
+export type LojasResumo = z.infer<typeof lojasResumoSchema>
+
+export const pontoSerieSchema = z.object({
+  data: z.string(),
+  qtd: z.number(),
+})
+export type PontoSerie = z.infer<typeof pontoSerieSchema>
+
+export const funilAtivacaoSchema = z.object({
+  cadastraram: z.number(),
+  verificaram: z.number(),
+  criaramCotacao: z.number(),
+  apuraram: z.number(),
+})
+export type FunilAtivacao = z.infer<typeof funilAtivacaoSchema>
+
+export const resumoSaasSchema = z.object({
+  lojas: lojasResumoSchema,
+  lojasAtivas30d: z.number(),
+  cotacoesNoMes: z.number(),
+  gmvTotal: z.number(),
+  cadastros30d: z.array(pontoSerieSchema),
+  funil: funilAtivacaoSchema,
+})
+export type ResumoSaas = z.infer<typeof resumoSaasSchema>

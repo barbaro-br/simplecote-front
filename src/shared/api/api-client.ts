@@ -23,10 +23,33 @@ export class SessaoExpiradaError extends Error {
   }
 }
 
+export type MotivoBloqueio = 'suspensao' | 'prazo'
+
+/**
+ * Erro lançado quando uma chamada autenticada recebe `403` de bloqueio (loja
+ * suspensa OU prazo de teste vencido — identificados pelo `ProblemDetail`).
+ * Diferente de um `403` de autorização de papel, que segue como `ApiError`.
+ */
+export class AcessoBloqueadoError extends Error {
+  public motivo: MotivoBloqueio
+  public detail: string
+
+  constructor(motivo: MotivoBloqueio, detail: string) {
+    super(detail)
+    this.name = 'AcessoBloqueadoError'
+    this.motivo = motivo
+    this.detail = detail
+  }
+}
+
 const LOGIN_PATH = '/api/auth/login'
 const REFRESH_PATH = '/api/auth/refresh'
 
 let sessaoExpiradaHandler: (() => void) | null = null
+
+// Handler injetável do `AcessoBloqueadoBridge` (App.tsx) para navegar até
+// `/conta-bloqueada` quando uma chamada autenticada volta `403` de bloqueio.
+let acessoBloqueadoHandler: ((info: { motivo: MotivoBloqueio; detail: string }) => void) | null = null
 
 // Access token em memória (não em `sessionStorage`). Setter injetável pelo
 // `AuthContext`; o refresh também grava aqui o token novo.
@@ -44,6 +67,12 @@ let refreshEmVoo: Promise<string | null> | null = null
  */
 export function configurarSessaoExpirada(handler: () => void): void {
   sessaoExpiradaHandler = handler
+}
+
+export function configurarAcessoBloqueado(
+  handler: (info: { motivo: MotivoBloqueio; detail: string }) => void,
+): void {
+  acessoBloqueadoHandler = handler
 }
 
 /**
@@ -112,6 +141,20 @@ function isPublicRequest(endpoint: string): boolean {
   return endpoint.split('?')[0].startsWith('/public/')
 }
 
+// /api/auth/** nunca vira "acesso bloqueado" (senão o cliente não desloga) —
+// o interceptor de bloqueio do back libera essas rotas de propósito.
+function isAuthRequest(endpoint: string): boolean {
+  return endpoint.split('?')[0].startsWith('/api/auth/')
+}
+
+// Identifica um ProblemDetail de bloqueio (403) pelo title/type próprios.
+// Retorna null para qualquer 403 comum (autorização de papel etc.).
+function motivoBloqueio(problem: ProblemDetail): MotivoBloqueio | null {
+  if (problem.title === 'Período de teste encerrado' || problem.type?.endsWith('/teste-encerrado')) return 'prazo'
+  if (problem.title === 'Conta suspensa') return 'suspensao'
+  return null
+}
+
 function montarHeaders(token: string | null, headersIniciais: HeadersInit | undefined): Record<string, string> {
   return {
     'Content-Type': 'application/json',
@@ -173,6 +216,33 @@ async function processarRequisicao<T>(
       !response.headers.get('content-type')?.includes('application/problem+json')
     ) {
       return null as T
+    }
+
+    // 403 em chamada autenticada cujo ProblemDetail é de bloqueio (suspensão ou
+    // prazo vencido) → AcessoBloqueadoError + handler (navega pra /conta-bloqueada).
+    // `403` de papel (ex.: OPERADOR numa rota de ADMIN) e `403` em /api/auth/**
+    // seguem como ApiError normal.
+    if (response.status === 403 && !publico && token && !isAuthRequest(endpoint)) {
+      try {
+        const problem = (await response.json()) as ProblemDetail
+        const motivo = motivoBloqueio(problem)
+        if (motivo) {
+          const detail = problem.detail || problem.title || ''
+          if (acessoBloqueadoHandler) {
+            acessoBloqueadoHandler({ motivo, detail })
+          }
+          throw new AcessoBloqueadoError(motivo, detail)
+        }
+        throw new ApiError(problem)
+      } catch (e) {
+        if (e instanceof ApiError || e instanceof AcessoBloqueadoError) throw e
+        throw new ApiError({
+          type: 'about:blank',
+          title: 'Erro Inesperado',
+          status: response.status,
+          detail: 'Ocorreu um erro ao processar a resposta do servidor.',
+        })
+      }
     }
 
     try {

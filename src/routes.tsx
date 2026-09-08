@@ -12,6 +12,7 @@ import { CadastroPage } from './admin/cadastro/CadastroPage'
 import { VerificarEmailPage } from './admin/cadastro/VerificarEmailPage'
 import { AceitarConvitePage } from './admin/organizacao/AceitarConvitePage'
 import { ContaEncerradaPage } from './admin/configuracoes/ContaEncerradaPage'
+import { ContaBloqueadaPage } from './shared/auth/ContaBloqueadaPage'
 import { TemaClaro } from './representante/TemaClaro'
 import { RouteLoadingFallback } from './shared/components/ui/route-loading'
 
@@ -56,6 +57,10 @@ export const routes = createBrowserRouter([
   {
     path: '/conta-encerrada',
     element: <ContaEncerradaPage />,
+  },
+  {
+    path: '/conta-bloqueada',
+    element: <ContaBloqueadaPage />,
   },
   {
     path: '/admin',
@@ -150,6 +155,10 @@ export const routes = createBrowserRouter([
         children: [
           {
             index: true,
+            lazy: () => import('./backoffice/ResumoPage').then(m => ({ Component: m.ResumoPage })),
+          },
+          {
+            path: 'lojas',
             lazy: () => import('./backoffice/CompradoresPage').then(m => ({ Component: m.CompradoresPage })),
           },
           {
