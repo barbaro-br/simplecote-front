@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
-import { api } from '@/shared/api/api-client'
+import { api, baixarArquivo, type ResultadoBaixarArquivo } from '@/shared/api/api-client'
 import {
   compradorAdminDetalheSchema,
   compradorAdminListaSchema,
+  cotacaoResumoListaSchema,
   type CompradorAdmin,
   type CompradorAdminDetalhe,
+  type CotacaoResumo,
 } from './backoffice.schema'
 
 // Contrato da change backoffice-super-admin do back. Todas as rotas
@@ -36,6 +38,21 @@ export function useComprador(id: string) {
     queryFn: () =>
       api.get<CompradorAdminDetalhe>(`/api/admin/compradores/${id}`).then((d) => compradorAdminDetalheSchema.parse(d)),
   })
+}
+
+export function useCotacoesDaLoja(id: string) {
+  return useQuery({
+    queryKey: ['admin', 'compradores', id, 'cotacoes'],
+    queryFn: () =>
+      api
+        .get<CotacaoResumo[]>(`/api/admin/compradores/${id}/cotacoes`)
+        .then((d) => cotacaoResumoListaSchema.parse(d)),
+  })
+}
+
+/** Baixa o relatório CSV de uso da loja (ação imperativa por clique, não `useQuery`). */
+export function baixarRelatorio(id: string, slug: string): Promise<ResultadoBaixarArquivo> {
+  return baixarArquivo(`/api/admin/compradores/${id}/relatorio`, `${slug}-uso.csv`)
 }
 
 export function useSuspenderComprador(id: string) {

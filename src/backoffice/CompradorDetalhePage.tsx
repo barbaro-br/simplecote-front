@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Key, Lifebuoy, Lock, LockOpen, Trash } from '@phosphor-icons/react'
+import { Download, Key, Lifebuoy, Lock, LockOpen, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { useAuth } from '@/shared/auth/useAuth'
@@ -9,11 +9,15 @@ import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { Input } from '@/shared/components/ui/input'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { StatusBadge } from '@/shared/components/StatusBadge'
 import { ConfirmarDialog } from '@/admin/cotacoes/ConfirmarDialog'
-import { dataBr, dataHoraBr } from '@/shared/format/formatters'
+import { dataBr, dataHoraBr, moeda } from '@/shared/format/formatters'
 import { ROTULO_PAPEL } from '@/shared/domain/papel'
+import { MetricaCard } from './MetricaCard'
 import {
+  baixarRelatorio,
   useComprador,
+  useCotacoesDaLoja,
   useEntrarComoSuporte,
   useExcluirComprador,
   useReativarComprador,
@@ -27,6 +31,22 @@ const CLASSE_STATUS: Record<string, string> = {
   ATIVA: 'bg-success/10 text-success-foreground',
   INADIMPLENTE: 'bg-destructive/10 text-destructive',
   CANCELADA: 'bg-muted text-muted-foreground',
+}
+
+const ROTULO_STATUS_COTACAO: Record<string, string> = {
+  RASCUNHO: 'Rascunho',
+  ABERTA: 'Aberta',
+  ENCERRADA: 'Encerrada',
+  PEDIDOS_GERADOS: 'Pedidos gerados',
+  CANCELADA: 'Cancelada',
+}
+
+const CLASSE_STATUS_COTACAO: Record<string, string> = {
+  RASCUNHO: 'bg-muted text-muted-foreground',
+  ABERTA: 'bg-primary/10 text-primary',
+  ENCERRADA: 'bg-warning/10 text-warning',
+  PEDIDOS_GERADOS: 'bg-success/10 text-success',
+  CANCELADA: 'bg-destructive/10 text-destructive',
 }
 
 type Acao =
@@ -46,6 +66,7 @@ export function CompradorDetalhePage() {
   const navigate = useNavigate()
   const { entrarComoSuporte: trocarSessao } = useAuth()
   const { data: comprador, isLoading, error } = useComprador(id)
+  const cotacoes = useCotacoesDaLoja(id)
   const suspender = useSuspenderComprador(id)
   const reativar = useReativarComprador(id)
   const resetarSenha = useResetarSenhaAdmin(id)
@@ -56,9 +77,12 @@ export function CompradorDetalhePage() {
   const [motivo, setMotivo] = useState('')
   const [slugDigitado, setSlugDigitado] = useState('')
   const [erro, setErro] = useState<string | null>(null)
+  const [baixando, setBaixando] = useState(false)
 
   if (isLoading) return <p className="p-6 text-muted-foreground">Carregando comprador…</p>
   if (error || !comprador) return <p className="p-6 text-destructive">Erro ao carregar comprador: {error?.message}</p>
+
+  const slug = comprador.slug
 
   function tratarErro(e: unknown) {
     if (e instanceof SessaoExpiradaError) return
@@ -118,6 +142,23 @@ export function CompradorDetalhePage() {
     }
   }
 
+  async function baixar() {
+    setBaixando(true)
+    try {
+      const resultado = await baixarRelatorio(id, slug)
+      if (resultado === 'assincrono') {
+        toast.info('O relatório está sendo gerado e será enviado quando pronto.')
+      } else {
+        toast.success('Relatório baixado.')
+      }
+    } catch (e) {
+      if (e instanceof SessaoExpiradaError) return
+      toast.error(mensagemDeErro(e))
+    } finally {
+      setBaixando(false)
+    }
+  }
+
   const slugConfere = slugDigitado.trim() === comprador.slug
 
   return (
@@ -139,6 +180,7 @@ export function CompradorDetalhePage() {
             </span>
           )}
         </div>
+        <p className="mt-1 text-sm text-muted-foreground">{comprador.slug}</p>
       </div>
 
       {erro && (
@@ -147,45 +189,77 @@ export function CompradorDetalhePage() {
         </div>
       )}
 
-      <Card className="space-y-3 p-6">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="text-xs text-muted-foreground ui-uppercase">Slug</p>
-            <p className="text-sm">{comprador.slug}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground ui-uppercase">Criada em</p>
-            <p className="text-sm">{dataBr(comprador.criadoEm)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground ui-uppercase">Último acesso</p>
-            <p className="text-sm">{comprador.ultimoAcessoEm ? dataHoraBr(comprador.ultimoAcessoEm) : '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground ui-uppercase">Uso</p>
-            <p className="text-sm">
-              {comprador.cotacoes} cotações · {comprador.usuarios} usuários · {comprador.representantes} representantes
-            </p>
-          </div>
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricaCard rotulo="Valor total comprado" valor={moeda(comprador.valorTotalComprado)} />
+        <MetricaCard
+          rotulo="Cotações"
+          valor={comprador.cotacoes}
+          extra={
+            comprador.cotacoesPorStatus ? (
+              <div className="flex flex-wrap gap-1">
+                {Object.entries(comprador.cotacoesPorStatus).map(([status, total]) => (
+                  <span
+                    key={status}
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${CLASSE_STATUS_COTACAO[status] ?? 'bg-muted text-muted-foreground'}`}
+                  >
+                    {ROTULO_STATUS_COTACAO[status] ?? status} · {total}
+                  </span>
+                ))}
+              </div>
+            ) : null
+          }
+        />
+        <MetricaCard rotulo="Primeira cotação" valor={comprador.primeiraCotacaoEm ? dataBr(comprador.primeiraCotacaoEm) : '—'} />
+        <MetricaCard rotulo="Última atividade" valor={comprador.ultimaAtividadeEm ? dataHoraBr(comprador.ultimaAtividadeEm) : '—'} />
+      </div>
 
-        <div className="flex flex-wrap gap-2 pt-2">
-          {comprador.suspenso ? (
-            <Button variant="outline" disabled={reativar.isPending} onClick={() => setAcao({ tipo: 'reativar' })}>
-              <LockOpen className="mr-2 size-4" />
-              Reativar
-            </Button>
-          ) : (
-            <Button variant="destructive" disabled={suspender.isPending} onClick={() => setAcao({ tipo: 'suspender' })}>
-              <Lock className="mr-2 size-4" />
-              Suspender
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => setAcao({ tipo: 'suporte' })}>
-            <Lifebuoy className="mr-2 size-4" />
-            Entrar como suporte
+      <Card className="p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold ui-uppercase">Cotações</h2>
+          <Button variant="outline" disabled={baixando} onClick={baixar}>
+            <Download className="mr-2 size-4" />
+            {baixando ? 'Baixando…' : 'Baixar relatório (CSV)'}
           </Button>
         </div>
+
+        {cotacoes.isLoading ? (
+          <p className="py-6 text-sm text-muted-foreground">Carregando cotações…</p>
+        ) : cotacoes.error ? (
+          <p className="py-6 text-sm text-destructive">Erro ao carregar cotações: {cotacoes.error.message}</p>
+        ) : !cotacoes.data?.length ? (
+          <p className="py-6 text-sm text-muted-foreground">Nenhuma cotação para esta loja.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[760px]">
+              <thead className="bg-muted/50 border-b">
+                <tr className="text-left text-muted-foreground">
+                  <th className="px-4 py-3 font-medium ui-uppercase">Título</th>
+                  <th className="px-4 py-3 font-medium ui-uppercase">Status</th>
+                  <th className="px-4 py-3 font-medium ui-uppercase">Itens</th>
+                  <th className="px-4 py-3 font-medium ui-uppercase">Participantes</th>
+                  <th className="px-4 py-3 font-medium ui-uppercase">Valor comprado</th>
+                  <th className="px-4 py-3 font-medium ui-uppercase">Criada</th>
+                  <th className="px-4 py-3 font-medium ui-uppercase">Encerrada</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {cotacoes.data.map((c) => (
+                  <tr key={c.id} className="transition-colors hover:bg-muted/50">
+                    <td className="px-4 py-3 font-medium">{c.titulo}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={c.status} />
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{c.qtdItens}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{c.qtdParticipantes}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{moeda(c.valorComprado)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{dataBr(c.criadoEm)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{c.encerradoEm ? dataBr(c.encerradoEm) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
       <Card className="p-6">
@@ -210,6 +284,27 @@ export function CompradorDetalhePage() {
             ))}
           </ul>
         )}
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="mb-4 text-lg font-semibold ui-uppercase">Ações</h2>
+        <div className="flex flex-wrap gap-2">
+          {comprador.suspenso ? (
+            <Button variant="outline" disabled={reativar.isPending} onClick={() => setAcao({ tipo: 'reativar' })}>
+              <LockOpen className="mr-2 size-4" />
+              Reativar
+            </Button>
+          ) : (
+            <Button variant="destructive" disabled={suspender.isPending} onClick={() => setAcao({ tipo: 'suspender' })}>
+              <Lock className="mr-2 size-4" />
+              Suspender
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => setAcao({ tipo: 'suporte' })}>
+            <Lifebuoy className="mr-2 size-4" />
+            Entrar como suporte
+          </Button>
+        </div>
       </Card>
 
       <Card className="space-y-3 border-destructive/40 p-6">

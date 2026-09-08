@@ -34,14 +34,33 @@ const DETALHE = {
   usuarios: 2,
   representantes: 5,
   suspenso: false,
+  valorTotalComprado: 1250.75,
+  cotacoesPorStatus: { ABERTA: 1, ENCERRADA: 2 },
+  primeiraCotacaoEm: '2026-09-01T10:00:00Z',
+  ultimaAtividadeEm: '2026-09-05T10:00:00Z',
   admins: [
     { id: ADMIN_1, nome: 'Dono', email: 'dono@x.com', papel: 'OWNER' },
   ],
 }
 
+const COTACAO_1 = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001'
+const COTACAO_2 = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'
+
 function createQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } })
 }
+
+// jsdom não implementa a API de object URL — stub mínimo para o fluxo de
+// download do relatório CSV.
+beforeAll(() => {
+  ;(URL as unknown as { createObjectURL: unknown }).createObjectURL = vi.fn(() => 'blob:mock')
+  ;(URL as unknown as { revokeObjectURL: unknown }).revokeObjectURL = vi.fn()
+})
+
+afterAll(() => {
+  delete (URL as unknown as { createObjectURL?: unknown }).createObjectURL
+  delete (URL as unknown as { revokeObjectURL?: unknown }).revokeObjectURL
+})
 
 function renderGuard(token: string | null) {
   server.use(
@@ -131,12 +150,36 @@ describe('CompradoresPage', () => {
     await user.type(screen.getByLabelText('Buscar por nome ou e-mail'), 'dono@x.com')
     await waitFor(() => expect(url).toContain('busca='))
   })
+
+  test('lista mostra a coluna Comprado com o valor de cada loja', async () => {
+    server.use(
+      http.get('*/api/admin/compradores', () =>
+        HttpResponse.json([
+          { ...DETALHE, nome: 'Mercado do Zé', valorTotalComprado: 1250.75 },
+          {
+            ...DETALHE,
+            id: '22222222-2222-4222-8222-222222222222',
+            nome: 'Mercado da Maria',
+            slug: 'mercado-da-maria',
+            valorTotalComprado: 3200,
+          },
+        ])
+      )
+    )
+    renderLista()
+
+    expect(await screen.findByText('Mercado do Zé')).toBeInTheDocument()
+    expect(screen.getByText('Mercado da Maria')).toBeInTheDocument()
+    expect(screen.getByText('R$ 1.250,75')).toBeInTheDocument()
+    expect(screen.getByText('R$ 3.200,00')).toBeInTheDocument()
+  })
 })
 
 describe('CompradorDetalhePage', () => {
-  function renderDetalhe() {
+  function renderDetalhe(cotacoes: unknown[] = []) {
     server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: TOKEN_SUPER_ADMIN })))
     server.use(http.get('*/api/admin/compradores/:id', () => HttpResponse.json(DETALHE)))
+    server.use(http.get('*/api/admin/compradores/:id/cotacoes', () => HttpResponse.json(cotacoes)))
     const router = createMemoryRouter(
       [
         { path: '/backoffice', element: <div>backoffice lista view</div> },
@@ -275,6 +318,61 @@ describe('CompradorDetalhePage', () => {
     expect(
       await screen.findByText('Loja com assinatura ativa não pode ser excluída.')
     ).toBeInTheDocument()
+  })
+
+  test('mostra o valor total comprado e a tabela de cotações da loja', async () => {
+    renderDetalhe([
+      {
+        id: COTACAO_1,
+        titulo: 'Café',
+        status: 'ENCERRADA',
+        criadoEm: '2026-09-02T10:00:00Z',
+        encerradoEm: '2026-09-03T10:00:00Z',
+        qtdItens: 3,
+        qtdParticipantes: 2,
+        valorComprado: 500,
+      },
+      {
+        id: COTACAO_2,
+        titulo: 'Arroz',
+        status: 'ABERTA',
+        criadoEm: '2026-09-04T10:00:00Z',
+        encerradoEm: null,
+        qtdItens: 5,
+        qtdParticipantes: 4,
+        valorComprado: 750.75,
+      },
+    ])
+
+    await screen.findByText('Mercado do Zé')
+    expect(await screen.findByText('R$ 1.250,75')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Cotações' })).toBeInTheDocument()
+    expect(screen.getByText('Café')).toBeInTheDocument()
+    expect(screen.getByText('Arroz')).toBeInTheDocument()
+    expect(screen.getByText('R$ 500,00')).toBeInTheDocument()
+    expect(screen.getByText('R$ 750,75')).toBeInTheDocument()
+    expect(screen.getAllByText('Encerrada').length).toBeGreaterThan(0)
+    expect(screen.getByText('Aberta')).toBeInTheDocument()
+  })
+
+  test('Baixar relatório (CSV) chama a URL de relatório da loja', async () => {
+    let urlRelatorio = ''
+    server.use(
+      http.get('*/api/admin/compradores/:id/relatorio', ({ request }) => {
+        urlRelatorio = request.url
+        return new HttpResponse(new Blob(['csv']), { headers: { 'Content-Type': 'text/csv' } })
+      })
+    )
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const user = userEvent.setup()
+    renderDetalhe()
+
+    await screen.findByText('Mercado do Zé')
+    await user.click(screen.getByRole('button', { name: 'Baixar relatório (CSV)' }))
+
+    await waitFor(() => expect(urlRelatorio).toContain(`/api/admin/compradores/${C1}/relatorio`))
+    expect(clickSpy).toHaveBeenCalled()
+    clickSpy.mockRestore()
   })
 })
 
