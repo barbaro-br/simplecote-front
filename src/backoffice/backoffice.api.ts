@@ -112,3 +112,13 @@ export function useDefinirPrazo(id: string) {
     onSuccess: () => invalidar(queryClient),
   })
 }
+
+// Reenvia o e-mail de verificação do OWNER de uma loja (change
+// backoffice-reenviar-verificacao). Invalida o detalhe para refletir o novo estado.
+export function useReenviarVerificacao(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.post<void>(`/api/admin/compradores/${id}/reenviar-verificacao`),
+    onSuccess: () => invalidar(queryClient),
+  })
+}

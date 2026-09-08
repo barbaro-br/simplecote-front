@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
+import { Toaster } from 'sonner'
 import { server } from '@/setupTests'
 import { AuthProvider } from '@/shared/auth/AuthContext'
 import { useAuth } from '@/shared/auth/useAuth'
@@ -41,7 +42,7 @@ const DETALHE = {
   primeiraCotacaoEm: '2026-09-01T10:00:00Z',
   ultimaAtividadeEm: '2026-09-05T10:00:00Z',
   admins: [
-    { id: ADMIN_1, nome: 'Dono', email: 'dono@x.com', papel: 'OWNER' },
+    { id: ADMIN_1, nome: 'Dono', email: 'dono@x.com', papel: 'OWNER', emailVerificado: false },
   ],
 }
 
@@ -250,9 +251,9 @@ describe('ResumoPage', () => {
 })
 
 describe('CompradorDetalhePage', () => {
-  function renderDetalhe(cotacoes: unknown[] = []) {
+  function renderDetalhe(cotacoes: unknown[] = [], detalhe: Record<string, unknown> = DETALHE) {
     server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: TOKEN_SUPER_ADMIN })))
-    server.use(http.get('*/api/admin/compradores/:id', () => HttpResponse.json(DETALHE)))
+    server.use(http.get('*/api/admin/compradores/:id', () => HttpResponse.json(detalhe)))
     server.use(http.get('*/api/admin/compradores/:id/cotacoes', () => HttpResponse.json(cotacoes)))
     const router = createMemoryRouter(
       [
@@ -266,6 +267,7 @@ describe('CompradorDetalhePage', () => {
         <AuthProvider>
           <RouterProvider router={router} />
         </AuthProvider>
+        <Toaster />
       </QueryClientProvider>
     )
   }
@@ -485,6 +487,37 @@ describe('CompradorDetalhePage', () => {
 
     await waitFor(() => expect(corpo).not.toBeNull())
     expect(corpo!.expiraEm).toBeNull()
+  })
+
+  test('admin não verificado mostra o botão e reenviar chama a API com toast', async () => {
+    let chamou = false
+    server.use(
+      http.post('*/api/admin/compradores/:id/reenviar-verificacao', () => {
+        chamou = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+    const user = userEvent.setup()
+    renderDetalhe()
+
+    await screen.findByText('Mercado do Zé')
+    expect(screen.getByText('Não verificado')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Reenviar verificação' }))
+
+    await waitFor(() => expect(chamou).toBe(true))
+    expect(await screen.findByText('E-mail de verificação reenviado')).toBeInTheDocument()
+  })
+
+  test('todos os admins verificados não mostram o botão de reenvio', async () => {
+    renderDetalhe([], {
+      ...DETALHE,
+      admins: [{ id: ADMIN_1, nome: 'Dono', email: 'dono@x.com', papel: 'OWNER', emailVerificado: true }],
+    })
+
+    await screen.findByText('Mercado do Zé')
+    expect(screen.getByText('E-mail verificado')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reenviar verificação' })).not.toBeInTheDocument()
   })
 })
 

@@ -22,6 +22,7 @@ import {
   useEntrarComoSuporte,
   useExcluirComprador,
   useReativarComprador,
+  useReenviarVerificacao,
   useResetarSenhaAdmin,
   useSuspenderComprador,
 } from './backoffice.api'
@@ -80,6 +81,7 @@ export function CompradorDetalhePage() {
   const entrarComoSuporte = useEntrarComoSuporte()
   const excluir = useExcluirComprador(id)
   const definirPrazo = useDefinirPrazo(id)
+  const reenviarVerificacao = useReenviarVerificacao(id)
 
   const [acao, setAcao] = useState<Acao>(null)
   const [motivo, setMotivo] = useState('')
@@ -125,6 +127,16 @@ export function CompradorDetalhePage() {
       toast.success(`E-mail de recuperação enviado para ${admin.email}.`)
     } catch (e) {
       tratarErro(e)
+    }
+  }
+
+  async function confirmarReenviar() {
+    try {
+      await reenviarVerificacao.mutateAsync()
+      toast.success('E-mail de verificação reenviado')
+    } catch (e) {
+      if (e instanceof SessaoExpiradaError) return
+      toast.error(mensagemDeErro(e))
     }
   }
 
@@ -340,17 +352,38 @@ export function CompradorDetalhePage() {
         ) : (
           <ul className="divide-y divide-border">
             {comprador.admins.map((admin) => (
-              <li key={admin.id} className="flex items-center justify-between py-3">
-                <div className="space-y-0.5">
+              <li key={admin.id} className="flex items-center justify-between gap-3 py-3">
+                <div className="space-y-1">
                   <p className="text-sm font-medium">{admin.nome}</p>
                   <p className="text-sm text-muted-foreground">
                     {admin.email} · {ROTULO_PAPEL[admin.papel]}
                   </p>
+                  {admin.emailVerificado ? (
+                    <span className="inline-flex items-center rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+                      E-mail verificado
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      Não verificado
+                    </span>
+                  )}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setAcao({ tipo: 'resetar', admin })}>
-                  <Key className="mr-2 size-4" />
-                  Resetar senha
-                </Button>
+                <div className="flex shrink-0 items-center gap-2">
+                  {!admin.emailVerificado && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={reenviarVerificacao.isPending}
+                      onClick={confirmarReenviar}
+                    >
+                      {reenviarVerificacao.isPending ? 'Reenviando…' : 'Reenviar verificação'}
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => setAcao({ tipo: 'resetar', admin })}>
+                    <Key className="mr-2 size-4" />
+                    Resetar senha
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>

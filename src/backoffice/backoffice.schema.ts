@@ -44,6 +44,7 @@ export const adminCompradorSchema = z.object({
   nome: z.string(),
   email: z.string(),
   papel: z.enum(['OWNER', 'ADMIN']),
+  emailVerificado: z.boolean(),
 })
 export type AdminComprador = z.infer<typeof adminCompradorSchema>
 
