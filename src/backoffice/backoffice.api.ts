@@ -67,3 +67,13 @@ export function useEntrarComoSuporte() {
       api.post<{ token: string; expiraEm: string }>(`/api/admin/compradores/${id}/suporte`, { motivo }),
   })
 }
+
+// Exclusão permanente de uma loja (change backoffice-excluir-comprador): purga
+// imediata, sem carência.
+export function useExcluirComprador(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.post<void>(`/api/admin/compradores/${id}/excluir`),
+    onSuccess: () => invalidar(queryClient),
+  })
+}

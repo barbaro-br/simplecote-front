@@ -14,17 +14,27 @@ export function ehHostDoApp(hostname: string): boolean {
   return h === APP_SUFIXO || h.endsWith(`.${APP_SUFIXO}`)
 }
 
+// Subdomínio antes do `.simplecote.app` ('' para apex, null para host não-app).
+function subdominioDoApp(hostname: string): string | null {
+  const h = normalizar(hostname)
+  if (!ehHostDoApp(h)) return null
+  const sufixo = `.${APP_SUFIXO}`
+  return h === APP_SUFIXO ? '' : h.slice(0, h.length - sufixo.length)
+}
+
+/** O host é o do backoffice (`backoffice.simplecote.app`) — host reservado, sem loja. */
+export function ehHostBackoffice(hostname: string): boolean {
+  return subdominioDoApp(hostname) === 'backoffice'
+}
+
 /**
  * Extrai o slug de `<slug>.simplecote.app`. Retorna `null` para host neutro
  * (`app`/`www`/`backoffice`/apex), subdomínio multi-nível, `localhost`, preview
  * da Vercel (`*.vercel.app`) e qualquer outro host sem loja.
  */
 export function extrairSlugDoHostname(hostname: string): string | null {
-  const h = normalizar(hostname)
-  if (!ehHostDoApp(h)) return null
-  const sufixo = `.${APP_SUFIXO}`
-  const sub = h === APP_SUFIXO ? '' : h.slice(0, h.length - sufixo.length)
-  if (!sub) return null
+  const sub = subdominioDoApp(hostname)
+  if (sub === null || sub === '') return null
   const labels = sub.split('.')
   if (labels.length !== 1) return null
   const label = labels[0]

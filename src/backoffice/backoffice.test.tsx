@@ -138,7 +138,10 @@ describe('CompradorDetalhePage', () => {
     server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: TOKEN_SUPER_ADMIN })))
     server.use(http.get('*/api/admin/compradores/:id', () => HttpResponse.json(DETALHE)))
     const router = createMemoryRouter(
-      [{ path: '/backoffice/compradores/:id', element: <CompradorDetalhePage /> }],
+      [
+        { path: '/backoffice', element: <div>backoffice lista view</div> },
+        { path: '/backoffice/compradores/:id', element: <CompradorDetalhePage /> },
+      ],
       { initialEntries: [`/backoffice/compradores/${C1}`] }
     )
     return render(
@@ -206,6 +209,72 @@ describe('CompradorDetalhePage', () => {
     await user.click(dialog.getByRole('button', { name: 'Suspender' }))
 
     expect(await screen.findByText('Conta já suspensa.')).toBeInTheDocument()
+  })
+
+  test('excluir loja: botão fica desabilitado até digitar o slug exato', async () => {
+    const user = userEvent.setup()
+    renderDetalhe()
+
+    await screen.findByText('Mercado do Zé')
+    await user.click(screen.getByRole('button', { name: 'Excluir loja permanentemente' }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    const confirmar = dialog.getByRole('button', { name: 'Excluir definitivamente' })
+    expect(confirmar).toBeDisabled()
+
+    await user.type(dialog.getByLabelText(/Digite/i), 'slug-errado')
+    expect(confirmar).toBeDisabled()
+
+    await user.clear(dialog.getByLabelText(/Digite/i))
+    await user.type(dialog.getByLabelText(/Digite/i), 'mercado-do-ze')
+    expect(confirmar).not.toBeDisabled()
+  })
+
+  test('excluir loja com slug exato chama a API e navega para /backoffice', async () => {
+    let chamou = false
+    server.use(
+      http.post('*/api/admin/compradores/:id/excluir', ({ params }) => {
+        chamou = true
+        expect(params.id).toBe(C1)
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+    const user = userEvent.setup()
+    renderDetalhe()
+
+    await screen.findByText('Mercado do Zé')
+    await user.click(screen.getByRole('button', { name: 'Excluir loja permanentemente' }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await user.type(dialog.getByLabelText(/Digite/i), 'mercado-do-ze')
+    await user.click(dialog.getByRole('button', { name: 'Excluir definitivamente' }))
+
+    expect(chamou).toBe(true)
+    expect(await screen.findByText('backoffice lista view')).toBeInTheDocument()
+  })
+
+  test('erro do backend na exclusão aparece na tela', async () => {
+    server.use(
+      http.post('*/api/admin/compradores/:id/excluir', () =>
+        HttpResponse.json(
+          { type: 'about:blank', title: 'Não processável', status: 422, detail: 'Loja com assinatura ativa não pode ser excluída.' },
+          { status: 422, headers: { 'Content-Type': 'application/problem+json' } }
+        )
+      )
+    )
+    const user = userEvent.setup()
+    renderDetalhe()
+
+    await screen.findByText('Mercado do Zé')
+    await user.click(screen.getByRole('button', { name: 'Excluir loja permanentemente' }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await user.type(dialog.getByLabelText(/Digite/i), 'mercado-do-ze')
+    await user.click(dialog.getByRole('button', { name: 'Excluir definitivamente' }))
+
+    expect(
+      await screen.findByText('Loja com assinatura ativa não pode ser excluída.')
+    ).toBeInTheDocument()
   })
 })
 

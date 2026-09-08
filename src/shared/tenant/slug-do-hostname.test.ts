@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   decidirRedirectTenant,
+  ehHostBackoffice,
   ehHostDoApp,
   extrairSlugDoHostname,
 } from './slug-do-hostname'
@@ -46,6 +47,19 @@ describe('ehHostDoApp', () => {
   it('não reconhece localhost nem preview', () => {
     expect(ehHostDoApp('localhost')).toBe(false)
     expect(ehHostDoApp('simplecote-front.vercel.app')).toBe(false)
+  })
+})
+
+describe('ehHostBackoffice', () => {
+  it('reconhece o host reservado do backoffice', () => {
+    expect(ehHostBackoffice('backoffice.simplecote.app')).toBe(true)
+  })
+
+  it('não confunde com outros hosts', () => {
+    expect(ehHostBackoffice('loja.simplecote.app')).toBe(false)
+    expect(ehHostBackoffice('app.simplecote.app')).toBe(false)
+    expect(ehHostBackoffice('simplecote.app')).toBe(false)
+    expect(ehHostBackoffice('localhost')).toBe(false)
   })
 })
 

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Key, Lifebuoy, Lock, LockOpen } from '@phosphor-icons/react'
+import { Key, Lifebuoy, Lock, LockOpen, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { useAuth } from '@/shared/auth/useAuth'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
+import { Input } from '@/shared/components/ui/input'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { ConfirmarDialog } from '@/admin/cotacoes/ConfirmarDialog'
 import { dataBr, dataHoraBr } from '@/shared/format/formatters'
@@ -14,6 +15,7 @@ import { ROTULO_PAPEL } from '@/shared/domain/papel'
 import {
   useComprador,
   useEntrarComoSuporte,
+  useExcluirComprador,
   useReativarComprador,
   useResetarSenhaAdmin,
   useSuspenderComprador,
@@ -32,6 +34,7 @@ type Acao =
   | { tipo: 'reativar' }
   | { tipo: 'resetar'; admin: AdminComprador }
   | { tipo: 'suporte' }
+  | { tipo: 'excluir' }
   | null
 
 function mensagemDeErro(e: unknown): string {
@@ -47,9 +50,11 @@ export function CompradorDetalhePage() {
   const reativar = useReativarComprador(id)
   const resetarSenha = useResetarSenhaAdmin(id)
   const entrarComoSuporte = useEntrarComoSuporte()
+  const excluir = useExcluirComprador(id)
 
   const [acao, setAcao] = useState<Acao>(null)
   const [motivo, setMotivo] = useState('')
+  const [slugDigitado, setSlugDigitado] = useState('')
   const [erro, setErro] = useState<string | null>(null)
 
   if (isLoading) return <p className="p-6 text-muted-foreground">Carregando comprador…</p>
@@ -99,6 +104,21 @@ export function CompradorDetalhePage() {
       tratarErro(e)
     }
   }
+
+  async function confirmarExcluir() {
+    setErro(null)
+    try {
+      await excluir.mutateAsync()
+      navigate('/backoffice', { replace: true })
+      toast.success('Loja excluída.')
+    } catch (e) {
+      if (e instanceof SessaoExpiradaError) return
+      setErro(mensagemDeErro(e))
+      setAcao(null)
+    }
+  }
+
+  const slugConfere = slugDigitado.trim() === comprador.slug
 
   return (
     <PageContainer maxWidth="4xl" className="space-y-6">
@@ -192,6 +212,28 @@ export function CompradorDetalhePage() {
         )}
       </Card>
 
+      <Card className="space-y-3 border-destructive/40 p-6">
+        <div>
+          <h2 className="text-lg font-semibold text-destructive ui-uppercase">Zona de perigo</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Excluir a loja permanentemente apaga todos os dados (cotações, produtos, empresas,
+            representantes) sem período de carência. Esta ação não pode ser desfeita.
+          </p>
+        </div>
+        <Button
+          variant="destructive"
+          disabled={excluir.isPending}
+          onClick={() => {
+            setSlugDigitado('')
+            setErro(null)
+            setAcao({ tipo: 'excluir' })
+          }}
+        >
+          <Trash className="mr-2 size-4" />
+          Excluir loja permanentemente
+        </Button>
+      </Card>
+
       {acao?.tipo === 'suspender' && (
         <ConfirmarDialog
           titulo="Suspender conta"
@@ -247,6 +289,36 @@ export function CompradorDetalhePage() {
               </Button>
               <Button disabled={!motivo.trim() || entrarComoSuporte.isPending} onClick={confirmarSuporte}>
                 {entrarComoSuporte.isPending ? 'Entrando…' : 'Entrar'}
+              </Button>
+            </div>
+          </div>
+        </Dialog>
+      )}
+
+      {acao?.tipo === 'excluir' && (
+        <Dialog open onClose={() => setAcao(null)} title="Excluir loja permanentemente">
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Esta ação apaga todos os dados da loja, sem período de carência. Não há como desfazer.
+            </p>
+            <div className="space-y-1.5">
+              <label htmlFor="confirmar-excluir" className="text-sm font-medium ui-uppercase">
+                Digite <strong>{comprador.slug}</strong> para confirmar
+              </label>
+              <Input
+                id="confirmar-excluir"
+                value={slugDigitado}
+                onChange={(e) => setSlugDigitado(e.target.value)}
+                autoComplete="off"
+                placeholder={comprador.slug}
+              />
+            </div>
+            <div className="flex justify-end gap-2 border-t pt-3">
+              <Button variant="ghost" onClick={() => setAcao(null)} disabled={excluir.isPending}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" disabled={!slugConfere || excluir.isPending} onClick={confirmarExcluir}>
+                {excluir.isPending ? 'Excluindo…' : 'Excluir definitivamente'}
               </Button>
             </div>
           </div>
