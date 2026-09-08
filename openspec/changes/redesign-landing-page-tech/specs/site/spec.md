@@ -2,17 +2,22 @@
 
 ### Requirement: Marca, vídeo e movimento no site institucional
 
-O site institucional SHALL exibir a nova marca oficial SimpleCote (logo com "S" em vetor/SVG) no cabeçalho e no rodapé, no lugar de um ícone genérico, com texto alternativo acessível e as cores institucionais atualizadas. A home SHALL ter uma seção de abertura (hero) tecnológica com um vídeo de marca em reprodução automática, sem som, em loop e `playsinline`, atuando como background imersivo, com um `poster` estático sempre presente e conteúdo (título, subtítulo, CTAs "Criar conta" e "Entrar") legível sobre ele, destacado com efeitos visuais modernos (ex: glassmorphism/desfoque de fundo). A home SHALL ter uma seção de demonstração com um vídeo do produto em player imersivo com controles (sem reprodução automática). As seções da home e a navegação SHALL entrar e se organizar com animações coordenadas e avançadas baseadas no scroll do usuário (aparecimento na viewport, elevação de cards, etc). Toda animação e a reprodução automática do hero SHALL respeitar estritamente `prefers-reduced-motion: reduce` (nesse caso, sem animação de scroll e sem play no vídeo — apenas a interface estática legível e o `poster`). A home SHALL continuar mostrando um resumo dos planos a partir da fonte única (`planos.ts`), com link para `/precos`. As rotas e o comportamento tenant-aware do `/` (backoffice → login, marketing → home) NÃO mudam.
+O site institucional SHALL exibir a marca SimpleCote como **logo SVG vetorial** (símbolo "S" navy/mint + wordmark em texto, recolorível, transparente) no cabeçalho e no rodapé, no lugar de um ícone genérico e dos JPEGs anteriores, com texto alternativo acessível e a paleta institucional (navy/mint) tokenizada. A home SHALL ter uma seção de abertura (hero) tecnológica com um vídeo de marca em reprodução automática, sem som, em loop e `playsinline`, com um `poster` estático sempre presente, atuando como background imersivo, e conteúdo (título, subtítulo, CTAs "Criar conta" e "Entrar") legível sobre ele nos temas claro e escuro, destacado com efeitos visuais modernos (glassmorphism, gradiente da marca). O hero PODE ter uma camada de fundo 3D animada (shader) por cima do gradiente/vídeo, carregada sem bloquear o first paint; a página NÃO SHALL depender dela para ser utilizável. A home SHALL ter uma seção de demonstração com um vídeo do produto em player com controles (sem reprodução automática) e um espaço para um vídeo de tutorial do YouTube (com placeholder enquanto não houver id). As seções da home SHALL entrar e se organizar com animações coordenadas baseadas no scroll do usuário (aparecimento na viewport, elevação de cards, parallax leve). Toda animação, a reprodução automática do hero e a camada 3D SHALL respeitar `prefers-reduced-motion: reduce` e `Save-Data` (nesse caso, sem animação de scroll, sem 3D e sem play no vídeo — apenas a interface estática legível e o `poster`). A home SHALL continuar mostrando um resumo dos planos a partir da fonte única (`planos.ts`), com link para `/precos`. As rotas e o comportamento tenant-aware do `/` (backoffice → login, marketing → home) NÃO mudam.
 
-#### Scenario: Hero tecnológico com vídeo imersivo
+#### Scenario: Hero com vídeo de marca
 
-- **WHEN** um visitante abre a home
-- **THEN** vê o novo logo SVG no cabeçalho e um hero imersivo com o vídeo de marca de fundo (autoplay, mudo, loop, `playsinline`, com `poster`) e os CTAs "Criar conta" e "Entrar" com destaque legível
+- **WHEN** um visitante abre a home num desktop sem movimento reduzido
+- **THEN** vê o novo logo SVG no cabeçalho e um hero imersivo com o vídeo de marca de fundo (autoplay, mudo, loop, `playsinline`, com `poster`), eventualmente com uma camada 3D animada por cima, e os CTAs "Criar conta" e "Entrar" com destaque legível
 
-#### Scenario: Movimento reduzido (Acessibilidade)
+#### Scenario: Movimento reduzido
 
-- **WHEN** o visitante tem `prefers-reduced-motion: reduce`
-- **THEN** o vídeo do hero não é reproduzido automaticamente (mostra o `poster`) e todas as seções e cards aparecem na tela instantaneamente, sem nenhuma animação de scroll ou fade-in
+- **WHEN** o visitante tem `prefers-reduced-motion: reduce` (ou `Save-Data`)
+- **THEN** o vídeo do hero não é reproduzido automaticamente (mostra o `poster`), não há camada 3D, e todas as seções e cards aparecem na tela instantaneamente, sem nenhuma animação de scroll ou fade-in
+
+#### Scenario: Degrada no celular sem quebrar
+
+- **WHEN** o visitante abre qualquer rota do site numa viewport estreita (ex.: 360px)
+- **THEN** não há scroll horizontal, a camada 3D e os desfoques pesados não são renderizados, os cards ficam em uma coluna, e todo o conteúdo (hero, planos, demonstração) permanece legível e navegável
 
 #### Scenario: Resumo de planos da fonte única
 
@@ -22,4 +27,4 @@ O site institucional SHALL exibir a nova marca oficial SimpleCote (logo com "S" 
 #### Scenario: Demonstração do produto
 
 - **WHEN** o visitante chega na seção "veja em ação"
-- **THEN** vê um player do vídeo de demonstração com controles, integrado perfeitamente ao layout moderno, sem reprodução automática
+- **THEN** vê um player do vídeo de demonstração com controles, integrado ao layout moderno, sem reprodução automática, e um espaço para o vídeo de tutorial do YouTube
