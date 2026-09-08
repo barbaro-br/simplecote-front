@@ -162,6 +162,10 @@ export const routes = createBrowserRouter([
             lazy: () => import('./backoffice/CompradoresPage').then(m => ({ Component: m.CompradoresPage })),
           },
           {
+            path: 'avisos',
+            lazy: () => import('./backoffice/AvisosPage').then(m => ({ Component: m.AvisosPage })),
+          },
+          {
             path: 'compradores/:id',
             lazy: () => import('./backoffice/CompradorDetalhePage').then(m => ({ Component: m.CompradorDetalhePage })),
           },

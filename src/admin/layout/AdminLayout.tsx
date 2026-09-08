@@ -21,6 +21,7 @@ import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { BottomNavBar } from './BottomNavBar'
 import { BotaoAjudaFlutuante } from '../ajuda/BotaoAjudaFlutuante'
 import { ModoSuporteBanner } from '@/backoffice/ModoSuporteBanner'
+import { AvisosBanner } from '@/avisos/AvisosBanner'
 
 const SIDEBAR_KEY = 'simplecote:sidebar'
 
@@ -292,6 +293,7 @@ export function AdminLayout() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-card text-foreground">
       <ModoSuporteBanner nomeComprador={nomeLoja} />
+      <AvisosBanner />
       <div className="flex min-h-0 flex-1 overflow-hidden flex-col md:flex-row">
         <ScrollRestoration />
         

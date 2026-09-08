@@ -35,6 +35,9 @@ export function BackofficeLayout() {
               <NavLink to="/backoffice/lojas" className={classeNav}>
                 Lojas
               </NavLink>
+              <NavLink to="/backoffice/avisos" className={classeNav}>
+                Avisos
+              </NavLink>
             </nav>
           </div>
           <button

@@ -12,6 +12,7 @@ import { CompradoresPage } from './CompradoresPage'
 import { CompradorDetalhePage } from './CompradorDetalhePage'
 import { ModoSuporteBanner } from './ModoSuporteBanner'
 import { ResumoPage } from './ResumoPage'
+import { AvisosPage } from './AvisosPage'
 
 function jwt(claims: Record<string, unknown>): string {
   const payload = btoa(JSON.stringify(claims)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -50,6 +51,7 @@ const COTACAO_1 = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001'
 const COTACAO_2 = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'
 const NOTA_1 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
 const SA_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+const AVISO_1 = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
 
 const RESUMO = {
   lojas: { total: 12, emTeste: 5, prazoVencido: 2, suspensas: 1 },
@@ -249,6 +251,112 @@ describe('ResumoPage', () => {
     await user.click(screen.getByRole('link', { name: /Ver todas as lojas/ }))
 
     expect(await screen.findByText('lista de lojas view')).toBeInTheDocument()
+  })
+})
+
+describe('AvisosPage', () => {
+  function renderAvisos(avisos: unknown[] = []) {
+    server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: TOKEN_SUPER_ADMIN })))
+    server.use(http.get('*/api/admin/avisos', () => HttpResponse.json(avisos)))
+    const router = createMemoryRouter([{ path: '/backoffice/avisos', element: <AvisosPage /> }], {
+      initialEntries: ['/backoffice/avisos'],
+    })
+    return render(
+      <QueryClientProvider client={createQueryClient()}>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </QueryClientProvider>
+    )
+  }
+
+  test('criar aviso chama POST /api/admin/avisos e ele aparece na lista', async () => {
+    const avisos: Array<Record<string, unknown>> = []
+    let corpo: Record<string, unknown> | null = null
+    server.use(
+      http.post('*/api/admin/avisos', async ({ request }) => {
+        corpo = (await request.json()) as Record<string, unknown>
+        avisos.push({
+          id: AVISO_1,
+          titulo: corpo.titulo,
+          corpo: corpo.corpo,
+          nivel: corpo.nivel,
+          publicadoEm: '2026-09-08T10:00:00Z',
+          expiraEm: corpo.expiraEm,
+          ativo: true,
+          criadoPor: SA_ID,
+        })
+        return new HttpResponse(null, { status: 201 })
+      })
+    )
+    const user = userEvent.setup()
+    renderAvisos(avisos)
+
+    await screen.findByText('Novo aviso')
+    await user.type(screen.getByLabelText('Título'), 'Manutenção programada')
+    await user.type(screen.getByLabelText('Corpo'), 'Painel fora do ar de madrugada')
+    await user.click(screen.getByRole('button', { name: 'Criar aviso' }))
+
+    await waitFor(() => expect(corpo).not.toBeNull())
+    expect(corpo!.titulo).toBe('Manutenção programada')
+    expect(await screen.findByText('Manutenção programada')).toBeInTheDocument()
+  })
+
+  test('toggle ativo chama PATCH /api/admin/avisos/{id}', async () => {
+    let corpo: { ativo: boolean } | null = null
+    server.use(
+      http.patch('*/api/admin/avisos/:id', async ({ request }) => {
+        corpo = (await request.json()) as { ativo: boolean }
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+    renderAvisos([
+      {
+        id: AVISO_1,
+        titulo: 'Aviso teste',
+        corpo: 'Corpo',
+        nivel: 'INFO',
+        publicadoEm: '2026-09-08T10:00:00Z',
+        expiraEm: null,
+        ativo: true,
+        criadoPor: SA_ID,
+      },
+    ])
+    const user = userEvent.setup()
+
+    await screen.findByText('Aviso teste')
+    await user.click(screen.getByRole('checkbox', { name: 'Ativo' }))
+
+    await waitFor(() => expect(corpo).toEqual({ ativo: false }))
+  })
+
+  test('remover chama DELETE /api/admin/avisos/{id} após confirmação', async () => {
+    let deletou: string | null = null
+    server.use(
+      http.delete('*/api/admin/avisos/:id', ({ params }) => {
+        deletou = params.id as string
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+    renderAvisos([
+      {
+        id: AVISO_1,
+        titulo: 'Aviso teste',
+        corpo: 'Corpo',
+        nivel: 'INFO',
+        publicadoEm: '2026-09-08T10:00:00Z',
+        expiraEm: null,
+        ativo: true,
+        criadoPor: SA_ID,
+      },
+    ])
+    const user = userEvent.setup()
+
+    await screen.findByText('Aviso teste')
+    await user.click(screen.getByRole('button', { name: 'Remover' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar remoção' }))
+
+    await waitFor(() => expect(deletou).toBe(AVISO_1))
   })
 })
 
