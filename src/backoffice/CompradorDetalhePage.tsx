@@ -27,6 +27,7 @@ import {
   useSuspenderComprador,
 } from './backoffice.api'
 import { prazoLabel, rotuloStatus, type AdminComprador, type NivelPrazo } from './backoffice.schema'
+import { NotasEHistorico } from './NotasEHistorico'
 
 const CLASSE_STATUS: Record<string, string> = {
   TESTE: 'bg-muted text-muted-foreground',
@@ -389,6 +390,8 @@ export function CompradorDetalhePage() {
           </ul>
         )}
       </Card>
+
+      <NotasEHistorico compradorId={id} />
 
       <Card className="p-6">
         <h2 className="mb-4 text-lg font-semibold ui-uppercase">Ações</h2>

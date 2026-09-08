@@ -48,6 +48,8 @@ const DETALHE = {
 
 const COTACAO_1 = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001'
 const COTACAO_2 = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'
+const NOTA_1 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+const SA_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
 
 const RESUMO = {
   lojas: { total: 12, emTeste: 5, prazoVencido: 2, suspensas: 1 },
@@ -251,10 +253,17 @@ describe('ResumoPage', () => {
 })
 
 describe('CompradorDetalhePage', () => {
-  function renderDetalhe(cotacoes: unknown[] = [], detalhe: Record<string, unknown> = DETALHE) {
+  function renderDetalhe(
+    cotacoes: unknown[] = [],
+    detalhe: Record<string, unknown> = DETALHE,
+    notas: unknown[] = [],
+    timeline: unknown[] = [],
+  ) {
     server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: TOKEN_SUPER_ADMIN })))
     server.use(http.get('*/api/admin/compradores/:id', () => HttpResponse.json(detalhe)))
     server.use(http.get('*/api/admin/compradores/:id/cotacoes', () => HttpResponse.json(cotacoes)))
+    server.use(http.get('*/api/admin/compradores/:id/notas', () => HttpResponse.json(notas)))
+    server.use(http.get('*/api/admin/compradores/:id/timeline', () => HttpResponse.json(timeline)))
     const router = createMemoryRouter(
       [
         { path: '/backoffice/lojas', element: <div>backoffice lista view</div> },
@@ -518,6 +527,63 @@ describe('CompradorDetalhePage', () => {
     await screen.findByText('Mercado do Zé')
     expect(screen.getByText('E-mail verificado')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Reenviar verificação' })).not.toBeInTheDocument()
+  })
+
+  test('escrever + Adicionar nota chama POST e a nota aparece na lista', async () => {
+    const notas: Array<{ id: string; texto: string; autorSuperAdminId: string; criadoEm: string }> = []
+    let corpo: { texto: string } | null = null
+    server.use(
+      http.post('*/api/admin/compradores/:id/notas', async ({ request }) => {
+        corpo = (await request.json()) as { texto: string }
+        notas.push({ id: NOTA_1, texto: corpo.texto, autorSuperAdminId: SA_ID, criadoEm: '2026-09-08T10:00:00Z' })
+        return new HttpResponse(null, { status: 201 })
+      })
+    )
+    const user = userEvent.setup()
+    renderDetalhe([], DETALHE, notas)
+
+    await screen.findByText('Mercado do Zé')
+    await user.type(screen.getByLabelText('Nova nota'), 'Cliente pediu extensão do prazo')
+    await user.click(screen.getByRole('button', { name: 'Adicionar nota' }))
+
+    await waitFor(() => expect(corpo).toEqual({ texto: 'Cliente pediu extensão do prazo' }))
+    expect(await screen.findByText('Cliente pediu extensão do prazo')).toBeInTheDocument()
+  })
+
+  test('Remover nota chama DELETE após confirmação inline', async () => {
+    let deletou: string | null = null
+    server.use(
+      http.delete('*/api/admin/compradores/:id/notas/:notaId', ({ params }) => {
+        deletou = params.notaId as string
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+    const user = userEvent.setup()
+    renderDetalhe([], DETALHE, [
+      { id: NOTA_1, texto: 'Nota existente', autorSuperAdminId: SA_ID, criadoEm: '2026-09-08T10:00:00Z' },
+    ])
+
+    await screen.findByText('Nota existente')
+    await user.click(screen.getByRole('button', { name: 'Remover' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar remoção' }))
+
+    await waitFor(() => expect(deletou).toBe(NOTA_1))
+  })
+
+  test('timeline renderiza tipos diferentes do mais recente ao mais antigo', async () => {
+    renderDetalhe([], DETALHE, [], [
+      { tipo: 'suspensao', quando: '2026-09-07T10:00:00Z', ator: 'Super admin', descricao: 'Conta suspensa' },
+      { tipo: 'nota', quando: '2026-09-05T10:00:00Z', ator: 'Super admin', descricao: 'Ligou pedindo ajuda' },
+      { tipo: 'cadastro', quando: '2026-09-01T10:00:00Z', ator: null, descricao: 'Loja cadastrada' },
+    ])
+
+    await screen.findByText('Mercado do Zé')
+    const items = await screen.findAllByTestId('timeline-item')
+    expect(items).toHaveLength(3)
+    expect(items[0]).toHaveTextContent('Suspensão')
+    expect(items[1]).toHaveTextContent('Nota')
+    expect(items[2]).toHaveTextContent('Cadastro')
+    expect(items[2]).toHaveTextContent('Sistema')
   })
 })
 

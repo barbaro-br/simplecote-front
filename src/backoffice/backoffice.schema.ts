@@ -120,3 +120,37 @@ export const resumoSaasSchema = z.object({
   funil: funilAtivacaoSchema,
 })
 export type ResumoSaas = z.infer<typeof resumoSaasSchema>
+
+// Notas livres do SUPER_ADMIN sobre uma loja (change backoffice-notas-e-auditoria).
+export const notaSchema = z.object({
+  id: z.string().uuid(),
+  texto: z.string(),
+  autorSuperAdminId: z.string().uuid(),
+  criadoEm: z.string(),
+})
+export const notaListaSchema = z.array(notaSchema)
+export type Nota = z.infer<typeof notaSchema>
+
+// Item da linha do tempo consolidada da loja. `tipo` é a string crua do back
+// (cadastro, verificacao, suporte, suspensao, reativacao, prazo_alterado,
+// exclusao, nota); `ator` é nome/e-mail quando dá pra resolver, senão nulo.
+export const TIPOS_EVENTO = [
+  'cadastro',
+  'verificacao',
+  'suporte',
+  'suspensao',
+  'reativacao',
+  'prazo_alterado',
+  'exclusao',
+  'nota',
+] as const
+export type TipoEvento = (typeof TIPOS_EVENTO)[number]
+
+export const timelineItemSchema = z.object({
+  tipo: z.string(),
+  quando: z.string(),
+  ator: z.string().nullable(),
+  descricao: z.string(),
+})
+export const timelineListaSchema = z.array(timelineItemSchema)
+export type TimelineItem = z.infer<typeof timelineItemSchema>

@@ -4,11 +4,15 @@ import {
   compradorAdminDetalheSchema,
   compradorAdminListaSchema,
   cotacaoResumoListaSchema,
+  notaListaSchema,
   resumoSaasSchema,
+  timelineListaSchema,
   type CompradorAdmin,
   type CompradorAdminDetalhe,
   type CotacaoResumo,
+  type Nota,
   type ResumoSaas,
+  type TimelineItem,
 } from './backoffice.schema'
 
 // Contrato da change backoffice-super-admin do back. Todas as rotas
@@ -120,5 +124,45 @@ export function useReenviarVerificacao(id: string) {
   return useMutation({
     mutationFn: () => api.post<void>(`/api/admin/compradores/${id}/reenviar-verificacao`),
     onSuccess: () => invalidar(queryClient),
+  })
+}
+
+// Notas e timeline (change backoffice-notas-e-auditoria).
+function invalidarNotasETimeline(queryClient: QueryClient, id: string) {
+  queryClient.invalidateQueries({ queryKey: ['admin', 'compradores', id, 'notas'] })
+  queryClient.invalidateQueries({ queryKey: ['admin', 'compradores', id, 'timeline'] })
+}
+
+export function useNotas(id: string) {
+  return useQuery({
+    queryKey: ['admin', 'compradores', id, 'notas'],
+    queryFn: () =>
+      api.get<Nota[]>(`/api/admin/compradores/${id}/notas`).then((d) => notaListaSchema.parse(d)),
+  })
+}
+
+export function useTimeline(id: string) {
+  return useQuery({
+    queryKey: ['admin', 'compradores', id, 'timeline'],
+    queryFn: () =>
+      api
+        .get<TimelineItem[]>(`/api/admin/compradores/${id}/timeline`)
+        .then((d) => timelineListaSchema.parse(d)),
+  })
+}
+
+export function useAdicionarNota(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (texto: string) => api.post<void>(`/api/admin/compradores/${id}/notas`, { texto }),
+    onSuccess: () => invalidarNotasETimeline(queryClient, id),
+  })
+}
+
+export function useRemoverNota(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (notaId: string) => api.delete<void>(`/api/admin/compradores/${id}/notas/${notaId}`),
+    onSuccess: () => invalidarNotasETimeline(queryClient, id),
   })
 }
