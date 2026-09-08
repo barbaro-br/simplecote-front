@@ -9,15 +9,15 @@
   },
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [{ "type": "host", "value": "app.simplecote.com.br" }],
-      "destination": "https://simplecote.app/:path*",
+      "destination": "https://simplecote.app/$1",
       "permanent": false
     },
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [{ "type": "host", "value": "app.simplecote.app" }],
-      "destination": "https://simplecote.app/:path*",
+      "destination": "https://simplecote.app/$1",
       "permanent": false
     }
   ],
