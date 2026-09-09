@@ -112,21 +112,22 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
     setFormAberto(false)
   }
 
+  // O modal de cadastro/edição de produto abre EMPILHADO sobre o de itens — sem
+  // fechar `formAberto`. Fechar e reabrir faria o AdicionarItemModal zerar os
+  // `drafts` (seleção ainda não salva) na transição de `open`, e o usuário
+  // perderia todos os produtos que tinha marcado.
   function abrirCadastro() {
-    setFormAberto(false) // Close the items list modal
-    setCadastroAberto(true) // Open the product creation modal
+    setCadastroAberto(true)
   }
 
   function abrirEdicao(produto: Produto) {
-    setFormAberto(false) // Close the items list modal
     setProdutoParaEditar(produto)
-    setCadastroAberto(true) // Open the product form (edit mode)
+    setCadastroAberto(true)
   }
 
   function aoCadastrarProduto() {
     setCadastroAberto(false)
     setProdutoParaEditar(undefined)
-    setFormAberto(true) // Re-open the items list modal after creating/editing
   }
 
   return (

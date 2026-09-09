@@ -195,8 +195,9 @@ test('3.2 — em RASCUNHO adiciona e remove item', async () => {
 
   await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
   const dialog = within(screen.getByRole('dialog'))
-  const produto = await dialog.findByText('Arroz Tipo 1 5kg')
-  await user.click(produto)
+  await dialog.findByText('Arroz Tipo 1 5kg')
+  // Clicar na linha adiciona o item na hora (sem rascunho/salvar em lote).
+  await user.click(dialog.getByRole('button', { name: 'Adicionar Arroz Tipo 1 5kg à cotação' }))
   await user.click(dialog.getByRole('button', { name: 'Concluído' }))
 
   const linhaItem = await screen.findByRole('cell', { name: 'Arroz Tipo 1 5kg' })
@@ -209,7 +210,7 @@ test('3.2 — em RASCUNHO adiciona e remove item', async () => {
   })
 })
 
-test('3.5 — cadastra Produto novo no modal aninhado, volta pré-selecionado e adiciona à cotação', async () => {
+test('3.5 — cadastra Produto novo no modal aninhado e adiciona à cotação', async () => {
   setup('RASCUNHO')
   const user = userEvent.setup()
   await screen.findByRole('heading', { name: 'Compra semanal' })
@@ -221,7 +222,7 @@ test('3.5 — cadastra Produto novo no modal aninhado, volta pré-selecionado e 
     }),
   )
 
-  // 2º modal (cadastro) empilhado (o 1º fechou)
+  // 2º modal (cadastro) abre empilhado sobre o 1º, que segue montado
   const cadastro = () => screen.getByRole('dialog', { name: 'Cadastrar novo produto' })
   await user.type(within(cadastro()).getByLabelText('Nome do produto'), 'Feijão Carioca 1kg')
   const qtd = within(cadastro()).getByLabelText('Qtd. por embalagem')
@@ -232,23 +233,24 @@ test('3.5 — cadastra Produto novo no modal aninhado, volta pré-selecionado e 
   // código de barras vazio → confirmação antes do POST
   await user.click(await screen.findByRole('button', { name: 'Salvar sem código' }))
 
-  // 2º modal fecha; o 1º reabre
+  // 2º modal fecha; a lista de itens segue aberta
   await waitFor(() =>
     expect(screen.queryByRole('dialog', { name: 'Cadastrar novo produto' })).not.toBeInTheDocument(),
   )
-  const dialogReaberto = within(screen.getByRole('dialog', { name: 'Adicionar Itens' }))
-  
-  // Selecionar o novo produto e concluir
-  const novoProduto = await dialogReaberto.findByText('Feijão Carioca 1kg')
-  await user.click(novoProduto)
-  await user.click(dialogReaberto.getByRole('button', { name: 'Concluído' }))
+  const dialogLista = within(screen.getByRole('dialog', { name: 'Adicionar Itens' }))
+
+  // Adiciona o produto recém-criado à cotação
+  await dialogLista.findByText('Feijão Carioca 1kg')
+  await user.click(dialogLista.getByRole('button', { name: 'Adicionar Feijão Carioca 1kg à cotação' }))
+  await user.click(dialogLista.getByRole('button', { name: 'Concluído' }))
 
   expect(await screen.findByRole('cell', { name: 'Feijão Carioca 1kg' })).toBeInTheDocument()
 })
 
-test('editar produto existente no modal de adicionar abre o form pré-preenchido e salva sem sair da tela', async () => {
+test('editar um produto no modal não perde os itens já adicionados à cotação', async () => {
   const produtosEditaveis = [
     { id: 'p-1', nome: 'Arroz Tipo 1 5kg', codigoBarras: null, unidade: 'Fardo', quantidadePorEmbalagem: 1, ativo: true },
+    { id: 'p-2', nome: 'Feijão Carioca 1kg', codigoBarras: null, unidade: 'Pacote', quantidadePorEmbalagem: 1, ativo: true },
   ]
   setup('RASCUNHO')
   server.use(
@@ -264,25 +266,33 @@ test('editar produto existente no modal de adicionar abre o form pré-preenchido
   await screen.findByRole('heading', { name: 'Compra semanal' })
 
   await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
-  const lista = screen.getByRole('dialog', { name: 'Adicionar Itens' })
-  await within(lista).findByText('Arroz Tipo 1 5kg')
+  const lista = () => within(screen.getByRole('dialog', { name: 'Adicionar Itens' }))
+  await lista().findByText('Feijão Carioca 1kg')
 
-  await user.click(within(lista).getByRole('button', { name: 'Editar Arroz Tipo 1 5kg' }))
+  // Adiciona o Feijão à cotação (fica com o estado "Na cotação")
+  await user.click(lista().getByRole('button', { name: 'Adicionar Feijão Carioca 1kg à cotação' }))
+  await waitFor(() => {
+    const linha = screen.getByText('Feijão Carioca 1kg').closest('li') as HTMLElement
+    expect(within(linha).getByText('Na cotação')).toBeInTheDocument()
+  })
 
+  // Edita OUTRO produto (Arroz): o modal de produto abre empilhado, sem fechar a lista
+  await user.click(lista().getByRole('button', { name: 'Editar Arroz Tipo 1 5kg' }))
   const form = await screen.findByRole('dialog', { name: 'Cadastrar novo produto' })
   expect(form).toHaveTextContent('Editar Produto')
   const nome = within(form).getByLabelText('Nome do produto')
-  expect((nome as HTMLInputElement).value).toBe('Arroz Tipo 1 5kg')
-
   await user.clear(nome)
   await user.type(nome, 'Arroz Integral 5kg')
   await user.click(within(form).getByRole('button', { name: /salvar/i }))
-
-  // código de barras vazio → confirmação antes do POST
   await user.click(await screen.findByRole('button', { name: 'Salvar sem código' }))
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog', { name: 'Cadastrar novo produto' })).not.toBeInTheDocument(),
+  )
 
-  const listaReaberta = await screen.findByRole('dialog', { name: 'Adicionar Itens' })
-  expect(await within(listaReaberta).findByText('Arroz Integral 5kg')).toBeInTheDocument()
+  // O Feijão continua marcado como "Na cotação" e o Arroz aparece com o nome novo
+  expect(await lista().findByText('Arroz Integral 5kg')).toBeInTheDocument()
+  const linhaFeijao = screen.getByText('Feijão Carioca 1kg').closest('li') as HTMLElement
+  expect(within(linhaFeijao).getByText('Na cotação')).toBeInTheDocument()
 })
 
 test('3.2 — em ABERTA o botão "Adicionar item" aparece junto à grade (mas não "Remover")', async () => {
