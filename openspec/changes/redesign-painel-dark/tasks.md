@@ -19,13 +19,17 @@ verde antes de mergear em `main`.
 
 ## Fase 1 — Casca + flows por token
 
+- [x] `/representante/:token`: grade escura com coluna "Seu preço" editável
+      (`LinhaPreco`), `SecaoCabecalho`/`SubFaixa`/`Selo`, rodapé fixo
+      "Enviar respostas" + bolha "N de T". Fila offline
+      (`useFilaDeSincronizacao`) e limpar-preço (toast "Desfazer") mantidos.
+      `ItemLanceCard` removido; `TelaDeSucesso`/`ConfirmarEnvioDialog`
+      re-tematizados. Testes: 48 verdes (page + LinhaPreco).
+- [ ] `/colaborador/:token`: `Busca` + `LinhaLista` de produtos, sem modal.
+- [ ] `/pedido/:token` (representante): re-tematizar.
+- [ ] `TutorialOnboarding` do representante: re-tematizar (ainda claro).
 - [ ] `CascaPainel` (fundo fixo, rail desktop, barra mobile, `CabecalhoPagina`).
 - [ ] `AdminLayout` passa a usar `CascaPainel`; `BottomNavBar` re-tematizado.
-- [ ] `/representante/:token`: `GradeDados` com coluna de preço editável +
-      `RodapeAcao` "Enviar respostas"; manter fila offline
-      (`useFilaDeSincronizacao`) e "não cotado".
-- [ ] `/colaborador/:token`: `Busca` + `LinhaLista` de produtos, sem modal.
-- [ ] Testes desses fluxos revisados.
 
 ## Fase 2 — Cotação unificada
 

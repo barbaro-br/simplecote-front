@@ -84,31 +84,26 @@ test('token válido: mostra a saudação, o contexto e os itens, com a bolha de 
   server.use(http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao())))
   renderPage()
 
-  // A saudação aparece duas vezes no DOM: no cabeçalho (só visível em desktop
-  // via CSS) e na barra inferior (só visível em mobile via CSS) — ambas
-  // renderizam sempre, a visibilidade é responsiva por classe, não por remontagem.
-  expect(await screen.findAllByText(/olá, francisco/i)).toHaveLength(2)
-  expect(screen.getAllByText(/Atacadão Central · cotação de Supermercado X/)).toHaveLength(2)
+  // Redesign: a saudação/contexto aparecem uma vez, na SubFaixa do card.
+  expect(await screen.findByText(/olá, francisco/i)).toHaveTextContent(
+    'Olá, Francisco · Atacadão Central · cotação de Supermercado X',
+  )
   expect(screen.getByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: /finalizar/i })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /enviar respostas/i })).toBeInTheDocument()
 
   // O item de mock está sem preço → bolha "0 de 1".
   expect(screen.getByRole('status', { name: /0 de 1 itens com preço/i })).toBeInTheDocument()
 })
 
-test('prazo alerta < 2h renderiza classe text-destructive', async () => {
+test('prazo alerta < 2h fica em destaque', async () => {
   const daquiUmPouco = new Date()
   daquiUmPouco.setMinutes(daquiUmPouco.getMinutes() + 60) // 1h no futuro
 
   server.use(http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao({ prazo: daquiUmPouco.toISOString() }))))
   renderPage()
 
-  // Aparece no cabeçalho (desktop) e na barra inferior (mobile); ambos alertam.
-  const prazoEls = await screen.findAllByText(/Prazo:/i)
-  expect(prazoEls).toHaveLength(2)
-  for (const el of prazoEls) {
-    expect(el).toHaveClass('text-destructive')
-  }
+  const prazoEl = await screen.findByText(/Prazo:/i)
+  expect(prazoEl).toHaveClass('font-semibold')
 })
 
 test('podeEditar falso: campos desabilitados e sem botão de finalizar/bolha', async () => {
@@ -121,7 +116,7 @@ test('podeEditar falso: campos desabilitados e sem botão de finalizar/bolha', a
 
   expect(await screen.findByText(/sua resposta já foi enviada/i)).toBeInTheDocument()
   expect(campoPreco()).toBeDisabled()
-  expect(screen.queryByRole('button', { name: /finalizar/i })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /enviar respostas/i })).not.toBeInTheDocument()
   expect(bolha()).not.toBeInTheDocument()
 })
 
@@ -242,7 +237,7 @@ test('finalizar: bloqueado com pendência; libera (via online) e, após confirma
   putFalha = false
   window.dispatchEvent(new Event('online'))
 
-  const finalizarBtn = await screen.findByRole('button', { name: /^finalizar$/i })
+  const finalizarBtn = await screen.findByRole('button', { name: /enviar respostas/i })
   await waitFor(() => expect(finalizarBtn).toBeEnabled())
 
   await user.click(finalizarBtn)
@@ -262,7 +257,7 @@ test('Finalizar abre a confirmação; POST só sai após "Confirmar"; "Cancelar"
   const user = userEvent.setup()
   renderPage()
 
-  await user.click(await screen.findByRole('button', { name: /^finalizar$/i }))
+  await user.click(await screen.findByRole('button', { name: /enviar respostas/i }))
   expect(await screen.findByText('Enviar cotação?')).toBeInTheDocument()
   expect(posts).toBe(0)
 
@@ -270,7 +265,7 @@ test('Finalizar abre a confirmação; POST só sai após "Confirmar"; "Cancelar"
   await waitFor(() => expect(screen.queryByText('Enviar cotação?')).not.toBeInTheDocument())
   expect(posts).toBe(0)
 
-  await user.click(screen.getByRole('button', { name: /^finalizar$/i }))
+  await user.click(screen.getByRole('button', { name: /enviar respostas/i }))
   await user.click(await screen.findByRole('button', { name: /confirmar/i }))
   await waitFor(() => expect(posts).toBe(1))
 })
@@ -294,14 +289,14 @@ test('sucesso: 204 mostra "Cotação enviada!" e, ao fechar, a tela fica somente
   const user = userEvent.setup()
   renderPage()
 
-  await user.click(await screen.findByRole('button', { name: /^finalizar$/i }))
+  await user.click(await screen.findByRole('button', { name: /enviar respostas/i }))
   await user.click(await screen.findByRole('button', { name: /confirmar/i }))
 
   expect(await screen.findByText('Cotação enviada!')).toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: /fechar/i }))
   expect(await screen.findByText(/sua resposta já foi enviada/i)).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: /finalizar/i })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /enviar respostas/i })).not.toBeInTheDocument()
 })
 
 test('a bolha acompanha a digitação de preço', async () => {
