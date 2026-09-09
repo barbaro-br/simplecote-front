@@ -1,10 +1,17 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
-import { MagnifyingGlass, Package, Barcode, Plus } from '@phosphor-icons/react'
-import { Button } from '@/shared/components/ui/button'
+import { Barcode, Package, Plus } from '@phosphor-icons/react'
 import { ApiError } from '@/shared/api/api-client'
 import { toast } from 'sonner'
 import { cn } from '@/shared/lib/utils'
+import {
+  Superficie,
+  Lista,
+  LinhaLista,
+  Busca,
+  BotaoPrimario,
+  BotaoFantasma,
+} from '@/shared/ui'
 import {
   useAdicionarItemColaborador,
   useEstadoColaborador,
@@ -19,19 +26,33 @@ const LeitorCodigoBarras = lazy(() =>
   import('@/shared/components/LeitorCodigoBarras').then((m) => ({ default: m.LeitorCodigoBarras })),
 )
 
-function Skeleton() {
+function Casca({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto max-w-md space-y-4 p-6">
-      <div className="h-6 w-2/3 animate-pulse rounded bg-muted" />
-      <div className="h-10 animate-pulse rounded bg-muted" />
-      <div className="space-y-2">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-14 animate-pulse rounded bg-muted" />
-        ))}
-      </div>
+    <div data-painel="dark" className="min-h-screen">
+      {children}
     </div>
   )
 }
+
+function Skeleton() {
+  return (
+    <Casca>
+      <div className="mx-auto max-w-md space-y-4 p-6">
+        <div className="h-6 w-2/3 animate-pulse rounded bg-white/10" />
+        <div className="h-10 animate-pulse rounded bg-white/10" />
+        <div className="space-y-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-14 animate-pulse rounded bg-white/10" />
+          ))}
+        </div>
+      </div>
+    </Casca>
+  )
+}
+
+const CLASSE_INPUT =
+  'w-full rounded-md border border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-white/[0.04] px-3 py-2 text-[13px] text-[var(--pnl-txt,#fff)] placeholder:text-[var(--pnl-txt-4,rgba(255,255,255,0.3))] focus:outline-none focus:ring-1 focus:ring-[var(--pnl-acento,#57bf8e)]/50'
+const CLASSE_LABEL = 'text-[13px] font-medium text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]'
 
 type FormularioNovoProdutoProps = {
   nome: string
@@ -44,8 +65,6 @@ type FormularioNovoProdutoProps = {
   onChangeQuantidade: (v: string) => void
 }
 
-// Campos do cadastro de um produto ainda não catalogado — usados tanto no fluxo
-// de bipagem (lookup 404) quanto no cadastro manual sem bipar.
 function FormularioNovoProduto({
   nome,
   unidade,
@@ -58,29 +77,35 @@ function FormularioNovoProduto({
 }: FormularioNovoProdutoProps) {
   return (
     <>
-      <div className="space-y-2">
-        <label htmlFor="novoNome" className="text-sm font-medium ui-uppercase">Nome</label>
+      <div className="space-y-1.5">
+        <label htmlFor="novoNome" className={CLASSE_LABEL}>
+          Nome
+        </label>
         <input
           id="novoNome"
           type="text"
           value={nome}
           onChange={(e) => onChangeNome(e.target.value)}
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+          className={CLASSE_INPUT}
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <label htmlFor="novoUnidade" className="text-sm font-medium ui-uppercase">Unidade</label>
+        <div className="space-y-1.5">
+          <label htmlFor="novoUnidade" className={CLASSE_LABEL}>
+            Unidade
+          </label>
           <input
             id="novoUnidade"
             type="text"
             value={unidade}
             onChange={(e) => onChangeUnidade(e.target.value)}
-            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+            className={CLASSE_INPUT}
           />
         </div>
-        <div className="space-y-2">
-          <label htmlFor="novoQtdEmb" className="text-sm font-medium ui-uppercase">Qtd/Emb</label>
+        <div className="space-y-1.5">
+          <label htmlFor="novoQtdEmb" className={CLASSE_LABEL}>
+            Qtd/Emb
+          </label>
           <input
             id="novoQtdEmb"
             type="number"
@@ -88,12 +113,14 @@ function FormularioNovoProduto({
             inputMode="numeric"
             value={qtdEmb}
             onChange={(e) => onChangeQtdEmb(e.target.value)}
-            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+            className={CLASSE_INPUT}
           />
         </div>
       </div>
-      <div className="space-y-2">
-        <label htmlFor="quantidadeNovo" className="text-sm font-medium ui-uppercase">Quantidade</label>
+      <div className="space-y-1.5">
+        <label htmlFor="quantidadeNovo" className={CLASSE_LABEL}>
+          Quantidade
+        </label>
         <input
           id="quantidadeNovo"
           type="number"
@@ -101,10 +128,47 @@ function FormularioNovoProduto({
           inputMode="numeric"
           value={quantidade}
           onChange={(e) => onChangeQuantidade(e.target.value)}
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+          className={CLASSE_INPUT}
         />
       </div>
     </>
+  )
+}
+
+function PainelForm({
+  titulo,
+  descricao,
+  aoCancelar,
+  rotuloCancelar = 'Cancelar',
+  children,
+}: {
+  titulo: string
+  descricao?: string
+  aoCancelar: () => void
+  rotuloCancelar?: string
+  children: ReactNode
+}) {
+  return (
+    <Superficie className="p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="text-[13px] font-semibold text-[var(--pnl-txt,#fff)]">{titulo}</div>
+          {descricao && (
+            <div className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+              {descricao}
+            </div>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={aoCancelar}
+          className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] hover:text-[var(--pnl-txt,#fff)]"
+        >
+          {rotuloCancelar}
+        </button>
+      </div>
+      <div className="mt-3 space-y-3">{children}</div>
+    </Superficie>
   )
 }
 
@@ -126,7 +190,6 @@ export function ColaboradorPage() {
   const [gtinBipado, setGtinBipado] = useState<string | null>(null)
   const lookup = useLookupProdutoColaborador(token, gtinBipado ?? '')
 
-  // Form for not found product
   const [novoNome, setNovoNome] = useState('')
   const [novoUnidade, setNovoUnidade] = useState('Unidade')
   const [novoQtdEmb, setNovoQtdEmb] = useState('1')
@@ -135,8 +198,7 @@ export function ColaboradorPage() {
     const s = busca.trim().toLowerCase()
     if (!s) return produtos.data ?? []
     return (produtos.data ?? []).filter(
-      (p) =>
-        p.nome.toLowerCase().includes(s) || (p.codigoBarras ?? '').toLowerCase().includes(s),
+      (p) => p.nome.toLowerCase().includes(s) || (p.codigoBarras ?? '').toLowerCase().includes(s),
     )
   }, [produtos.data, busca])
 
@@ -144,12 +206,14 @@ export function ColaboradorPage() {
 
   if (estado.error || !estado.data) {
     return (
-      <div className="mx-auto max-w-md space-y-2 p-6 text-center">
-        <h1 className="text-xl font-semibold">Link inválido</h1>
-        <p className="text-muted-foreground">
-          Este link de colaborador não é válido. Peça um novo ao comprador.
-        </p>
-      </div>
+      <Casca>
+        <div className="mx-auto max-w-md space-y-2 p-6 text-center">
+          <h1 className="text-xl font-semibold text-[var(--pnl-txt,#fff)]">Link inválido</h1>
+          <p className="text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">
+            Este link de colaborador não é válido. Peça um novo ao comprador.
+          </p>
+        </div>
+      </Casca>
     )
   }
 
@@ -157,12 +221,14 @@ export function ColaboradorPage() {
 
   if (cotacoesAbertas.length === 0) {
     return (
-      <div className="mx-auto max-w-md space-y-2 p-6 text-center">
-        <h1 className="text-xl font-semibold">{nomeLoja}</h1>
-        <p className="text-muted-foreground">
-          Nenhuma cotação aberta no momento.
-        </p>
-      </div>
+      <Casca>
+        <div className="mx-auto max-w-md space-y-2 p-6 text-center">
+          <h1 className="text-xl font-semibold text-[var(--pnl-txt,#fff)]">{nomeLoja}</h1>
+          <p className="text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">
+            Nenhuma cotação aberta no momento.
+          </p>
+        </div>
+      </Casca>
     )
   }
 
@@ -203,8 +269,8 @@ export function ColaboradorPage() {
     try {
       await adicionar.mutateAsync({
         cotacaoId: cotacaoAtualId,
-        produtoId: selecionado.id, 
-        quantidade: qtd 
+        produtoId: selecionado.id,
+        quantidade: qtd,
       })
       toast.success('Item adicionado à cotação!')
       setSelecionado(null)
@@ -233,7 +299,7 @@ export function ColaboradorPage() {
       setErro('Informe uma quantidade por embalagem válida (mínimo 1).')
       return
     }
-    
+
     setErro(null)
     try {
       await cadastrarBipado.mutateAsync({
@@ -242,7 +308,7 @@ export function ColaboradorPage() {
         nome,
         unidade: isFound ? 'Unidade' : novoUnidade,
         quantidadePorEmbalagem: isFound ? 1 : qtdEmb,
-        quantidade: qtd
+        quantidade: qtd,
       })
       toast.success('Item adicionado à cotação!')
       cancelarBipado()
@@ -298,26 +364,34 @@ export function ColaboradorPage() {
     )
   }
 
+  const alerta = erro && (
+    <p role="alert" className="text-[13px] font-medium text-[var(--pnl-perigo,#ff6b6b)]">
+      {erro}
+    </p>
+  )
+
   return (
-    <div className="mx-auto max-w-md space-y-4 px-4 pb-10 pt-6">
-      <div
-        data-testid="cabecalho-colaborador"
-        className="sticky top-0 z-10 -mx-4 border-b border-border bg-background px-4 pb-3 pt-4"
-      >
-        <div>
+    <Casca>
+      <div className="mx-auto max-w-md space-y-4 px-4 pb-10 pt-6">
+        <div
+          data-testid="cabecalho-colaborador"
+          className="sticky top-0 z-10 -mx-4 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-[var(--pnl-superficie,#12263f)] px-4 pb-3 pt-4"
+        >
           {cotacoesAbertas.length === 1 ? (
-            <h1 className="text-xl font-semibold tracking-tight">{cotacoesAbertas[0].titulo}</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-[var(--pnl-txt,#fff)]">
+              {cotacoesAbertas[0].titulo}
+            </h1>
           ) : (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
               {cotacoesAbertas.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setCotacaoSelecionadaId(c.id)}
                   className={cn(
-                    "whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors",
+                    'whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors',
                     cotacaoAtualId === c.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      ? 'bg-[var(--pnl-acento,#57bf8e)]/15 text-[var(--pnl-acento-hi,#6fe6ac)] ring-1 ring-inset ring-[var(--pnl-acento,#57bf8e)]/30'
+                      : 'bg-white/[0.06] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]',
                   )}
                 >
                   {c.titulo}
@@ -325,256 +399,201 @@ export function ColaboradorPage() {
               ))}
             </div>
           )}
-          <p className="text-sm text-muted-foreground mt-1">{nomeLoja}</p>
+          <p className="mt-1 text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{nomeLoja}</p>
         </div>
-      </div>
 
-      {!selecionado && !gtinBipado && !modoCadastro && (
-        <>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full gap-2"
-            onClick={() => setModoBipador(true)}
-          >
-            <Barcode className="size-4" />
-            Bipar código de barras
-          </Button>
+        {!selecionado && !gtinBipado && !modoCadastro && (
+          <>
+            <BotaoFantasma
+              type="button"
+              className="h-10 w-full gap-2 text-[14px]"
+              onClick={() => setModoBipador(true)}
+            >
+              <Barcode className="size-4" aria-hidden />
+              Bipar código de barras
+            </BotaoFantasma>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full gap-2"
-            onClick={() => setModoCadastro(true)}
-          >
-            <Plus className="size-4" />
-            Cadastrar produto
-          </Button>
+            <BotaoFantasma
+              type="button"
+              className="h-10 w-full gap-2 text-[14px]"
+              onClick={() => setModoCadastro(true)}
+            >
+              <Plus className="size-4" aria-hidden />
+              Cadastrar produto
+            </BotaoFantasma>
 
-          <div className="relative">
-            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70">
-              <MagnifyingGlass className="size-4" />
-            </span>
-            <input
-              type="text"
+            <Busca
+              aria-label="Buscar produto"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              aria-label="Buscar produto"
               placeholder="Buscar por nome ou código de barras…"
-              className="w-full rounded-md border border-input bg-transparent py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
             />
-          </div>
 
-          <ul className="m-0 list-none space-y-1 p-0">
-            {filtrados.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  onClick={() => selecionar(p)}
-                  className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent"
-                >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    <Package className="size-4" />
+            <Superficie>
+              {filtrados.length === 0 ? (
+                <p className="py-10 text-center text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+                  Nenhum produto encontrado.
+                </p>
+              ) : (
+                <Lista>
+                  {filtrados.map((p) => (
+                    <LinhaLista
+                      key={p.id}
+                      onClick={() => selecionar(p)}
+                      avatar={<Package className="size-4 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]" />}
+                      titulo={p.nome}
+                      meta={
+                        (p.codigoBarras ? `${p.codigoBarras} · ` : '') +
+                        (p.unidade === 'Unidade' && p.quantidadePorEmbalagem === 1
+                          ? 'Unidade'
+                          : `${p.unidade} com ${p.quantidadePorEmbalagem}`)
+                      }
+                    />
+                  ))}
+                </Lista>
+              )}
+            </Superficie>
+          </>
+        )}
+
+        {gtinBipado && (
+          <PainelForm
+            titulo="Código Lido"
+            descricao={gtinBipado}
+            aoCancelar={cancelarBipado}
+          >
+            {lookup.isLoading ? (
+              <div className="py-8 text-center text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+                Buscando produto…
+              </div>
+            ) : lookup.isSuccess && lookup.data ? (
+              <>
+                <div className="rounded-md bg-white/[0.04] p-3">
+                  <div className="text-sm font-medium text-[var(--pnl-txt,#fff)]">
+                    {lookup.data.nome}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-foreground">{p.nome}</div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      {p.codigoBarras ? `${p.codigoBarras} · ` : ''}
-                      {p.unidade === 'Unidade' && p.quantidadePorEmbalagem === 1
-                        ? 'Unidade'
-                        : `${p.unidade} com ${p.quantidadePorEmbalagem}`}
+                  {lookup.data.marca && (
+                    <div className="mt-0.5 text-xs text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+                      {lookup.data.marca}
                     </div>
-                  </div>
-                </button>
-              </li>
-            ))}
-            {filtrados.length === 0 && (
-              <li className="py-10 text-center text-sm text-muted-foreground">
-                Nenhum produto encontrado.
-              </li>
-            )}
-          </ul>
-        </>
-      )}
-
-      {gtinBipado && (
-        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="text-sm font-semibold text-foreground">Código Lido</div>
-              <div className="text-xs text-muted-foreground">{gtinBipado}</div>
-            </div>
-            <button
-              type="button"
-              onClick={cancelarBipado}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Cancelar
-            </button>
-          </div>
-
-          {lookup.isLoading ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              Buscando produto…
-            </div>
-          ) : lookup.isSuccess && lookup.data ? (
-            <div className="space-y-3 pt-2">
-              <div className="rounded-md bg-muted/50 p-3">
-                <div className="text-sm font-medium">{lookup.data.nome}</div>
-                {lookup.data.marca && (
-                  <div className="text-xs text-muted-foreground mt-0.5">{lookup.data.marca}</div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="quantidadeBipado" className="text-sm font-medium ui-uppercase">Quantidade</label>
-                <input
-                  id="quantidadeBipado"
-                  type="number"
-                  min={1}
-                  inputMode="numeric"
-                  value={quantidade}
-                  onChange={(e) => setQuantidade(e.target.value)}
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="quantidadeBipado" className={CLASSE_LABEL}>
+                    Quantidade
+                  </label>
+                  <input
+                    id="quantidadeBipado"
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    value={quantidade}
+                    onChange={(e) => setQuantidade(e.target.value)}
+                    className={CLASSE_INPUT}
+                  />
+                </div>
+              </>
+            ) : lookup.isSuccess && !lookup.data ? (
+              <>
+                <p className="text-sm text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">
+                  Produto não encontrado. Preencha os dados abaixo:
+                </p>
+                <FormularioNovoProduto
+                  nome={novoNome}
+                  unidade={novoUnidade}
+                  qtdEmb={novoQtdEmb}
+                  quantidade={quantidade}
+                  onChangeNome={setNovoNome}
+                  onChangeUnidade={setNovoUnidade}
+                  onChangeQtdEmb={setNovoQtdEmb}
+                  onChangeQuantidade={setQuantidade}
                 />
-              </div>
-            </div>
-          ) : lookup.isSuccess && !lookup.data ? (
-            <div className="space-y-3 pt-2">
-              <p className="text-sm text-muted-foreground">
-                Produto não encontrado. Preencha os dados abaixo:
-              </p>
-              <FormularioNovoProduto
-                nome={novoNome}
-                unidade={novoUnidade}
-                qtdEmb={novoQtdEmb}
-                quantidade={quantidade}
-                onChangeNome={setNovoNome}
-                onChangeUnidade={setNovoUnidade}
-                onChangeQtdEmb={setNovoQtdEmb}
-                onChangeQuantidade={setQuantidade}
-              />
-            </div>
-          ) : null}
+              </>
+            ) : null}
 
-          {erro && (
-            <p role="alert" className="text-[13px] font-medium text-destructive">
-              {erro}
-            </p>
-          )}
+            {alerta}
 
-          {!lookup.isLoading && (
-            <Button
+            {!lookup.isLoading && (
+              <BotaoPrimario
+                type="button"
+                className="h-10 w-full text-[14px]"
+                disabled={cadastrarBipado.isPending}
+                onClick={aoCadastrarBipado}
+              >
+                {cadastrarBipado.isPending ? 'Adicionando…' : 'Adicionar'}
+              </BotaoPrimario>
+            )}
+          </PainelForm>
+        )}
+
+        {modoCadastro && !gtinBipado && (
+          <PainelForm
+            titulo="Cadastrar produto"
+            descricao="Produto novo, fora do catálogo."
+            aoCancelar={cancelarCadastro}
+          >
+            <FormularioNovoProduto
+              nome={novoNome}
+              unidade={novoUnidade}
+              qtdEmb={novoQtdEmb}
+              quantidade={quantidade}
+              onChangeNome={setNovoNome}
+              onChangeUnidade={setNovoUnidade}
+              onChangeQtdEmb={setNovoQtdEmb}
+              onChangeQuantidade={setQuantidade}
+            />
+            {alerta}
+            <BotaoPrimario
               type="button"
-              className="w-full"
+              className="h-10 w-full text-[14px]"
               disabled={cadastrarBipado.isPending}
-              onClick={aoCadastrarBipado}
+              onClick={aoCadastrarManual}
             >
               {cadastrarBipado.isPending ? 'Adicionando…' : 'Adicionar'}
-            </Button>
-          )}
-        </div>
-      )}
+            </BotaoPrimario>
+          </PainelForm>
+        )}
 
-      {modoCadastro && !gtinBipado && (
-        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="text-sm font-semibold text-foreground">Cadastrar produto</div>
-              <div className="text-xs text-muted-foreground">Produto novo, fora do catálogo.</div>
-            </div>
-            <button
-              type="button"
-              onClick={cancelarCadastro}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Cancelar
-            </button>
-          </div>
-
-          <FormularioNovoProduto
-            nome={novoNome}
-            unidade={novoUnidade}
-            qtdEmb={novoQtdEmb}
-            quantidade={quantidade}
-            onChangeNome={setNovoNome}
-            onChangeUnidade={setNovoUnidade}
-            onChangeQtdEmb={setNovoQtdEmb}
-            onChangeQuantidade={setQuantidade}
-          />
-
-          {erro && (
-            <p role="alert" className="text-[13px] font-medium text-destructive">
-              {erro}
-            </p>
-          )}
-
-          <Button
-            type="button"
-            className="w-full"
-            disabled={cadastrarBipado.isPending}
-            onClick={aoCadastrarManual}
+        {selecionado && !gtinBipado && (
+          <PainelForm
+            titulo={selecionado.nome}
+            descricao={
+              selecionado.unidade === 'Unidade' && selecionado.quantidadePorEmbalagem === 1
+                ? 'Unidade'
+                : `${selecionado.unidade} com ${selecionado.quantidadePorEmbalagem}`
+            }
+            rotuloCancelar="Trocar"
+            aoCancelar={() => {
+              setSelecionado(null)
+              setErro(null)
+            }}
           >
-            {cadastrarBipado.isPending ? 'Adicionando…' : 'Adicionar'}
-          </Button>
-        </div>
-      )}
-
-      {selecionado && !gtinBipado && (
-        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="text-sm font-semibold text-foreground">{selecionado.nome}</div>
-              <div className="text-xs text-muted-foreground">
-                {selecionado.unidade === 'Unidade' && selecionado.quantidadePorEmbalagem === 1
-                  ? 'Unidade'
-                  : `${selecionado.unidade} com ${selecionado.quantidadePorEmbalagem}`}
-              </div>
+            <div className="space-y-1.5">
+              <label htmlFor="quantidade" className={CLASSE_LABEL}>
+                Quantidade
+              </label>
+              <input
+                id="quantidade"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={quantidade}
+                onChange={(e) => setQuantidade(e.target.value)}
+                className={CLASSE_INPUT}
+              />
             </div>
-            <button
+            {alerta}
+            <BotaoPrimario
               type="button"
-              onClick={() => {
-                setSelecionado(null)
-                setErro(null)
-              }}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="h-10 w-full text-[14px]"
+              disabled={adicionar.isPending}
+              onClick={aoAdicionar}
             >
-              Trocar
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="quantidade" className="text-sm font-medium ui-uppercase">
-              Quantidade
-            </label>
-            <input
-              id="quantidade"
-              type="number"
-              min={1}
-              inputMode="numeric"
-              value={quantidade}
-              onChange={(e) => setQuantidade(e.target.value)}
-              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
-
-          {erro && (
-            <p role="alert" className="text-[13px] font-medium text-destructive">
-              {erro}
-            </p>
-          )}
-
-          <Button
-            type="button"
-            className="w-full"
-            disabled={adicionar.isPending}
-            onClick={aoAdicionar}
-          >
-            {adicionar.isPending ? 'Adicionando…' : 'Adicionar'}
-          </Button>
-        </div>
-      )}
-    </div>
+              {adicionar.isPending ? 'Adicionando…' : 'Adicionar'}
+            </BotaoPrimario>
+          </PainelForm>
+        )}
+      </div>
+    </Casca>
   )
 }
-
-

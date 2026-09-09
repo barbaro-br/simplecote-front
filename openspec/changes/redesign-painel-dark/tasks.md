@@ -25,9 +25,9 @@ verde antes de mergear em `main`.
       (`useFilaDeSincronizacao`) e limpar-preço (toast "Desfazer") mantidos.
       `ItemLanceCard` removido; `TelaDeSucesso`/`ConfirmarEnvioDialog`
       re-tematizados. Testes: 48 verdes (page + LinhaPreco).
-- [ ] `/colaborador/:token`: `Busca` + `LinhaLista` de produtos, sem modal.
-- [ ] `/pedido/:token` (representante): re-tematizar.
-- [ ] `TutorialOnboarding` do representante: re-tematizar (ainda claro).
+- [x] `/colaborador/:token`: `Busca` + `Lista/LinhaLista` + `Superficie` nos formulários (bipagem/cadastro/quantidade), sem modal. Casca escura. Testes verdes.
+- [x] `/pedido/:token` (representante): reescrita no painel escuro.
+- [x] `TutorialOnboarding` + `VistoStatus` removidos (descreviam a UI antiga).
 - [ ] `CascaPainel` (fundo fixo, rail desktop, barra mobile, `CabecalhoPagina`).
 - [ ] `AdminLayout` passa a usar `CascaPainel`; `BottomNavBar` re-tematizado.
 
