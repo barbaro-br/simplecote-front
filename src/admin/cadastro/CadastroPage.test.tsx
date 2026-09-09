@@ -80,7 +80,11 @@ test('endereço sempre em uso revela o campo para personalização', async () =>
 
   await user.type(screen.getByLabelText('Nome do supermercado'), 'Supermercado do Zé')
 
-  expect(await screen.findByText('Este endereço já está em uso.')).toBeInTheDocument()
+  // 4 tentativas automáticas, cada uma com debounce de 400ms + roundtrip MSW,
+  // antes de revelar o campo — precisa de folga além do timeout padrão de 1s.
+  expect(
+    await screen.findByText('Este endereço já está em uso.', {}, { timeout: 6000 }),
+  ).toBeInTheDocument()
   expect(screen.getByLabelText('Endereço na web')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Criar conta' })).toBeDisabled()
 })
