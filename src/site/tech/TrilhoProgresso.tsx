@@ -24,8 +24,9 @@ function irPara(id: string) {
 
 /**
  * Trilho fixo na lateral que mostra em que seção da home o visitante está e
- * quanto já rolou. Só em `lg+` (`hidden lg:flex`); no mobile o scroll normal
- * já basta. Seção ativa via IntersectionObserver, progresso via scroll.
+ * quanto já rolou. Só em `xl+` (`hidden xl:flex`) — abaixo disso o hero de 2
+ * colunas fica estreito e o trilho encostaria no card da grade. Seção ativa
+ * via IntersectionObserver, progresso via scroll.
  */
 export function TrilhoProgresso({ secoes = SECOES_HOME }: { secoes?: SecaoTrilho[] }) {
   const [ativa, setAtiva] = useState(secoes[0]?.id ?? '')
@@ -68,7 +69,7 @@ export function TrilhoProgresso({ secoes = SECOES_HOME }: { secoes?: SecaoTrilho
   return (
     <nav
       aria-label="Progresso da página"
-      className="fixed right-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-3 lg:flex xl:right-8"
+      className="fixed right-5 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-3 xl:flex 2xl:right-8"
     >
       <span
         aria-hidden
