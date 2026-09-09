@@ -29,7 +29,6 @@ import {
   useReabrir,
   useConvidarEmpresas,
   useGradeAoVivo,
-  useGradeAoVivoSSE,
   useParticipantes,
   useFinalizarParticipante,
   usePreviaApuracao
@@ -38,8 +37,7 @@ import {
 type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | 'encerrar' | null
 
 function GradeAoVivoContainer({ id, status, itens }: { id: string; status: string; itens: ItemCotacao[] }) {
-  useGradeAoVivoSSE(id, status)
-  const { data: grade, isLoading, error } = useGradeAoVivo(id)
+  const { data: grade, isLoading, error } = useGradeAoVivo(id, status)
 
   const [adicionarItemAberto, setAdicionarItemAberto] = useState(false)
   const [cadastroAberto, setCadastroAberto] = useState(false)
@@ -112,7 +110,7 @@ export function CotacaoDetalhePage() {
   const apurar = useApurar(id)
   const convidar = useConvidarEmpresas(id)
   const participantes = useParticipantes(id)
-  const gradeAoVivo = useGradeAoVivo(id)
+  const gradeAoVivo = useGradeAoVivo(id, cotacao?.status)
   const finalizarParticipante = useFinalizarParticipante(id)
 
   const [dialog, setDialog] = useState<DialogAberto>(null)

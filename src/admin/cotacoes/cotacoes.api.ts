@@ -1,6 +1,4 @@
-import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { api, baixarArquivo } from '@/shared/api/api-client'
 import type {
   AbrirCotacaoValues,
@@ -215,54 +213,16 @@ export function useReenviarConvite(cotacaoId: string) {
   })
 }
 
-// Leitura pontual da grade — sem refetchInterval.
-export function useAoVivo(cotacaoId: string) {
+// Grade da tela de acompanhamento. Enquanto a cotação está ABERTA, faz polling
+// a cada 5s. (O SSE foi removido: `EventSource` não envia o header
+// `Authorization` e, em produção, o front é estático na Vercel enquanto a API
+// fica noutro domínio — o stream nunca chegava a conectar.)
+export function useGradeAoVivo(cotacaoId: string, status?: string) {
   return useQuery({
     queryKey: aoVivoKey(cotacaoId),
     queryFn: () => api.get<GridAoVivo>(`/api/cotacoes/${cotacaoId}/ao-vivo`),
+    refetchInterval: status === 'ABERTA' ? 5000 : false,
   })
-}
-
-// Grade da tela de acompanhamento (agora consumida via SSE se ABERTA)
-export function useGradeAoVivo(cotacaoId: string) {
-  return useQuery({
-    queryKey: aoVivoKey(cotacaoId),
-    queryFn: () => api.get<GridAoVivo>(`/api/cotacoes/${cotacaoId}/ao-vivo`),
-  })
-}
-
-export function useGradeAoVivoSSE(cotacaoId: string, status?: string) {
-  const queryClient = useQueryClient()
-
-  useEffect(() => {
-    if (status !== 'ABERTA') {
-      return
-    }
-
-    const eventSource = new EventSource(`/api/cotacoes/${cotacaoId}/ao-vivo/stream`)
-
-    eventSource.addEventListener('LanceAtualizado', () => {
-      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
-    })
-    
-    eventSource.addEventListener('Conectado', () => {
-      // Ignorar
-    })
-
-    // Item adicionado pelo colaborador (link público) — avisa o Comprador em
-    // tempo real sem exigir refresh.
-    eventSource.addEventListener('ItemAdicionado', () => {
-      toast.success('Colaborador adicionou um item à cotação.')
-    })
-
-    eventSource.onerror = () => {
-      // Reconexão é tratada automaticamente pelo EventSource
-    }
-
-    return () => {
-      eventSource.close()
-    }
-  }, [cotacaoId, status, queryClient])
 }
 
 export function useCorrecoes(cotacaoId: string) {
