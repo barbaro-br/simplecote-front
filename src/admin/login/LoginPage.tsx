@@ -12,6 +12,8 @@ import { Button } from '@/shared/components/ui/button'
 import { RouteLoadingFallback } from '@/shared/components/ui/route-loading'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { Warning } from '@phosphor-icons/react'
+import { HeroFundo } from '@/site/HeroFundo'
+import { BrandLogo } from '@/site/BrandLogo'
 
 const loginSchema = z.object({
   email: z.string().min(1, 'E-mail obrigatório').email('E-mail inválido'),
@@ -58,13 +60,17 @@ export function LoginPage() {
   // sem um formulário de login que só falharia.
   if (slug !== null && existe === false) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-full max-w-sm space-y-8 px-4">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-primary">SimpleCote</h1>
-            <p className="text-sm text-muted-foreground">Cotações simplificadas</p>
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
+        <HeroFundo variant="simples" />
+        <div className="relative z-10 w-full max-w-sm space-y-8 px-4">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <BrandLogo variant="mark" size="lg" />
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold tracking-tight text-white">SimpleCote</h1>
+              <p className="text-sm text-white/70">Cotações simplificadas</p>
+            </div>
           </div>
-          <Card className="p-8 text-center space-y-4">
+          <Card className="space-y-4 border-white/10 bg-card/85 p-8 text-center backdrop-blur-xl">
             <p className="text-sm text-muted-foreground">Esse endereço de loja não existe.</p>
             <a
               href="https://simplecote.com.br"
@@ -79,16 +85,20 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-sm space-y-8 px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
+      <HeroFundo variant="simples" />
+      <div className="relative z-10 w-full max-w-sm space-y-8 px-4">
         {/* Logo / título — identidade do produto, igual para qualquer visitante */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-primary">SimpleCote</h1>
-          <p className="text-sm text-muted-foreground">Cotações simplificadas</p>
+        <div className="flex flex-col items-center gap-3 text-center">
+          <BrandLogo variant="mark" size="lg" />
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight text-white">SimpleCote</h1>
+            <p className="text-sm text-white/70">Cotações simplificadas</p>
+          </div>
         </div>
 
         {/* Card do formulário */}
-        <Card className="p-8 space-y-6">
+        <Card className="space-y-6 border-white/10 bg-card/85 p-8 backdrop-blur-xl">
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
             {/* E-mail */}
             <div className="space-y-1.5">

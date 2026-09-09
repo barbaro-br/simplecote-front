@@ -42,14 +42,17 @@ function webglDisponivel(): boolean {
  *     (erro de contexto → `sem3d`, sem lançar);
  * (d) scrim `bg-brand-navy-deep/50` por cima pro contraste do texto.
  * `< md` ou reduced-motion/Save-Data → só o gradiente fixo (sem vídeo).
+ *
+ * `variant="simples"` (Preços, Ajuda, telas de auth) → só o gradiente + scrim,
+ * sem vídeo nem shader: mesmo fundo de marca, bem mais leve nas subpáginas.
  */
-export function HeroFundo() {
+export function HeroFundo({ variant = 'completo' }: { variant?: 'completo' | 'simples' }) {
   const deveAnimar = useDeveAnimar()
   const larga = useViewportLarga()
   const [webglOk] = useState(() => webglDisponivel())
   const [sem3d, setSem3d] = useState(false)
 
-  const podeVideo = deveAnimar && larga
+  const podeVideo = variant === 'completo' && deveAnimar && larga
   const pode3d = podeVideo && webglOk && !sem3d
 
   return (

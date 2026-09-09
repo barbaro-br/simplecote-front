@@ -430,13 +430,9 @@
 }
 
 /*
- * Scroll-snap suave da home (change redesign-landing-page-tech §8). A classe é
- * adicionada ao `<html>` por `useScrollSnap` — só na home, só quando anima
- * (nunca sob prefers-reduced-motion/Save-Data). `proximity` (não `mandatory`)
- * deixa o scroll livre, apenas assentando perto dos limites das seções.
+ * Paginação por seção da home (change redesign-landing-page-tech §8): agora é
+ * feita em JS por `useScrollSnap` via `lenis/snap`, não mais por `scroll-snap`
+ * do CSS — o `proximity` + `scroll-behavior: smooth` brigavam com o Lenis e
+ * davam o tranco. As seções seguem marcadas com a utility `.snap-start` (só
+ * como âncora pro JS; sem contêiner de snap, ela não tem efeito visual).
  */
-.scroll-snap-home {
-  scroll-snap-type: y proximity;
-  scroll-padding-top: 4rem;
-  scroll-behavior: smooth;
-}

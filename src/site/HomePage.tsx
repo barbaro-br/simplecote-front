@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, CheckCircle, Package, Storefront, TrendDown, Users } from '@phosphor-icons/react'
 import { buttonClasses } from '@/shared/components/ui/button-classes'
@@ -7,6 +7,7 @@ import logo from '@/assets/logo-simplecote.jpg'
 import { PLANOS } from './planos'
 import { useSEO } from './seo'
 import { HeroFundo } from './HeroFundo'
+import { Painel } from './tech/Painel'
 import { BotaoMagnetico } from './tech/BotaoMagnetico'
 import { BorderBeam } from './tech/BorderBeam'
 import { CardTilt } from './tech/CardTilt'
@@ -75,19 +76,6 @@ function HeroTitulo() {
     >
       Cotações competitivas, sem planilha.
     </h1>
-  )
-}
-
-/** Painel glass de seção: conteúdo legível por cima do vídeo fixo. */
-function Painel({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      className={`mx-auto w-full max-w-6xl rounded-3xl border border-white/10 bg-background/70 backdrop-blur-sm md:backdrop-blur-2xl ${
-        className ?? ''
-      }`}
-    >
-      {children}
-    </div>
   )
 }
 

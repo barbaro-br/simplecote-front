@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import Lenis from 'lenis'
 import { gsap, ScrollTrigger, temMatchMedia } from './gsap-scroll'
 import { useDeveAnimar } from './useReduzirMovimento'
+import { definirLenis } from './lenis-atual'
 
 /**
  * Smooth-scroll global (Lenis) amarrado ao ticker do GSAP. É montado uma vez
@@ -16,6 +17,7 @@ export function useSmoothScroll() {
     if (!deveAnimar || !temMatchMedia()) return
 
     const lenis = new Lenis({ lerp: 0.1 })
+    definirLenis(lenis)
 
     lenis.on('scroll', ScrollTrigger.update)
 
@@ -25,6 +27,7 @@ export function useSmoothScroll() {
 
     return () => {
       gsap.ticker.remove(tick)
+      definirLenis(null)
       lenis.destroy()
     }
   }, [deveAnimar])

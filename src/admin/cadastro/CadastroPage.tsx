@@ -7,6 +7,8 @@ import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { Check, Eye, EyeSlash, Warning } from '@phosphor-icons/react'
+import { HeroFundo } from '@/site/HeroFundo'
+import { BrandLogo } from '@/site/BrandLogo'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 import {
   dominioDaLoja,
@@ -78,16 +80,22 @@ export function CadastroPage() {
 
   if (cadastrado) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-full max-w-sm space-y-6 px-4">
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold tracking-tight ui-uppercase">Confira seu e-mail</h1>
-            <p className="text-sm text-muted-foreground">
-              Enviamos um link de verificação para <strong>{emailCadastrado}</strong>. Clique nele
-              para ativar sua conta e acessar o painel.
-            </p>
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
+        <HeroFundo variant="simples" />
+        <div className="relative z-10 w-full max-w-sm space-y-6 px-4">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <BrandLogo variant="mark" size="lg" />
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold tracking-tight text-white ui-uppercase">
+                Confira seu e-mail
+              </h1>
+              <p className="text-sm text-white/70">
+                Enviamos um link de verificação para <strong>{emailCadastrado}</strong>. Clique nele
+                para ativar sua conta e acessar o painel.
+              </p>
+            </div>
           </div>
-          <Card className="p-8 text-center space-y-4">
+          <Card className="space-y-4 border-white/10 bg-card/85 p-8 text-center backdrop-blur-xl">
             <p className="text-sm text-muted-foreground">
               Se o e-mail não chegar em alguns minutos, confira a caixa de spam.
             </p>
@@ -104,14 +112,18 @@ export function CadastroPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-sm space-y-6 px-4">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-primary">SimpleCote</h1>
-          <p className="text-sm text-muted-foreground">Crie a conta do seu supermercado</p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
+      <HeroFundo variant="simples" />
+      <div className="relative z-10 w-full max-w-sm space-y-6 px-4 py-10">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <BrandLogo variant="mark" size="lg" />
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight text-white">SimpleCote</h1>
+            <p className="text-sm text-white/70">Crie a conta do seu supermercado</p>
+          </div>
         </div>
 
-        <Card className="p-8">
+        <Card className="border-white/10 bg-card/85 p-8 backdrop-blur-xl">
           <form onSubmit={form.handleSubmit(aoEnviar)} noValidate className="space-y-5">
             <Campo
               id="cadastro-nome"
