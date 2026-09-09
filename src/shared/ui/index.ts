@@ -12,3 +12,10 @@ export { Lista, LinhaLista } from './LinhaLista'
 export { Selo, type TomSelo } from './Selo'
 export { CampoEstat, RodapeAcao } from './CampoEstat'
 export { ChipsFiltro, type OpcaoChip } from './ChipsFiltro'
+export {
+  GradeDados,
+  type ColunaGrade,
+  type LinhaGrade,
+  type CelulaGrade,
+} from './GradeDados'
+export { BotaoPrimario, BotaoFantasma, BotaoIcone, CampoTexto, Busca } from './controles'

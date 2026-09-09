@@ -4,6 +4,7 @@ import { CheckCircle } from '@phosphor-icons/react'
 import {
   CampoEstat,
   ChipsFiltro,
+  GradeDados,
   LinhaLista,
   Lista,
   RodapeAcao,
@@ -68,4 +69,44 @@ test('ChipsFiltro marca o ativo com aria-pressed', () => {
   )
   expect(screen.getByRole('button', { name: 'Hortifruti', pressed: true })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Bebidas', pressed: false })).toBeInTheDocument()
+})
+
+test('GradeDados destaca a célula vencedora e expõe a coluna editável', () => {
+  const mudancas: string[] = []
+  render(
+    <GradeDados
+      colunas={[
+        { chave: 'a', rotulo: 'Aurora' },
+        { chave: 'b', rotulo: 'Meridiano' },
+      ]}
+      linhas={[
+        {
+          chave: 'arroz',
+          titulo: 'Arroz tipo 1',
+          sub: 'Fardo c/ 6',
+          codigo: '7896 0067 11234',
+          celulas: [
+            { valor: 'R$ 179,40' },
+            {
+              valor: '',
+              editavel: {
+                valor: '174,00',
+                aoMudar: (v) => mudancas.push(v),
+                rotuloA11y: 'Preço de Meridiano para Arroz tipo 1',
+              },
+            },
+          ],
+        },
+        {
+          chave: 'feijao',
+          titulo: 'Feijão carioca',
+          celulas: [{ valor: 'R$ 80,00', destaque: true, sub: 'R$ 8,00/un' }, { valor: 'R$ 87,00' }],
+        },
+      ]}
+    />,
+  )
+  expect(screen.getByText('7896 0067 11234')).toBeInTheDocument()
+  const editavel = screen.getByLabelText('Preço de Meridiano para Arroz tipo 1') as HTMLInputElement
+  expect(editavel.value).toBe('174,00')
+  expect(screen.getByText('R$ 8,00/un')).toBeInTheDocument()
 })
