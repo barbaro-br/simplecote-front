@@ -420,6 +420,16 @@
   }
 }
 
+/* Preenchimento do segmento ativo da barra de progresso do DeckHero (stories). */
+@keyframes deck-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .border-beam,
   .marquee-track,

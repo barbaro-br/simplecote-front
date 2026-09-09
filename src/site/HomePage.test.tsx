@@ -43,10 +43,12 @@ test('hero tem os CTAs "Criar conta" e "Entrar"', () => {
 test('renderiza em jsdom (sem WebGL) sem lançar, com headline e headings das seções', () => {
   const { container } = renderHome()
 
+  // headline do slide de abertura do deck (ativo) + headings da parte com scroll
   expect(screen.getByRole('heading', { name: /Cotações competitivas, sem planilha/i })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Como funciona' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Planos' })).toBeInTheDocument()
-  expect(screen.getByRole('heading', { name: 'Comece grátis' })).toBeInTheDocument()
+  // "Comece grátis" é o último slide do deck — presente, mas num slide inativo (aria-hidden)
+  expect(screen.getByRole('heading', { name: 'Comece grátis', hidden: true })).toBeInTheDocument()
   // sem WebGL no jsdom → a camada 3D não monta (fallback gradiente)
   expect(container.querySelector('canvas')).toBeNull()
 })

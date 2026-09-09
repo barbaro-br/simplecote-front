@@ -3,6 +3,7 @@ import { CaretDown } from '@phosphor-icons/react'
 import { moeda } from '@/shared/format/formatters'
 import { temMatchMedia } from './gsap-scroll'
 import { useDeveAnimar } from './useReduzirMovimento'
+import { TelaCard } from './telas/TelaCard'
 
 // Fornecedores fictícios — é uma simulação, não dado real nem marca existente.
 const FORNECEDORES = ['Aurora', 'Meridiano', 'Litoral'] as const
@@ -52,10 +53,11 @@ function economiaProjetada(precos: number[][]): number {
  * cobrindo o menor preço da embalagem item a item, sempre um pouco abaixo do
  * concorrente (nunca empatando), a célula vencedora acende e a economia
  * projetada sobe. Roteirizada (sem back, sem dado real). Respeita
- * `prefers-reduced-motion` — sem timers, estado assentado.
+ * `prefers-reduced-motion` — sem timers, estado assentado. `ativo` liga a
+ * animação só quando este slide do deck está visível.
  */
-export function GradeAoVivoDemo() {
-  const anima = useDeveAnimar() && temMatchMedia()
+export function GradeAoVivoDemo({ ativo = true }: { ativo?: boolean }) {
+  const anima = useDeveAnimar() && temMatchMedia() && ativo
 
   const [precos, setPrecos] = useState<number[][]>(() => PRODUTOS.map((p) => [...p.precos]))
   const [flash, setFlash] = useState<{ r: number; c: number; k: number } | null>(null)
@@ -94,28 +96,8 @@ export function GradeAoVivoDemo() {
   const economiaSuave = useNumeroSuave(economia, anima)
 
   return (
-    <div className="relative w-full max-w-2xl">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -inset-8 -z-10 rounded-[2.5rem] bg-brand-mint/20 blur-3xl"
-      />
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-brand-navy-deep shadow-[0_40px_100px_-20px_rgba(0,0,0,0.75)] ring-1 ring-inset ring-white/[0.06]">
-        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5 sm:px-5">
-          <span className="flex items-center gap-2 text-xs font-medium text-white/85">
-            <span className="relative flex size-2">
-              {anima && (
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-mint/70" />
-              )}
-              <span className="relative inline-flex size-2 rounded-full bg-brand-mint" />
-            </span>
-            Grade ao vivo
-          </span>
-          <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white/50">
-            Simulação
-          </span>
-        </div>
-
-        <div className="overflow-x-auto">
+    <TelaCard titulo="Grade ao vivo" pulso={anima}>
+      <div className="overflow-x-auto">
           <table className="w-full min-w-[460px] border-collapse text-left">
             <thead>
               <tr className="text-[10px] uppercase tracking-wide text-white/40">
@@ -176,15 +158,14 @@ export function GradeAoVivoDemo() {
           </table>
         </div>
 
-        <div className="flex items-baseline justify-between gap-3 border-t border-white/10 bg-white/[0.03] px-4 py-3 sm:px-5">
-          <span className="text-xs text-white/55">Economia projetada nesta cotação</span>
-          <span className="text-lg font-bold text-brand-mint-bright tabular-nums sm:text-xl">
-            {moeda(Math.round(economiaSuave))}
-            <span className="ml-1 text-xs font-normal text-white/40">/ mês</span>
-          </span>
-        </div>
+      <div className="flex items-baseline justify-between gap-3 border-t border-white/10 bg-white/[0.03] px-4 py-3 sm:px-5">
+        <span className="text-xs text-white/55">Economia projetada nesta cotação</span>
+        <span className="text-lg font-bold text-brand-mint-bright tabular-nums sm:text-xl">
+          {moeda(Math.round(economiaSuave))}
+          <span className="ml-1 text-xs font-normal text-white/40">/ mês</span>
+        </span>
       </div>
-    </div>
+    </TelaCard>
   )
 }
 
