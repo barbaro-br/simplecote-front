@@ -30,3 +30,4 @@ dist-ssr
 scratch.md
 handoff*.md
 paleta-grade-ao-vivo.md
+.playwright-mcp/

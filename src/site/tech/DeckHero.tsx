@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { CaretLeft, CaretRight, CheckCircle, Pause, Play, Storefront } from '@phosphor-icons/react'
+import {
+  CaretDown,
+  CaretLeft,
+  CaretRight,
+  CheckCircle,
+  Pause,
+  Play,
+  Storefront,
+} from '@phosphor-icons/react'
 import { buttonClasses } from '@/shared/components/ui/button-classes'
 import { BotaoMagnetico } from './BotaoMagnetico'
 import { GradeAoVivoDemo } from './GradeAoVivoDemo'
@@ -322,6 +330,15 @@ export function DeckHero() {
       <p className="sr-only" aria-live="polite">
         Slide {indice + 1} de {N}: {SLIDES[indice].rotulo}
       </p>
+
+      <a
+        href="#como-funciona"
+        data-cursor="mais"
+        className="absolute bottom-6 right-4 hidden items-center gap-1.5 text-[11px] font-medium text-white/45 transition-colors hover:text-white/80 sm:flex"
+      >
+        Planos e detalhes
+        <CaretDown className="size-3.5" aria-hidden />
+      </a>
     </section>
   )
 }

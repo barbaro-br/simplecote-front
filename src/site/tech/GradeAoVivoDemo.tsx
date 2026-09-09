@@ -98,67 +98,67 @@ export function GradeAoVivoDemo({ ativo = true }: { ativo?: boolean }) {
   return (
     <TelaCard titulo="Grade ao vivo" pulso={anima}>
       <div className="overflow-x-auto">
-          <table className="w-full min-w-[460px] border-collapse text-left">
-            <thead>
-              <tr className="text-[10px] uppercase tracking-wide text-white/40">
-                <th className="px-4 py-2 font-medium sm:px-5">Item</th>
-                {FORNECEDORES.map((f) => (
-                  <th key={f} className="px-2 py-2 text-right font-medium">
-                    {f}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {precos.map((linha, r) => {
-                const prod = PRODUTOS[r]
-                const vencedor = idxMenor(linha)
-                return (
-                  <tr key={prod.nome} className="border-t border-white/[0.07] align-top">
-                    <td className="whitespace-nowrap px-4 py-2.5 sm:px-5">
-                      <div className="text-[13px] font-semibold text-white">{prod.nome}</div>
-                      <div className="text-[11px] text-white/45">
-                        {prod.embalagem} c/ {prod.itensPorEmbalagem} · {prod.medida}
-                      </div>
-                      <div className="mt-0.5 font-mono text-[10px] tracking-tight text-white/30">
-                        {eanFormatado(prod.ean)}
-                      </div>
-                    </td>
-                    {linha.map((preco, c) => {
-                      const vencendo = c === vencedor
-                      const piscando = flash?.r === r && flash?.c === c
-                      const unit = preco / prod.itensPorEmbalagem
-                      return (
-                        <td key={c} className="px-2 py-2.5 text-right">
-                          <span
-                            key={piscando ? flash!.k : 'x'}
-                            className={`inline-flex flex-col items-end rounded-md px-2 py-1 text-[13px] tabular-nums transition-colors duration-500 ${
-                              vencendo
-                                ? 'bg-brand-mint/15 font-semibold text-brand-mint-bright ring-1 ring-brand-mint/40'
-                                : 'text-white/60'
-                            } ${piscando && vencendo ? 'flash-green' : ''}`}
-                          >
-                            <span className="inline-flex items-center gap-1">
-                              {vencendo && <CaretDown className="size-3" weight="bold" aria-hidden />}
-                              {moeda(preco)}
-                            </span>
-                            <span
-                              className={`text-[10px] font-normal ${vencendo ? 'text-brand-mint-bright/70' : 'text-white/30'}`}
-                            >
-                              {moeda(unit)}/un
-                            </span>
+        <table className="w-full min-w-[340px] border-collapse text-left sm:min-w-[460px]">
+          <thead>
+            <tr className="text-[10px] uppercase tracking-wide text-white/40">
+              <th className="px-4 py-2 font-medium sm:px-5">Item</th>
+              {FORNECEDORES.map((f) => (
+                <th key={f} className="px-2 py-2 text-right font-medium">
+                  {f}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {precos.map((linha, r) => {
+              const prod = PRODUTOS[r]
+              const vencedor = idxMenor(linha)
+              return (
+                <tr key={prod.nome} className="border-t border-white/[0.07] align-top">
+                  <td className="whitespace-nowrap px-4 py-2 sm:px-5 sm:py-2.5">
+                    <div className="text-[13px] font-semibold text-white">{prod.nome}</div>
+                    <div className="text-[11px] text-white/45">
+                      {prod.embalagem} c/ {prod.itensPorEmbalagem} · {prod.medida}
+                    </div>
+                    <div className="mt-0.5 hidden font-mono text-[10px] tracking-tight text-white/30 sm:block">
+                      {eanFormatado(prod.ean)}
+                    </div>
+                  </td>
+                  {linha.map((preco, c) => {
+                    const vencendo = c === vencedor
+                    const piscando = flash?.r === r && flash?.c === c
+                    const unit = preco / prod.itensPorEmbalagem
+                    return (
+                      <td key={c} className="px-2 py-2 text-right sm:py-2.5">
+                        <span
+                          key={piscando ? flash!.k : 'x'}
+                          className={`inline-flex flex-col items-end rounded-md px-2 py-1 text-[13px] tabular-nums transition-colors duration-500 ${
+                            vencendo
+                              ? 'bg-brand-mint/15 font-semibold text-brand-mint-bright ring-1 ring-brand-mint/40'
+                              : 'text-white/60'
+                          } ${piscando && vencendo ? 'flash-green' : ''}`}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            {vencendo && <CaretDown className="size-3" weight="bold" aria-hidden />}
+                            {moeda(preco)}
                           </span>
-                        </td>
-                      )
-                    })}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                          <span
+                            className={`hidden text-[10px] font-normal sm:block ${vencendo ? 'text-brand-mint-bright/70' : 'text-white/30'}`}
+                          >
+                            {moeda(unit)}/un
+                          </span>
+                        </span>
+                      </td>
+                    )
+                  })}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
 
-      <div className="flex items-baseline justify-between gap-3 border-t border-white/10 bg-white/[0.03] px-4 py-3 sm:px-5">
+      <div className="flex items-baseline justify-between gap-3 border-t border-white/10 bg-white/[0.03] px-4 py-2.5 sm:px-5 sm:py-3">
         <span className="text-xs text-white/55">Economia projetada nesta cotação</span>
         <span className="text-lg font-bold text-brand-mint-bright tabular-nums sm:text-xl">
           {moeda(Math.round(economiaSuave))}

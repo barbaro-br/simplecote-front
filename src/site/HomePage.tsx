@@ -47,7 +47,7 @@ export function HomePage() {
         <DeckHero />
 
         {/* Abaixo do deck: conteúdo pra ler/comparar (SEO + quem chega decidido) */}
-        <RevealSecao id="como-funciona" className="px-4 py-20">
+        <RevealSecao id="como-funciona" className="scroll-mt-20 px-4 pb-16 pt-24 sm:pt-32">
           <Painel className="p-6 sm:p-10 md:p-14">
             <div data-reveal className="mb-10 text-center">
               <h2 className="mb-3 text-3xl font-bold tracking-tight">Como funciona</h2>

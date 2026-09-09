@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, Outlet } from 'react-router-dom'
+import { List, X } from '@phosphor-icons/react'
 import { buttonClasses } from '@/shared/components/ui/button-classes'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { BrandLogo } from './BrandLogo'
@@ -20,7 +21,18 @@ export function SiteChrome({ children }: { children: ReactNode }) {
   const deveAnimar = useDeveAnimar()
   const [noTopo, setNoTopo] = useState(true)
   const [escondido, setEscondido] = useState(false)
+  const [menuAberto, setMenuAberto] = useState(false)
   const ultimoY = useRef(0)
+
+  // Fecha o menu mobile com Escape (a troca de rota é fechada no onClick dos links).
+  useEffect(() => {
+    if (!menuAberto) return
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuAberto(false)
+    }
+    window.addEventListener('keydown', aoTeclar)
+    return () => window.removeEventListener('keydown', aoTeclar)
+  }, [menuAberto])
 
   useEffect(() => {
     const aoRolar = () => {
@@ -52,34 +64,84 @@ export function SiteChrome({ children }: { children: ReactNode }) {
         }`}
       >
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
-          <Link to="/" aria-label="SimpleCote — página inicial" data-cursor="mais">
+          <Link
+            to="/"
+            aria-label="SimpleCote — página inicial"
+            data-cursor="mais"
+            onClick={() => setMenuAberto(false)}
+          >
             <BrandLogo tom={noTopo ? 'claro' : 'auto'} />
           </Link>
-          <nav className="flex items-center gap-4 sm:gap-6">
+
+          <div className="flex items-center gap-3 sm:gap-6">
+            <nav className="hidden items-center gap-6 sm:flex">
+              <Link
+                to="/precos"
+                className={`text-sm transition-colors ${noTopo ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                Preços
+              </Link>
+              <Link
+                to="/ajuda"
+                className={`text-sm transition-colors ${noTopo ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                Ajuda
+              </Link>
+              <Link
+                to="/login"
+                className={`text-sm font-medium hover:underline ${noTopo ? 'text-white' : ''}`}
+                data-cursor="mais"
+              >
+                Entrar
+              </Link>
+            </nav>
+
             <Link
-              to="/precos"
-              className={`hidden text-sm transition-colors sm:inline ${noTopo ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Preços
-            </Link>
-            <Link
-              to="/ajuda"
-              className={`hidden text-sm transition-colors sm:inline ${noTopo ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Ajuda
-            </Link>
-            <Link
-              to="/login"
-              className={`text-sm font-medium hover:underline ${noTopo ? 'text-white' : ''}`}
+              to="/cadastro"
+              className={buttonClasses({ className: 'max-sm:px-3 max-sm:text-xs' })}
               data-cursor="mais"
             >
-              Entrar
-            </Link>
-            <Link to="/cadastro" className={buttonClasses({})} data-cursor="mais">
               Criar conta
             </Link>
-          </nav>
+
+            <button
+              type="button"
+              onClick={() => setMenuAberto((v) => !v)}
+              aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
+              aria-expanded={menuAberto}
+              aria-controls="menu-mobile"
+              className={`flex size-9 items-center justify-center rounded-md transition-colors sm:hidden ${
+                noTopo ? 'text-white hover:bg-white/10' : 'text-foreground hover:bg-muted'
+              }`}
+            >
+              {menuAberto ? <X className="size-5" /> : <List className="size-5" />}
+            </button>
+          </div>
         </div>
+
+        {menuAberto && (
+          <div
+            id="menu-mobile"
+            className="absolute inset-x-0 top-full border-b border-border bg-background/95 shadow-lg backdrop-blur-md sm:hidden"
+          >
+            <nav className="mx-auto flex max-w-6xl flex-col px-4 py-1">
+              {[
+                ['/precos', 'Preços'],
+                ['/ajuda', 'Ajuda'],
+                ['/login', 'Entrar'],
+              ].map(([to, rotulo]) => (
+                <Link
+                  key={to}
+                  to={to}
+                  onClick={() => setMenuAberto(false)}
+                  className="border-b border-border/40 py-3 text-sm font-medium text-foreground last:border-0"
+                >
+                  {rotulo}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
       </header>
 
       <main className="flex-1">{children}</main>
