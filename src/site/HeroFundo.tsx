@@ -63,7 +63,7 @@ export function HeroFundo({ variant = 'completo' }: { variant?: 'completo' | 'si
       />
       {podeVideo && (
         <video
-          className="h-full w-full object-cover opacity-60"
+          className="h-full w-full object-cover opacity-40"
           src="/midia/animacao-marca.mp4"
           poster={hero}
           muted
@@ -82,7 +82,14 @@ export function HeroFundo({ variant = 'completo' }: { variant?: 'completo' | 'si
           </Suspense>
         </LimiteShader>
       )}
-      <div className="absolute inset-0 bg-brand-navy-deep/50" />
+      <div className="absolute inset-0 bg-brand-navy-deep/65" />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(125% 85% at 50% 0%, transparent 25%, var(--brand-navy-deep) 100%)',
+        }}
+      />
     </div>
   )
 }

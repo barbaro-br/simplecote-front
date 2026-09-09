@@ -6,6 +6,8 @@ type BrandLogoProps = {
   /** Classe no wrapper. O tamanho do símbolo vem de `size`. */
   className?: string
   size?: 'sm' | 'md' | 'lg'
+  /** `claro` força o "Simple" branco — para header transparente sobre fundo escuro. */
+  tom?: 'auto' | 'claro'
 }
 
 const MARCA: Record<NonNullable<BrandLogoProps['size']>, string> = {
@@ -28,7 +30,7 @@ const WORDMARK: Record<NonNullable<BrandLogoProps['size']>, string> = {
  * muito ampliado — pra uso grande (hero) prefira uma peça dedicada.
  * O wordmark ao lado continua sendo texto, recolorível via `--brand-mint`.
  */
-export function BrandLogo({ variant = 'full', className, size = 'md' }: BrandLogoProps) {
+export function BrandLogo({ variant = 'full', className, size = 'md', tom = 'auto' }: BrandLogoProps) {
   const simbolo = (
     <img
       src={logoUnica}
@@ -49,7 +51,7 @@ export function BrandLogo({ variant = 'full', className, size = 'md' }: BrandLog
     <span className={`inline-flex items-center gap-2.5 ${className ?? ''}`}>
       {simbolo}
       <span className={`font-bold tracking-tight ${WORDMARK[size]}`}>
-        <span className="text-foreground">Simple</span>
+        <span className={tom === 'claro' ? 'text-white' : 'text-foreground'}>Simple</span>
         <span className="text-[var(--brand-mint,#3fae7a)]">Cote</span>
       </span>
     </span>

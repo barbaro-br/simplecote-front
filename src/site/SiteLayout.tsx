@@ -43,26 +43,36 @@ export function SiteChrome({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col overflow-x-clip text-foreground">
       <CursorMais />
       <header
-        className={`sticky top-0 z-30 border-b backdrop-blur-md transition-all duration-300 ${
+        className={`sticky top-0 z-30 border-b transition-all duration-300 ${
           escondido ? '-translate-y-full' : 'translate-y-0'
         } ${
           noTopo
-            ? 'border-transparent bg-background/70 supports-[backdrop-filter]:bg-background/60'
-            : 'border-border bg-background/80 shadow-sm supports-[backdrop-filter]:bg-background/70'
+            ? 'border-transparent bg-transparent'
+            : 'border-border bg-background/80 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/70'
         }`}
       >
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
           <Link to="/" aria-label="SimpleCote — página inicial" data-cursor="mais">
-            <BrandLogo />
+            <BrandLogo tom={noTopo ? 'claro' : 'auto'} />
           </Link>
           <nav className="flex items-center gap-4 sm:gap-6">
-            <Link to="/precos" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link
+              to="/precos"
+              className={`hidden text-sm transition-colors sm:inline ${noTopo ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+            >
               Preços
             </Link>
-            <Link to="/ajuda" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link
+              to="/ajuda"
+              className={`hidden text-sm transition-colors sm:inline ${noTopo ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+            >
               Ajuda
             </Link>
-            <Link to="/login" className="text-sm font-medium hover:underline" data-cursor="mais">
+            <Link
+              to="/login"
+              className={`text-sm font-medium hover:underline ${noTopo ? 'text-white' : ''}`}
+              data-cursor="mais"
+            >
               Entrar
             </Link>
             <Link to="/cadastro" className={buttonClasses({})} data-cursor="mais">

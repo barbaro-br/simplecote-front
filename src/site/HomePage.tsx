@@ -17,6 +17,8 @@ import { RevealSecao } from './tech/RevealSecao'
 import { SpotlightCard } from './tech/SpotlightCard'
 import { TextoGradiente } from './tech/TextoGradiente'
 import { gsap, SplitText } from './tech/gsap-scroll'
+import { GradeAoVivoDemo } from './tech/GradeAoVivoDemo'
+import { TrilhoProgresso } from './tech/TrilhoProgresso'
 import { useDeveAnimar } from './tech/useReduzirMovimento'
 import { useScrollSnap } from './tech/useScrollSnap'
 
@@ -72,7 +74,7 @@ function HeroTitulo() {
   return (
     <h1
       ref={ref}
-      className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl"
+      className="mx-auto max-w-2xl text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl lg:mx-0 lg:max-w-xl"
     >
       Cotações competitivas, sem planilha.
     </h1>
@@ -92,35 +94,44 @@ export function HomePage() {
       {/* Fundo de marca fixo atrás da página inteira (só na home) */}
       <HeroFundo />
 
+      {/* Trilho lateral de progresso/seção (lg+) */}
+      <TrilhoProgresso />
+
       {/* Conteúdo por cima do fundo fixo */}
       <div className="relative z-10">
         {/* HERO */}
-        <section className="snap-start flex min-h-[100svh] flex-col overflow-hidden">
-          <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-24 text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-sm">
-              <Storefront className="size-4" aria-hidden />
-              Leilão reverso para supermercados
-            </span>
-            <HeroTitulo />
-            <p className="mx-auto max-w-xl text-lg text-white/80">
-              Você abre a cotação, os fornecedores disputam preço item a item e você economiza em
-              cada compra — com a grade ao vivo mostrando tudo em tempo real.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <BotaoMagnetico>
-                <Link to="/cadastro" className={buttonClasses({ size: 'lg' })} data-cursor="mais">
-                  Criar conta
-                </Link>
-              </BotaoMagnetico>
-              <BotaoMagnetico>
-                <Link
-                  to="/login"
-                  className={buttonClasses({ variant: 'outline', size: 'lg', className: 'border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white' })}
-                  data-cursor="mais"
-                >
-                  Entrar
-                </Link>
-              </BotaoMagnetico>
+        <section id="inicio" className="snap-start flex min-h-[100svh] flex-col overflow-hidden">
+          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center gap-10 px-4 py-20 lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-12">
+            <div className="flex flex-col items-center gap-6 text-center lg:items-start lg:text-left">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-sm">
+                <Storefront className="size-4" aria-hidden />
+                Leilão reverso para supermercados
+              </span>
+              <HeroTitulo />
+              <p className="max-w-xl text-lg text-white/80">
+                Você abre a cotação, os fornecedores disputam preço item a item e você economiza em
+                cada compra — com a grade ao vivo mostrando tudo em tempo real.
+              </p>
+              <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+                <BotaoMagnetico>
+                  <Link to="/cadastro" className={buttonClasses({ size: 'lg' })} data-cursor="mais">
+                    Criar conta
+                  </Link>
+                </BotaoMagnetico>
+                <BotaoMagnetico>
+                  <Link
+                    to="/login"
+                    className={buttonClasses({ variant: 'outline', size: 'lg', className: 'border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white' })}
+                    data-cursor="mais"
+                  >
+                    Entrar
+                  </Link>
+                </BotaoMagnetico>
+              </div>
+            </div>
+
+            <div className="w-full max-w-2xl lg:max-w-none">
+              <GradeAoVivoDemo />
             </div>
           </div>
 
@@ -138,7 +149,7 @@ export function HomePage() {
         </section>
 
         {/* COMO FUNCIONA */}
-        <RevealSecao className="snap-start flex min-h-[100svh] items-center px-4 py-12">
+        <RevealSecao id="como-funciona" className="snap-start flex min-h-[100svh] items-center px-4 py-12">
           <Painel className="p-6 sm:p-10 md:p-14">
             <div data-reveal className="mb-10 text-center">
               <h2 className="mb-3 text-3xl font-bold tracking-tight">Como funciona</h2>
@@ -167,7 +178,7 @@ export function HomePage() {
         </RevealSecao>
 
         {/* VEJA EM AÇÃO */}
-        <RevealSecao className="snap-start flex min-h-[100svh] items-center px-4 py-12">
+        <RevealSecao id="em-acao" className="snap-start flex min-h-[100svh] items-center px-4 py-12">
           <Painel className="p-6 sm:p-10 md:p-14">
             <div data-reveal className="mb-10 text-center">
               <h2 className="mb-3 text-3xl font-bold tracking-tight">
@@ -194,7 +205,7 @@ export function HomePage() {
         </RevealSecao>
 
         {/* POR QUE O SIMPLECOTE */}
-        <RevealSecao className="snap-start flex min-h-[100svh] items-center px-4 py-12">
+        <RevealSecao id="por-que" className="snap-start flex min-h-[100svh] items-center px-4 py-12">
           <Painel className="p-6 sm:p-10 md:p-14">
             <div data-reveal className="mb-10 text-center">
               <h2 className="mb-3 text-3xl font-bold tracking-tight">Por que o SimpleCote</h2>
@@ -216,7 +227,7 @@ export function HomePage() {
         </RevealSecao>
 
         {/* PLANOS (resumo da fonte única) */}
-        <RevealSecao className="snap-start flex min-h-[100svh] items-center px-4 py-12">
+        <RevealSecao id="planos" className="snap-start flex min-h-[100svh] items-center px-4 py-12">
           <Painel className="p-6 sm:p-10 md:p-14">
             <div data-reveal className="mb-10 text-center">
               <h2 className="mb-3 text-3xl font-bold tracking-tight">Planos</h2>
@@ -259,7 +270,7 @@ export function HomePage() {
         </RevealSecao>
 
         {/* CTA FINAL */}
-        <RevealSecao className="snap-start flex min-h-[100svh] items-center px-4 py-12">
+        <RevealSecao id="comecar" className="snap-start flex min-h-[100svh] items-center px-4 py-12">
           <Painel className="p-6 sm:p-10 md:p-14">
             <div className="flex flex-col items-center gap-6 text-center">
               <h2 data-reveal className="text-3xl font-bold tracking-tight">
