@@ -446,3 +446,33 @@
  * davam o tranco. As seções seguem marcadas com a utility `.snap-start` (só
  * como âncora pro JS; sem contêiner de snap, ela não tem efeito visual).
  */
+
+/* =========================================================================
+ * Tema "painel escuro" — change redesign-painel-dark (design.md §1).
+ * Escopo: um wrapper alto do app autenticado marcado com data-painel="dark".
+ * Nunca no <html> (não afeta o site institucional). Reusa os --brand-*.
+ * ========================================================================= */
+[data-painel='dark'] {
+  --pnl-superficie: var(--brand-navy-deep);
+  --pnl-superficie-2: rgba(255, 255, 255, 0.03);
+  --pnl-borda: rgba(255, 255, 255, 0.1);
+  --pnl-borda-fraca: rgba(255, 255, 255, 0.07);
+  --pnl-ring: rgba(255, 255, 255, 0.06);
+  --pnl-txt: #ffffff;
+  --pnl-txt-2: rgba(255, 255, 255, 0.7);
+  --pnl-txt-3: rgba(255, 255, 255, 0.45);
+  --pnl-txt-4: rgba(255, 255, 255, 0.3);
+  --pnl-acento: var(--brand-mint);
+  --pnl-acento-hi: var(--brand-mint-bright);
+  --pnl-atencao: var(--warning);
+  --pnl-perigo: var(--destructive);
+
+  color: var(--pnl-txt-2);
+  background: linear-gradient(160deg, var(--brand-navy-deep), var(--brand-navy)) fixed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-painel='dark'] .flash-green {
+    animation: none !important;
+  }
+}
