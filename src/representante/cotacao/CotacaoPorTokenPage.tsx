@@ -8,28 +8,10 @@ import { usePullToRefresh } from '@/shared/hooks/usePullToRefresh'
 import { LinhaPreco } from './LinhaPreco'
 import { ConfirmarEnvioDialog } from './ConfirmarEnvioDialog'
 import { TelaDeSucesso } from './TelaDeSucesso'
-import { TutorialOnboarding } from './TutorialOnboarding'
 import { useCotacaoPorToken, useFinalizar } from './cotacao-token.api'
 import { useFilaDeSincronizacao } from './useFilaDeSincronizacao'
 import { prazoExpirando, contarComPreco, itemEhNovo } from './cotacao-token.derivados'
 import type { CotacaoPorToken } from './cotacao-token.schema'
-
-const CHAVE_TUTORIAL = 'simplecote:tutorial-preco:v1'
-
-function tutorialJaVisto(): boolean {
-  try {
-    return localStorage.getItem(CHAVE_TUTORIAL) != null
-  } catch {
-    return false
-  }
-}
-function marcarTutorialVisto() {
-  try {
-    localStorage.setItem(CHAVE_TUTORIAL, '1')
-  } catch {
-    /* modo privado / storage indisponível — só não persiste */
-  }
-}
 
 function estaVencido(prazo: string | null): boolean {
   return prazo != null && new Date(prazo).getTime() < Date.now()
@@ -54,7 +36,6 @@ export function CotacaoPorTokenPage() {
   const [erroFinal, setErroFinal] = useState<string | null>(null)
   const [confirmando, setConfirmando] = useState(false)
   const [finalizado, setFinalizado] = useState(false)
-  const [mostrarTutorial, setMostrarTutorial] = useState(() => !tutorialJaVisto())
 
   // "Itens com preço agora" — reflete a digitação na hora, alimenta a bolha.
   // Semeado dos dados da API assim que chegam, sem efeito e sem flicker.
@@ -84,14 +65,6 @@ export function CotacaoPorTokenPage() {
       return base[id] === temPreco ? base : { ...base, [id]: temPreco }
     })
   }, [])
-
-  function dispensarTutorial() {
-    marcarTutorialVisto()
-    setMostrarTutorial(false)
-  }
-  const tutorialEl = mostrarTutorial ? (
-    <TutorialOnboarding aoConcluir={dispensarTutorial} />
-  ) : null
 
   const d = cotacao.data
   const comPreco = temPrecoLocal
@@ -127,9 +100,7 @@ export function CotacaoPorTokenPage() {
 
   if (cotacao.isLoading) {
     return (
-      <Casca>
-        {tutorialEl}
-        {puxarParaAtualizar}
+      <Casca>        {puxarParaAtualizar}
         <p className="p-6 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">Carregando…</p>
       </Casca>
     )
@@ -187,9 +158,7 @@ export function CotacaoPorTokenPage() {
   const completo = total > 0 && comPreco === total
 
   return (
-    <Casca>
-      {tutorialEl}
-      {puxarParaAtualizar}
+    <Casca>      {puxarParaAtualizar}
 
       <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-40">
         <Superficie>

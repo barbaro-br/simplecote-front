@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -10,7 +10,6 @@ import type { LanceStatus } from '@/shared/domain/tipos-base'
 
 const TOKEN = 'tok-page'
 const CHAVE_FILA = `simplecote:fila:${TOKEN}`
-const CHAVE_TUTORIAL = 'simplecote:tutorial-preco:v1'
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 // debounce do ItemLanceCard é 800ms — espera com folga
 const APOS_DEBOUNCE = 950
@@ -76,8 +75,6 @@ Object.defineProperty(window, 'localStorage', {
 
 beforeEach(() => {
   window.localStorage.clear()
-  // Sem isto o tutorial de primeira visita cobriria todas as telas.
-  window.localStorage.setItem(CHAVE_TUTORIAL, '1')
 })
 
 test('token válido: mostra a saudação, o contexto e os itens, com a bolha de progresso', async () => {
@@ -316,24 +313,6 @@ test('a bolha destaca (bg-primary) quando todos os itens têm preço', async () 
 
   const el = await screen.findByRole('status', { name: /1 de 1 itens com preço/i })
   expect(el).toHaveClass('bg-primary')
-})
-
-test('primeira visita: mostra o tutorial; concluir grava a chave e não repete', async () => {
-  window.localStorage.removeItem(CHAVE_TUTORIAL)
-  server.use(http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao())))
-  const { unmount } = renderPage()
-
-  expect(await screen.findByText('Conheça o card de produto')).toBeInTheDocument()
-  // fireEvent (não userEvent): o overlay full-screen + a barra fixa confundem o
-  // hit-test do userEvent no jsdom; o clique do botão em si é coberto por TutorialOnboarding.test.tsx.
-  fireEvent.click(screen.getByRole('button', { name: /pular tutorial/i }))
-  await waitFor(() => expect(screen.queryByText('Conheça o card de produto')).not.toBeInTheDocument())
-  expect(window.localStorage.getItem(CHAVE_TUTORIAL)).not.toBeNull()
-
-  unmount()
-  renderPage()
-  expect(await screen.findByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
-  expect(screen.queryByText('Conheça o card de produto')).not.toBeInTheDocument()
 })
 
 test('preencher um item não marca os demais (presentes desde o início) como "Novo"', async () => {
