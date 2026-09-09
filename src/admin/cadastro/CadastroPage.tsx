@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from 'react-router-dom'
@@ -15,6 +15,7 @@ import {
   nomeParaSlug,
   slugFormatoValido,
   slugReservado,
+  SLUG_MAX,
 } from '@/shared/domain/slug'
 import {
   cadastroSchema,
@@ -25,11 +26,28 @@ import { useCadastrar, useValidarSlug } from './cadastro.api'
 
 type EstadoSlug = 'vazio' | 'invalido' | 'reservado' | 'verificando' | 'livre' | 'em_uso'
 
+// Quantas variações (`-2`, `-3`, …) o cadastro tenta sozinho antes de revelar o
+// campo para o dono resolver na mão.
+const MAX_TENTATIVAS_SLUG = 4
+
+// Slug gerado do nome com sufixo `-N` a partir da 2ª tentativa, respeitando o
+// limite de 40 caracteres do back.
+function slugCandidato(nome: string, tentativa: number): string {
+  const base = nomeParaSlug(nome)
+  if (!base || tentativa === 0) return base
+  const sufixo = `-${tentativa + 1}`
+  return `${base.slice(0, SLUG_MAX - sufixo.length).replace(/-+$/, '')}${sufixo}`
+}
+
 export function CadastroPage() {
   const cadastrar = useCadastrar()
   const [erro, setErro] = useState<string | null>(null)
   const [mostrarSenha, setMostrarSenha] = useState(false)
-  const [slugTocado, setSlugTocado] = useState(false)
+  // O endereço web é derivado do nome e fica oculto; `slugManual` liga o campo
+  // editável (link "personalizar" ou esgotadas as tentativas automáticas).
+  const [slugManual, setSlugManual] = useState(false)
+  const [tentativaSlug, setTentativaSlug] = useState(0)
+  const ultimaTentativaRef = useRef('')
   const [cadastrado, setCadastrado] = useState(false)
   const [emailCadastrado, setEmailCadastrado] = useState('')
 
@@ -62,8 +80,31 @@ export function CadastroPage() {
   })()
 
   const slugLivre = estadoSlug === 'livre'
+  const nome = useWatch({ control: form.control, name: 'nomeSupermercado' }) ?? ''
   const senha = useWatch({ control: form.control, name: 'senha' }) ?? ''
   const senhaValida = senha.length >= SENHA_MIN_CADASTRO
+
+  // Enquanto o campo está oculto, resolve colisão/reserva sozinho tentando
+  // `nome`, `nome-2`, `nome-3`… Cada valor é processado uma única vez (ref); ao
+  // esgotar as tentativas, revela o campo para o dono decidir.
+  useEffect(() => {
+    if (slugManual) return
+    if (estadoSlug !== 'em_uso' && estadoSlug !== 'reservado') return
+    if (ultimaTentativaRef.current === slug) return
+    ultimaTentativaRef.current = slug
+    // setState no efeito de propósito: a próxima tentativa só é conhecida após a
+    // resposta do `validar-slug` (sistema externo); o loop é limitado a
+    // MAX_TENTATIVAS_SLUG antes de revelar o campo.
+    if (tentativaSlug >= MAX_TENTATIVAS_SLUG) {
+      // eslint-disable-next-line react/set-state-in-effect
+      setSlugManual(true)
+      return
+    }
+    const proxima = tentativaSlug + 1
+    // eslint-disable-next-line react/set-state-in-effect
+    setTentativaSlug(proxima)
+    form.setValue('slug', slugCandidato(nome, proxima), { shouldValidate: true })
+  }, [estadoSlug, slug, slugManual, tentativaSlug, nome, form])
 
   async function aoEnviar(v: CadastroFormValues) {
     if (estadoSlug !== 'livre') return
@@ -141,7 +182,9 @@ export function CadastroPage() {
                     value={field.value}
                     onChange={(e) => {
                       field.onChange(e.target.value)
-                      if (!slugTocado) {
+                      if (!slugManual) {
+                        setTentativaSlug(0)
+                        ultimaTentativaRef.current = ''
                         form.setValue('slug', nomeParaSlug(e.target.value), { shouldValidate: true })
                       }
                     }}
@@ -153,32 +196,42 @@ export function CadastroPage() {
               />
             </Campo>
 
-            <Campo
-              id="cadastro-slug"
-              label="Endereço da loja"
-              erro={form.formState.errors.slug?.message}
-            >
-              <Controller
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <Input
-                    id="cadastro-slug"
-                    autoComplete="off"
-                    placeholder="supermercado-do-ze"
-                    value={field.value}
-                    onChange={(e) => {
-                      setSlugTocado(true)
-                      field.onChange(nomeParaSlug(e.target.value))
-                    }}
-                    onBlur={field.onBlur}
-                    ref={field.ref}
-                    disabled={cadastrar.isPending}
-                  />
-                )}
-              />
-              <FeedbackSlug estado={estadoSlug} slug={slug} />
-            </Campo>
+            {slugManual ? (
+              <Campo
+                id="cadastro-slug"
+                label="Endereço na web"
+                erro={form.formState.errors.slug?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <Input
+                      id="cadastro-slug"
+                      autoComplete="off"
+                      placeholder="supermercado-do-ze"
+                      value={field.value}
+                      onChange={(e) => field.onChange(nomeParaSlug(e.target.value))}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      disabled={cadastrar.isPending}
+                    />
+                  )}
+                />
+                <FeedbackSlug estado={estadoSlug} slug={slug} />
+              </Campo>
+            ) : (
+              <div className="space-y-1.5">
+                <EnderecoWebGerado estado={estadoSlug} slug={slug} nome={nome} />
+                <button
+                  type="button"
+                  onClick={() => setSlugManual(true)}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Personalizar endereço
+                </button>
+              </div>
+            )}
 
             <Campo id="cadastro-email" label="E-mail" erro={form.formState.errors.email?.message}>
               <Input
@@ -273,6 +326,44 @@ function Campo({
       </label>
       {children}
       {erro && <p className="text-xs text-destructive">{erro}</p>}
+    </div>
+  )
+}
+
+function EnderecoWebGerado({
+  estado,
+  slug,
+  nome,
+}: {
+  estado: EstadoSlug
+  slug: string
+  nome: string
+}) {
+  if (!slug || estado === 'invalido') {
+    return (
+      <p className="text-xs text-muted-foreground">
+        {nome.trim()
+          ? 'Esse nome é curto demais para um endereço — use “Personalizar endereço”.'
+          : 'O endereço da loja é gerado a partir do nome acima.'}
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-0.5">
+      <p className="text-sm text-muted-foreground">
+        Endereço na web:{' '}
+        <span className="font-medium text-foreground">{dominioDaLoja(slug)}</span>
+      </p>
+      {(estado === 'verificando' || estado === 'em_uso' || estado === 'reservado') && (
+        <p className="text-xs text-muted-foreground">Procurando um endereço disponível…</p>
+      )}
+      {estado === 'livre' && (
+        <p className="flex items-center gap-1.5 text-[13px] font-medium text-success">
+          <Check className="size-3.5" aria-hidden />
+          Disponível
+        </p>
+      )}
     </div>
   )
 }

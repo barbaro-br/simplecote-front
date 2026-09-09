@@ -43,22 +43,37 @@ test('e-mail inválido e senha curta não enviam', async () => {
   expect(postCadastro).toBe(0)
 })
 
-test('nome "Supermercado do Zé" sugere o slug supermercado-do-ze', async () => {
+test('nome "Supermercado do Zé" gera o endereço supermercado-do-ze (campo oculto)', async () => {
   server.use(http.get('*/public/compradores/validar-slug', () => HttpResponse.json('LIVRE')))
   const user = userEvent.setup()
   renderPage()
 
   await user.type(screen.getByLabelText('Nome do supermercado'), 'Supermercado do Zé')
 
-  await waitFor(() => {
-    expect((screen.getByLabelText('Endereço da loja') as HTMLInputElement).value).toBe(
-      'supermercado-do-ze'
-    )
-  })
-  expect(screen.getByText('supermercado-do-ze.simplecote.app')).toBeInTheDocument()
+  expect(await screen.findByText('supermercado-do-ze.simplecote.app')).toBeInTheDocument()
+  // O campo do slug fica oculto até o dono clicar em "Personalizar endereço".
+  expect(screen.queryByLabelText('Endereço na web')).not.toBeInTheDocument()
 })
 
-test('slug em uso bloqueia o envio', async () => {
+test('endereço em uso é resolvido sozinho para a variação -2', async () => {
+  server.use(
+    http.get('*/public/compradores/validar-slug', ({ request }) => {
+      const slug = new URL(request.url).searchParams.get('slug')
+      return HttpResponse.json(slug === 'supermercado-do-ze' ? 'EM_USO' : 'LIVRE')
+    })
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Nome do supermercado'), 'Supermercado do Zé')
+
+  expect(await screen.findByText('supermercado-do-ze-2.simplecote.app')).toBeInTheDocument()
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Criar conta' })).toBeEnabled()
+  )
+})
+
+test('endereço sempre em uso revela o campo para personalização', async () => {
   server.use(http.get('*/public/compradores/validar-slug', () => HttpResponse.json('EM_USO')))
   const user = userEvent.setup()
   renderPage()
@@ -66,17 +81,27 @@ test('slug em uso bloqueia o envio', async () => {
   await user.type(screen.getByLabelText('Nome do supermercado'), 'Supermercado do Zé')
 
   expect(await screen.findByText('Este endereço já está em uso.')).toBeInTheDocument()
+  expect(screen.getByLabelText('Endereço na web')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Criar conta' })).toBeDisabled()
 })
 
-test('slug reservado bloqueia o envio sem chamar o back', async () => {
+test('slug reservado, ao personalizar, bloqueia o envio sem chamar o back', async () => {
+  let chamouBack = 0
+  server.use(
+    http.get('*/public/compradores/validar-slug', () => {
+      chamouBack += 1
+      return HttpResponse.json('LIVRE')
+    })
+  )
   const user = userEvent.setup()
   renderPage()
 
-  await user.type(screen.getByLabelText('Endereço da loja'), 'admin')
+  await user.click(screen.getByRole('button', { name: 'Personalizar endereço' }))
+  await user.type(screen.getByLabelText('Endereço na web'), 'admin')
 
   expect(await screen.findByText('Este endereço não está disponível.')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Criar conta' })).toBeDisabled()
+  expect(chamouBack).toBe(0)
 })
 
 test('cadastro com sucesso mostra "Confira seu e-mail"', async () => {
