@@ -8,6 +8,7 @@
  */
 export { Superficie } from './Superficie'
 export { SecaoCabecalho, SubFaixa } from './SecaoCabecalho'
+export { CabecalhoPagina } from './CabecalhoPagina'
 export { Lista, LinhaLista } from './LinhaLista'
 export { Selo, type TomSelo } from './Selo'
 export { CampoEstat, RodapeAcao } from './CampoEstat'

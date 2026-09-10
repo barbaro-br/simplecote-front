@@ -6,9 +6,9 @@ import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import type { StatusCotacao } from '@/shared/domain/tipos-base'
 import { StatusBadge } from '@/shared/components/StatusBadge'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie } from '@/shared/ui'
 import { Button } from '@/shared/components/ui/button'
 import { buttonClasses } from '@/shared/components/ui/button-classes'
-import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { MenuAcoes } from '@/shared/components/ui/menu-acoes'
@@ -97,23 +97,18 @@ export function CotacoesPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-5">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold ui-uppercase">Cotações</h1>
-          <p className="text-sm text-muted-foreground">
-            {isLoading
-              ? 'Carregando…'
-              : `${total} ${total === 1 ? 'cotação' : 'cotações'} no total`}
-          </p>
-        </div>
-        <Link
-          to="/admin/cotacoes/nova"
-          className={buttonClasses()}
-        >
-          <Plus className="size-4" aria-hidden />
-          Nova cotação
-        </Link>
-      </div>
+      <CabecalhoPagina
+        titulo="Cotações"
+        subtitulo={
+          isLoading ? 'Carregando…' : `${total} ${total === 1 ? 'cotação' : 'cotações'} no total`
+        }
+        acao={
+          <Link to="/admin/cotacoes/nova" className={buttonClasses()}>
+            <Plus className="size-4" aria-hidden />
+            Nova cotação
+          </Link>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-56 flex-1 max-w-xs">
@@ -143,8 +138,8 @@ export function CotacoesPage() {
                 onClick={() => setFiltro(f.valor)}
                 className={`h-7 rounded-full px-3 text-xs font-medium transition-colors ${
                   ativo
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                    ? 'bg-[var(--pnl-acento,#57bf8e)]/15 text-[var(--pnl-acento-hi,#6fe6ac)] ring-1 ring-inset ring-[var(--pnl-acento,#57bf8e)]/30'
+                    : 'bg-white/[0.06] text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {f.rotulo}
@@ -173,21 +168,21 @@ export function CotacoesPage() {
 
       {erroAcao && <ErrorAlert>{erroAcao}</ErrorAlert>}
 
-      <Card className="overflow-hidden">
+      <Superficie>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
-          <thead className="bg-muted/50">
-            <tr className="text-left text-muted-foreground">
-              <th className="px-4 py-3 font-medium ui-uppercase rounded-tl-xl">Título</th>
-              <th className="px-4 py-3 font-medium ui-uppercase">Status</th>
-              <th className="px-4 py-3 font-medium ui-uppercase">Prazo</th>
-              <th className="px-4 py-3 font-medium ui-uppercase text-right">Valor Total</th>
-              <th className="px-4 py-3 font-medium ui-uppercase w-12 rounded-tr-xl">
+          <thead>
+            <tr className="border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] text-left text-[11px] uppercase tracking-wide text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+              <th className="px-4 py-2.5 font-medium">Título</th>
+              <th className="px-4 py-2.5 font-medium">Status</th>
+              <th className="px-4 py-2.5 font-medium">Prazo</th>
+              <th className="px-4 py-2.5 font-medium text-right">Valor Total</th>
+              <th className="px-4 py-2.5 font-medium w-12">
                 <span className="sr-only">Ações</span>
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <tr key={i}>
@@ -255,7 +250,7 @@ export function CotacoesPage() {
                 return (
                   <tr
                     key={c.id}
-                    className={`transition-colors hover:bg-muted/40${
+                    className={`transition-colors hover:bg-white/[0.03]${
                       primeiraCarga ? ' fade-in' : ''
                     }`}
                     style={
@@ -267,7 +262,7 @@ export function CotacoesPage() {
                     <td className="px-4 py-3">
                       <Link
                         to={`/admin/cotacoes/${c.id}`}
-                        className="font-medium text-primary hover:underline"
+                        className="font-medium text-[var(--pnl-acento-hi,#6fe6ac)] hover:underline"
                       >
                         {c.titulo}
                       </Link>
@@ -310,7 +305,7 @@ export function CotacoesPage() {
           </tbody>
         </table>
         </div>
-      </Card>
+      </Superficie>
       {idAExcluir && (
         <ConfirmarDialog
           titulo="Excluir Cotação"
