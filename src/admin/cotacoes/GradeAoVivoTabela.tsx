@@ -5,6 +5,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
+import { sanitizarEntradaValor, valorParaNumero } from '@/shared/utils/preco'
 import type { CelulaGrid, GridAoVivo, ItemGrid } from './cotacoes.schema'
 import { useCorrigirLance, useAtualizarQuantidadeItem, useRemoverItem } from './cotacoes.api'
 import { ConfirmarDialog } from './ConfirmarDialog'
@@ -375,11 +376,18 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
   async function salvar() {
     if (!alvo) return
     setErro(null)
+    if (!naoCotado) {
+      const n = valorParaNumero(preco)
+      if (!Number.isFinite(n) || n < 0) {
+        setErro('Informe um preço válido (só números, no máximo 2 casas decimais).')
+        return
+      }
+    }
     try {
       await corrigir.mutateAsync({
         participanteId: alvo.celula.participanteId,
         itemId: alvo.item.itemCotacaoId,
-        ...(naoCotado ? { naoCotado: true } : { preco: Number(preco) }),
+        ...(naoCotado ? { naoCotado: true } : { preco: valorParaNumero(preco) }),
       })
       setAlvo(null)
     } catch (e) {
@@ -464,12 +472,16 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
               </label>
               <Input
                 id="corr-preco"
-                type="number"
-                min={0}
-                step="0.01"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="0,00"
                 value={preco}
                 disabled={naoCotado}
-                onChange={(e) => setPreco(e.target.value)}
+                onChange={(e) => {
+                  const s = sanitizarEntradaValor(e.target.value)
+                  if (s !== null) setPreco(s)
+                }}
                 className="text-lg h-12"
               />
             </div>

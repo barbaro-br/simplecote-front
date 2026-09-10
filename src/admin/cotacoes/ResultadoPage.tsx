@@ -8,6 +8,7 @@ import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { CabecalhoPagina, Superficie, SubFaixa, Selo, type TomSelo } from '@/shared/ui'
 import { Breadcrumb } from '@/shared/components/ui/breadcrumb'
 import { moeda } from '@/shared/format/formatters'
+import { sanitizarEntradaValor } from '@/shared/utils/preco'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import {
   baixarPedidoPdf,
@@ -140,7 +141,10 @@ export function ResultadoPage() {
               <Input
                 id="margem-global"
                 value={margemGlobal}
-                onChange={(e) => setMargemGlobal(e.target.value)}
+                onChange={(e) => {
+                  const s = sanitizarEntradaValor(e.target.value)
+                  if (s !== null) setMargemGlobal(s)
+                }}
                 placeholder="Ex: 30"
                 inputMode="decimal"
                 className="max-w-40"
@@ -252,9 +256,11 @@ export function ResultadoPage() {
                                     <td className="py-2 text-right">
                                       <Input
                                         value={margemEfetiva(item.id)}
-                                        onChange={(e) =>
-                                          setMargensPorItem((prev) => ({ ...prev, [item.id]: e.target.value }))
-                                        }
+                                        onChange={(e) => {
+                                          const s = sanitizarEntradaValor(e.target.value)
+                                          if (s !== null)
+                                            setMargensPorItem((prev) => ({ ...prev, [item.id]: s }))
+                                        }}
                                         placeholder="—"
                                         inputMode="decimal"
                                         aria-label={`Margem (%) de ${item.nomeSnapshot}`}

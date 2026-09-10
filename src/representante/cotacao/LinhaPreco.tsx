@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { X } from '@phosphor-icons/react'
 import { moeda } from '@/shared/format/formatters'
 import { useDebounce } from '@/shared/hooks/useDebounce'
+import { sanitizarEntradaValor } from '@/shared/utils/preco'
 import { cn } from '@/shared/lib/utils'
 import { precoSchema, type ItemLance } from './cotacao-token.schema'
 import type { StatusCelula } from './useFilaDeSincronizacao'
@@ -97,10 +98,8 @@ export function LinhaPreco({
   }, [texto])
 
   function alterar(bruto: string) {
-    const val = bruto.replace(/[^0-9.,]/g, '')
-    const partes = val.replace(',', '.').split('.')
-    if (partes.length > 2) return
-    if (partes[1] !== undefined && partes[1].length > 2) return
+    const val = sanitizarEntradaValor(bruto)
+    if (val === null) return
     setTexto(val)
     onPrecoChange?.(item.itemCotacaoId, val.trim() !== '')
   }
