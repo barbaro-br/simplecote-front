@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Warning } from '@phosphor-icons/react'
+import { Warning, X } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
@@ -41,6 +41,7 @@ import {
   useGradeAoVivo,
   useParticipantes,
   useFinalizarParticipante,
+  useDesconvidarParticipante,
   usePreviaApuracao
 } from './cotacoes.api'
 
@@ -119,6 +120,7 @@ export function CotacaoDetalhePage() {
   const cancelar = useCancelar(id)
   const apurar = useApurar(id)
   const convidar = useConvidarEmpresas(id)
+  const desconvidar = useDesconvidarParticipante(id)
   const participantes = useParticipantes(id)
   const gradeAoVivo = useGradeAoVivo(id, cotacao?.status)
   const finalizarParticipante = useFinalizarParticipante(id)
@@ -200,6 +202,25 @@ export function CotacaoDetalhePage() {
   const podeMontar = status === 'RASCUNHO'
   const podeConvidar = status === 'RASCUNHO' || status === 'ABERTA'
 
+  // Economia estimada da disputa: soma, por item, de quanto o menor lance atual
+  // ficou abaixo da referência de última compra (× quantidade). Sem referência
+  // de última compra, usa o spread entre o maior e o menor lance do item.
+  const economiaEstimada = (gradeAoVivo.data?.itens ?? []).reduce((soma, it) => {
+    const menor = it.menorPrecoUnitario
+    if (menor == null) return soma
+    const cotados = it.precos
+      .filter((c) => c.status === 'COTADO' && c.precoUnitario != null)
+      .map((c) => c.precoUnitario as number)
+    const referencia =
+      it.ultimoPrecoUnitario != null
+        ? it.ultimoPrecoUnitario
+        : cotados.length >= 2
+          ? Math.max(...cotados)
+          : null
+    if (referencia == null) return soma
+    return soma + Math.max(0, referencia - menor) * it.quantidadeSolicitada
+  }, 0)
+
   const SELO_TOM: Record<string, TomSelo> = {
     RASCUNHO: 'neutro',
     ABERTA: 'info',
@@ -267,6 +288,21 @@ export function CotacaoDetalhePage() {
                         !
                       </span>
                     )}
+                    {status === 'RASCUNHO' && (
+                      <button
+                        type="button"
+                        aria-label={`Remover ${p.empresaNome} da cotação`}
+                        disabled={desconvidar.isPending}
+                        onClick={() =>
+                          desconvidar
+                            .mutateAsync(p.participanteId)
+                            .catch((e) => tratarErro(e))
+                        }
+                        className="-mr-1 rounded-full p-0.5 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] hover:text-[var(--pnl-perigo,#ff6b6b)]"
+                      >
+                        <X className="size-3" weight="bold" aria-hidden />
+                      </button>
+                    )}
                   </span>
                 ))}
                 {podeConvidar && (
@@ -318,11 +354,15 @@ export function CotacaoDetalhePage() {
 
           <RodapeAcao
             esquerda={
-              <CampoEstat
-                inline
-                rotulo={status === 'PEDIDOS_GERADOS' ? 'Cotação apurada' : 'Itens na cotação'}
-                valor={totalItens}
-              />
+              (status === 'ABERTA' || status === 'ENCERRADA') && economiaEstimada > 0 ? (
+                <CampoEstat inline rotulo="Economia estimada até agora" valor={moeda(economiaEstimada)} />
+              ) : (
+                <CampoEstat
+                  inline
+                  rotulo={status === 'PEDIDOS_GERADOS' ? 'Cotação apurada' : 'Itens na cotação'}
+                  valor={totalItens}
+                />
+              )
             }
             direita={
               <div className="flex items-center gap-2">
