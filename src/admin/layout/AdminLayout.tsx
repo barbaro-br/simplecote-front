@@ -18,6 +18,7 @@ import {
 import { useAuth } from '@/shared/auth/useAuth'
 import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
+import { VoltarLayoutAntigo } from '@/shared/components/VoltarLayoutAntigo'
 import { BottomNavBar } from './BottomNavBar'
 import { BotaoAjudaFlutuante } from '../ajuda/BotaoAjudaFlutuante'
 import { ModoSuporteBanner } from '@/backoffice/ModoSuporteBanner'
@@ -164,6 +165,8 @@ function Sidebar({ nome, onLogout, itens }: { nome: string; onLogout: () => void
         </span>
       </button>
 
+      {isExpanded && <VoltarLayoutAntigo className="mt-1" />}
+
       <div
         className={`overflow-hidden whitespace-nowrap transition-all duration-300 text-[11px] text-muted-foreground/60 ${
           isExpanded ? 'opacity-100 translate-x-0 mt-2' : 'opacity-0 -translate-x-4 w-0 mt-0'
@@ -248,6 +251,8 @@ function SidebarMobile({ nome, onLogout, aberta, aoFechar, itens }: { nome: stri
           <SignOut className="size-6 shrink-0" aria-hidden />
           <span className="ui-uppercase">Sair</span>
         </button>
+
+        <VoltarLayoutAntigo className="mt-1" />
       </aside>
     </>
   )

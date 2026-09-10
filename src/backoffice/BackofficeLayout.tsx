@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { ShoppingBag } from '@phosphor-icons/react'
 import { useAuth } from '@/shared/auth/useAuth'
+import { VoltarLayoutAntigo } from '@/shared/components/VoltarLayoutAntigo'
 
 /**
  * Casca do backoffice — identidade SimpleCote (§I), sem tema/cor de loja.
@@ -40,16 +41,19 @@ export function BackofficeLayout() {
               </NavLink>
             </nav>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              logout()
-              navigate('/login', { replace: true })
-            }}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Sair
-          </button>
+          <div className="flex items-center gap-3">
+            <VoltarLayoutAntigo className="px-0 py-0 text-[13px]" />
+            <button
+              type="button"
+              onClick={() => {
+                logout()
+                navigate('/login', { replace: true })
+              }}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
