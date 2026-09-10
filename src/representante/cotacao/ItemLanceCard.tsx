@@ -15,6 +15,16 @@ const UNIT_ABBR: Record<string, string> = {
   Unidade: 'un',
 }
 
+// Rótulo do único campo de preço. Deixa explícito o que o representante digita
+// (o valor por unidade vira só uma dica embaixo, quando a embalagem tem mais de
+// uma unidade). Embalagem desconhecida cai em "Preço da embalagem".
+const ROTULO_PRECO: Record<string, string> = {
+  Fardo: 'Preço do fardo',
+  Caixa: 'Preço da caixa',
+  Cartela: 'Preço da cartela',
+  Unidade: 'Preço',
+}
+
 function precoInicial(item: ItemLance): string {
   return item.preco != null ? String(item.preco) : ''
 }
@@ -134,12 +144,18 @@ export function ItemLanceCard({
 
   const swipeRevelado = swipeOffset < -LIMIAR_SWIPE / 2
   const temPreco = precoTexto.trim() !== ''
-  const unitario =
+
+  // Um campo só: o representante digita o preço da embalagem. O valor por
+  // unidade aparece como dica discreta, e só quando a embalagem tem >1 unidade
+  // (senão os dois números são iguais — puro ruído).
+  const mostrarUnitario = item.quantidadePorEmbalagemSnapshot > 1
+  const rotuloPreco = ROTULO_PRECO[item.unidade] ?? 'Preço da embalagem'
+  const textoUnitario =
     item.precoUnitario != null
-      ? moeda(item.precoUnitario)
+      ? `≈ ${moeda(item.precoUnitario)}/un`
       : status === 'enviando' && temPreco
         ? 'calculando…'
-        : '—'
+        : null
 
   const unitAbbr = UNIT_ABBR[item.unidade] ?? item.unidade
   const unitText =
@@ -214,12 +230,12 @@ export function ItemLanceCard({
         </div>
 
         <div className="flex items-end gap-3">
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[10px] font-medium uppercase text-muted-foreground">
-              P.CX
-            </span>
-            <label htmlFor={`preco-${item.itemCotacaoId}`} className="sr-only">
-              Preço da embalagem
+          <div className="flex flex-col items-end gap-1">
+            <label
+              htmlFor={`preco-${item.itemCotacaoId}`}
+              className="text-[10px] font-medium uppercase text-muted-foreground"
+            >
+              {rotuloPreco}
             </label>
             <div className="flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 transition-colors focus-within:border-muted-foreground">
               <span className="text-[11px] font-medium text-muted-foreground">R$</span>
@@ -241,22 +257,11 @@ export function ItemLanceCard({
                 className="w-24 bg-transparent text-[16px] font-semibold tabular-nums outline-none placeholder:text-muted-foreground/60 disabled:opacity-50 md:w-20 md:text-[12px]"
               />
             </div>
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[10px] font-medium uppercase text-muted-foreground">
-              P.UN
-            </span>
-            <div className="min-w-[114px] rounded-lg border border-border bg-card px-2 py-1 text-center">
-              <span
-                className={`whitespace-nowrap tabular-nums ${
-                  item.precoUnitario != null
-                    ? 'text-sm font-semibold text-foreground'
-                    : 'text-[11px] text-muted-foreground'
-                }`}
-              >
-                {unitario}
+            {mostrarUnitario && (
+              <span className="h-3.5 text-[10px] tabular-nums text-muted-foreground">
+                {textoUnitario ?? ' '}
               </span>
-            </div>
+            )}
           </div>
           <VistoStatus filled={temPreco} />
         </div>

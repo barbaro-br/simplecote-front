@@ -114,8 +114,9 @@ export function TutorialOnboarding({ aoConcluir }: { aoConcluir: () => void }) {
                 </div>
               </div>
               <p className="text-[11px] leading-relaxed text-muted-foreground">
-                P.CX = preço da caixa/embalagem · P.UN = preço por unidade (calculado
-                automaticamente)
+                Digite o <span className="font-semibold text-foreground">preço da embalagem
+                inteira</span> (a caixa, o fardo…). Quando a embalagem tem mais de uma
+                unidade, o preço por unidade aparece como referência abaixo do campo.
               </p>
             </div>
           )}

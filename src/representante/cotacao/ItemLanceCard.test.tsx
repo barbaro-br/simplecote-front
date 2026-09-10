@@ -136,46 +136,33 @@ describe('ItemLanceCard', () => {
     expect((campo() as HTMLInputElement).value).toBe('10')
   })
 
-  it('mostra o preço unitário quando o item já tem precoUnitario', () => {
-    renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
-    expect(screen.getByText(/R\$\s0,50/)).toBeInTheDocument()
+  it('mostra o preço unitário como dica quando a embalagem tem >1 unidade', () => {
+    renderCard({ item: { ...baseItem, quantidadePorEmbalagemSnapshot: 6, precoUnitario: 0.5 } })
+    expect(screen.getByText(/≈\s*R\$\s0,50\/un/)).toBeInTheDocument()
   })
 
-  const caixaDoPun = (conteudo: string | RegExp) =>
-    screen.getByText(conteudo).closest('div.rounded-lg') as HTMLElement
-
-  it('a caixa do P.UN tem largura mínima no estado vazio ("—")', () => {
-    renderCard()
-    expect(caixaDoPun('—').className).toContain('min-w-[114px]')
+  it('não mostra dica de unitário quando a embalagem é 1 unidade', () => {
+    renderCard({ item: { ...baseItem, quantidadePorEmbalagemSnapshot: 1, precoUnitario: 0.5 } })
+    expect(screen.queryByText(/\/un/)).not.toBeInTheDocument()
   })
 
-  it('a caixa do P.UN tem largura mínima no estado "calculando…"', async () => {
-    const user = userEvent.setup()
-    renderCard({ status: 'enviando' })
-    await user.type(campo(), '9')
-    expect(caixaDoPun('calculando…').className).toContain('min-w-[114px]')
+  it('um campo de preço só, com rótulo pela embalagem (sem P.CX/P.UN)', () => {
+    renderCard({ item: { ...baseItem, unidade: 'Caixa', quantidadePorEmbalagemSnapshot: 6 } })
+    expect(screen.getByLabelText('Preço da caixa')).toBeInTheDocument()
+    expect(screen.queryByText('P.CX')).not.toBeInTheDocument()
+    expect(screen.queryByText('P.UN')).not.toBeInTheDocument()
   })
 
-  it('a caixa do P.UN tem largura mínima com valor formatado', () => {
-    renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
-    expect(caixaDoPun(/R\$\s0,50/).className).toContain('min-w-[114px]')
-  })
-
-  it('renderiza os rótulos "P.CX" e "P.UN" acima dos valores', () => {
-    renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
-    expect(screen.getByText('P.CX')).toBeInTheDocument()
-    expect(screen.getByText('P.UN')).toBeInTheDocument()
-  })
-
-  it('o preço unitário é texto simples, não um input', () => {
-    renderCard({ item: { ...baseItem, precoUnitario: 0.5 } })
-    expect(screen.getByText(/R\$\s0,50/).tagName).toBe('SPAN')
-    expect(screen.getByText(/R\$\s0,50/)).not.toHaveAttribute('type')
+  it('a dica de unitário é texto simples, não um input', () => {
+    renderCard({ item: { ...baseItem, quantidadePorEmbalagemSnapshot: 6, precoUnitario: 0.5 } })
+    const dica = screen.getByText(/≈\s*R\$\s0,50\/un/)
+    expect(dica.tagName).toBe('SPAN')
+    expect(dica).not.toHaveAttribute('type')
   })
 
   it('mostra "calculando…" durante o envio quando ainda não há unitário', async () => {
     const user = userEvent.setup()
-    renderCard({ status: 'enviando' })
+    renderCard({ item: { ...baseItem, quantidadePorEmbalagemSnapshot: 6 }, status: 'enviando' })
 
     await user.type(campo(), '9')
 
