@@ -149,7 +149,7 @@ export function LinhaPreco({
         </div>
         <div className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{sub}</div>
         {item.codigoBarras && (
-          <div className="mt-0.5 font-mono text-[10px] tracking-tight text-[var(--pnl-txt-4,rgba(255,255,255,0.3))]">
+          <div className="mt-0.5 font-mono text-[10px] tracking-tight text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
             {item.codigoBarras}
           </div>
         )}

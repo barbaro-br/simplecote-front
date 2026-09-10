@@ -121,7 +121,7 @@ export function AnalisesPage() {
                       <span className="text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]"> · {data.itemMaisComprado.quantidade} un</span>
                     </p>
                   ) : (
-                    <p className="text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">Nada por aqui</p>
+                    <p className="text-sm text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">Nada por aqui</p>
                   )}
                 </div>
               </Superficie>
@@ -134,7 +134,7 @@ export function AnalisesPage() {
                       <span className="text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]"> · {data.itemMenosComprado.quantidade} un</span>
                     </p>
                   ) : (
-                    <p className="text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">Nada por aqui</p>
+                    <p className="text-sm text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">Nada por aqui</p>
                   )}
                 </div>
               </Superficie>

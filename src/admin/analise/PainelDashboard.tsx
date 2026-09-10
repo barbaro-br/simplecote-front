@@ -52,7 +52,7 @@ function BarraTop({
   vazio: string
 }) {
   if (itens.length === 0) {
-    return <p className="px-4 py-4 text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] sm:px-5">{vazio}</p>
+    return <p className="px-4 py-4 text-sm text-[var(--pnl-txt-2,rgba(255,255,255,0.7))] sm:px-5">{vazio}</p>
   }
   const max = Math.max(0, ...itens.map((i) => i.valor))
   return (
@@ -177,14 +177,14 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
             className="flex items-center gap-2 rounded-lg border border-[var(--pnl-borda,rgba(255,255,255,0.1))] px-3 py-2 text-left text-sm transition-colors hover:border-[var(--pnl-acento,#57bf8e)]/50"
           >
             <span className="font-semibold tabular-nums text-[var(--pnl-txt,#fff)]">{data.encerradasSemApurar}</span>
-            <span className="text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">encerradas sem apurar</span>
+            <span className="text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">encerradas sem apurar</span>
           </button>
           <button
             onClick={() => onStatusClick('PEDIDOS_GERADOS')}
             className="flex items-center gap-2 rounded-lg border border-[var(--pnl-borda,rgba(255,255,255,0.1))] px-3 py-2 text-left text-sm transition-colors hover:border-[var(--pnl-acento,#57bf8e)]/50"
           >
             <span className="font-semibold tabular-nums text-[var(--pnl-txt,#fff)]">{data.apuradasSemPedidoEnviado}</span>
-            <span className="text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">apuradas sem pedido enviado</span>
+            <span className="text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">apuradas sem pedido enviado</span>
           </button>
         </div>
       </Superficie>
@@ -216,7 +216,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
                 className="flex items-center gap-1.5 hover:underline"
               >
                 <span className={`size-2.5 rounded-full ${s.cor}`} />
-                <span className="text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{s.rotulo}</span>
+                <span className="text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">{s.rotulo}</span>
                 <span className="font-semibold tabular-nums text-[var(--pnl-txt,#fff)]">{data.porStatus[s.chave]}</span>
               </button>
             ))}
@@ -228,7 +228,7 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
       <Superficie>
         <SecaoCabecalho titulo="Próximos prazos" />
         {data.proximosPrazos.length === 0 ? (
-          <p className="px-4 py-4 text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] sm:px-5">Nada por aqui</p>
+          <p className="px-4 py-4 text-sm text-[var(--pnl-txt-2,rgba(255,255,255,0.7))] sm:px-5">Nada por aqui</p>
         ) : (
           <Lista>
             {data.proximosPrazos.map((prazo) => {

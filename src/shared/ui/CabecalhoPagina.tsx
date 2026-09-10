@@ -23,7 +23,7 @@ export function CabecalhoPagina({
           {titulo}
         </h1>
         {subtitulo != null && (
-          <p className="mt-0.5 text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+          <p className="mt-0.5 text-sm text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">
             {subtitulo}
           </p>
         )}

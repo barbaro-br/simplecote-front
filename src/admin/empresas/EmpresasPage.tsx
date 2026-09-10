@@ -152,7 +152,7 @@ export function EmpresasPage() {
             <tbody className="divide-y divide-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
               {!empresas?.length ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+                  <td colSpan={3} className="px-4 py-8 text-center text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">
                     Nenhum fornecedor cadastrado.
                   </td>
                 </tr>
@@ -179,7 +179,7 @@ export function EmpresasPage() {
                             <div className="text-xs text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{rep.email}</div>
                           </div>
                         ) : (
-                          <span className="text-xs text-[var(--pnl-txt-4,rgba(255,255,255,0.3))]">sem representante</span>
+                          <span className="text-xs text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">sem representante</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">

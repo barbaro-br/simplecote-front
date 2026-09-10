@@ -93,7 +93,7 @@ export function UsuariosPage() {
             <tbody className="divide-y divide-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
               {!lista.length ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+                  <td colSpan={4} className="px-4 py-8 text-center text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">
                     Nenhum usuário cadastrado.
                   </td>
                 </tr>

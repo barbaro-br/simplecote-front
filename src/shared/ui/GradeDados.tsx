@@ -73,7 +73,7 @@ function Celula({ c }: { c: CelulaGrade }) {
               'text-[10px] font-normal',
               c.destaque
                 ? 'text-[var(--pnl-acento-hi,#6fe6ac)]/70'
-                : 'text-[var(--pnl-txt-4,rgba(255,255,255,0.3))]',
+                : 'text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]',
             )}
           >
             {c.sub}
@@ -132,7 +132,7 @@ export function GradeDados({
                   </div>
                 )}
                 {linha.codigo != null && (
-                  <div className="mt-0.5 font-mono text-[10px] tracking-tight text-[var(--pnl-txt-4,rgba(255,255,255,0.3))]">
+                  <div className="mt-0.5 font-mono text-[10px] tracking-tight text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
                     {linha.codigo}
                   </div>
                 )}
