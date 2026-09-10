@@ -304,6 +304,43 @@ test('editar um produto no modal não perde os itens já adicionados à cotaçã
   expect(within(linhaFeijao).getByText('Na cotação')).toBeInTheDocument()
 })
 
+test('lápis no item (RASCUNHO) abre o cadastro do produto e a embalagem atualiza na lista', async () => {
+  const produtosEditaveis = [
+    { id: 'p-1', nome: 'Arroz Tipo 1 5kg', codigoBarras: null, unidade: 'Fardo', quantidadePorEmbalagem: 1, ativo: true },
+  ]
+  setup('RASCUNHO', [novoItem('p-1', 5)])
+  server.use(
+    http.get('*/api/produtos', () => HttpResponse.json(produtosEditaveis)),
+    http.put('*/api/produtos/:id', async ({ params, request }) => {
+      const v = (await request.json()) as { nome: string; unidade: string; quantidadePorEmbalagem: number }
+      const p = produtosEditaveis.find((x) => x.id === params.id)
+      if (p) Object.assign(p, v)
+      return HttpResponse.json(p ?? {})
+    }),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  // Coluna Embalagem começa com o que o produto tinha (Fardo, 1)
+  expect(await screen.findByText('FARDO 1')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Editar embalagem de Arroz Tipo 1 5kg' }))
+  const form = await screen.findByRole('dialog', { name: 'Cadastrar novo produto' })
+  expect(form).toHaveTextContent('Editar Produto')
+
+  await user.selectOptions(within(form).getByLabelText('Embalagem'), 'Caixa')
+  const qtd = within(form).getByLabelText('Qtd. por embalagem')
+  await user.clear(qtd)
+  await user.type(qtd, '12')
+  await user.click(within(form).getByRole('button', { name: /salvar/i }))
+  await user.click(await screen.findByRole('button', { name: 'Salvar sem código' }))
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog', { name: 'Cadastrar novo produto' })).not.toBeInTheDocument(),
+  )
+
+  expect(await screen.findByText('CAIXA COM 12')).toBeInTheDocument()
+})
+
 test('3.2 — em ABERTA o botão "Adicionar item" aparece junto à grade (mas não "Remover")', async () => {
   setup('ABERTA', [novoItem('p-1', 5)])
   await screen.findByRole('heading', { name: 'Compra semanal' })

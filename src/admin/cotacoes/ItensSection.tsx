@@ -4,7 +4,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { BotaoIcone } from '@/shared/ui'
 import { AdicionarItemModal } from './AdicionarItemModal'
-import { Package, Trash, Plus, Minus } from '@phosphor-icons/react'
+import { Package, Trash, Plus, Minus, PencilSimple } from '@phosphor-icons/react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import { type Produto } from '@/admin/produtos/produtos.schema'
@@ -215,16 +215,34 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
                     </td>
                     {editavel && (
                       <td className="px-4 py-2 text-right">
-                        <Button  
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => remover.mutate(item.id)}
-                          disabled={remover.isPending}
-                          aria-label="Remover"
-                        >
-                          <Trash className="size-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Lápis: abre o cadastro do produto (embalagem +
+                              qtd. por embalagem). Em RASCUNHO a coluna já mostra
+                              o valor vivo do catálogo, então corrigir o produto
+                              conserta a cotação. Sem `liveProd` (produto sumiu
+                              do catálogo) não há o que editar. */}
+                          {liveProd && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => abrirEdicao(liveProd)}
+                              aria-label={`Editar embalagem de ${item.nomeSnapshot}`}
+                              title="Editar embalagem no cadastro do produto"
+                            >
+                              <PencilSimple className="size-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => remover.mutate(item.id)}
+                            disabled={remover.isPending}
+                            aria-label="Remover"
+                          >
+                            <Trash className="size-4" />
+                          </Button>
+                        </div>
                       </td>
                     )}
                   </tr>

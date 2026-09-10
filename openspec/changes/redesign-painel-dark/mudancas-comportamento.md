@@ -204,6 +204,24 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   têm `aria-label` "Aumentar quantidade" / "Diminuir quantidade". Leitor de
   tela e testes passam a conseguir mirá-los. Sem mudança visual/de fluxo.
 
+- **Lápis para corrigir a embalagem do item.** Cada linha da tabela de itens
+  (só em RASCUNHO) ganhou um lápis ao lado da lixeira. Ele abre o cadastro do
+  produto (mesmo card de sempre) já em modo edição, pra ajustar tipo de
+  embalagem e quantidade por embalagem. **É o produto no catálogo que muda** —
+  em RASCUNHO a coluna "Embalagem" já mostra o valor vivo do catálogo, então a
+  correção aparece na hora na cotação. Sem `liveProd` (produto removido do
+  catálogo) o lápis não aparece.
+
+- **Abrir a cotação re-lê a embalagem do catálogo (mudança de back).** Antes:
+  o snapshot de nome/código/embalagem de cada item era congelado quando o item
+  foi adicionado e nunca mais mudava — se você corrigisse a embalagem do
+  produto depois, a cotação abria com o valor velho e o representante cotava
+  contra a embalagem errada. Depois: no momento de **abrir** (RASCUNHO →
+  ABERTA), cada item re-lê nome/código/embalagem do produto no catálogo. A
+  partir daí o snapshot volta a ser fixo — editar o produto não mexe mais na
+  cotação (spec.md §10.3). Produto removido ou inativo mantém o snapshot que
+  já estava no item.
+
 ## Grade ao vivo (admin)
 
 - **Cabeçalho da grade dentro da mesma superfície.** Antes "Grade de Respostas
