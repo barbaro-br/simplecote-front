@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { afterEach, vi, expect, test } from 'vitest'
 import * as Sentry from '@sentry/react'
-import { iniciarSentry, definirCompradorTag, limparCompradorTag } from './sentry'
+import { iniciarSentry, definirCompradorTag, limparCompradorTag, deveDescartarEvento } from './sentry'
+import { SessaoExpiradaError } from '@/shared/api/api-client'
 import { FallbackErro } from './FallbackErro'
 
 // Mantém o `ErrorBoundary` real (testado abaixo) e substitui apenas `init`,
@@ -42,6 +43,31 @@ test('limparCompradorTag limpa a tag "comprador"', () => {
   limparCompradorTag()
   expect(spy).toHaveBeenCalledWith('comprador', '')
   spy.mockRestore()
+})
+
+type Ev = Parameters<typeof deveDescartarEvento>[0]
+type Hint = Parameters<typeof deveDescartarEvento>[1]
+
+test('deveDescartarEvento descarta erro de contexto WebGL (Error)', () => {
+  const hint = { originalException: new Error('THREE.WebGLRenderer: Error creating WebGL context.') } as Hint
+  expect(deveDescartarEvento({} as Ev, hint)).toBe(true)
+})
+
+test('deveDescartarEvento descarta pela mensagem serializada em event.exception', () => {
+  const event = {
+    exception: { values: [{ type: 'Error', value: 'Error creating WebGL context.' }] },
+  } as Ev
+  expect(deveDescartarEvento(event, {} as Hint)).toBe(true)
+})
+
+test('deveDescartarEvento descarta SessaoExpiradaError', () => {
+  expect(deveDescartarEvento({} as Ev, { originalException: new SessaoExpiradaError() } as Hint)).toBe(true)
+})
+
+test('deveDescartarEvento deixa passar um erro comum', () => {
+  const event = { exception: { values: [{ type: 'TypeError', value: 'x is not a function' }] } } as Ev
+  const hint = { originalException: new TypeError('x is not a function') } as Hint
+  expect(deveDescartarEvento(event, hint)).toBe(false)
 })
 
 function FilhoQueLanca(): never {

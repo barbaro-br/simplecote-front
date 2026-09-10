@@ -10,6 +10,7 @@ import { ConfirmarEnvioDialog } from './ConfirmarEnvioDialog'
 import { TelaDeSucesso } from './TelaDeSucesso'
 import { useCotacaoPorToken, useFinalizar } from './cotacao-token.api'
 import { useFilaDeSincronizacao } from './useFilaDeSincronizacao'
+import { useRodapeEscondido } from './useRodapeEscondido'
 import { prazoExpirando, contarComPreco, itemEhNovo } from './cotacao-token.derivados'
 import type { CotacaoPorToken } from './cotacao-token.schema'
 
@@ -32,6 +33,7 @@ export function CotacaoPorTokenPage() {
   const fila = useFilaDeSincronizacao(token)
   const finalizar = useFinalizar(token)
   const { isRefreshing, pullY } = usePullToRefresh(() => cotacao.refetch())
+  const rodapeEscondido = useRodapeEscondido()
 
   const [erroFinal, setErroFinal] = useState<string | null>(null)
   const [confirmando, setConfirmando] = useState(false)
@@ -125,7 +127,15 @@ export function CotacaoPorTokenPage() {
   const total = d.itens.length
   const semPreco = total - comPreco
   const primeiroNome = d.representanteNome.split(' ')[0]
-  const primeiroSemPreco = d.itens.find((i) => i.preco == null)?.itemCotacaoId ?? null
+
+  // Itens que o comprador adicionou depois do 1º carregamento vão pro fim da
+  // lista (o `sort` é estável — os demais mantêm a ordem alfabética da API),
+  // pra o representante não ter que caçar o item novo no meio do alfabeto.
+  const conhecidos = idsConhecidos ?? new Set<string>()
+  const itensOrdenados = [...d.itens].sort(
+    (a, b) => Number(itemEhNovo(a, conhecidos)) - Number(itemEhNovo(b, conhecidos)),
+  )
+  const primeiroSemPreco = itensOrdenados.find((i) => i.preco == null)?.itemCotacaoId ?? null
 
   async function confirmarEnvio() {
     setConfirmando(false)
@@ -141,7 +151,12 @@ export function CotacaoPorTokenPage() {
     }
   }
 
-  if (finalizado) {
+  // Tela de sucesso enquanto a resposta continua fechada. Se o comprador
+  // adicionar item numa cotação já respondida, o back reabre a resposta
+  // (`podeEditar` volta a `true`, `somenteLeitura` a `false`) e o refetch
+  // periódico traz o representante de volta pra lista — sem recarregar nem
+  // ligar pro comprador.
+  if (finalizado && somenteLeitura) {
     return (
       <Casca>
         <TelaDeSucesso nome={primeiroNome} aoFechar={() => setFinalizado(false)} />
@@ -209,7 +224,7 @@ export function CotacaoPorTokenPage() {
                 </tr>
               </thead>
               <tbody>
-                {d.itens.map((item) => (
+                {itensOrdenados.map((item) => (
                   <LinhaPreco
                     key={item.itemCotacaoId}
                     item={item}
@@ -231,8 +246,15 @@ export function CotacaoPorTokenPage() {
       {!somenteLeitura && (
         <div
           data-painel="dark"
-          className="fixed inset-x-0 bottom-0 z-10"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          className="fixed inset-x-0 bottom-0 z-10 transition-transform duration-300 ease-out motion-reduce:transition-none"
+          style={{
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            // Em celular, sai de cena enquanto o representante digita um preço
+            // (teclado aberto) ou rola a lista para baixo; volta ao rolar para
+            // cima ou perto do fim. 120% cobre a barra de progresso acima.
+            transform: rodapeEscondido ? 'translateY(120%)' : 'translateY(0)',
+          }}
+          aria-hidden={rodapeEscondido}
         >
           <div className="mx-auto w-full max-w-3xl px-4">
             <div className="flex items-center justify-between gap-3 rounded-t-2xl border border-b-0 border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-[var(--pnl-superficie,#12263f)] px-4 py-3 shadow-[0_-16px_44px_-16px_rgba(0,0,0,0.7)] sm:px-5">

@@ -60,7 +60,7 @@ function renderPage() {
   )
 }
 
-const campoPreco = () => screen.getByLabelText(/preço da embalagem/i)
+const campoPreco = () => screen.getByLabelText(/^preço\b/i)
 const bolha = () => screen.queryByRole('status')
 
 const mockStore: Record<string, string> = {}
@@ -142,7 +142,7 @@ test('autosave: digitar preço → 1 PUT só com aquele item → célula sincron
   const user = userEvent.setup()
   renderPage()
 
-  await user.type(await screen.findByLabelText(/preço da embalagem/i), '12.5')
+  await user.type(await screen.findByLabelText(/^preço\b/i), '12.5')
   await sleep(APOS_DEBOUNCE)
 
   await waitFor(() => expect(puts).toHaveLength(1))
@@ -158,7 +158,7 @@ test('falha de rede: entrada persiste no localStorage e célula mostra "sem cone
   const user = userEvent.setup()
   renderPage()
 
-  await user.type(await screen.findByLabelText(/preço da embalagem/i), '30')
+  await user.type(await screen.findByLabelText(/^preço\b/i), '30')
   await sleep(APOS_DEBOUNCE)
 
   expect(await screen.findByText(/sem conexão/i)).toBeInTheDocument()
@@ -179,7 +179,7 @@ test('erro 422: ProblemDetail exibido e entrada some da fila', async () => {
   const user = userEvent.setup()
   renderPage()
 
-  await user.type(await screen.findByLabelText(/preço da embalagem/i), '999')
+  await user.type(await screen.findByLabelText(/^preço\b/i), '999')
   await sleep(APOS_DEBOUNCE)
 
   await waitFor(() =>
@@ -201,7 +201,7 @@ test('concorrência: duas edições rápidas no mesmo campo — estado final = �
   const user = userEvent.setup()
   renderPage()
 
-  const campo = await screen.findByLabelText(/preço da embalagem/i)
+  const campo = await screen.findByLabelText(/^preço\b/i)
   await user.type(campo, '1')
   await sleep(300)
   await user.type(campo, '2') // "12"
@@ -224,7 +224,7 @@ test('finalizar: bloqueado com pendência; libera (via online) e, após confirma
   const user = userEvent.setup()
   renderPage()
 
-  await user.type(await screen.findByLabelText(/preço da embalagem/i), '20')
+  await user.type(await screen.findByLabelText(/^preço\b/i), '20')
   await sleep(APOS_DEBOUNCE)
 
   const btn = await screen.findByRole('button', { name: /sincronizando 1 preço/i })
@@ -336,7 +336,7 @@ test('preencher um item não marca os demais (presentes desde o início) como "N
   expect(screen.getByText('Feijão Preto 1kg')).toBeInTheDocument()
   expect(screen.queryByText('Novo')).not.toBeInTheDocument()
 
-  const campos = screen.getAllByLabelText(/preço da embalagem/i)
+  const campos = screen.getAllByLabelText(/^preço\b/i)
   await user.type(campos[0], '12.5')
   await sleep(APOS_DEBOUNCE)
 
@@ -426,6 +426,31 @@ test('primeiro carregamento semeia a contagem a partir de d.itens (mistura de co
   expect(await screen.findByRole('status', { name: /1 de 3 itens com preço/i })).toBeInTheDocument()
 })
 
+test('item novo vai pro fim da lista, mesmo vindo antes no alfabeto', async () => {
+  const inicial = cotacao({ itens: [itemDe('i-2', 'Banana'), itemDe('i-3', 'Cebola')] })
+  const comNovo = cotacao({
+    itens: [
+      itemDe('i-1', 'Abacaxi'),
+      { ...itemDe('i-2', 'Banana'), preco: 10, statusLance: 'COTADO' },
+      itemDe('i-3', 'Cebola'),
+    ],
+  })
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(inicial)),
+    http.put(`*/public/cotacoes/${TOKEN}/lances`, () => HttpResponse.json(comNovo)),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await screen.findByText('Banana')
+  await user.type(screen.getAllByLabelText(/^preço\b/i)[0], '10')
+  await sleep(APOS_DEBOUNCE)
+
+  await screen.findByText('Abacaxi')
+  const nomes = screen.getAllByText(/^(Abacaxi|Banana|Cebola)$/).map((el) => el.textContent)
+  expect(nomes).toEqual(['Banana', 'Cebola', 'Abacaxi'])
+})
+
 test('item que chega numa atualização depois do primeiro load é marcado "Novo"', async () => {
   const inicial = cotacao({ itens: [itemDe('i-1', 'Arroz Tipo 1 5kg')] })
   const atualizado = cotacao({
@@ -445,7 +470,7 @@ test('item que chega numa atualização depois do primeiro load é marcado "Novo
   expect(screen.queryByText('Feijão Preto 1kg')).not.toBeInTheDocument()
   expect(screen.queryByText('Novo')).not.toBeInTheDocument()
 
-  await user.type(await screen.findByLabelText(/preço da embalagem/i), '10')
+  await user.type(await screen.findByLabelText(/^preço\b/i), '10')
   await sleep(APOS_DEBOUNCE)
 
   expect(await screen.findByText('Feijão Preto 1kg')).toBeInTheDocument()
