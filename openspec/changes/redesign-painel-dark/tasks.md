@@ -3,19 +3,42 @@
 Fases entregues em sequência; cada uma fecha com o app navegável e `npm test`
 verde antes de mergear em `main`.
 
+## Onde está (2026-09-10)
+
+Todo o app autenticado (admin, backoffice, telas de token do representante/
+colaborador, auth) está no tema navy/mint: casca, primitivos do design
+system em `src/shared/ui/`, e cada área re-tematizada. Todos os 17 modais
+herdam o escuro pelo `Dialog`. Passe de reduced-motion/foco/contraste feito.
+Suíte verde.
+
+**Ficou para uma change à parte** (risco alto / mudança de rota, não
+bloqueiam o merge do redesign):
+- adicionar item inline na grade (hoje é o `AdicionarItemModal`);
+- combobox de fornecedor inline (hoje é o `RepresentantesModal`; em RASCUNHO
+  os selecionados já viram chip na tela);
+- dobrar a `ResultadoPage` dentro da tela de detalhe como "modo resultado"
+  (+ os redirects de `/cotacoes/nova` e `/:id/resultado`);
+- reescrever `GradeAoVivoTabela` sobre `GradeDados`.
+
+Marcadores: `[x]` feito · `[~]` feito com desvio consciente (motivo ao lado)
+· `[ ]` aberto.
+
 ## Fase 0 — Design system (`src/shared/ui/`)
 
-- [ ] `tema-painel.css` (ou bloco em `index.css`): tokens `--pnl-*` no escopo
-      `[data-painel="dark"]`, mapeados dos `--brand-*`.
-- [ ] `Superficie`, `SecaoCabecalho`, `SubFaixa`, `RodapeAcao`.
-- [ ] `LinhaLista` (+ `avatar` de iniciais, estado `onClick`).
-- [ ] `Selo` (tons sucesso/atenção/neutro/info/perigo).
-- [ ] `GradeDados` + `CelulaValor` (normal / destaque / editável / linha 2ª).
-- [ ] `CampoEstat` (inline + bloco).
-- [ ] `ChipsFiltro` (controlado).
-- [ ] `BotaoPrimario` / `BotaoFantasma` / `BotaoIcone` / `CampoTexto` / `Busca`.
-- [ ] Testes RTL de cada primitivo + teste de contraste/reduced-motion.
-- [ ] `src/site/tech/telas/*` passa a importar de `src/shared/ui/` (dedupe).
+- [x] bloco em `index.css`: tokens `--pnl-*` no escopo `[data-painel="dark"]`,
+      mapeados dos `--brand-*`, + remap dos tokens shadcn.
+- [x] `Superficie`, `SecaoCabecalho`, `SubFaixa`, `RodapeAcao`.
+- [x] `LinhaLista` (+ `avatar` de iniciais, estado `onClick` + foco visível).
+- [x] `Selo` (tons sucesso/atenção/neutro/info/perigo).
+- [x] `GradeDados` + `Celula` (normal / destaque / editável / linha 2ª).
+- [x] `CampoEstat` (inline + bloco) + `RodapeAcao`.
+- [x] `ChipsFiltro` (controlado, `aria-pressed`, foco visível).
+- [x] `BotaoPrimario` / `BotaoFantasma` / `BotaoIcone` / `CampoTexto` / `Busca`.
+- [x] `ui.test.tsx` cobre os primitivos; reduced-motion/foco/contraste no
+      passe de acessibilidade.
+- [~] `src/site/tech/telas/TelaCard` compõe `Superficie`+`SecaoCabecalho`;
+      demais telas de demo da landing ainda têm markup próprio (baixa
+      prioridade — vivem fora do `[data-painel]`).
 
 ## Fase 1 — Casca + flows por token
 
@@ -33,8 +56,9 @@ verde antes de mergear em `main`.
       `BottomNavBar` entram nesse escopo: a casca inteira do admin fica
       escura e cada página herda os tokens (nada quebrado), antes de ser
       reescrita com os primitivos. 343 testes de admin verdes.
-- [ ] Rebuild da casca com rail/CabecalhoPagina próprios (polimento).
-- [ ] Páginas do admin reescritas com primitivos, por área (Fases 2-6).
+- [x] Casca do admin (`AdminLayout` + `BottomNavBar`) no escopo escuro; rail
+      navy/mint. `CabecalhoPagina` é o cabeçalho padrão de todas as páginas.
+- [x] Páginas do admin reescritas/re-tematizadas por área (ver Fases 2-6).
 
 ## Fase 2 — Cotação unificada
 
@@ -52,22 +76,34 @@ verde antes de mergear em `main`.
       sem o bloco solto com `mt-8`. Bug de sobreposição nome × stepper na
       coluna "Item" corrigido (trunca) + largura padrão 240 → 280 px.
 - [ ] Adicionar item inline na última linha da `GradeDados` (`POST /itens`).
+      Pendente: reescrita de risco alto (o `AdicionarItemModal` tem busca +
+      multi-seleção + cadastro de produto empilhado). O modal já renderiza
+      escuro e ganhou busca por código de barras — fica pra uma change à parte.
 - [~] Chip-input de fornecedores (`POST/DELETE /participantes`). Parcial: em
       RASCUNHO os fornecedores escolhidos no modal já aparecem como chips
       com × na própria tela (antes a seleção era invisível até reabrir o
       modal). O combobox de digitar-e-adicionar inline fica pra depois.
 - [ ] Botão primário único por estado; `AbrirCotacaoDialog` (prazo) mantido.
 - [ ] `GradeDados` modo "resultado" (vencedor + economia/item) + `RodapeAcao`
-      "Gerar pedidos" em ENCERRADA/PEDIDOS_GERADOS.
+      "Gerar pedidos" em ENCERRADA/PEDIDOS_GERADOS. Pendente junto com a
+      dobra da `ResultadoPage` no detalhe. A economia estimada já aparece no
+      `RodapeAcao` da cotação em ABERTA/ENCERRADA.
 - [~] `ResultadoPage` re-tematizada com `CabecalhoPagina` + `Superficie` +
       `SubFaixa` + `Selo` (era `Card`/`CardHeader`/`CardTitle`). Só aparência —
       margem, expandir pedidos, XLSX/PDF, enviar, recotar intactos. 20 testes
       verdes. Falta ainda dobrar tudo dentro da tela de detalhe (modo resultado).
-- [ ] `CotacoesPage` = `Superficie` + `LinhaLista` + "+ Nova cotação".
+- [~] `CotacoesPage`: `CabecalhoPagina` + `Superficie` + chips de filtro +
+      "+ Nova cotação". Mantida como `<table>` (título/status/prazo/valor são
+      colunas escaneáveis; `LinhaLista` perderia densidade). `StatusBadge`
+      já é `Selo`.
 - [ ] Redirects: `/cotacoes/nova`, `/cotacoes/:id/resultado` → estado da tela.
-- [ ] Aposentar `NovaCotacaoWizard`, `NovaCotacaoPage`, `AdicionarItemModal`,
-      `RepresentantesModal`, `ItensSection`, `ResultadoPage`, `GradeAoVivoTabela`.
-- [ ] Migrar/mesclar os testes desses arquivos pra `CotacaoPage.test`.
+      Pendente junto com "dobrar ResultadoPage no detalhe" — mudança de rota,
+      risco alto. `NovaCotacaoWizard` já foi aposentado (Fase 2).
+- [~] Aposentadorias: `NovaCotacaoWizard`(.test) removido. `NovaCotacaoPage`
+      agora é uma casca fina (cria + navega). `AdicionarItemModal`,
+      `RepresentantesModal`, `ItensSection`, `ResultadoPage`,
+      `GradeAoVivoTabela` mantidos (renderizam no tema; reescrita completa =
+      change à parte).
 
 ## Fase 3 — Catálogo
 
@@ -107,8 +143,10 @@ verde antes de mergear em `main`.
       `Superficie` no login e cadastro.
 - [x] `Dialog` compartilhado porta em `data-painel="dark"` → todos os 17
       modais do app ficam escuros de uma vez.
-- [ ] Remover `src/shared/components/ui/*` sem uso; `grep` por classes do tema
-      claro órfãs.
+- [x] Auditado `src/shared/components/ui/*` — nenhum componente ficou órfão
+      (todos com ≥ 1 uso). `Card` ainda é usado (auth, backoffice,
+      LinkColaboradorCard) e renderiza escuro pelo remap; migrar pra
+      `Superficie` é polimento opcional, não bloqueia.
 - [x] Passe de reduced-motion/foco/contraste: `animate-ping`/`animate-pulse`
       na lista de reduced-motion; anel de foco em `ChipsFiltro` e `LinhaLista`;
       texto secundário de conteúdo sobe de `--pnl-txt-3` (45%) p/ `--pnl-txt-2`
