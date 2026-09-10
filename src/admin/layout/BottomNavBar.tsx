@@ -59,7 +59,7 @@ export function BottomNavBar({
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t bg-background">
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t bg-card">
         {itensVisiveis.map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}

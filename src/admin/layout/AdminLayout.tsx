@@ -84,7 +84,7 @@ function Sidebar({ nome, onLogout, itens }: { nome: string; onLogout: () => void
       onMouseLeave={() => setIsHovered(false)}
       className={`${
         isExpanded ? 'w-64' : 'w-20'
-      } sticky top-0 h-screen border-r bg-background p-4 flex flex-col transition-all duration-300 ease-in-out relative z-20`}
+      } sticky top-0 h-screen border-r bg-card p-4 flex flex-col transition-all duration-300 ease-in-out relative z-20`}
     >
       <div className={`flex items-center mb-8 h-10 ${isExpanded ? 'justify-between' : 'justify-center'}`}>
         <div
@@ -190,13 +190,13 @@ function SidebarMobile({ nome, onLogout, aberta, aoFechar, itens }: { nome: stri
     <>
       {aberta && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-card/80 backdrop-blur-sm md:hidden"
           onClick={aoFechar}
           aria-hidden="true"
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-3/4 max-w-sm border-r bg-background p-4 flex flex-col shadow-lg transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-3/4 max-w-sm border-r bg-card p-4 flex flex-col shadow-lg transition-transform duration-300 ease-in-out md:hidden ${
           aberta ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -291,7 +291,7 @@ export function AdminLayout() {
   const nomeLoja = configuracao?.nome ?? ''
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-card text-foreground">
+    <div data-painel="dark" className="flex h-screen flex-col overflow-hidden text-foreground">
       <ModoSuporteBanner nomeComprador={nomeLoja} />
       <AvisosBanner />
       <div className="flex min-h-0 flex-1 overflow-hidden flex-col md:flex-row">
@@ -299,7 +299,7 @@ export function AdminLayout() {
         
         {/* Mobile Topbar */}
         {ehEstreita && !ehInferior && (
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 shadow-sm md:hidden shrink-0">
+          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card px-4 shadow-sm md:hidden shrink-0">
             <button
               type="button"
               onClick={() => setDrawerAberto(true)}

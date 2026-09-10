@@ -28,8 +28,13 @@ verde antes de mergear em `main`.
 - [x] `/colaborador/:token`: `Busca` + `Lista/LinhaLista` + `Superficie` nos formulários (bipagem/cadastro/quantidade), sem modal. Casca escura. Testes verdes.
 - [x] `/pedido/:token` (representante): reescrita no painel escuro.
 - [x] `TutorialOnboarding` + `VistoStatus` removidos (descreviam a UI antiga).
-- [ ] `CascaPainel` (fundo fixo, rail desktop, barra mobile, `CabecalhoPagina`).
-- [ ] `AdminLayout` passa a usar `CascaPainel`; `BottomNavBar` re-tematizado.
+- [x] `[data-painel="dark"]` agora remapeia os tokens shadcn (--background,
+      --card, --border, --primary, --muted…) pro navy/mint. `AdminLayout` +
+      `BottomNavBar` entram nesse escopo: a casca inteira do admin fica
+      escura e cada página herda os tokens (nada quebrado), antes de ser
+      reescrita com os primitivos. 343 testes de admin verdes.
+- [ ] Rebuild da casca com rail/CabecalhoPagina próprios (polimento).
+- [ ] Páginas do admin reescritas com primitivos, por área (Fases 2-6).
 
 ## Fase 2 — Cotação unificada
 
