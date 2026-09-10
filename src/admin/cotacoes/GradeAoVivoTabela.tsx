@@ -169,7 +169,17 @@ const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, empateNoM
             )}
           </span>
         ) : (
-          <span className="rounded-full bg-muted text-muted-foreground text-[10px] font-medium uppercase tracking-wider px-2 py-0.5">
+          // `whitespace-nowrap` + `inline-block`: em coluna estreita a pílula
+          // não quebra "Não / cotou" em duas linhas (engrossava a linha toda).
+          // `NAO_COTADO` fica um pouco mais apagado que `PENDENTE` — é resposta
+          // dada ("não vou cotar"), não ausência de resposta.
+          <span
+            className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
+              celula.status === 'NAO_COTADO'
+                ? 'bg-muted/60 text-muted-foreground/70'
+                : 'bg-muted text-muted-foreground'
+            }`}
+          >
             {rotuloStatus(celula.status)}
           </span>
         )}

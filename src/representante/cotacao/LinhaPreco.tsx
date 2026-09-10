@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { X } from '@phosphor-icons/react'
+import { Check, CloudSlash, WarningCircle, X } from '@phosphor-icons/react'
 import { moeda } from '@/shared/format/formatters'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 import { sanitizarEntradaValor } from '@/shared/utils/preco'
@@ -17,6 +17,68 @@ const UNIT_ABBR: Record<string, string> = {
 
 function precoInicial(item: ItemLance): string {
   return item.preco != null ? String(item.preco) : ''
+}
+
+/**
+ * Indicador de estado do lance, do tamanho de um ícone — não muda a altura da
+ * linha (o texto "salvando…/✓ salvo" fazia isso e deslocava a lista):
+ * sem preço → X apagado · salvando → spinner · salvo → ✓ (com `pop`) ·
+ * sem conexão → nuvem cortada · erro → alerta vermelho.
+ */
+function StatusPreco({
+  status,
+  temErro,
+  temPreco,
+}: {
+  status?: StatusCelula
+  temErro: boolean
+  temPreco: boolean
+}) {
+  if (temErro) {
+    return (
+      <WarningCircle
+        weight="fill"
+        className="size-4 shrink-0 text-[var(--pnl-perigo,#ff6b6b)]"
+        aria-label="preço com erro"
+      />
+    )
+  }
+  if (status === 'falhou') {
+    return (
+      <CloudSlash
+        className="size-4 shrink-0 text-[var(--pnl-atencao,#e0a030)]"
+        aria-label="sem conexão — salva quando voltar"
+      />
+    )
+  }
+  if (status === 'enviando') {
+    return (
+      <span
+        role="img"
+        aria-label="salvando"
+        className="size-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--pnl-acento,#57bf8e)] border-t-transparent"
+      />
+    )
+  }
+  if (status === 'sincronizado' || temPreco) {
+    return (
+      <Check
+        key={status === 'sincronizado' ? 'ok' : 'idle'}
+        weight="bold"
+        className={cn(
+          'size-4 shrink-0 text-[var(--pnl-acento-hi,#6fe6ac)]',
+          status === 'sincronizado' && 'pop',
+        )}
+        aria-label={status === 'sincronizado' ? 'salvo' : 'com preço'}
+      />
+    )
+  }
+  return (
+    <X
+      className="size-3.5 shrink-0 text-[var(--pnl-txt-4,rgba(255,255,255,0.3))]"
+      aria-label="sem preço"
+    />
+  )
 }
 
 type Props = {
@@ -105,6 +167,7 @@ export function LinhaPreco({
   }
 
   const temPreco = texto.trim() !== ''
+  const mensagemErro = erroLocal ?? erro ?? null
   const unitAbbr = UNIT_ABBR[item.unidade] ?? item.unidade
   const sub =
     item.unidade === 'Unidade'
@@ -116,22 +179,6 @@ export function LinhaPreco({
       : status === 'enviando' && temPreco
         ? 'calculando…'
         : '—'
-
-  const msg = (() => {
-    if (erroLocal) return { t: erroLocal, c: 'text-[var(--pnl-perigo,#ff6b6b)]', alerta: true }
-    if (erro) return { t: erro, c: 'text-[var(--pnl-perigo,#ff6b6b)]', alerta: true }
-    if (status === 'enviando')
-      return { t: 'salvando…', c: 'text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]', alerta: false }
-    if (status === 'sincronizado')
-      return { t: '✓ salvo', c: 'text-[var(--pnl-acento-hi,#6fe6ac)]', alerta: false }
-    if (status === 'falhou')
-      return {
-        t: 'sem conexão — salva quando voltar',
-        c: 'text-[var(--pnl-atencao,#e0a030)]',
-        alerta: false,
-      }
-    return null
-  })()
 
   return (
     <tr className="border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))] align-top">
@@ -152,51 +199,57 @@ export function LinhaPreco({
             {item.codigoBarras}
           </div>
         )}
-        {msg && (
-          <p role={msg.alerta ? 'alert' : undefined} className={cn('mt-1 text-[11px]', msg.c)}>
-            {msg.t}
+        {/* Erro só pra leitor de tela — o feedback visual vai no ícone de
+            status, que não empurra a linha (antes o texto "salvo" mudava a
+            altura e deslocava a lista). */}
+        {mensagemErro && (
+          <p role="alert" className="sr-only">
+            {mensagemErro}
           </p>
         )}
       </td>
 
-      <td className="px-2 py-2.5 text-right">
-        <span
-          className={cn(
-            'inline-flex items-center gap-1 rounded-md border px-2 py-1 transition-colors',
-            'border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-white/[0.04] focus-within:ring-1 focus-within:ring-[var(--pnl-acento,#57bf8e)]/50',
-            flash && 'flash-green',
-          )}
-        >
-          <span className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">R$</span>
-          <label htmlFor={`preco-${item.itemCotacaoId}`} className="sr-only">
-            Preço da embalagem — {item.nome}
-          </label>
-          <input
-            id={`preco-${item.itemCotacaoId}`}
-            type="text"
-            inputMode="decimal"
-            pattern="[0-9.,]*"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            autoFocus={autoFocus}
-            value={texto}
-            disabled={!podeEditar}
-            placeholder="0,00"
-            onChange={(e) => alterar(e.target.value)}
-            className="w-16 bg-transparent text-right text-[13px] font-semibold tabular-nums text-[var(--pnl-txt,#fff)] outline-none placeholder:text-[var(--pnl-txt-4,rgba(255,255,255,0.3))] disabled:opacity-50"
-          />
-          {temPreco && podeEditar && (
-            <button
-              type="button"
-              aria-label={`Limpar preço de ${item.nome}`}
-              onClick={() => alterar('')}
-              className="text-[var(--pnl-txt-4,rgba(255,255,255,0.3))] transition-colors hover:text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]"
-            >
-              <X className="size-3" weight="bold" aria-hidden />
-            </button>
-          )}
-        </span>
+      <td className="px-2 py-2.5">
+        <div className="flex items-center justify-end gap-1.5">
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 rounded-md border px-2 py-1 transition-colors',
+              'border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-white/[0.04] focus-within:ring-1 focus-within:ring-[var(--pnl-acento,#57bf8e)]/50',
+              flash && 'flash-green',
+            )}
+          >
+            <span className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">R$</span>
+            <label htmlFor={`preco-${item.itemCotacaoId}`} className="sr-only">
+              Preço da embalagem — {item.nome}
+            </label>
+            <input
+              id={`preco-${item.itemCotacaoId}`}
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9.,]*"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              autoFocus={autoFocus}
+              value={texto}
+              disabled={!podeEditar}
+              placeholder="0,00"
+              onChange={(e) => alterar(e.target.value)}
+              className="w-16 bg-transparent text-right text-[13px] font-semibold tabular-nums text-[var(--pnl-txt,#fff)] outline-none placeholder:text-[var(--pnl-txt-4,rgba(255,255,255,0.3))] disabled:opacity-50"
+            />
+            {temPreco && podeEditar && (
+              <button
+                type="button"
+                aria-label={`Limpar preço de ${item.nome}`}
+                onClick={() => alterar('')}
+                className="text-[var(--pnl-txt-4,rgba(255,255,255,0.3))] transition-colors hover:text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]"
+              >
+                <X className="size-3" weight="bold" aria-hidden />
+              </button>
+            )}
+          </span>
+          <StatusPreco status={status} temErro={mensagemErro != null} temPreco={temPreco} />
+        </div>
       </td>
 
       <td className="whitespace-nowrap px-2 py-2.5 pr-4 text-right sm:pr-5">

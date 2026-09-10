@@ -172,7 +172,8 @@ test('célula NAO_COTADO renderiza o estado vazio como badge', () => {
   renderGrade(gradeNaoCotado)
 
   const badge = screen.getByText('Não cotou')
-  expect(badge).toHaveClass('rounded-full', 'bg-muted')
+  // pílula não quebra em coluna estreita; NAO_COTADO fica mais apagado que PENDENTE
+  expect(badge).toHaveClass('rounded-full', 'whitespace-nowrap', 'bg-muted/60')
 })
 
 test('célula COTADO mostra preço e unitário na mesma linha, sem "COTADO" nem "MENOR"', () => {

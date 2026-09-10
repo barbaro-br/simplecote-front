@@ -147,7 +147,7 @@ test('autosave: digitar preço → 1 PUT só com aquele item → célula sincron
 
   await waitFor(() => expect(puts).toHaveLength(1))
   expect(puts[0]).toEqual({ lances: [{ itemCotacaoId: 'i-1', preco: 12.5 }] })
-  expect(await screen.findByText('✓ salvo')).toBeInTheDocument()
+  expect(await screen.findByLabelText('salvo')).toBeInTheDocument()
 })
 
 test('falha de rede: entrada persiste no localStorage e célula mostra "sem conexão"', async () => {
@@ -161,7 +161,7 @@ test('falha de rede: entrada persiste no localStorage e célula mostra "sem cone
   await user.type(await screen.findByLabelText(/^preço\b/i), '30')
   await sleep(APOS_DEBOUNCE)
 
-  expect(await screen.findByText(/sem conexão/i)).toBeInTheDocument()
+  expect(await screen.findByLabelText(/sem conexão/i)).toBeInTheDocument()
   const fila = JSON.parse(window.localStorage.getItem(CHAVE_FILA) ?? '{}')
   expect(fila['i-1']).toMatchObject({ preco: 30 })
 })
@@ -207,7 +207,7 @@ test('concorrência: duas edições rápidas no mesmo campo — estado final = �
   await user.type(campo, '2') // "12"
   await sleep(APOS_DEBOUNCE)
 
-  expect(await screen.findByText('✓ salvo')).toBeInTheDocument()
+  expect(await screen.findByLabelText('salvo')).toBeInTheDocument()
   expect(precos.at(-1)).toBe(12)
   expect(window.localStorage.getItem(CHAVE_FILA)).toBeNull()
 })

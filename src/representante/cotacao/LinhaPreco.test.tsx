@@ -24,14 +24,14 @@ function item(over: Partial<ItemLance> = {}): ItemLance {
 
 function renderLinha(props: Partial<React.ComponentProps<typeof LinhaPreco>> = {}) {
   const aoAssentar = vi.fn()
-  render(
+  const utils = render(
     <table>
       <tbody>
         <LinhaPreco item={item()} podeEditar aoAssentar={aoAssentar} {...props} />
       </tbody>
     </table>,
   )
-  return { aoAssentar }
+  return { aoAssentar, ...utils }
 }
 
 const campo = () => screen.getByLabelText(/preço da embalagem/i)
@@ -74,10 +74,23 @@ test('somente leitura: input desabilitado, sem botão limpar', () => {
   expect(screen.queryByRole('button', { name: /limpar preço/i })).not.toBeInTheDocument()
 })
 
-test('selo "Novo" e status de sincronização', () => {
+test('selo "Novo" e status de sincronização (ícone, não texto)', () => {
   renderLinha({ novo: true, status: 'sincronizado' })
   expect(screen.getByText('Novo')).toBeInTheDocument()
-  expect(screen.getByText('✓ salvo')).toBeInTheDocument()
+  expect(screen.getByLabelText('salvo')).toBeInTheDocument()
+})
+
+test('status "enviando" mostra spinner; "falhou" mostra ícone de sem conexão', () => {
+  const { unmount } = renderLinha({ item: item({ preco: 40 }), status: 'enviando' })
+  expect(screen.getByLabelText('salvando')).toBeInTheDocument()
+  unmount()
+  renderLinha({ item: item({ preco: 40 }), status: 'falhou' })
+  expect(screen.getByLabelText(/sem conexão/i)).toBeInTheDocument()
+})
+
+test('sem preço mostra o indicador "sem preço" (X apagado)', () => {
+  renderLinha()
+  expect(screen.getByLabelText('sem preço')).toBeInTheDocument()
 })
 
 test('preço unitário do servidor é exibido', () => {
