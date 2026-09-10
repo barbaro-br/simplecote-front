@@ -38,6 +38,9 @@ verde antes de mergear em `main`.
 
 ## Fase 2 — Cotação unificada
 
+- [x] Fim do wizard: `NovaCotacaoPage` cria e vai DIRETO pra `/admin/cotacoes/:id`
+      (RASCUNHO). `NovaCotacaoWizard`(.test) removidos. A montagem (itens +
+      representantes + prazo) já acontece inline na tela de detalhe.
 - [ ] `CotacaoPage` única (RASCUNHO → ABERTA → ENCERRADA → PEDIDOS_GERADOS na
       mesma superfície).
 - [ ] Adicionar item inline na última linha da `GradeDados` (`POST /itens`).
