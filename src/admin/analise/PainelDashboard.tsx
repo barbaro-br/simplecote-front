@@ -28,8 +28,8 @@ function prazoRelativo(fechaEm: string) {
 function variacaoGasto(atual: number, anterior: number): { texto: string; subiu: boolean } | null {
   if (anterior <= 0) return null
   const pct = ((atual - anterior) / anterior) * 100
-  const sinal = pct >= 0 ? '+' : ''
-  return { texto: `${sinal}${pct.toFixed(0)}% vs. mês anterior`, subiu: pct >= 0 }
+  const seta = pct >= 0 ? '▲' : '▼'
+  return { texto: `${seta} ${Math.abs(pct).toFixed(0)}% vs. mês anterior`, subiu: pct >= 0 }
 }
 
 interface PainelDashboardProps {
@@ -146,8 +146,18 @@ export function PainelDashboard({ onStatusClick }: PainelDashboardProps) {
             <CampoEstat
               rotulo="Gasto do mês"
               valor={<AnimatedNumber value={data.gastoMes} formatter={moeda} />}
-              sufixo={variacao?.texto}
             />
+            {variacao && (
+              <p
+                className={`mt-1 text-[11px] font-medium ${
+                  variacao.subiu
+                    ? 'text-[var(--pnl-perigo,#f87171)]'
+                    : 'text-[var(--pnl-acento-hi,#6fe6ac)]'
+                }`}
+              >
+                {variacao.texto}
+              </p>
+            )}
           </div>
           <div className="bg-[var(--pnl-superficie,#12263f)] p-4 sm:p-5">
             <CampoEstat

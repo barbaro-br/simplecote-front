@@ -66,10 +66,11 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
 
 ## Dashboard (admin)
 
-- **Variação do gasto do mês.** Novo: o KPI "Gasto do mês" mostra um sufixo
-  "+N% vs. mês anterior" (ou −N%) quando há mês anterior com gasto. Puramente
-  informativo, some quando o mês anterior está zerado. Antes o dashboard só
-  mostrava os dois valores lado a lado sem o percentual.
+- **Variação do gasto do mês.** Novo: o KPI "Gasto do mês" mostra abaixo do
+  valor uma linha "▲/▼ N% vs. mês anterior" quando há mês anterior com gasto
+  (▲ vermelho = gastou mais, ▼ verde = gastou menos). Puramente informativo,
+  some quando o mês anterior está zerado. Antes o dashboard só mostrava os
+  dois valores lado a lado sem o percentual.
 
 ## Grade ao vivo (admin)
 
