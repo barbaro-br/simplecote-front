@@ -17,7 +17,7 @@ export function BackofficeLayout() {
     }`
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div data-painel="dark" className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-6">

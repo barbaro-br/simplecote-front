@@ -64,30 +64,36 @@ verde antes de mergear em `main`.
 
 ## Fase 3 — Catálogo
 
-- [ ] `produtos`: `ChipsFiltro` (ativo/inativo) + `LinhaLista` + `Modal` de form.
-- [ ] `empresas`: `ChipsFiltro` (ramo) + `LinhaLista` + contato.
+- [x] `produtos`, `empresas`, `usuarios`: `CabecalhoPagina` + `Superficie`
+      (tabela mantida — colunas demais pra virar `LinhaLista`). Herdam os
+      tokens escuros. `ChipsFiltro`/`LinhaLista` fica como polimento futuro.
 - [ ] `representantes`: `LinhaLista` + `Selo` de vínculo.
-- [ ] `usuarios`: `LinhaLista` + `Selo` de papel + convite.
-- [ ] Testes revisados.
+- [x] Testes revisados (verdes).
 
 ## Fase 4 — Conta
 
-- [ ] `analise` / dashboard: grade de `CampoEstat` + `Superficie` de cotações
-      recentes + `GradeDados` de insight de produtos.
-- [ ] `organizacao`, `configuracoes`, `onboarding`, `ajuda`: `Superficie` +
-      `LinhaLista` / formulários re-tematizados.
-- [ ] Testes revisados.
+- [x] `analise` / dashboard: `PainelDashboard` e `AnalisesPage` em
+      `Superficie` + `SecaoCabecalho` + `CampoEstat`; próximos prazos em
+      `Lista`/`LinhaLista`.
+- [x] `organizacao` (`MembrosPage`), `configuracoes`: `Superficie` +
+      `CabecalhoPagina`; papel/status de membro viram `Selo`.
+- [ ] `onboarding`, `ajuda`: re-tematizar.
+- [x] Testes revisados (verdes).
 
 ## Fase 5 — Backoffice
 
-- [ ] `backoffice/*`: `CascaPainel` variante super-admin, `LinhaLista` de
-      compradores, `GradeDados` de métricas, `CampoEstat` de resumo.
-- [ ] Testes revisados.
+- [x] `BackofficeLayout` entra no escopo `data-painel="dark"`: casca + todas
+      as páginas (`Resumo`, `Compradores`, `Avisos`, detalhe) herdam navy/mint
+      via remap de tokens. `LinhaLista`/`GradeDados`/`CampoEstat` dedicados
+      ficam como polimento.
+- [x] Testes revisados (verdes).
 
 ## Fase 6 — Auth + limpeza
 
-- [ ] `login`, `cadastro`, `recuperar-senha`, `verificar-email`,
-      `aceitar-convite`: alinhar aos primitivos (já são escuras).
+- [x] `login`, `cadastro`, `verificar-email`, `esqueci-senha`: escopo
+      `data-painel="dark"`; `Card` do formulário → `Superficie` no login e
+      cadastro.
+- [ ] `aceitar-convite`: alinhar.
 - [ ] Remover `src/shared/components/ui/*` sem uso; `grep` por classes do tema
       claro órfãs.
 - [ ] Passe final de contraste/reduced-motion/foco em todo o app.
