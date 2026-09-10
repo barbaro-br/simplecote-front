@@ -188,7 +188,7 @@ export function CotacaoDetalhePage() {
 
   return (
     <PageContainer maxWidth="full" className="space-y-6">
-      <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border mb-6 space-y-4">
+      <div className="sticky top-0 z-10 mb-6 space-y-4 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-card/95 pb-4 pt-4 backdrop-blur">
         <Breadcrumb
           items={[
             { label: 'Cotações', to: '/admin/cotacoes' },
@@ -332,7 +332,7 @@ export function CotacaoDetalhePage() {
                 <div className="space-y-2">
                   <p className="font-medium">Prévia do resultado:</p>
                   {previaApuracao.data.pedidos.map((pedido) => (
-                    <div key={pedido.id} className="rounded-md border bg-background p-2">
+                    <div key={pedido.id} className="rounded-md border bg-card p-2">
                       <div className="flex items-center justify-between gap-2 font-medium">
                         <span>{pedido.empresaNome}</span>
                         <span className="shrink-0">{moeda(pedido.total)}</span>
