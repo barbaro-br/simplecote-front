@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
-import { CabecalhoPagina } from '@/shared/ui'
+import { CabecalhoPagina, Superficie, SecaoCabecalho, CampoEstat } from '@/shared/ui'
 import { moeda, dataBr } from '@/shared/format/formatters'
 import { useCompras } from './analise.api'
 
@@ -55,8 +54,8 @@ export function AnalisesPage() {
                 onClick={() => setPreset(p)}
                 className={`h-7 rounded-full px-3 text-xs font-medium transition-colors ${
                   ativo
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                    ? 'bg-[var(--pnl-acento,#57bf8e)]/15 text-[var(--pnl-acento-hi,#6fe6ac)] ring-1 ring-inset ring-[var(--pnl-acento,#57bf8e)]/30'
+                    : 'bg-white/[0.06] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] hover:text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]'
                 }`}
               >
                 {p.rotulo}
@@ -67,7 +66,7 @@ export function AnalisesPage() {
       </div>
 
       {isPending ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Skeleton className="h-28 w-full" />
           <Skeleton className="h-28 w-full" />
           <Skeleton className="h-28 w-full" />
@@ -77,92 +76,96 @@ export function AnalisesPage() {
           Não foi possível carregar as análises. Tente novamente.
         </p>
       ) : data.totais.length === 0 && data.ultimosPrecos.length === 0 ? (
-        <Card className="p-8 text-center text-sm text-muted-foreground">
-          Nenhuma compra apurada neste período.
-        </Card>
+        <Superficie>
+          <p className="p-8 text-center text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+            Nenhuma compra apurada neste período.
+          </p>
+        </Superficie>
       ) : (
         <>
-          <Card className="p-4">
-            <h2 className="text-sm font-medium text-muted-foreground ui-uppercase">Total gasto no período</h2>
-            <div className="mt-2 text-3xl font-bold tabular-nums">{moeda(totalGasto)}</div>
-          </Card>
+          <Superficie>
+            <SecaoCabecalho titulo="Total gasto no período" />
+            <div className="p-4 sm:p-5">
+              <CampoEstat rotulo={`${dataBr(de)} — ${dataBr(ate)}`} valor={moeda(totalGasto)} />
+            </div>
+          </Superficie>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gasto por Empresa</CardTitle>
-              </CardHeader>
-              <ul className="space-y-2 p-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Superficie>
+              <SecaoCabecalho titulo="Gasto por Empresa" />
+              <ul className="space-y-3 p-4 sm:p-5">
                 {data.totais.map((t) => (
                   <li key={t.empresa} className="text-sm">
-                    <div className="flex justify-between items-baseline mb-1">
-                      <span className="truncate max-w-[150px]">{t.empresa}</span>
-                      <span className="font-medium tabular-nums">{moeda(t.total)}</span>
+                    <div className="mb-1 flex items-baseline justify-between gap-3">
+                      <span className="truncate text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">{t.empresa}</span>
+                      <span className="shrink-0 font-medium tabular-nums text-[var(--pnl-txt,#fff)]">{moeda(t.total)}</span>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
                       <div
-                        className="h-full rounded-full bg-primary"
+                        className="h-full rounded-full bg-[var(--pnl-acento,#57bf8e)]"
                         style={{ width: `${maxTotal > 0 ? (t.total / maxTotal) * 100 : 0}%` }}
                       />
                     </div>
                   </li>
                 ))}
               </ul>
-            </Card>
+            </Superficie>
 
-            <div className="space-y-4">
-              <Card className="p-4">
-                <h3 className="text-sm font-medium text-muted-foreground mb-2 ui-uppercase">Item mais comprado</h3>
-                {data.itemMaisComprado ? (
-                  <p className="text-sm">
-                    <span className="font-semibold">{data.itemMaisComprado.nome}</span>
-                    <span className="text-muted-foreground"> · {data.itemMaisComprado.quantidade} un</span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Nada por aqui</p>
-                )}
-              </Card>
-              <Card className="p-4">
-                <h3 className="text-sm font-medium text-muted-foreground mb-2 ui-uppercase">Item menos comprado</h3>
-                {data.itemMenosComprado ? (
-                  <p className="text-sm">
-                    <span className="font-semibold">{data.itemMenosComprado.nome}</span>
-                    <span className="text-muted-foreground"> · {data.itemMenosComprado.quantidade} un</span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Nada por aqui</p>
-                )}
-              </Card>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-1">
+              <Superficie>
+                <SecaoCabecalho titulo="Item mais comprado" />
+                <div className="p-4 sm:p-5">
+                  {data.itemMaisComprado ? (
+                    <p className="text-sm">
+                      <span className="font-semibold text-[var(--pnl-txt,#fff)]">{data.itemMaisComprado.nome}</span>
+                      <span className="text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]"> · {data.itemMaisComprado.quantidade} un</span>
+                    </p>
+                  ) : (
+                    <p className="text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">Nada por aqui</p>
+                  )}
+                </div>
+              </Superficie>
+              <Superficie>
+                <SecaoCabecalho titulo="Item menos comprado" />
+                <div className="p-4 sm:p-5">
+                  {data.itemMenosComprado ? (
+                    <p className="text-sm">
+                      <span className="font-semibold text-[var(--pnl-txt,#fff)]">{data.itemMenosComprado.nome}</span>
+                      <span className="text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]"> · {data.itemMenosComprado.quantidade} un</span>
+                    </p>
+                  ) : (
+                    <p className="text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">Nada por aqui</p>
+                  )}
+                </div>
+              </Superficie>
             </div>
           </div>
 
-          <Card className="overflow-hidden">
-            <CardHeader>
-              <CardTitle>Últimos preços por produto</CardTitle>
-            </CardHeader>
-            <div className="overflow-x-auto border-t">
+          <Superficie>
+            <SecaoCabecalho titulo="Últimos preços por produto" />
+            <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr className="text-left text-muted-foreground">
+                <thead className="bg-white/[0.03]">
+                  <tr className="text-left text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
                     <th className="px-4 py-3 font-medium ui-uppercase">Produto</th>
-                    <th className="px-4 py-3 font-medium ui-uppercase text-right">Preço unitário</th>
+                    <th className="px-4 py-3 text-right font-medium ui-uppercase">Preço unitário</th>
                     <th className="px-4 py-3 font-medium ui-uppercase">Empresa</th>
                     <th className="px-4 py-3 font-medium ui-uppercase">Data</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
                   {data.ultimosPrecos.map((u) => (
-                    <tr key={`${u.produto}-${u.data}`} className="hover:bg-muted/50 transition-colors">
-                      <td className="px-4 py-3 font-medium">{u.produto}</td>
-                      <td className="px-4 py-3 text-right tabular-nums">{moeda(u.precoUnitario)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{u.empresa}</td>
-                      <td className="px-4 py-3 text-muted-foreground tabular-nums">{dataBr(u.data)}</td>
+                    <tr key={`${u.produto}-${u.data}`} className="transition-colors hover:bg-white/[0.03]">
+                      <td className="px-4 py-3 font-medium text-[var(--pnl-txt,#fff)]">{u.produto}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">{moeda(u.precoUnitario)}</td>
+                      <td className="px-4 py-3 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{u.empresa}</td>
+                      <td className="px-4 py-3 tabular-nums text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{dataBr(u.data)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </Card>
+          </Superficie>
         </>
       )}
     </PageContainer>
