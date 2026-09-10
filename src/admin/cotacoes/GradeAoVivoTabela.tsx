@@ -434,8 +434,8 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
           {erroQuantidade}
         </p>
       )}
-      <div className="flex flex-col">
-        <div className="overflow-x-auto overflow-y-auto max-h-[65vh]">
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
           <table
             className="w-full text-sm border-separate border-spacing-0 table-fixed"
             style={{ '--w-item': `${larguraItem}px` } as CSSProperties}

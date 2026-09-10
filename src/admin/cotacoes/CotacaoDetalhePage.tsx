@@ -10,7 +10,6 @@ import {
   Superficie,
   SecaoCabecalho,
   SubFaixa,
-  RodapeAcao,
   CampoEstat,
   Selo,
   type TomSelo,
@@ -74,8 +73,8 @@ function GradeAoVivoContainer({ id, status, itens }: { id: string; status: strin
   if (!grade) return null
 
   return (
-    <div className="border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))] px-4 py-2.5 sm:px-5">
+    <div className="flex min-h-0 flex-1 flex-col border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))] px-4 py-2.5 sm:px-5">
         <div className="flex items-center gap-2 text-[13px] font-medium text-[var(--pnl-txt,#fff)]">
           <span className="relative flex size-2 shrink-0">
             {status === 'ABERTA' && (
@@ -94,7 +93,9 @@ function GradeAoVivoContainer({ id, status, itens }: { id: string; status: strin
           )}
         </div>
       </div>
-      <GradeAoVivoTabela cotacaoId={id} grade={grade} />
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <GradeAoVivoTabela cotacaoId={id} grade={grade} />
+      </div>
 
       <AdicionarItemModal
         cotacaoId={id}
@@ -262,9 +263,57 @@ export function CotacaoDetalhePage() {
     CANCELADA: 'Cancelada',
   }
 
+  const acoesEstado = (
+    <>
+      {(status === 'RASCUNHO' || status === 'ABERTA') && (
+        <BotaoFantasma
+          className="text-[var(--pnl-perigo,#ff6b6b)]"
+          onClick={() => setDialog('cancelar')}
+        >
+          Cancelar
+        </BotaoFantasma>
+      )}
+      {status === 'ENCERRADA' && (
+        <BotaoFantasma
+          onClick={() => executar(() => reabrir.mutateAsync())}
+          disabled={acaoPendente}
+        >
+          Reabrir
+        </BotaoFantasma>
+      )}
+      {status === 'RASCUNHO' && (
+        <BotaoPrimario onClick={() => setDialog('abrir')}>Abrir</BotaoPrimario>
+      )}
+      {status === 'ABERTA' && (
+        <BotaoPrimario onClick={() => setDialog('encerrar')} disabled={acaoPendente}>
+          Encerrar
+        </BotaoPrimario>
+      )}
+      {status === 'ENCERRADA' && (
+        <BotaoPrimario onClick={() => setDialog('apurar')}>Apurar</BotaoPrimario>
+      )}
+      {status === 'PEDIDOS_GERADOS' && (
+        <Link
+          to={`/admin/cotacoes/${id}/resultado`}
+          className="inline-flex items-center justify-center rounded-lg bg-[var(--pnl-acento,#57bf8e)] px-3 py-1.5 text-xs font-semibold text-[var(--pnl-superficie,#12263f)] hover:brightness-110"
+        >
+          Ver resultado
+        </Link>
+      )}
+    </>
+  )
+
+  // Nos estados com grade ao vivo a tela vira "cockpit": ocupa a altura toda,
+  // cabeçalho + ações fixos e só a grade rola por dentro (sem o tranco de
+  // rolagem na página). Nos demais estados segue no fluxo normal.
+  const cockpit = emGrade
+
   return (
-    <div data-painel="dark" className="min-h-screen">
-      <PageContainer maxWidth={emGrade ? 'full' : '4xl'} className="space-y-4 py-6">
+    <div data-painel="dark" className={cockpit ? 'flex min-h-0 flex-1 flex-col' : ''}>
+      <PageContainer
+        maxWidth={emGrade ? 'full' : '4xl'}
+        className={cockpit ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-3 py-2'}
+      >
         <Breadcrumb
           items={[
             { label: 'Cotações', to: '/admin/cotacoes' },
@@ -274,7 +323,7 @@ export function CotacaoDetalhePage() {
 
         {erroAcao && <ErrorAlert>{erroAcao}</ErrorAlert>}
 
-        <Superficie>
+        <Superficie className={cockpit ? 'flex min-h-0 flex-1 flex-col' : 'flex flex-col'}>
           <SecaoCabecalho
             titulo={cotacao.titulo}
             nivelTitulo={1}
@@ -287,6 +336,7 @@ export function CotacaoDetalhePage() {
                     Representantes
                   </BotaoFantasma>
                 )}
+                {acoesEstado}
               </>
             }
           />
@@ -296,8 +346,12 @@ export function CotacaoDetalhePage() {
               totalFornecedoresExibido > 0
                 ? ` · ${totalFornecedoresExibido} ${totalFornecedoresExibido === 1 ? 'fornecedor' : 'fornecedores'}`
                 : ''
-            }`}
-            direita={cotacao.prazo ? `Prazo: ${dataHoraBr(cotacao.prazo)}` : undefined}
+            }${cotacao.prazo ? ` · vence ${dataHoraBr(cotacao.prazo)}` : ''}`}
+            direita={
+              (status === 'ABERTA' || status === 'ENCERRADA') && economiaEstimada > 0 ? (
+                <CampoEstat inline rotulo="Economia estimada" valor={moeda(economiaEstimada)} />
+              ) : undefined
+            }
           />
 
           {(podeConvidar || (participantes.data ?? []).length > 0) && (
@@ -391,61 +445,10 @@ export function CotacaoDetalhePage() {
             <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={podeMontar} />
           )}
           {(status === 'ABERTA' || status === 'ENCERRADA') && (
-            <GradeAoVivoContainer id={id} status={status} itens={cotacao.itens} />
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <GradeAoVivoContainer id={id} status={status} itens={cotacao.itens} />
+            </div>
           )}
-
-          <RodapeAcao
-            esquerda={
-              (status === 'ABERTA' || status === 'ENCERRADA') && economiaEstimada > 0 ? (
-                <CampoEstat inline rotulo="Economia estimada até agora" valor={moeda(economiaEstimada)} />
-              ) : (
-                <CampoEstat
-                  inline
-                  rotulo={status === 'PEDIDOS_GERADOS' ? 'Cotação apurada' : 'Itens na cotação'}
-                  valor={totalItens}
-                />
-              )
-            }
-            direita={
-              <div className="flex items-center gap-2">
-                {(status === 'RASCUNHO' || status === 'ABERTA') && (
-                  <BotaoFantasma
-                    className="text-[var(--pnl-perigo,#ff6b6b)]"
-                    onClick={() => setDialog('cancelar')}
-                  >
-                    Cancelar
-                  </BotaoFantasma>
-                )}
-                {status === 'ENCERRADA' && (
-                  <BotaoFantasma
-                    onClick={() => executar(() => reabrir.mutateAsync())}
-                    disabled={acaoPendente}
-                  >
-                    Reabrir
-                  </BotaoFantasma>
-                )}
-                {status === 'RASCUNHO' && (
-                  <BotaoPrimario onClick={() => setDialog('abrir')}>Abrir</BotaoPrimario>
-                )}
-                {status === 'ABERTA' && (
-                  <BotaoPrimario onClick={() => setDialog('encerrar')} disabled={acaoPendente}>
-                    Encerrar
-                  </BotaoPrimario>
-                )}
-                {status === 'ENCERRADA' && (
-                  <BotaoPrimario onClick={() => setDialog('apurar')}>Apurar</BotaoPrimario>
-                )}
-                {status === 'PEDIDOS_GERADOS' && (
-                  <Link
-                    to={`/admin/cotacoes/${id}/resultado`}
-                    className="inline-flex items-center justify-center rounded-lg bg-[var(--pnl-acento,#57bf8e)] px-3 py-1.5 text-xs font-semibold text-[var(--pnl-superficie,#12263f)] hover:brightness-110"
-                  >
-                    Ver resultado
-                  </Link>
-                )}
-              </div>
-            }
-          />
         </Superficie>
 
       {dialog === 'abrir' && (

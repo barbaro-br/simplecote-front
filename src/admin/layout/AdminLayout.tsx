@@ -336,7 +336,7 @@ export function AdminLayout() {
         ) : null}
 
         <main className={`flex-1 min-w-0 h-full overflow-y-auto ${ehInferior ? 'pb-20' : ''}`}>
-          <div className="mx-auto w-full px-4 md:px-6 py-6 max-w-full">
+          <div className="mx-auto flex h-full w-full max-w-full flex-col px-4 py-6 md:px-6">
             <RouteTransition />
           </div>
         </main>

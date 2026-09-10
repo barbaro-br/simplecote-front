@@ -297,7 +297,7 @@ test('cabeçalho das Empresas e preço padrão alinhados à direita com cartão'
   expect(celula).toHaveClass('bg-card', 'border-border', 'text-right')
 })
 
-test('a grade tem contêiner de rolagem com limite de altura (65vh) e overflow nos dois eixos', () => {
+test('a grade tem contêiner de rolagem que preenche a altura e faz overflow nos dois eixos', () => {
   renderGrade(gradeBase)
 
   const table = screen.getByRole('table')
@@ -305,7 +305,7 @@ test('a grade tem contêiner de rolagem com limite de altura (65vh) e overflow n
 
   expect(container).toHaveClass('overflow-x-auto')
   expect(container).toHaveClass('overflow-y-auto')
-  expect(container).toHaveClass('max-h-[65vh]')
+  expect(container).toHaveClass('flex-1')
   expect(container).not.toHaveClass('relative')
 })
 

@@ -122,6 +122,26 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   Encerrada = âmbar, Rascunho = cinza, **Pedidos gerados = azul** (era
   verde), Cancelada = vermelho. Rótulos idênticos; nada de comportamento.
 
+## Tela de detalhe da cotação
+
+- **Ações no cabeçalho, sem rodapé.** Antes: "Cancelar", "Abrir/Encerrar/
+  Apurar/Ver resultado" e a "Economia estimada" ficavam num rodapé (`RodapeAcao`)
+  no fim da superfície. Agora: o botão de estado (+ Cancelar/Reabrir) vai pro
+  cabeçalho, ao lado de "Representantes"; a economia estimada aparece no canto
+  direito da faixa de contexto. O rodapé sumiu. Mesmos botões, mesmos nomes,
+  mesmos diálogos.
+- **Tela "cockpit" na cotação ABERTA/ENCERRADA.** A tela passa a ocupar a
+  altura toda: cabeçalho + faixa + chips fixos e **só a grade rola por
+  dentro**. Antes a página inteira dava um "tranco" de rolagem dependendo de
+  onde o mouse estava (sobre a grade rolava a grade; sobre o cabeçalho rolava
+  a página). Agora a página não rola — só a grade. Nos estados RASCUNHO/
+  CANCELADA/PEDIDOS_GERADOS segue no fluxo normal (a lista de itens rola por
+  dentro se passar de ~70vh).
+- **Casca do admin ganha `flex` na altura.** `AdminLayout` (wrapper do
+  conteúdo) e `RouteTransition` passam a ser coluna flex de altura cheia —
+  necessário pro "cockpit" acima. Páginas comuns não mudam: seguem no fluxo
+  e rolam via `<main>` quando são altas.
+
 ## Diálogos (todo o app)
 
 - **Todo modal renderiza escuro.** O componente `Dialog` compartilhado passou

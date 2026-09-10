@@ -160,10 +160,10 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
         <ProdutoForm aoSalvar={aoCadastrarProduto} produtoParaEditar={produtoParaEditar} />
       </Dialog>
 
-      <div className="overflow-x-auto">
+      <div className="max-h-[70vh] overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-white/[0.03]">
-            <tr className="text-left text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+          <thead>
+            <tr className="text-left text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-[var(--pnl-superficie,#12263f)]">
               <th className="px-4 py-2 font-medium ui-uppercase">Produto</th>
               <th className="px-4 py-2 font-medium ui-uppercase">Embalagem</th>
               <th className="px-4 py-2 font-medium ui-uppercase">Qtd. solicitada</th>
