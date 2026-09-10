@@ -112,11 +112,11 @@ export function ProdutosPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase border-b">Nome</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase border-b">Código de barras</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase border-b">Embalagem</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase text-right border-b">Qtd.</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase text-right border-b border-l border-border">Ações</th>
+                <th className="sticky top-0 z-10 bg-card px-4 py-3 font-medium ui-uppercase border-b">Nome</th>
+                <th className="sticky top-0 z-10 bg-card px-4 py-3 font-medium ui-uppercase border-b">Código de barras</th>
+                <th className="sticky top-0 z-10 bg-card px-4 py-3 font-medium ui-uppercase border-b">Embalagem</th>
+                <th className="sticky top-0 z-10 bg-card px-4 py-3 font-medium ui-uppercase text-right border-b">Qtd.</th>
+                <th className="sticky top-0 z-10 bg-card px-4 py-3 font-medium ui-uppercase text-right border-b border-l border-border">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

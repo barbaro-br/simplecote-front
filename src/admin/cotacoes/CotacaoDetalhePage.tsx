@@ -183,6 +183,9 @@ export function CotacaoDetalhePage() {
   // Ainda assim mostramos os escolhidos como chips (com × pra tirar) para o
   // Comprador não precisar reabrir o modal só pra lembrar quem marcou.
   const emRascunho = status === 'RASCUNHO'
+  // Nos estados com grade ao vivo a tela usa toda a largura útil — quanto mais
+  // fornecedores, mais colunas cabem antes de precisar rolar na horizontal.
+  const emGrade = status === 'ABERTA' || status === 'ENCERRADA'
   const fornecedoresSelecionados = emRascunho
     ? empresasSelecionadas.map((eid) => ({
         id: eid,
@@ -261,7 +264,7 @@ export function CotacaoDetalhePage() {
 
   return (
     <div data-painel="dark" className="min-h-screen">
-      <PageContainer maxWidth="4xl" className="space-y-4 py-6">
+      <PageContainer maxWidth={emGrade ? 'full' : '4xl'} className="space-y-4 py-6">
         <Breadcrumb
           items={[
             { label: 'Cotações', to: '/admin/cotacoes' },
