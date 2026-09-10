@@ -100,6 +100,11 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   coladas (grid sem espaço). Ganharam espaçamento entre si e a tela ficou um
   pouco mais larga pra caberem folgadas. Só layout.
 
+- **Busca de produto por código de barras no seletor de itens da cotação.**
+  O modal "Adicionar item" só filtrava por nome; agora casa também pelo
+  código de barras (`includes`, então "3412" acha o barcode que termina em
+  …3412). O catálogo já fazia isso.
+
 ## Campos de valor (preço e margem)
 
 - **Entrada validada em todo campo de preço/percentual.** "Corrigir lance" da
