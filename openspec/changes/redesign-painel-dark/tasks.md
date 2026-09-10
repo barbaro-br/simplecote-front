@@ -77,7 +77,9 @@ verde antes de mergear em `main`.
       `Lista`/`LinhaLista`.
 - [x] `organizacao` (`MembrosPage`), `configuracoes`: `Superficie` +
       `CabecalhoPagina`; papel/status de membro viram `Selo`.
-- [ ] `onboarding`, `ajuda`: re-tematizar.
+- [x] `onboarding`: `OnboardingChecklist` em `Superficie` + `SecaoCabecalho`
+      + barra de progresso; `OnboardingWizard`/`BotaoAjudaFlutuante` herdam o
+      escuro pelo `Dialog`.
 - [x] Testes revisados (verdes).
 
 ## Fase 5 — Backoffice
@@ -90,10 +92,11 @@ verde antes de mergear em `main`.
 
 ## Fase 6 — Auth + limpeza
 
-- [x] `login`, `cadastro`, `verificar-email`, `esqueci-senha`: escopo
-      `data-painel="dark"`; `Card` do formulário → `Superficie` no login e
-      cadastro.
-- [ ] `aceitar-convite`: alinhar.
+- [x] `login`, `cadastro`, `verificar-email`, `esqueci-senha`,
+      `aceitar-convite`: escopo `data-painel="dark"`; `Card` do formulário →
+      `Superficie` no login e cadastro.
+- [x] `Dialog` compartilhado porta em `data-painel="dark"` → todos os 17
+      modais do app ficam escuros de uma vez.
 - [ ] Remover `src/shared/components/ui/*` sem uso; `grep` por classes do tema
       claro órfãs.
 - [ ] Passe final de contraste/reduced-motion/foco em todo o app.

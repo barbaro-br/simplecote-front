@@ -64,6 +64,22 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   ou fornecedor — antes o `abrir` só falhava no servidor com uma mensagem
   genérica.
 
+## Diálogos (todo o app)
+
+- **Todo modal renderiza escuro.** O componente `Dialog` compartilhado passou
+  a portar num container `data-painel="dark"`. Antes cada modal herdava (ou
+  não) o tema conforme onde era montado — vários ficavam claros sobre o painel
+  escuro. Agora os 17 modais do app (novo produto, convidar representante,
+  abrir cotação, confirmar apuração, ajuda…) ficam navy/menta. Sem mudança de
+  fluxo, texto, foco ou atalhos (Esc/Tab).
+
+## Primeiros passos (dashboard)
+
+- **Barra de progresso.** Novo: o card "Primeiros passos" mostra "N de 3
+  concluídos" no cabeçalho e uma barra de progresso menta. Antes só os itens
+  riscados indicavam avanço. Os passos, links e ações (Dispensar, Configurar
+  em 3 passos, dados de exemplo) são os mesmos.
+
 ## Dashboard (admin)
 
 - **Variação do gasto do mês.** Novo: o KPI "Gasto do mês" mostra abaixo do

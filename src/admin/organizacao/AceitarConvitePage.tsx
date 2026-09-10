@@ -43,7 +43,7 @@ export function AceitarConvitePage() {
 
   if (contexto.isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div data-painel="dark" className="min-h-screen flex items-center justify-center bg-background">
         <div role="status" aria-label="Carregando" className="flex flex-col items-center gap-3 text-muted-foreground">
           <CircleNotch className="size-8 animate-spin" />
           <p className="text-sm">Carregando convite…</p>
@@ -54,7 +54,7 @@ export function AceitarConvitePage() {
 
   if (contexto.isError || !contexto.data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div data-painel="dark" className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-full max-w-sm space-y-6 px-4">
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold tracking-tight ui-uppercase">Convite inválido</h1>
@@ -69,7 +69,7 @@ export function AceitarConvitePage() {
 
   if (slug) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div data-painel="dark" className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-full max-w-sm space-y-6 px-4">
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold tracking-tight ui-uppercase">Conta criada!</h1>
@@ -94,7 +94,7 @@ export function AceitarConvitePage() {
   const err = form.formState.errors
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div data-painel="dark" className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold tracking-tight ui-uppercase">Você foi convidado</h1>
