@@ -64,6 +64,13 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   ou fornecedor — antes o `abrir` só falhava no servidor com uma mensagem
   genérica.
 
+## Dashboard (admin)
+
+- **Variação do gasto do mês.** Novo: o KPI "Gasto do mês" mostra um sufixo
+  "+N% vs. mês anterior" (ou −N%) quando há mês anterior com gasto. Puramente
+  informativo, some quando o mês anterior está zerado. Antes o dashboard só
+  mostrava os dois valores lado a lado sem o percentual.
+
 ## Grade ao vivo (admin)
 
 - **`10a4d84` — Célula do menor preço em menta + pulso.**

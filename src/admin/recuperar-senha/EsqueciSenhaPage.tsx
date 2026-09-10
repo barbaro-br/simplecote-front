@@ -126,7 +126,7 @@ export function EsqueciSenhaPage() {
 
   if (etapa === 'sucesso') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div data-painel="dark" className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-full max-w-sm space-y-6 px-4">
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold tracking-tight ui-uppercase">Senha redefinida</h1>
@@ -149,7 +149,7 @@ export function EsqueciSenhaPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div data-painel="dark" className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold tracking-tight ui-uppercase">
