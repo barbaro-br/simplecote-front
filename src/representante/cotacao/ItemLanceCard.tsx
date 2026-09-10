@@ -236,7 +236,9 @@ export function ItemLanceCard({
                 disabled={!podeEditar}
                 onChange={(e) => alterarPreco(e.target.value)}
                 placeholder="0,00"
-                className="w-20 bg-transparent text-[12px] font-semibold tabular-nums outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+                // 16px no celular: abaixo disso o Safari do iPhone dá zoom
+                // automático ao focar e desfaz ao sair ("a tela cresce e volta").
+                className="w-24 bg-transparent text-[16px] font-semibold tabular-nums outline-none placeholder:text-muted-foreground/60 disabled:opacity-50 md:w-20 md:text-[12px]"
               />
             </div>
           </div>

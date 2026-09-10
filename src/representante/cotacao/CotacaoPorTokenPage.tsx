@@ -10,6 +10,7 @@ import { TelaDeSucesso } from './TelaDeSucesso'
 import { TutorialOnboarding } from './TutorialOnboarding'
 import { useCotacaoPorToken, useFinalizar } from './cotacao-token.api'
 import { useFilaDeSincronizacao } from './useFilaDeSincronizacao'
+import { useRodapeEscondido } from './useRodapeEscondido'
 import { prazoExpirando, contarComPreco, itemEhNovo } from './cotacao-token.derivados'
 import type { CotacaoPorToken } from './cotacao-token.schema'
 
@@ -40,6 +41,7 @@ export function CotacaoPorTokenPage() {
   const fila = useFilaDeSincronizacao(token)
   const finalizar = useFinalizar(token)
   const { isRefreshing, pullY } = usePullToRefresh(() => cotacao.refetch())
+  const rodapeEscondido = useRodapeEscondido()
 
   const [erroFinal, setErroFinal] = useState<string | null>(null)
   const [confirmando, setConfirmando] = useState(false)
@@ -221,8 +223,15 @@ export function CotacaoPorTokenPage() {
 
       {!somenteLeitura && (
         <div
-          className="fixed inset-x-0 bottom-0 z-10 overflow-visible border-t border-border bg-card shadow-top"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          className="fixed inset-x-0 bottom-0 z-10 overflow-visible border-t border-border bg-card shadow-top transition-transform duration-300 ease-out motion-reduce:transition-none"
+          style={{
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            // Em celular, sai de cena enquanto o representante digita um preço
+            // (teclado aberto) ou rola a lista para baixo; volta ao rolar para
+            // cima ou perto do fim. 120% cobre a bolha "N de T" que fica acima.
+            transform: rodapeEscondido ? 'translateY(120%)' : 'translateY(0)',
+          }}
+          aria-hidden={rodapeEscondido}
         >
           <div className="absolute -top-5 left-5">
             <div
