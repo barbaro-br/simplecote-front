@@ -1,6 +1,14 @@
-export function Sparkline({ pontos, className }: { pontos: number[]; className?: string }) {
-  const w = 60
-  const h = 20
+export function Sparkline({
+  pontos,
+  className,
+  w = 60,
+  h = 20,
+}: {
+  pontos: number[]
+  className?: string
+  w?: number
+  h?: number
+}) {
 
   if (!pontos || pontos.length <= 1) {
     return <svg width={w} height={h} className={className} data-testid="sparkline-empty" />

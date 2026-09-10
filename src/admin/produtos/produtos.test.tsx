@@ -436,5 +436,7 @@ test('abre o histórico de compras de um produto pelo botão da linha', async ()
 
   const dialog = screen.getByRole('dialog')
   expect(dialog).toHaveTextContent('Histórico — Arroz 5kg')
-  expect(await within(dialog).findByText(/Sem compra anterior/i)).toBeInTheDocument()
+  expect(
+    await within(dialog).findByText(/ainda não foi comprado em nenhuma cotação/i),
+  ).toBeInTheDocument()
 })

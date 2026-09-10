@@ -7,7 +7,7 @@ import { Input } from '@/shared/components/ui/input'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { CabecalhoPagina, Superficie, ChipsFiltro, Selo, type OpcaoChip } from '@/shared/ui'
 import { useInsightProdutos } from '@/admin/analise/analise.api'
-import { InsightProdutoCard } from '@/admin/analise/InsightProdutoCard'
+import { HistoricoCompraProduto } from './HistoricoCompraProduto'
 import { useProdutos, useInativarProduto, useAtivarProduto } from './produtos.api'
 import { ProdutoForm } from './ProdutoForm'
 import type { Produto } from './produtos.schema'
@@ -124,13 +124,9 @@ export function ProdutosPage() {
           (insights.isLoading ? (
             <p className="text-sm text-muted-foreground">Carregando histórico…</p>
           ) : (
-            <div className="flex justify-center">
-              <InsightProdutoCard
-                insight={
-                  insights.isError ? 'erro' : (insights.data?.[historicoDe.id] ?? null)
-                }
-              />
-            </div>
+            <HistoricoCompraProduto
+              insight={insights.isError ? 'erro' : (insights.data?.[historicoDe.id] ?? null)}
+            />
           ))}
       </Dialog>
 
