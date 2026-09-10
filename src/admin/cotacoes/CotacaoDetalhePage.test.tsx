@@ -49,7 +49,12 @@ function participante(
   }
 }
 
-function setup(status: StatusCotacao, itensIniciais: Item[] = [], prazoVencido = false) {
+function setup(
+  status: StatusCotacao,
+  itensIniciais: Item[] = [],
+  prazoVencido = false,
+  lancesDe: string[] = [],
+) {
   const state = {
     id: 'c-1',
     titulo: 'Compra semanal',
@@ -109,7 +114,11 @@ function setup(status: StatusCotacao, itensIniciais: Item[] = [], prazoVencido =
     http.get('*/api/cotacoes/c-1/participantes', () => HttpResponse.json([])),
     http.get('*/api/empresas', () => HttpResponse.json([])),
     http.get('*/api/cotacoes/c-1/ao-vivo', () =>
-      HttpResponse.json({ status: state.status, respondidos: 0, totalParticipantes: 0, itens: [] }),
+      HttpResponse.json(
+        lancesDe.length > 0
+          ? gradeComLances(lancesDe)
+          : { status: state.status, respondidos: 0, totalParticipantes: 0, itens: [] },
+      ),
     ),
     http.post('*/api/cotacoes/c-1/:acao', ({ params }) => {
       chamadas[params.acao as string] = (chamadas[params.acao as string] ?? 0) + 1
@@ -466,14 +475,13 @@ test('diálogo de Encerrar sem pendências não mostra o aviso nem o botão de f
 })
 
 test('diálogo de Encerrar com pendências lista os nomes e finaliza em massa ao clicar', async () => {
-  setup('ABERTA')
+  setup('ABERTA', [], false, ['p1', 'p2'])
   let lista = [
     participante('p1', 'Mercado A', 'VISUALIZOU'),
     participante('p2', 'Mercado B', 'RESPONDIDO'),
   ]
   server.use(
     http.get('*/api/cotacoes/c-1/participantes', () => HttpResponse.json(lista)),
-    http.get('*/api/cotacoes/c-1/ao-vivo', () => HttpResponse.json(gradeComLances(['p1', 'p2']))),
     http.post('*/api/participantes/:participanteId/finalizar', ({ params }) => {
       const participanteId = params.participanteId as string
       lista = lista.map((p) =>
@@ -484,6 +492,7 @@ test('diálogo de Encerrar com pendências lista os nomes e finaliza em massa ao
   )
   const user = userEvent.setup()
   await screen.findByRole('heading', { name: 'Compra semanal' })
+  await screen.findAllByRole('button', { name: /Corrigir lance de Empresa para Arroz/i })
 
   await user.click(screen.getByRole('button', { name: 'Encerrar' }))
 
@@ -501,15 +510,15 @@ test('diálogo de Encerrar com pendências lista os nomes e finaliza em massa ao
 })
 
 test('Encerrar continua funcionando normalmente mesmo com o aviso visível', async () => {
-  const { chamadas } = setup('ABERTA')
+  const { chamadas } = setup('ABERTA', [], false, ['p1'])
   server.use(
     http.get('*/api/cotacoes/c-1/participantes', () =>
       HttpResponse.json([participante('p1', 'Mercado A', 'VISUALIZOU')]),
     ),
-    http.get('*/api/cotacoes/c-1/ao-vivo', () => HttpResponse.json(gradeComLances(['p1']))),
   )
   const user = userEvent.setup()
   await screen.findByRole('heading', { name: 'Compra semanal' })
+  await screen.findByRole('button', { name: /Corrigir lance de Empresa para Arroz/i })
 
   await user.click(screen.getByRole('button', { name: 'Encerrar' }))
 
@@ -650,7 +659,7 @@ test('banner de prazo vencido ausente quando status não é ABERTA', async () =>
   expect(screen.queryByText(/Prazo vencido/)).not.toBeInTheDocument()
 })
 
-test('cabeçalho mostra "3 de 4 convites entregues" com participantes mistos', async () => {
+test('cabeçalho avisa quando há convite não entregue', async () => {
   setup('ABERTA')
   server.use(
     http.get('*/api/cotacoes/c-1/participantes', () =>
@@ -664,17 +673,34 @@ test('cabeçalho mostra "3 de 4 convites entregues" com participantes mistos', a
   )
 
   await screen.findByRole('heading', { name: 'Compra semanal' })
-  expect(await screen.findByText(/3 de 4 convites entregues/)).toBeInTheDocument()
+  expect(await screen.findByText(/1 convite não entregue/)).toBeInTheDocument()
 })
 
-test('resumo de convites entregues ausente em RASCUNHO', async () => {
+test('nenhuma info de convite/resposta em RASCUNHO', async () => {
   setup('RASCUNHO')
 
   await screen.findByRole('heading', { name: 'Compra semanal' })
-  expect(screen.queryByText(/convites entregues/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/convite/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/responderam/)).not.toBeInTheDocument()
 })
 
-test('ação "ver" no resumo abre o modal de Representantes', async () => {
+test('cabeçalho não avisa nada de convite quando todos foram entregues', async () => {
+  setup('ABERTA')
+  server.use(
+    http.get('*/api/cotacoes/c-1/participantes', () =>
+      HttpResponse.json([
+        participante('p1', 'Mercado A', 'CONVIDADO'),
+        participante('p2', 'Mercado B', 'CONVIDADO'),
+      ]),
+    ),
+  )
+
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  await screen.findByText(/responderam/)
+  expect(screen.queryByText(/não entregue/)).not.toBeInTheDocument()
+})
+
+test('aviso de convite não entregue abre o modal de Representantes', async () => {
   setup('ABERTA')
   server.use(
     http.get('*/api/cotacoes/c-1/participantes', () =>
@@ -687,8 +713,7 @@ test('ação "ver" no resumo abre o modal de Representantes', async () => {
   const user = userEvent.setup()
 
   await screen.findByRole('heading', { name: 'Compra semanal' })
-  await screen.findByText(/1 de 2 convites entregues/)
-  await user.click(screen.getByRole('button', { name: 'ver' }))
+  await user.click(await screen.findByRole('button', { name: /1 convite não entregue/i }))
 
   expect(await screen.findByRole('dialog')).toBeInTheDocument()
 })

@@ -122,6 +122,37 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   Encerrada = âmbar, Rascunho = cinza, **Pedidos gerados = azul** (era
   verde), Cancelada = vermelho. Rótulos idênticos; nada de comportamento.
 
+## Tela de detalhe da cotação — limpeza (menos "poluído")
+
+- **Cabeçalho de 5 faixas → 2.** Antes empilhava: cabeçalho · "N itens · M
+  fornecedores · vence…" · fileira de chips de fornecedor · "N de M convites
+  entregues" · barra "Grade de respostas · ao vivo · N responderam ·
+  Adicionar item". Agora: (1) cabeçalho com título + selo + ações
+  (Representantes · [Adicionar item, em ABERTA] · Cancelar · botão de estado);
+  (2) **uma linha de contexto** que junta tudo — "14 itens · 2 de 4
+  responderam · vence 12/09 · [economia à direita]".
+- **Chips de fornecedor só em RASCUNHO.** Em ABERTA/ENCERRADA os fornecedores
+  já são as colunas da grade — a fileira de chips repetia. Some. O botão
+  "Representantes" (cabeçalho) continua abrindo o modal de gestão.
+- **Aviso de convite não entregue** deixa de ser um `!` em cada chip: vira
+  "⚠ N convites não entregues" na linha de contexto (só quando há falha),
+  clicável, abre o modal. O × de desconvidar em ABERTA sai do chip (passa a
+  ser só pelo modal Representantes).
+- **Banner de "Prazo vencido"** deixa de ser uma faixa com ícone: vira o
+  trecho "Prazo vencido (data) — encerre para apurar" (âmbar, `role=alert`)
+  na própria linha de contexto.
+- **Barra "Grade de respostas · ao vivo" removida.** O pulso "ao vivo" já
+  está no ponto do título; "N responderam" foi pra linha de contexto;
+  "Adicionar item" foi pro cabeçalho.
+
+## Diálogo "Abrir cotação" — limpeza
+
+- Sai o foguete no círculo com brilho, o "LANÇAR COTAÇÃO" em caixa-alta e o
+  fundo com `blur`. Fica: título "Abrir cotação" simples, uma linha de ajuda,
+  o resumo "X itens · Y fornecedores" (com aviso âmbar inline se faltar
+  algo), calendário + hora, "Expira …", e os botões Cancelar / "Abrir
+  Cotação". Mesma lógica de prazo e validações.
+
 ## Tela de detalhe da cotação
 
 - **Ações no cabeçalho, sem rodapé.** Antes: "Cancelar", "Abrir/Encerrar/

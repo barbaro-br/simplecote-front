@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Warning, X } from '@phosphor-icons/react'
+import { X } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
@@ -29,7 +29,6 @@ import { RepresentantesModal } from './RepresentantesModal'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import { useEmpresas } from '@/admin/empresas/empresas.api'
 import type { Produto } from '@/admin/produtos/produtos.schema'
-import type { ItemCotacao } from './cotacoes.schema'
 import {
   useAbrir,
   useApurar,
@@ -41,82 +40,10 @@ import {
   useGradeAoVivo,
   useParticipantes,
   useFinalizarParticipante,
-  useDesconvidarParticipante,
   usePreviaApuracao
 } from './cotacoes.api'
 
 type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | 'encerrar' | null
-
-function GradeAoVivoContainer({ id, status, itens }: { id: string; status: string; itens: ItemCotacao[] }) {
-  const { data: grade, isLoading, error } = useGradeAoVivo(id, status)
-
-  const [adicionarItemAberto, setAdicionarItemAberto] = useState(false)
-  const [cadastroAberto, setCadastroAberto] = useState(false)
-  const [produtoParaEditar, setProdutoParaEditar] = useState<Produto | undefined>(undefined)
-
-  function abrirCadastro() {
-    setCadastroAberto(true)
-  }
-
-  function abrirEdicao(produto: Produto) {
-    setProdutoParaEditar(produto)
-    setCadastroAberto(true)
-  }
-
-  function aoCadastrarProduto() {
-    setCadastroAberto(false)
-    setProdutoParaEditar(undefined)
-  }
-
-  if (isLoading) return <p className="text-sm text-muted-foreground p-4">Carregando grade ao vivo…</p>
-  if (error) return <p className="text-sm text-destructive p-4">Erro ao carregar grade ao vivo: {error.message}</p>
-  if (!grade) return null
-
-  return (
-    <div className="flex min-h-0 flex-1 flex-col border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
-      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))] px-4 py-2.5 sm:px-5">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-[var(--pnl-txt,#fff)]">
-          <span className="relative flex size-2 shrink-0">
-            {status === 'ABERTA' && (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--pnl-acento,#57bf8e)]/70" />
-            )}
-            <span className="relative inline-flex size-2 rounded-full bg-[var(--pnl-acento,#57bf8e)]" />
-          </span>
-          Grade de respostas · ao vivo
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
-            {grade.respondidos} de {grade.totalParticipantes} responderam
-          </span>
-          {status === 'ABERTA' && (
-            <BotaoFantasma onClick={() => setAdicionarItemAberto(true)}>Adicionar item</BotaoFantasma>
-          )}
-        </div>
-      </div>
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <GradeAoVivoTabela cotacaoId={id} grade={grade} />
-      </div>
-
-      <AdicionarItemModal
-        cotacaoId={id}
-        itens={itens}
-        open={adicionarItemAberto}
-        onClose={() => setAdicionarItemAberto(false)}
-        aoCadastrarProduto={abrirCadastro}
-        aoEditarProduto={abrirEdicao}
-      />
-
-      <Dialog
-        open={cadastroAberto}
-        onClose={() => setCadastroAberto(false)}
-        size="lg"
-        ariaLabel="Cadastrar novo produto"
-      >
-        <ProdutoForm aoSalvar={aoCadastrarProduto} produtoParaEditar={produtoParaEditar} />
-      </Dialog>
-    </div>
-  )
-}
 
 export function CotacaoDetalhePage() {
   const { id = '' } = useParams()
@@ -128,7 +55,6 @@ export function CotacaoDetalhePage() {
   const cancelar = useCancelar(id)
   const apurar = useApurar(id)
   const convidar = useConvidarEmpresas(id)
-  const desconvidar = useDesconvidarParticipante(id)
   const participantes = useParticipantes(id)
   const gradeAoVivo = useGradeAoVivo(id, cotacao?.status)
   const finalizarParticipante = useFinalizarParticipante(id)
@@ -138,6 +64,9 @@ export function CotacaoDetalhePage() {
   const [erroAcao, setErroAcao] = useState<string | null>(null)
   const [modalConviteAberto, setModalConviteAberto] = useState(false)
   const [empresasSelecionadas, setEmpresasSelecionadas] = useState<string[]>([])
+  const [adicionarItemAberto, setAdicionarItemAberto] = useState(false)
+  const [cadastroProdutoAberto, setCadastroProdutoAberto] = useState(false)
+  const [produtoParaEditar, setProdutoParaEditar] = useState<Produto | undefined>(undefined)
   const [finalizandoMassa, setFinalizandoMassa] = useState(false)
 
   const previaApuracao = usePreviaApuracao(id, { enabled: dialog === 'apurar' })
@@ -155,6 +84,20 @@ export function CotacaoDetalhePage() {
     } catch (e) {
       tratarErro(e)
     }
+  }
+
+  // O modal de cadastro/edição de produto abre EMPILHADO sobre o de itens (sem
+  // fechar `adicionarItemAberto`) — fechar e reabrir zeraria a seleção.
+  function aoCadastrarProduto() {
+    setCadastroProdutoAberto(true)
+  }
+  function aoEditarProduto(produto: Produto) {
+    setProdutoParaEditar(produto)
+    setCadastroProdutoAberto(true)
+  }
+  function aoSalvarProduto() {
+    setCadastroProdutoAberto(false)
+    setProdutoParaEditar(undefined)
   }
 
   if (isLoading) return <p className="p-6 text-muted-foreground">Carregando cotação…</p>
@@ -175,9 +118,6 @@ export function CotacaoDetalhePage() {
   )
 
   const totalParticipantesConvite = (participantes.data ?? []).length
-  const convitesEntregues = (participantes.data ?? []).filter(
-    (p) => p.conviteStatus === 'ENVIADO',
-  ).length
 
   // Em RASCUNHO os fornecedores ainda não viraram participantes — a seleção
   // vive em `empresasSelecionadas` e o convite só é disparado no "Abrir".
@@ -227,7 +167,6 @@ export function CotacaoDetalhePage() {
 
   const totalItens = cotacao.itens.length
   const podeMontar = status === 'RASCUNHO'
-  const podeConvidar = status === 'RASCUNHO' || status === 'ABERTA'
 
   // Economia estimada da disputa: soma, por item, de quanto o menor lance atual
   // ficou abaixo da referência de última compra (× quantidade). Sem referência
@@ -248,6 +187,12 @@ export function CotacaoDetalhePage() {
     return soma + Math.max(0, referencia - menor) * it.quantidadeSolicitada
   }, 0)
 
+  const respondidos = gradeAoVivo.data?.respondidos ?? 0
+  const totalRespostas = gradeAoVivo.data?.totalParticipantes ?? totalParticipantesConvite
+  const convitesNaoEntregues = (participantes.data ?? []).filter(
+    (p) => p.conviteStatus !== 'ENVIADO',
+  ).length
+
   const SELO_TOM: Record<string, TomSelo> = {
     RASCUNHO: 'neutro',
     ABERTA: 'info',
@@ -265,6 +210,9 @@ export function CotacaoDetalhePage() {
 
   const acoesEstado = (
     <>
+      {status === 'ABERTA' && (
+        <BotaoFantasma onClick={() => setAdicionarItemAberto(true)}>Adicionar item</BotaoFantasma>
+      )}
       {(status === 'RASCUNHO' || status === 'ABERTA') && (
         <BotaoFantasma
           className="text-[var(--pnl-perigo,#ff6b6b)]"
@@ -342,111 +290,104 @@ export function CotacaoDetalhePage() {
           />
 
           <SubFaixa
-            esquerda={`${totalItens} ${totalItens === 1 ? 'item' : 'itens'}${
-              totalFornecedoresExibido > 0
-                ? ` · ${totalFornecedoresExibido} ${totalFornecedoresExibido === 1 ? 'fornecedor' : 'fornecedores'}`
-                : ''
-            }${cotacao.prazo ? ` · vence ${dataHoraBr(cotacao.prazo)}` : ''}`}
+            esquerda={
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span>
+                  {totalItens} {totalItens === 1 ? 'item' : 'itens'}
+                </span>
+                {emRascunho && totalFornecedoresExibido > 0 && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>
+                      {totalFornecedoresExibido}{' '}
+                      {totalFornecedoresExibido === 1 ? 'fornecedor' : 'fornecedores'}
+                    </span>
+                  </>
+                )}
+                {emGrade && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>
+                      {respondidos} de {totalRespostas} responderam
+                    </span>
+                  </>
+                )}
+                {emGrade && convitesNaoEntregues > 0 && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <button
+                      type="button"
+                      onClick={() => setModalConviteAberto(true)}
+                      className="text-[var(--pnl-atencao,#e0a030)] hover:underline"
+                    >
+                      ⚠ {convitesNaoEntregues}{' '}
+                      {convitesNaoEntregues === 1 ? 'convite não entregue' : 'convites não entregues'}
+                    </button>
+                  </>
+                )}
+                {cotacao.prazo && (
+                  <>
+                    <span aria-hidden>·</span>
+                    {cotacao.prazoVencido ? (
+                      <span role="alert" className="text-[var(--pnl-atencao,#e0a030)]">
+                        Prazo vencido ({dataHoraBr(cotacao.prazo)}) — encerre para apurar
+                      </span>
+                    ) : (
+                      <span>vence {dataHoraBr(cotacao.prazo)}</span>
+                    )}
+                  </>
+                )}
+              </span>
+            }
             direita={
-              (status === 'ABERTA' || status === 'ENCERRADA') && economiaEstimada > 0 ? (
+              emGrade && economiaEstimada > 0 ? (
                 <CampoEstat inline rotulo="Economia estimada" valor={moeda(economiaEstimada)} />
               ) : undefined
             }
           />
 
-          {(podeConvidar || (participantes.data ?? []).length > 0) && (
-            <div className="space-y-2 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] px-4 py-3 sm:px-5">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {fornecedoresSelecionados.map((f) => (
-                  <span
-                    key={f.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]"
-                  >
-                    {f.nome}
-                    <button
-                      type="button"
-                      aria-label={`Remover ${f.nome} da cotação`}
-                      onClick={() =>
-                        setEmpresasSelecionadas((s) => s.filter((x) => x !== f.id))
-                      }
-                      className="-mr-1 rounded-full p-0.5 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] hover:text-[var(--pnl-perigo,#ff6b6b)]"
-                    >
-                      <X className="size-3" weight="bold" aria-hidden />
-                    </button>
-                  </span>
-                ))}
-                {(participantes.data ?? []).map((p) => (
-                  <span
-                    key={p.participanteId}
-                    className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]"
-                  >
-                    {p.empresaNome}
-                    {status === 'ABERTA' && p.conviteStatus !== 'ENVIADO' && (
-                      <span title="convite não entregue" className="text-[var(--pnl-atencao,#e0a030)]">
-                        !
-                      </span>
-                    )}
-                    {podeConvidar && p.participanteStatus !== 'RESPONDIDO' && (
-                      <button
-                        type="button"
-                        aria-label={`Remover ${p.empresaNome} da cotação`}
-                        disabled={desconvidar.isPending}
-                        onClick={() =>
-                          desconvidar.mutateAsync(p.participanteId).catch((e) => tratarErro(e))
-                        }
-                        className="-mr-1 rounded-full p-0.5 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] hover:text-[var(--pnl-perigo,#ff6b6b)]"
-                      >
-                        <X className="size-3" weight="bold" aria-hidden />
-                      </button>
-                    )}
-                  </span>
-                ))}
-                {podeConvidar && (
+          {emRascunho && (
+            <div className="flex flex-wrap items-center gap-1.5 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] px-4 py-3 sm:px-5">
+              {fornecedoresSelecionados.map((f) => (
+                <span
+                  key={f.id}
+                  className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]"
+                >
+                  {f.nome}
                   <button
                     type="button"
-                    onClick={() => setModalConviteAberto(true)}
-                    className="rounded-full px-2 py-1 text-[11px] font-medium text-[var(--pnl-acento-hi,#6fe6ac)] hover:underline"
+                    aria-label={`Remover ${f.nome} da cotação`}
+                    onClick={() => setEmpresasSelecionadas((s) => s.filter((x) => x !== f.id))}
+                    className="-mr-1 rounded-full p-0.5 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] hover:text-[var(--pnl-perigo,#ff6b6b)]"
                   >
-                    + convidar
+                    <X className="size-3" weight="bold" aria-hidden />
                   </button>
-                )}
-              </div>
-              {(status === 'ABERTA' || status === 'ENCERRADA') && totalParticipantesConvite > 0 && (
-                <p className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
-                  {convitesEntregues} de {totalParticipantesConvite}{' '}
-                  {totalParticipantesConvite === 1 ? 'convite entregue' : 'convites entregues'}
-                  {convitesEntregues < totalParticipantesConvite && (
-                    <button
-                      type="button"
-                      onClick={() => setModalConviteAberto(true)}
-                      className="ml-1 text-[var(--pnl-acento-hi,#6fe6ac)] hover:underline"
-                    >
-                      ver
-                    </button>
-                  )}
-                </p>
-              )}
-            </div>
-          )}
-
-          {status === 'ABERTA' && cotacao.prazoVencido && (
-            <div
-              role="alert"
-              className="flex items-center gap-3 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-[var(--pnl-atencao,#e0a030)]/10 px-4 py-3 text-sm sm:px-5"
-            >
-              <Warning className="size-5 shrink-0 text-[var(--pnl-atencao,#e0a030)]" aria-hidden />
-              <span className="font-medium text-[var(--pnl-atencao,#e0a030)]">
-                Prazo vencido — os representantes não podem mais responder. Encerre para apurar.
-              </span>
+                </span>
+              ))}
+              <button
+                type="button"
+                onClick={() => setModalConviteAberto(true)}
+                className="rounded-full px-2 py-1 text-[11px] font-medium text-[var(--pnl-acento-hi,#6fe6ac)] hover:underline"
+              >
+                + convidar
+              </button>
             </div>
           )}
 
           {(status === 'RASCUNHO' || status === 'CANCELADA' || status === 'PEDIDOS_GERADOS') && (
             <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={podeMontar} />
           )}
-          {(status === 'ABERTA' || status === 'ENCERRADA') && (
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <GradeAoVivoContainer id={id} status={status} itens={cotacao.itens} />
+          {emGrade && (
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
+              {gradeAoVivo.isLoading ? (
+                <p className="p-4 text-sm text-muted-foreground">Carregando grade ao vivo…</p>
+              ) : gradeAoVivo.error ? (
+                <p className="p-4 text-sm text-destructive">
+                  Erro ao carregar grade ao vivo: {gradeAoVivo.error.message}
+                </p>
+              ) : gradeAoVivo.data ? (
+                <GradeAoVivoTabela cotacaoId={id} grade={gradeAoVivo.data} />
+              ) : null}
             </div>
           )}
         </Superficie>
@@ -592,6 +533,27 @@ export function CotacaoDetalhePage() {
         selecionadas={empresasSelecionadas}
         onToggle={(empresaId) => setEmpresasSelecionadas(s => s.includes(empresaId) ? s.filter(x => x !== empresaId) : [...s, empresaId])}
       />
+
+      {status === 'ABERTA' && (
+        <>
+          <AdicionarItemModal
+            cotacaoId={id}
+            itens={cotacao.itens}
+            open={adicionarItemAberto}
+            onClose={() => setAdicionarItemAberto(false)}
+            aoCadastrarProduto={aoCadastrarProduto}
+            aoEditarProduto={aoEditarProduto}
+          />
+          <Dialog
+            open={cadastroProdutoAberto}
+            onClose={() => setCadastroProdutoAberto(false)}
+            size="lg"
+            ariaLabel="Cadastrar novo produto"
+          >
+            <ProdutoForm aoSalvar={aoSalvarProduto} produtoParaEditar={produtoParaEditar} />
+          </Dialog>
+        </>
+      )}
       </PageContainer>
     </div>
   )

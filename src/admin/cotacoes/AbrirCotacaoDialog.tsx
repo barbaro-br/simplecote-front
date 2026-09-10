@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { Calendar } from '@/shared/components/ui/calendar'
-import { Rocket, Clock, PaperPlaneRight } from '@phosphor-icons/react'
+import { Clock, PaperPlaneRight } from '@phosphor-icons/react'
 import { dataHoraBr } from '@/shared/format/formatters'
 
 type Props = {
@@ -121,102 +121,89 @@ export function AbrirCotacaoDialog({
   const horas = Array.from({ length: 24 }).map((_, i) => i.toString().padStart(2, '0'))
   const minutos = Array.from({ length: 60 }).map((_, i) => i.toString().padStart(2, '0'))
 
+  const faltaAlgo = totalItens === 0 || totalFornecedores === 0
+
   return (
-    <Dialog
-      open
-      onClose={onCancelar}
-      className="p-0 overflow-hidden bg-background/80 backdrop-blur-xl border border-border/50 shadow-2xl relative max-w-[420px]"
-    >
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-primary/10 blur-3xl rounded-full pointer-events-none" />
+    <Dialog open onClose={onCancelar} title="Abrir cotação" className="max-w-md p-5 space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Os representantes convidados são notificados na hora e respondem até o prazo abaixo.
+      </p>
 
-      <div className="flex flex-col relative z-10">
-        <div className="px-6 py-6 pb-4 shrink-0 flex flex-col items-center justify-center text-center">
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 ring-1 ring-primary/20 shadow-inner">
-            <Rocket className="size-7" />
-          </div>
-          <h2 className="text-xl font-semibold tracking-tight text-foreground ui-uppercase">Lançar Cotação</h2>
-          <p className="text-sm text-muted-foreground mt-2 max-w-sm">
-            Os representantes convidados serão notificados imediatamente e poderão responder até o prazo que você definir.
-          </p>
-          {(totalItens != null || totalFornecedores != null) && (
-            <div className="mt-3 w-full max-w-sm rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-[13px] text-muted-foreground">
-              {totalItens != null && (
-                <>
-                  <strong className="text-foreground">
-                    {totalItens} {totalItens === 1 ? 'item' : 'itens'}
-                  </strong>
-                  {totalFornecedores != null && ' · '}
-                </>
-              )}
-              {totalFornecedores != null && (
-                <strong className="text-foreground">
-                  {totalFornecedores} {totalFornecedores === 1 ? 'fornecedor' : 'fornecedores'}
-                </strong>
-              )}
-              {(totalItens === 0 || totalFornecedores === 0) && (
-                <p className="mt-1 font-medium text-warning">
-                  {totalItens === 0
-                    ? 'Adicione itens antes de abrir.'
-                    : 'Convide ao menos um fornecedor (botão Representantes) antes de abrir.'}
-                </p>
-              )}
-            </div>
+      {(totalItens != null || totalFornecedores != null) && (
+        <p className="text-[13px] text-muted-foreground">
+          {totalItens != null && (
+            <>
+              <strong className="text-foreground">
+                {totalItens} {totalItens === 1 ? 'item' : 'itens'}
+              </strong>
+              {totalFornecedores != null && ' · '}
+            </>
           )}
+          {totalFornecedores != null && (
+            <strong className="text-foreground">
+              {totalFornecedores} {totalFornecedores === 1 ? 'fornecedor' : 'fornecedores'}
+            </strong>
+          )}
+          {faltaAlgo && (
+            <span className="ml-1 font-medium text-warning">
+              {totalItens === 0
+                ? '— adicione itens antes de abrir.'
+                : '— convide ao menos um fornecedor antes de abrir.'}
+            </span>
+          )}
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-start gap-4">
+        <Calendar
+          mode="single"
+          selected={data}
+          onSelect={setData}
+          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+          className="pointer-events-auto rounded-lg border p-2"
+        />
+        <div className="flex items-center gap-2">
+          <Clock className="size-4 text-muted-foreground" aria-hidden />
+          <select
+            aria-label="Hora"
+            value={hora}
+            onChange={(e) => setHora(e.target.value)}
+            className="rounded-md border bg-transparent px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+          >
+            {horas.map((h) => (
+              <option key={h} value={h}>{h}</option>
+            ))}
+          </select>
+          <span className="text-muted-foreground">:</span>
+          <select
+            aria-label="Minuto"
+            value={minuto}
+            onChange={(e) => setMinuto(e.target.value)}
+            className="rounded-md border bg-transparent px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+          >
+            {minutos.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
         </div>
+      </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background/40">
-          <Calendar
-            mode="single"
-            selected={data}
-            onSelect={setData}
-            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-            className="pointer-events-auto bg-background rounded-xl border border-border/50 shadow-sm p-3 mb-6"
-          />
+      {prazoIso && (
+        <p className="text-[13px] text-muted-foreground">
+          Expira {dataHoraBr(prazoIso)} (horário de Brasília)
+        </p>
+      )}
 
-          <div className="flex items-center gap-3 w-full justify-center bg-background rounded-xl border border-border/50 p-3 shadow-sm">
-            <Clock className="size-4 text-muted-foreground" />
-            <span className="text-[13px] font-medium text-foreground mr-1">Horário:</span>
-            <select
-              aria-label="Hora"
-              value={hora}
-              onChange={(e) => setHora(e.target.value)}
-              className="bg-muted text-foreground border border-transparent hover:border-border rounded-lg text-sm px-2 py-1.5 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer transition-all"
-            >
-              {horas.map((h) => <option key={h} value={h}>{h}</option>)}
-            </select>
-            <span className="font-bold text-muted-foreground">:</span>
-            <select
-              aria-label="Minuto"
-              value={minuto}
-              onChange={(e) => setMinuto(e.target.value)}
-              className="bg-muted text-foreground border border-transparent hover:border-border rounded-lg text-sm px-2 py-1.5 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer transition-all"
-            >
-              {minutos.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-        </div>
+      {erro && <p className="text-[13px] font-medium text-destructive">{erro}</p>}
 
-        {prazoIso && (
-          <p className="px-6 pb-3 text-center text-[13px] text-muted-foreground">
-            Expira {dataHoraBr(prazoIso)} (horário de Brasília)
-          </p>
-        )}
-
-        {erro && (
-          <p className="px-6 pb-3 text-center text-[13px] text-destructive font-medium">
-            {erro}
-          </p>
-        )}
-
-        <div className="p-4 px-6 border-t border-border/50 bg-background/50 backdrop-blur-md shrink-0 flex justify-end gap-3 rounded-b-xl z-20">
-          <Button variant="ghost" onClick={onCancelar} disabled={pendente} className="rounded-full text-[13px] font-medium text-muted-foreground hover:text-foreground">
-            Cancelar
-          </Button>
-          <Button onClick={confirmar} disabled={pendente} className="rounded-full text-[13px] font-medium shadow-sm hover:shadow transition-all gap-2 px-6">
-            {pendente ? 'Lançando...' : 'Abrir Cotação'}
-            <PaperPlaneRight className="size-4" />
-          </Button>
-        </div>
+      <div className="flex justify-end gap-2 border-t pt-3">
+        <Button variant="ghost" onClick={onCancelar} disabled={pendente}>
+          Cancelar
+        </Button>
+        <Button onClick={confirmar} disabled={pendente} className="gap-2">
+          {pendente ? 'Abrindo…' : 'Abrir Cotação'}
+          <PaperPlaneRight className="size-4" />
+        </Button>
       </div>
     </Dialog>
   )
