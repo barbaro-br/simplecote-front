@@ -64,10 +64,13 @@ verde antes de mergear em `main`.
 
 ## Fase 3 — Catálogo
 
-- [x] `produtos`, `empresas`, `usuarios`: `CabecalhoPagina` + `Superficie`
-      (tabela mantida — colunas demais pra virar `LinhaLista`). Herdam os
-      tokens escuros. `ChipsFiltro`/`LinhaLista` fica como polimento futuro.
-- [ ] `representantes`: `LinhaLista` + `Selo` de vínculo.
+- [x] `produtos`, `empresas`, `usuarios`: `CabecalhoPagina` + `Superficie` +
+      `ChipsFiltro` (Todos/Ativos/Inativos) + `Selo` pra situação/papel.
+      Tabela mantida (colunas demais pra virar `LinhaLista`).
+- [x] `StatusBadge` reescrito sobre o `Selo` — cotações, resultado e
+      backoffice herdam o chip do design system.
+- [ ] `representantes`: `LinhaLista` + `Selo` de vínculo (geridos dentro de
+      `empresas`; sem tela própria).
 - [x] Testes revisados (verdes).
 
 ## Fase 4 — Conta

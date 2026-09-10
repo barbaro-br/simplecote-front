@@ -5,10 +5,16 @@ import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
 import { Input } from '@/shared/components/ui/input'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
-import { CabecalhoPagina, Superficie } from '@/shared/ui'
+import { CabecalhoPagina, Superficie, ChipsFiltro, Selo, type OpcaoChip } from '@/shared/ui'
 import { useProdutos, useInativarProduto, useAtivarProduto } from './produtos.api'
 import { ProdutoForm } from './ProdutoForm'
 import type { Produto } from './produtos.schema'
+
+const FILTROS: OpcaoChip[] = [
+  { valor: 'todos', rotulo: 'Todos' },
+  { valor: 'ativos', rotulo: 'Ativos' },
+  { valor: 'inativos', rotulo: 'Inativos' },
+]
 
 function normalizar(termo: string): string {
   return termo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -21,10 +27,13 @@ export function ProdutosPage() {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [produtoEditando, setProdutoEditando] = useState<Produto | undefined>(undefined)
   const [busca, setBusca] = useState('')
+  const [filtro, setFiltro] = useState('todos')
 
   const termo = normalizar(busca.trim())
   const listaFiltrada = (produtos ?? [])
     .filter((p) => {
+      if (filtro === 'ativos' && !p.ativo) return false
+      if (filtro === 'inativos' && p.ativo) return false
       if (termo === '') return true
       return (
         normalizar(p.nome).includes(termo) ||
@@ -65,18 +74,26 @@ export function ProdutosPage() {
             </Button>
           }
         />
-        <div className="relative max-w-xs">
-          <MagnifyingGlass
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            type="search"
-            aria-label="Buscar produto"
-            placeholder="Buscar por nome ou código de barras…"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="pl-9 pr-3"
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative max-w-xs flex-1">
+            <MagnifyingGlass
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              type="search"
+              aria-label="Buscar produto"
+              placeholder="Buscar por nome ou código de barras…"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="pl-9 pr-3"
+            />
+          </div>
+          <ChipsFiltro
+            opcoes={FILTROS}
+            valor={filtro}
+            aoTrocar={setFiltro}
+            className="border-b-0 p-0"
           />
         </div>
       </div>
@@ -123,7 +140,7 @@ export function ProdutosPage() {
                   >
                     <td className="px-4 py-3 font-medium ui-uppercase">
                       {produto.nome}
-                      {!produto.ativo && <span className="ml-2 inline-flex items-center rounded-full bg-muted-foreground/10 px-2 py-0.5 text-xs font-medium text-muted-foreground">Inativo</span>}
+                      {!produto.ativo && <Selo tom="neutro" className="ml-2">Inativo</Selo>}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{produto.codigoBarras ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{produto.unidade}</td>

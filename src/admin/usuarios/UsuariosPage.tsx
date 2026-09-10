@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
-import { CabecalhoPagina, Superficie } from '@/shared/ui'
+import { CabecalhoPagina, Superficie, Selo, ChipsFiltro, type OpcaoChip } from '@/shared/ui'
 import { UsuarioForm } from './UsuarioForm'
 import { RedefinirSenhaForm } from './RedefinirSenhaForm'
 import { useInativarUsuario, useUsuarios } from './usuarios.api'
@@ -16,16 +16,25 @@ type Modal =
   | { tipo: 'senha'; usuario: Usuario }
   | null
 
+const FILTROS: OpcaoChip[] = [
+  { valor: 'todos', rotulo: 'Todos' },
+  { valor: 'ativos', rotulo: 'Ativos' },
+  { valor: 'inativos', rotulo: 'Inativos' },
+]
+
 export function UsuariosPage() {
   const { data: usuarios, isLoading, error } = useUsuarios()
   const inativar = useInativarUsuario()
   const [modal, setModal] = useState<Modal>(null)
   const [confirmar, setConfirmar] = useState<Usuario | null>(null)
+  const [filtro, setFiltro] = useState('todos')
 
   if (isLoading) return <p className="p-6 text-muted-foreground">Carregando usuários…</p>
   if (error) return <p className="p-6 text-destructive">Erro ao carregar usuários: {error.message}</p>
 
-  const lista = usuarios ?? []
+  const lista = (usuarios ?? []).filter(
+    (u) => filtro === 'todos' || (filtro === 'ativos' ? u.ativo : !u.ativo),
+  )
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-6">
@@ -70,20 +79,21 @@ export function UsuariosPage() {
       </Dialog>
 
       <Superficie>
+        <ChipsFiltro opcoes={FILTROS} valor={filtro} aoTrocar={setFiltro} />
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">
-            <thead className="bg-muted/50 border-b">
-              <tr className="text-left text-muted-foreground">
+            <thead className="bg-white/[0.03] border-b border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
+              <tr className="text-left text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
                 <th className="px-4 py-3 font-medium ui-uppercase">Nome</th>
                 <th className="px-4 py-3 font-medium ui-uppercase">E-mail</th>
                 <th className="px-4 py-3 font-medium ui-uppercase">Papel</th>
                 <th className="px-4 py-3 font-medium ui-uppercase text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
               {!lista.length ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={4} className="px-4 py-8 text-center text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
                     Nenhum usuário cadastrado.
                   </td>
                 </tr>
@@ -91,21 +101,19 @@ export function UsuariosPage() {
                 lista.map((u) => (
                   <tr
                     key={u.id}
-                    className={`transition-colors hover:bg-muted/50 ${u.ativo ? '' : 'opacity-60 bg-muted/10'}`}
+                    className={`transition-colors hover:bg-white/[0.03] ${u.ativo ? '' : 'opacity-60'}`}
                   >
-                    <td className="px-4 py-3 font-medium">
+                    <td className="px-4 py-3 font-medium text-[var(--pnl-txt,#fff)]">
                       {u.nome}
                       {!u.ativo && (
-                        <span className="ml-2 inline-flex items-center rounded-full bg-muted-foreground/10 px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                        <Selo tom="neutro" className="ml-2">
                           Inativo
-                        </span>
+                        </Selo>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                    <td className="px-4 py-3 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{u.email}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                        {ROTULO_PAPEL[u.papel]}
-                      </span>
+                      <Selo tom="info">{ROTULO_PAPEL[u.papel]}</Selo>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1">

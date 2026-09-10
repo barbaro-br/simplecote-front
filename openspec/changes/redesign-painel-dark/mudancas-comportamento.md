@@ -64,6 +64,23 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   ou fornecedor — antes o `abrir` só falhava no servidor com uma mensagem
   genérica.
 
+## Catálogo — produtos, fornecedores e usuários
+
+- **Filtro Todos / Ativos / Inativos.** Novo: cada uma das três listas ganhou
+  uma fileira de chips pra filtrar por situação. O padrão é "Todos" (mesma
+  visão de antes — inativos aparecem no fim da lista, esmaecidos). Só filtra
+  no cliente; nenhuma chamada nova.
+- **Chips de situação/papel padronizados.** "Inativo/Inativa" e o papel do
+  usuário (Dono/Administrador/Operador) agora usam o `Selo` do design system
+  (mesmo chip de status da cotação). Só aparência.
+
+## Status da cotação (chip)
+
+- **`StatusBadge` usa o `Selo` do design system.** As cores de estado
+  mudaram levemente pra casar com a paleta do painel: Aberta = menta,
+  Encerrada = âmbar, Rascunho = cinza, **Pedidos gerados = azul** (era
+  verde), Cancelada = vermelho. Rótulos idênticos; nada de comportamento.
+
 ## Diálogos (todo o app)
 
 - **Todo modal renderiza escuro.** O componente `Dialog` compartilhado passou
