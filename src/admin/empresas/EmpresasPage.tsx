@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react'
 import { Eye, EyeSlash, Pencil, PlusCircle, Trash, UserMinus } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
-import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
 import { Tooltip } from '@/shared/components/ui/tooltip'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie } from '@/shared/ui'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { ConfirmarDialog } from '../cotacoes/ConfirmarDialog'
 import { useEmpresas, useInativarEmpresa, useAtivarEmpresa, useExcluirEmpresa } from './empresas.api'
@@ -86,16 +86,10 @@ export function EmpresasPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Fornecedores (Empresas)</h1>
-          <p className="text-sm text-muted-foreground">Gerencie as empresas e seus respectivos representantes.</p>
-        </div>
-        <Button onClick={abrirNovo}>
+      <CabecalhoPagina titulo="Fornecedores (Empresas)" subtitulo="Gerencie as empresas e seus respectivos representantes." acao={<Button onClick={abrirNovo}>
           <PlusCircle className="mr-2 size-4" />
           Nova Empresa
-        </Button>
-      </div>
+        </Button>} />
 
       <Dialog
         open={mostrarForm}
@@ -134,7 +128,7 @@ export function EmpresasPage() {
         />
       )}
 
-      <Card className="overflow-hidden">
+      <Superficie>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">
             <thead className="bg-muted/50 border-b">
@@ -236,7 +230,7 @@ export function EmpresasPage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </Superficie>
     </PageContainer>
   )
 }

@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Archive, BoxArrowUp, Pencil, PlusCircle, MagnifyingGlass } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
-import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
 import { Input } from '@/shared/components/ui/input'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie } from '@/shared/ui'
 import { useProdutos, useInativarProduto, useAtivarProduto } from './produtos.api'
 import { ProdutoForm } from './ProdutoForm'
 import type { Produto } from './produtos.schema'
@@ -54,17 +54,17 @@ export function ProdutosPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-6">
-      <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Catálogo de produtos</h1>
-            <p className="text-sm text-muted-foreground">Gerencie os produtos, códigos de barra e configurações de embalagem.</p>
-          </div>
-          <Button onClick={abrirNovo}>
-            <PlusCircle className="mr-2 size-4" />
-            Novo produto
-          </Button>
-        </div>
+      <div className="sticky top-0 z-10 space-y-4 border-b border-border bg-card pb-4 pt-4">
+        <CabecalhoPagina
+          titulo="Catálogo de produtos"
+          subtitulo="Gerencie os produtos, códigos de barra e configurações de embalagem."
+          acao={
+            <Button onClick={abrirNovo}>
+              <PlusCircle className="mr-2 size-4" />
+              Novo produto
+            </Button>
+          }
+        />
         <div className="relative max-w-xs">
           <MagnifyingGlass
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -90,7 +90,7 @@ export function ProdutosPage() {
         <ProdutoForm aoSalvar={fecharForm} produtoParaEditar={produtoEditando} />
       </Dialog>
 
-      <Card className="overflow-hidden">
+      <Superficie>
         <div className="scrollbar-fina overflow-x-auto overflow-y-auto max-h-[calc(100vh-14rem)]">
           <table className="w-full text-sm">
             <thead>
@@ -161,7 +161,7 @@ export function ProdutosPage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </Superficie>
     </PageContainer>
   )
 }

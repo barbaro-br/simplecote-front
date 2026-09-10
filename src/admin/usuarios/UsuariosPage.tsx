@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Key, Pencil, PlusCircle, UserMinus } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
-import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie } from '@/shared/ui'
 import { UsuarioForm } from './UsuarioForm'
 import { RedefinirSenhaForm } from './RedefinirSenhaForm'
 import { useInativarUsuario, useUsuarios } from './usuarios.api'
@@ -29,16 +29,10 @@ export function UsuariosPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Usuários</h1>
-          <p className="text-sm text-muted-foreground">Quem acessa o painel administrativo.</p>
-        </div>
-        <Button onClick={() => setModal({ tipo: 'criar' })}>
+      <CabecalhoPagina titulo="Usuários" subtitulo="Quem acessa o painel administrativo." acao={<Button onClick={() => setModal({ tipo: 'criar' })}>
           <PlusCircle className="mr-2 size-4" />
           Novo usuário
-        </Button>
-      </div>
+        </Button>} />
 
       <Dialog open={modal !== null} onClose={() => setModal(null)} size="lg" ariaLabel="Usuário">
         {modal?.tipo === 'editar' && (
@@ -75,7 +69,7 @@ export function UsuariosPage() {
         </div>
       </Dialog>
 
-      <Card className="overflow-hidden">
+      <Superficie>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">
             <thead className="bg-muted/50 border-b">
@@ -144,7 +138,7 @@ export function UsuariosPage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </Superficie>
     </PageContainer>
   )
 }
