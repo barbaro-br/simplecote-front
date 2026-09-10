@@ -131,6 +131,12 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   "Adicionar item"). Sem mudança de fluxo — os mesmos elementos, encaixados
   no cartão único.
 
+- **Tabela da grade encaixada na superfície.** A tabela era um card com
+  borda/sombra própria dentro da `Superficie` (card dentro de card) e o
+  cabeçalho fixo tinha fundo translúcido — as linhas apareciam por baixo dele
+  ao rolar. Agora a tabela é rente ao cartão e o cabeçalho fixo (linha e
+  primeira coluna) tem fundo opaco. Só aparência.
+
 - **Coluna "Item" mais larga por padrão (240 → 280 px).** O nome do produto
   vinha espremido/sobreposto pelos controles de quantidade quando a coluna
   estava no tamanho padrão. Agora o nome trunca com reticências e tudo se

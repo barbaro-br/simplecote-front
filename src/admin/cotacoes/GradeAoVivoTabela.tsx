@@ -399,7 +399,7 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
           {erroQuantidade}
         </p>
       )}
-      <div className="rounded-md border bg-card text-card-foreground shadow-sm flex flex-col">
+      <div className="flex flex-col">
         <div className="overflow-x-auto overflow-y-auto max-h-[65vh]">
           <table
             className="w-full text-sm border-separate border-spacing-0 table-fixed"
@@ -407,7 +407,7 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
           >
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="sticky top-0 left-0 z-30 bg-muted px-4 py-2 font-medium ui-uppercase border-b border-r shadow-[1px_0_0_0_var(--border)] whitespace-nowrap" style={{ width: 'var(--w-item)' }}>
+                <th className="sticky top-0 left-0 z-30 bg-card px-4 py-2 font-medium ui-uppercase border-b border-r shadow-[1px_0_0_0_var(--border)] whitespace-nowrap" style={{ width: 'var(--w-item)' }}>
                   Item
                   <span
                     data-testid="grade-resize-handle"
@@ -423,7 +423,7 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
                 {colunas.map((c) => (
                   <th
                     key={c.participanteId}
-                    className="sticky top-0 z-20 bg-muted px-2 py-2 font-medium ui-uppercase min-w-[140px] border-b border-l shadow-[0_1px_0_0_var(--border)] text-right whitespace-nowrap"
+                    className="sticky top-0 z-20 bg-card px-2 py-2 font-medium ui-uppercase min-w-[140px] border-b border-l shadow-[0_1px_0_0_var(--border)] text-right whitespace-nowrap"
                   >
                     {c.empresa}
                   </th>
