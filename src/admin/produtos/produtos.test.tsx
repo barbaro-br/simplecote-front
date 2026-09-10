@@ -432,7 +432,7 @@ test('abre o histórico de compras de um produto pelo botão da linha', async ()
   renderComQuery(<ProdutosPage />)
   await screen.findByText('Arroz 5kg')
 
-  await user.click(screen.getByRole('button', { name: 'Histórico de compras' }))
+  await user.click(screen.getByRole('button', { name: 'Arroz 5kg' }))
 
   const dialog = screen.getByRole('dialog')
   expect(dialog).toHaveTextContent('Histórico — Arroz 5kg')

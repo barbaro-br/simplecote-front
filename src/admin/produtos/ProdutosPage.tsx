@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Archive, BoxArrowUp, ClockCounterClockwise, Pencil, PlusCircle, MagnifyingGlass } from '@phosphor-icons/react'
+import { Archive, BoxArrowUp, Pencil, PlusCircle, MagnifyingGlass } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
@@ -162,7 +162,14 @@ export function ProdutosPage() {
                     className={`transition-colors hover:bg-muted/50 ${produto.ativo ? '' : 'opacity-60 bg-muted/10'}`}
                   >
                     <td className="px-4 py-3 font-medium ui-uppercase">
-                      {produto.nome}
+                      <button
+                        type="button"
+                        onClick={() => setHistoricoDe(produto)}
+                        title="Ver histórico de compras"
+                        className="text-left transition-colors hover:text-[var(--pnl-acento-hi,#6fe6ac)] hover:underline focus-visible:outline-none focus-visible:underline"
+                      >
+                        {produto.nome}
+                      </button>
                       {!produto.ativo && <Selo tom="neutro" className="ml-2">Inativo</Selo>}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{produto.codigoBarras ?? '—'}</td>
@@ -170,11 +177,6 @@ export function ProdutosPage() {
                     <td className="px-4 py-3 tabular-nums text-muted-foreground text-right">{produto.quantidadePorEmbalagem}</td>
                     <td className="px-4 py-3 text-right border-l border-border">
                       <div className="flex gap-1 justify-end">
-                        <IconButton
-                          icon={ClockCounterClockwise}
-                          label="Histórico de compras"
-                          onClick={() => setHistoricoDe(produto)}
-                        />
                         {produto.ativo ? (
                           <>
                             <IconButton
