@@ -191,7 +191,7 @@ const LinhaItem = memo(function LinhaItem({
 }: LinhaProps) {
   return (
     <tr className="group transition-colors hover:bg-muted/40">
-      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-2 border-b border-r shadow-[1px_1px_0_0_var(--border)]" style={{ width: 'var(--w-item)' }}>
+      <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-2 border-b border-r shadow-[1px_1px_0_0_var(--border)]" style={{ width: 'var(--w-item)' }}>
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <UltimaCompraPopover item={item} />
