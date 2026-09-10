@@ -5,9 +5,9 @@ import { Check, Copy, Storefront, Palette, Sliders, ShieldCheck } from '@phospho
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
-import { Card } from '@/shared/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie } from '@/shared/ui'
 import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
 import { useAuth } from '@/shared/auth/useAuth'
 import { configuracaoSchema, type Configuracao, type ConfiguracaoFormValues } from './configuracoes.schema'
@@ -192,14 +192,13 @@ export function ConfiguracoesPage() {
 
   return (
     <PageContainer maxWidth="md" className="h-[calc(100vh-80px)] overflow-hidden">
-      <div className="mb-6 space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight ui-uppercase">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Gerencie as preferências da sua loja.</p>
+      <div className="mb-6">
+        <CabecalhoPagina titulo="Configurações" subtitulo="Gerencie as preferências da sua loja." />
       </div>
 
-      <Card className="p-6 h-[520px] flex flex-col">
+      <Superficie className="flex h-[520px] flex-col p-6">
         <ConfiguracoesForm configuracaoInicial={data} />
-      </Card>
+      </Superficie>
     </PageContainer>
   )
 }
