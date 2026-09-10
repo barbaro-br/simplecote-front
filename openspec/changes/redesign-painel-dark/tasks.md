@@ -109,7 +109,8 @@ verde antes de mergear em `main`.
       modais do app ficam escuros de uma vez.
 - [ ] Remover `src/shared/components/ui/*` sem uso; `grep` por classes do tema
       claro órfãs.
-- [~] Passe de reduced-motion/foco: `animate-ping`/`animate-pulse` entram na
-      lista de reduced-motion; anel de foco nos `ChipsFiltro` e nas
-      `LinhaLista` clicáveis. Falta varrer contraste tela a tela.
+- [x] Passe de reduced-motion/foco/contraste: `animate-ping`/`animate-pulse`
+      na lista de reduced-motion; anel de foco em `ChipsFiltro` e `LinhaLista`;
+      texto secundário de conteúdo sobe de `--pnl-txt-3` (45%) p/ `--pnl-txt-2`
+      (70%) — subtítulos, estados vazios, rótulos clicáveis, código de barras.
 - [ ] Atualizar `README`/`openspec/specs` afetadas; arquivar a change.

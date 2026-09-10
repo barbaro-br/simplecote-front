@@ -161,3 +161,8 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
 - **Anel de foco nos chips de filtro e nas linhas de lista.** Navegando por
   teclado, os chips (Todos/Ativos/Inativos, período) e as `LinhaLista`
   clicáveis agora mostram um anel de foco menta. Sem mudança no mouse.
+- **Texto secundário mais legível.** Onde `--pnl-txt-3` (branco 45%) estava
+  em conteúdo de verdade — subtítulo de página, estados vazios ("Nada por
+  aqui", "Nenhum X cadastrado"), rótulos clicáveis do dashboard, código de
+  barras na grade — subiu para `--pnl-txt-2` (70%), que passa no contraste
+  AA. Placeholders e ícones decorativos ficaram como estavam.
