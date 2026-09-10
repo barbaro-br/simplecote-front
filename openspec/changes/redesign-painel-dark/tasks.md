@@ -52,7 +52,10 @@ verde antes de mergear em `main`.
       sem o bloco solto com `mt-8`. Bug de sobreposição nome × stepper na
       coluna "Item" corrigido (trunca) + largura padrão 240 → 280 px.
 - [ ] Adicionar item inline na última linha da `GradeDados` (`POST /itens`).
-- [ ] Chip-input de fornecedores (`POST/DELETE /participantes`).
+- [~] Chip-input de fornecedores (`POST/DELETE /participantes`). Parcial: em
+      RASCUNHO os fornecedores escolhidos no modal já aparecem como chips
+      com × na própria tela (antes a seleção era invisível até reabrir o
+      modal). O combobox de digitar-e-adicionar inline fica pra depois.
 - [ ] Botão primário único por estado; `AbrirCotacaoDialog` (prazo) mantido.
 - [ ] `GradeDados` modo "resultado" (vencedor + economia/item) + `RodapeAcao`
       "Gerar pedidos" em ENCERRADA/PEDIDOS_GERADOS.

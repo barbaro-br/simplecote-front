@@ -46,6 +46,16 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
 
 ## Melhorias de usabilidade (carta branca)
 
+- **Fornecedores escolhidos em RASCUNHO aparecem como chips na tela.** Antes,
+  ao marcar fornecedores no modal "Representantes" numa cotação em RASCUNHO,
+  a seleção sumia da vista assim que o modal fechava (só ia pro servidor no
+  "Abrir"); pra conferir quem tinha marcado era preciso reabrir o modal.
+  Agora os selecionados aparecem como chips logo abaixo do cabeçalho, cada um
+  com um × pra tirar, e a linha "N fornecedores" da faixa de contexto passa a
+  contar a seleção. Nada muda no back — o convite continua disparando só no
+  "Abrir".
+
+
 - **Economia estimada no rodapé da cotação (ABERTA/ENCERRADA).** Novo: o
   rodapé mostra "Economia estimada até agora" = soma, por item, de quanto o
   menor lance atual ficou abaixo da referência de última compra (× quantidade);

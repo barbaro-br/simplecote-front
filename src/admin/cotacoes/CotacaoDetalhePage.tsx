@@ -28,6 +28,7 @@ import { ConfirmarDialog } from './ConfirmarDialog'
 import { AbrirCotacaoDialog } from './AbrirCotacaoDialog'
 import { RepresentantesModal } from './RepresentantesModal'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
+import { useEmpresas } from '@/admin/empresas/empresas.api'
 import type { Produto } from '@/admin/produtos/produtos.schema'
 import type { ItemCotacao } from './cotacoes.schema'
 import {
@@ -130,6 +131,7 @@ export function CotacaoDetalhePage() {
   const participantes = useParticipantes(id)
   const gradeAoVivo = useGradeAoVivo(id, cotacao?.status)
   const finalizarParticipante = useFinalizarParticipante(id)
+  const { data: empresas } = useEmpresas()
 
   const [dialog, setDialog] = useState<DialogAberto>(null)
   const [erroAcao, setErroAcao] = useState<string | null>(null)
@@ -175,6 +177,21 @@ export function CotacaoDetalhePage() {
   const convitesEntregues = (participantes.data ?? []).filter(
     (p) => p.conviteStatus === 'ENVIADO',
   ).length
+
+  // Em RASCUNHO os fornecedores ainda não viraram participantes — a seleção
+  // vive em `empresasSelecionadas` e o convite só é disparado no "Abrir".
+  // Ainda assim mostramos os escolhidos como chips (com × pra tirar) para o
+  // Comprador não precisar reabrir o modal só pra lembrar quem marcou.
+  const emRascunho = status === 'RASCUNHO'
+  const fornecedoresSelecionados = emRascunho
+    ? empresasSelecionadas.map((eid) => ({
+        id: eid,
+        nome: (empresas ?? []).find((e) => e.id === eid)?.nome ?? 'Fornecedor',
+      }))
+    : []
+  const totalFornecedoresExibido = emRascunho
+    ? empresasSelecionadas.length
+    : totalParticipantesConvite
 
   const participantesComLanceCotado = (participantes.data ?? []).filter((p) => {
     if (p.participanteStatus === 'RESPONDIDO') return false
@@ -273,8 +290,8 @@ export function CotacaoDetalhePage() {
 
           <SubFaixa
             esquerda={`${totalItens} ${totalItens === 1 ? 'item' : 'itens'}${
-              totalParticipantesConvite > 0
-                ? ` · ${totalParticipantesConvite} ${totalParticipantesConvite === 1 ? 'fornecedor' : 'fornecedores'}`
+              totalFornecedoresExibido > 0
+                ? ` · ${totalFornecedoresExibido} ${totalFornecedoresExibido === 1 ? 'fornecedor' : 'fornecedores'}`
                 : ''
             }`}
             direita={cotacao.prazo ? `Prazo: ${dataHoraBr(cotacao.prazo)}` : undefined}
@@ -283,6 +300,24 @@ export function CotacaoDetalhePage() {
           {(podeConvidar || (participantes.data ?? []).length > 0) && (
             <div className="space-y-2 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] px-4 py-3 sm:px-5">
               <div className="flex flex-wrap items-center gap-1.5">
+                {fornecedoresSelecionados.map((f) => (
+                  <span
+                    key={f.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]"
+                  >
+                    {f.nome}
+                    <button
+                      type="button"
+                      aria-label={`Remover ${f.nome} da cotação`}
+                      onClick={() =>
+                        setEmpresasSelecionadas((s) => s.filter((x) => x !== f.id))
+                      }
+                      className="-mr-1 rounded-full p-0.5 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] hover:text-[var(--pnl-perigo,#ff6b6b)]"
+                    >
+                      <X className="size-3" weight="bold" aria-hidden />
+                    </button>
+                  </span>
+                ))}
                 {(participantes.data ?? []).map((p) => (
                   <span
                     key={p.participanteId}

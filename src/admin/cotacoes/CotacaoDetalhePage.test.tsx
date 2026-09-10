@@ -692,3 +692,41 @@ test('ação "ver" no resumo abre o modal de Representantes', async () => {
 
   expect(await screen.findByRole('dialog')).toBeInTheDocument()
 })
+
+test('RASCUNHO: fornecedor escolhido no modal vira chip com × na tela', async () => {
+  setup('RASCUNHO')
+  server.use(
+    http.get('*/api/empresas', () =>
+      HttpResponse.json([
+        { id: 'e1', nome: 'Distribuidora Aurora', ramo: 'Hortifrúti', ativo: true },
+        { id: 'e2', nome: 'Comercial Sul', ramo: 'Mercearia', ativo: true },
+      ]),
+    ),
+  )
+  const user = userEvent.setup()
+
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  // antes de escolher, a SubFaixa não cita fornecedores
+  expect(screen.queryByText(/fornecedor/)).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Representantes' }))
+  const dialog = await screen.findByRole('dialog')
+  await user.click(within(dialog).getByText('Distribuidora Aurora'))
+  await user.click(within(dialog).getByRole('button', { name: 'Pronto' }))
+
+  // chip aparece na superfície, com ação de remover
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Remover Distribuidora Aurora da cotação' }),
+    ).toBeInTheDocument(),
+  )
+  expect(screen.getByText(/1 fornecedor/)).toBeInTheDocument()
+
+  // × tira o chip
+  await user.click(screen.getByRole('button', { name: 'Remover Distribuidora Aurora da cotação' }))
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: 'Remover Distribuidora Aurora da cotação' }),
+    ).not.toBeInTheDocument(),
+  )
+})
