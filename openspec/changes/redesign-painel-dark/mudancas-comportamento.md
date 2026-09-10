@@ -83,6 +83,32 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
 - **Chips de situação/papel padronizados.** "Inativo/Inativa" e o papel do
   usuário (Dono/Administrador/Operador) agora usam o `Selo` do design system
   (mesmo chip de status da cotação). Só aparência.
+- **Histórico de compra do produto no catálogo.** Novo: cada linha de
+  `produtos` ganhou um botão "Histórico de compras" que abre um modal com o
+  mesmo card de insight que existe no popover da grade ao vivo — última
+  compra (preço, data, fornecedor), nº de compras, fornecedores distintos,
+  menor preço, média 90d e mini-gráfico. Busca sob demanda (`GET
+  /api/analises/produtos/insight`, endpoint que já existia); nada é buscado
+  até abrir o modal.
+- **Cabeçalho da tabela de produtos opaco.** O `thead` fixo usava fundo
+  translúcido — o nome do produto passava por baixo dele ao rolar. Agora é
+  opaco. Só aparência.
+
+## Configurações
+
+- **Abas com respiro.** As abas Geral / Aparência / Avançado / Dados estavam
+  coladas (grid sem espaço). Ganharam espaçamento entre si e a tela ficou um
+  pouco mais larga pra caberem folgadas. Só layout.
+
+## Campos de valor (preço e margem)
+
+- **Entrada validada em todo campo de preço/percentual.** "Corrigir lance" da
+  grade aceitava letras, sinal negativo, "e" e casas decimais infinitas
+  (era `<input type="number">`); margem (%) na tela de resultado idem. Agora
+  todos os campos de valor (corrigir lance, margem global e por item, preço
+  do representante) só aceitam dígitos + 1 separador com no máximo 2 casas,
+  sem negativo e sem letra. O "Corrigir lance" também valida (≥ 0) antes de
+  enviar, com mensagem clara.
 
 ## Status da cotação (chip)
 

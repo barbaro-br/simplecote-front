@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Archive, BoxArrowUp, Pencil, PlusCircle, MagnifyingGlass } from '@phosphor-icons/react'
+import { Archive, BoxArrowUp, ClockCounterClockwise, Pencil, PlusCircle, MagnifyingGlass } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
 import { Input } from '@/shared/components/ui/input'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { CabecalhoPagina, Superficie, ChipsFiltro, Selo, type OpcaoChip } from '@/shared/ui'
+import { useInsightProdutos } from '@/admin/analise/analise.api'
+import { InsightProdutoCard } from '@/admin/analise/InsightProdutoCard'
 import { useProdutos, useInativarProduto, useAtivarProduto } from './produtos.api'
 import { ProdutoForm } from './ProdutoForm'
 import type { Produto } from './produtos.schema'
@@ -26,8 +28,14 @@ export function ProdutosPage() {
   const ativar = useAtivarProduto()
   const [mostrarForm, setMostrarForm] = useState(false)
   const [produtoEditando, setProdutoEditando] = useState<Produto | undefined>(undefined)
+  const [historicoDe, setHistoricoDe] = useState<Produto | null>(null)
   const [busca, setBusca] = useState('')
   const [filtro, setFiltro] = useState('todos')
+
+  // Histórico de compra do produto (última compra, nº de compras, fornecedores…)
+  // — mesmo dado do popover da grade ao vivo, agora acessível no catálogo.
+  // Só busca quando um histórico está aberto (lazy).
+  const insights = useInsightProdutos(historicoDe ? [historicoDe.id] : [])
 
   const termo = normalizar(busca.trim())
   const listaFiltrada = (produtos ?? [])
@@ -107,6 +115,25 @@ export function ProdutosPage() {
         <ProdutoForm aoSalvar={fecharForm} produtoParaEditar={produtoEditando} />
       </Dialog>
 
+      <Dialog
+        open={historicoDe !== null}
+        onClose={() => setHistoricoDe(null)}
+        title={historicoDe ? `Histórico — ${historicoDe.nome}` : 'Histórico'}
+      >
+        {historicoDe &&
+          (insights.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando histórico…</p>
+          ) : (
+            <div className="flex justify-center">
+              <InsightProdutoCard
+                insight={
+                  insights.isError ? 'erro' : (insights.data?.[historicoDe.id] ?? null)
+                }
+              />
+            </div>
+          ))}
+      </Dialog>
+
       <Superficie>
         <div className="scrollbar-fina overflow-x-auto overflow-y-auto max-h-[calc(100vh-14rem)]">
           <table className="w-full text-sm">
@@ -147,6 +174,11 @@ export function ProdutosPage() {
                     <td className="px-4 py-3 tabular-nums text-muted-foreground text-right">{produto.quantidadePorEmbalagem}</td>
                     <td className="px-4 py-3 text-right border-l border-border">
                       <div className="flex gap-1 justify-end">
+                        <IconButton
+                          icon={ClockCounterClockwise}
+                          label="Histórico de compras"
+                          onClick={() => setHistoricoDe(produto)}
+                        />
                         {produto.ativo ? (
                           <>
                             <IconButton
