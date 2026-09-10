@@ -288,15 +288,13 @@ export function CotacaoDetalhePage() {
                         !
                       </span>
                     )}
-                    {status === 'RASCUNHO' && (
+                    {podeConvidar && p.participanteStatus !== 'RESPONDIDO' && (
                       <button
                         type="button"
                         aria-label={`Remover ${p.empresaNome} da cotação`}
                         disabled={desconvidar.isPending}
                         onClick={() =>
-                          desconvidar
-                            .mutateAsync(p.participanteId)
-                            .catch((e) => tratarErro(e))
+                          desconvidar.mutateAsync(p.participanteId).catch((e) => tratarErro(e))
                         }
                         className="-mr-1 rounded-full p-0.5 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] hover:text-[var(--pnl-perigo,#ff6b6b)]"
                       >
@@ -409,6 +407,8 @@ export function CotacaoDetalhePage() {
       {dialog === 'abrir' && (
         <AbrirCotacaoDialog
           pendente={abrir.isPending || convidar.isPending}
+          totalItens={totalItens}
+          totalFornecedores={empresasSelecionadas.length}
           onCancelar={() => setDialog(null)}
           onAbrir={async (prazoIso) => {
             setErroAcao(null)

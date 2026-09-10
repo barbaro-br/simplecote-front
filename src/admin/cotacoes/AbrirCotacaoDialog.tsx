@@ -7,6 +7,10 @@ import { dataHoraBr } from '@/shared/format/formatters'
 
 type Props = {
   pendente?: boolean
+  /** quantos itens a cotação tem no momento (para o resumo/aviso) */
+  totalItens?: number
+  /** quantos fornecedores serão convidados ao abrir */
+  totalFornecedores?: number
   onAbrir: (prazoIso: string) => void
   onCancelar: () => void
 }
@@ -85,7 +89,13 @@ function estaNoPassado(iso: string): boolean {
   return new Date(iso).getTime() < Date.now()
 }
 
-export function AbrirCotacaoDialog({ pendente, onAbrir, onCancelar }: Props) {
+export function AbrirCotacaoDialog({
+  pendente,
+  totalItens,
+  totalFornecedores,
+  onAbrir,
+  onCancelar,
+}: Props) {
   const [data, setData] = useState<Date | undefined>(() => dataAmanha())
   const [hora, setHora] = useState('18')
   const [minuto, setMinuto] = useState('00')
@@ -128,6 +138,30 @@ export function AbrirCotacaoDialog({ pendente, onAbrir, onCancelar }: Props) {
           <p className="text-sm text-muted-foreground mt-2 max-w-sm">
             Os representantes convidados serão notificados imediatamente e poderão responder até o prazo que você definir.
           </p>
+          {(totalItens != null || totalFornecedores != null) && (
+            <div className="mt-3 w-full max-w-sm rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-[13px] text-muted-foreground">
+              {totalItens != null && (
+                <>
+                  <strong className="text-foreground">
+                    {totalItens} {totalItens === 1 ? 'item' : 'itens'}
+                  </strong>
+                  {totalFornecedores != null && ' · '}
+                </>
+              )}
+              {totalFornecedores != null && (
+                <strong className="text-foreground">
+                  {totalFornecedores} {totalFornecedores === 1 ? 'fornecedor' : 'fornecedores'}
+                </strong>
+              )}
+              {(totalItens === 0 || totalFornecedores === 0) && (
+                <p className="mt-1 font-medium text-warning">
+                  {totalItens === 0
+                    ? 'Adicione itens antes de abrir.'
+                    : 'Convide ao menos um fornecedor (botão Representantes) antes de abrir.'}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background/40">

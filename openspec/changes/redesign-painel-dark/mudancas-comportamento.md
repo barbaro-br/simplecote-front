@@ -53,10 +53,16 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   Some quando ainda não há economia (cai no contador de itens). Só leitura,
   não afeta apuração.
 
-- **Chip de fornecedor com × em RASCUNHO.** Novo: cada chip de fornecedor tem
-  um × para desconvidar sem abrir o modal de Representantes (`DELETE
-  /api/participantes/:id`, endpoint que já existia). Só em RASCUNHO — depois de
-  ABERTA, remover participante segue pelo modal.
+- **Chip de fornecedor com × (RASCUNHO/ABERTA).** Novo: cada chip de
+  fornecedor tem um × para desconvidar direto, sem abrir o modal de
+  Representantes (`DELETE /api/participantes/:id`, endpoint que já existia). Só
+  aparece enquanto o participante ainda não respondeu (`participanteStatus !==
+  'RESPONDIDO'`).
+
+- **Resumo/aviso no diálogo de Abrir.** Novo: ao abrir a cotação, o diálogo de
+  prazo mostra "X itens · Y fornecedores" e avisa (não bloqueia) se faltar item
+  ou fornecedor — antes o `abrir` só falhava no servidor com uma mensagem
+  genérica.
 
 ## Grade ao vivo (admin)
 
