@@ -279,6 +279,14 @@
   border-color: color-mix(in srgb, var(--brand-mint) 40%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-mint) 28%, transparent);
 }
+
+/* Empate no menor preço: âmbar em vez de menta — não há "um" vencedor visual,
+ * o desempate (quem respondeu primeiro) acontece na apuração. */
+.grade-cel-empate {
+  background-color: color-mix(in srgb, var(--warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 38%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warning) 26%, transparent);
+}
 @keyframes gradeCelFlash {
   0%, 100% { box-shadow: inset 0 0 0 1px transparent; }
   30%, 70% {

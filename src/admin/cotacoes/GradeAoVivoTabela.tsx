@@ -116,6 +116,9 @@ type CelulaPrecoProps = {
   item: ItemGrid
   celula: CelulaGrid
   ehMenor: boolean
+  /** `true` quando 2+ células compartilham o menor preço unitário — não há
+   * vencedor único; o desempate (primeiro a responder) fica pra apuração. */
+  empateNoMenor: boolean
   aoCorrigir: (item: ItemGrid, celula: CelulaGrid) => void
 }
 
@@ -126,10 +129,12 @@ type CelulaPrecoProps = {
  * lance/correção, inclusive entrar ou sair de COTADO) e quando a célula assume
  * a liderança de menor preço.
  */
-const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, aoCorrigir }: CelulaPrecoProps) {
+const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, empateNoMenor, aoCorrigir }: CelulaPrecoProps) {
   const pulsoPreco = useHighlightOnUpdate(celula.preco)
   const pulsoLideranca = useHighlightOnUpdate(ehMenor) && ehMenor
   const destacado = pulsoPreco || pulsoLideranca
+  const lider = ehMenor && !empateNoMenor
+  const empatado = ehMenor && empateNoMenor
 
   return (
     <td className="px-2 py-1 min-w-[140px] border-b border-l shadow-[0_1px_0_0_var(--border)] bg-card group-hover:bg-muted/40">
@@ -138,16 +143,23 @@ const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, aoCorrigi
         onClick={() => aoCorrigir(item, celula)}
         aria-label={`Corrigir lance de ${celula.empresa} para ${item.nome}`}
         className={`w-full h-full min-h-[2rem] rounded-md px-2 py-1 text-right transition-colors duration-700 border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
-          ehMenor
+          lider
             ? 'grade-cel-lider'
-            : 'bg-card border-border hover:bg-muted/50'
+            : empatado
+              ? 'grade-cel-empate'
+              : 'bg-card border-border hover:bg-muted/50'
         } ${destacado ? 'grade-cel-flash' : ''}`}
       >
         {celula.status === 'COTADO' && celula.preco != null ? (
           <span className="tabular-nums flex flex-col items-end leading-tight">
+            {empatado && (
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-[var(--warning)]">
+                empate
+              </span>
+            )}
             <span
               className={`font-semibold whitespace-nowrap ${
-                ehMenor ? 'text-[var(--brand-mint-bright)]' : 'text-foreground'
+                lider ? 'text-[var(--brand-mint-bright)]' : empatado ? 'text-[var(--warning)]' : 'text-foreground'
               }`}
             >
               {moeda(celula.preco)}
@@ -243,31 +255,46 @@ const LinhaItem = memo(function LinhaItem({
           )}
         </div>
       </td>
-      {colunas.map((col) => {
-        const celula = item.precos.find((c) => c.participanteId === col.participanteId)
-        if (!celula) {
+      {(() => {
+        // Quantas células empatam no menor preço unitário — 2+ = empate visual
+        // (âmbar), o desempate por ordem de resposta acontece na apuração.
+        const noMenor =
+          destacarMenorPreco && item.menorPrecoUnitario != null
+            ? item.precos.filter(
+                (c) =>
+                  c.status === 'COTADO' &&
+                  c.precoUnitario != null &&
+                  c.precoUnitario === item.menorPrecoUnitario,
+              ).length
+            : 0
+        const empateNoMenor = noMenor > 1
+        return colunas.map((col) => {
+          const celula = item.precos.find((c) => c.participanteId === col.participanteId)
+          if (!celula) {
+            return (
+              <td key={col.participanteId} className="px-4 py-3 text-muted-foreground text-center border-b border-l shadow-[0_1px_0_0_var(--border)] bg-card group-hover:bg-muted/40">
+                —
+              </td>
+            )
+          }
+          const ehMenor =
+            destacarMenorPreco &&
+            celula.status === 'COTADO' &&
+            celula.precoUnitario != null &&
+            item.menorPrecoUnitario != null &&
+            celula.precoUnitario === item.menorPrecoUnitario
           return (
-            <td key={col.participanteId} className="px-4 py-3 text-muted-foreground text-center border-b border-l shadow-[0_1px_0_0_var(--border)] bg-card group-hover:bg-muted/40">
-              —
-            </td>
+            <CelulaPreco
+              key={col.participanteId}
+              item={item}
+              celula={celula}
+              ehMenor={ehMenor}
+              empateNoMenor={empateNoMenor}
+              aoCorrigir={aoCorrigir}
+            />
           )
-        }
-        const ehMenor =
-          destacarMenorPreco &&
-          celula.status === 'COTADO' &&
-          celula.precoUnitario != null &&
-          item.menorPrecoUnitario != null &&
-          celula.precoUnitario === item.menorPrecoUnitario
-        return (
-          <CelulaPreco
-            key={col.participanteId}
-            item={item}
-            celula={celula}
-            ehMenor={ehMenor}
-            aoCorrigir={aoCorrigir}
-          />
-        )
-      })}
+        })
+      })()}
     </tr>
   )
 })

@@ -555,3 +555,30 @@ test('localStorage indisponível usa o padrão sem quebrar e o arrasto segue fun
     setItem.mockRestore()
   }
 })
+
+test('empate no menor preço: as duas células ficam em "empate" (âmbar), não em líder', () => {
+  const gradeEmpate: GridAoVivo = {
+    ...gradeBase,
+    respondidos: 2,
+    totalParticipantes: 2,
+    itens: [
+      {
+        ...gradeBase.itens[0],
+        menorPrecoUnitario: 5,
+        precos: [
+          { participanteId: 'p1', empresaId: 'e1', empresa: 'Atacadão', preco: 100, precoUnitario: 5, status: 'COTADO' },
+          { participanteId: 'p2', empresaId: 'e2', empresa: 'Mercado Bom', preco: 100, precoUnitario: 5, status: 'COTADO' },
+        ],
+      },
+    ],
+  }
+
+  renderGrade(gradeEmpate)
+
+  const a = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
+  const b = screen.getByRole('button', { name: /Corrigir lance de Mercado Bom para Arroz/i })
+  expect(a).toHaveClass('grade-cel-empate')
+  expect(b).toHaveClass('grade-cel-empate')
+  expect(a).not.toHaveClass('grade-cel-lider')
+  expect(screen.getAllByText(/empate/i).length).toBeGreaterThanOrEqual(1)
+})

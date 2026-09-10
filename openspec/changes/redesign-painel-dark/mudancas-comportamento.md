@@ -151,6 +151,15 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   liderança ou mudar de valor. Puramente visual; a lógica de "quem é o menor"
   é a mesma.
 
+- **Empate no menor preço é mostrado como empate (âmbar), não vários
+  vencedores.** Antes: quando 2+ fornecedores davam exatamente o mesmo menor
+  preço unitário, todas as células ficavam em menta — parecia haver vários
+  "campeões". Depois: as células empatadas ficam em âmbar com o rótulo
+  "empate". Puramente visual — o desempate real (por ordem de resposta)
+  acontece na apuração, no back. **A confirmar com o back:** a regra de
+  desempate é "campeão = primeiro a responder com aquele preço", comparando
+  o preço unitário arredondado a 4 casas.
+
 ## Acessibilidade
 
 - **Menos movimento também congela os pontos "ao vivo".** Com
