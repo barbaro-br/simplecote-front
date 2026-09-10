@@ -423,3 +423,20 @@ test('Salvar sem código na confirmação chama POST e fecha o formulário', asy
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
+
+test('abre o histórico de compras de um produto pelo botão da linha', async () => {
+  server.use(
+    http.get('*/api/analises/produtos/insight', () => HttpResponse.json({})),
+  )
+  const user = userEvent.setup()
+  renderComQuery(<ProdutosPage />)
+  await screen.findByText('Arroz 5kg')
+
+  await user.click(screen.getByRole('button', { name: 'Arroz 5kg' }))
+
+  const dialog = screen.getByRole('dialog')
+  expect(dialog).toHaveTextContent('Histórico — Arroz 5kg')
+  expect(
+    await within(dialog).findByText(/ainda não foi comprado em nenhuma cotação/i),
+  ).toBeInTheDocument()
+})

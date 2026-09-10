@@ -11,7 +11,7 @@ export function VerificarEmailPage() {
 
   if (verificacao.isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div data-painel="dark" className="min-h-screen flex items-center justify-center bg-background">
         <div
           role="status"
           aria-label="Verificando"
@@ -26,7 +26,7 @@ export function VerificarEmailPage() {
 
   if (verificacao.isError || !verificacao.data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div data-painel="dark" className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-full max-w-sm space-y-6 px-4">
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold tracking-tight ui-uppercase">
@@ -60,7 +60,7 @@ export function VerificarEmailPage() {
   const slug = verificacao.data.slug
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div data-painel="dark" className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold tracking-tight ui-uppercase">Conta ativada!</h1>

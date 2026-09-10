@@ -3,6 +3,7 @@ import {
   decidirRedirectTenant,
   ehHostBackoffice,
   ehHostDoApp,
+  ehHostTransicaoLayout,
   extrairSlugDoHostname,
 } from './slug-do-hostname'
 
@@ -60,6 +61,21 @@ describe('ehHostBackoffice', () => {
     expect(ehHostBackoffice('app.simplecote.app')).toBe(false)
     expect(ehHostBackoffice('simplecote.app')).toBe(false)
     expect(ehHostBackoffice('localhost')).toBe(false)
+  })
+})
+
+describe('ehHostTransicaoLayout', () => {
+  it('reconhece o host de transição do redesign', () => {
+    expect(ehHostTransicaoLayout('novo.simplecote.app')).toBe(true)
+    expect(ehHostTransicaoLayout('Novo.SimpleCote.App:443')).toBe(true)
+  })
+
+  it('não confunde com lojas nem outros hosts neutros', () => {
+    expect(ehHostTransicaoLayout('novo-mercado.simplecote.app')).toBe(false)
+    expect(ehHostTransicaoLayout('loja.simplecote.app')).toBe(false)
+    expect(ehHostTransicaoLayout('simplecote.app')).toBe(false)
+    expect(ehHostTransicaoLayout('backoffice.simplecote.app')).toBe(false)
+    expect(ehHostTransicaoLayout('localhost')).toBe(false)
   })
 })
 

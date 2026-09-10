@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { PainelDashboard } from './PainelDashboard'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina } from '@/shared/ui'
 import { LinkColaboradorCard } from '@/admin/configuracoes/LinkColaboradorCard'
 import { OnboardingChecklist } from '@/admin/onboarding/OnboardingChecklist'
 import { useDispensarOnboarding, useOnboarding } from '@/admin/onboarding/onboarding.api'
@@ -23,12 +24,7 @@ export function DashboardPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold ui-uppercase">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Visão geral das suas cotações, gastos e economia.
-        </p>
-      </div>
+      <CabecalhoPagina titulo="Dashboard" subtitulo="Visão geral das suas cotações, gastos e economia." />
       {mostrarChecklist && <OnboardingChecklist />}
       {mostrarReexibir && (
         <div>

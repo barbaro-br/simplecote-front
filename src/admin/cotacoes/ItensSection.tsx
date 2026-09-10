@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
+import { BotaoIcone } from '@/shared/ui'
 import { AdicionarItemModal } from './AdicionarItemModal'
-import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { Package, Trash, Plus, Minus } from '@phosphor-icons/react'
+import { Package, Trash, Plus, Minus, PencilSimple } from '@phosphor-icons/react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import { type Produto } from '@/admin/produtos/produtos.schema'
@@ -61,16 +61,15 @@ function Stepper({
 
   return (
     <div className="flex items-center gap-1">
-      <Button  
+      <BotaoIcone
         type="button"
-        variant="outline"
-        size="icon"
-        className="size-7 h-7 w-7 rounded-full shrink-0"
+        aria-label="Diminuir quantidade"
+        className="size-7 rounded-full"
         onClick={dec}
         disabled={disabled || (typeof localVal === 'number' && localVal <= 1)}
       >
         <Minus className="size-3" />
-      </Button>
+      </BotaoIcone>
       <Input
         type="number"
         min={1}
@@ -80,16 +79,15 @@ function Stepper({
         onBlur={handleBlur}
         disabled={disabled}
       />
-      <Button  
+      <BotaoIcone
         type="button"
-        variant="outline"
-        size="icon"
-        className="size-7 h-7 w-7 rounded-full shrink-0"
+        aria-label="Aumentar quantidade"
+        className="size-7 rounded-full"
         onClick={inc}
         disabled={disabled}
       >
         <Plus className="size-3" />
-      </Button>
+      </BotaoIcone>
     </div>
   )
 }
@@ -131,15 +129,17 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader>
-        <CardTitle>Itens</CardTitle>
-        {editavel && (
-          <Button   type="button" onClick={() => setFormAberto(true)} size="sm">
+    <div className="border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
+      {editavel && (
+        <div className="flex items-center justify-between border-b border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))] px-4 py-2.5 sm:px-5">
+          <span className="text-[11px] uppercase tracking-wide text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+            Itens
+          </span>
+          <Button type="button" onClick={() => setFormAberto(true)} size="sm">
             Adicionar item
           </Button>
-        )}
-      </CardHeader>
+        </div>
+      )}
 
       <AdicionarItemModal
         cotacaoId={cotacaoId}
@@ -160,22 +160,22 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
         <ProdutoForm aoSalvar={aoCadastrarProduto} produtoParaEditar={produtoParaEditar} />
       </Dialog>
 
-      <div className="overflow-x-auto">
+      <div className="max-h-[70vh] overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50">
-            <tr className="text-left text-muted-foreground">
+          <thead>
+            <tr className="text-left text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-[var(--pnl-superficie,#12263f)]">
               <th className="px-4 py-2 font-medium ui-uppercase">Produto</th>
               <th className="px-4 py-2 font-medium ui-uppercase">Embalagem</th>
               <th className="px-4 py-2 font-medium ui-uppercase">Qtd. solicitada</th>
               {editavel && <th className="px-4 py-2 font-medium ui-uppercase text-right">Ações</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
             {!itens.length ? (
               <tr>
-                <td colSpan={editavel ? 4 : 3} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={editavel ? 4 : 3} className="px-4 py-8 text-center text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <Package className="size-8 text-muted-foreground/50" />
+                    <Package className="size-8 text-[var(--pnl-txt-4,rgba(255,255,255,0.3))]" />
                     <p>Nenhum item adicionado.</p>
                   </div>
                 </td>
@@ -193,12 +193,12 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
                 const formatoEmbalagem = qt === 1 ? `${tipoUnidade} ${qt}` : `${tipoUnidade}${temCom ? "" : " COM"} ${qt}`;
 
                 return (
-                  <tr key={item.id} className="even:bg-muted/50 hover:bg-muted transition-colors group">
-                    <td className="px-4 py-2 font-medium">
+                  <tr key={item.id} className="transition-colors hover:bg-white/[0.03] group">
+                    <td className="px-4 py-2 font-medium text-[var(--pnl-txt,#fff)]">
                       <UltimaCompraPopover item={{ nome: item.nomeSnapshot } as any} insight={insight} />
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-[11px] font-semibold tracking-wide ring-1 ring-inset ring-border text-foreground">
+                      <span className="inline-flex items-center rounded-md bg-white/[0.06] px-2 py-1 text-[11px] font-semibold tracking-wide text-[var(--pnl-txt-2,rgba(255,255,255,0.7))] ring-1 ring-inset ring-[var(--pnl-borda,rgba(255,255,255,0.1))]">
                         {formatoEmbalagem}
                       </span>
                     </td>
@@ -215,16 +215,34 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
                     </td>
                     {editavel && (
                       <td className="px-4 py-2 text-right">
-                        <Button  
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => remover.mutate(item.id)}
-                          disabled={remover.isPending}
-                          aria-label="Remover"
-                        >
-                          <Trash className="size-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Lápis: abre o cadastro do produto (embalagem +
+                              qtd. por embalagem). Em RASCUNHO a coluna já mostra
+                              o valor vivo do catálogo, então corrigir o produto
+                              conserta a cotação. Sem `liveProd` (produto sumiu
+                              do catálogo) não há o que editar. */}
+                          {liveProd && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => abrirEdicao(liveProd)}
+                              aria-label={`Editar embalagem de ${item.nomeSnapshot}`}
+                              title="Editar embalagem no cadastro do produto"
+                            >
+                              <PencilSimple className="size-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => remover.mutate(item.id)}
+                            disabled={remover.isPending}
+                            aria-label="Remover"
+                          >
+                            <Trash className="size-4" />
+                          </Button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -234,7 +252,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
   )
 }
 

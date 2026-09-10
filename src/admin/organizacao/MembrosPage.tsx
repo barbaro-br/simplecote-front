@@ -3,10 +3,10 @@ import { PaperPlaneTilt, Trash, UserMinus, UserPlus } from '@phosphor-icons/reac
 import { toast } from 'sonner'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { Button } from '@/shared/components/ui/button'
-import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie, Selo, type TomSelo } from '@/shared/ui'
 import { ConfirmarDialog } from '@/admin/cotacoes/ConfirmarDialog'
 import { ConvidarMembroDialog } from './ConvidarMembroDialog'
 import {
@@ -16,6 +16,12 @@ import {
   useRevogarConvite,
 } from './organizacao.api'
 import { ROTULO_STATUS, rotuloPapel, type Membro } from './organizacao.schema'
+
+const TOM_STATUS: Record<string, TomSelo> = {
+  ATIVO: 'sucesso',
+  CONVITE_PENDENTE: 'atencao',
+  INATIVO: 'neutro',
+}
 
 type AcaoConfirmar =
   | { tipo: 'revogar'; conviteId: string; email: string }
@@ -67,16 +73,10 @@ export function MembrosPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Membros</h1>
-          <p className="text-sm text-muted-foreground">Quem acessa o painel da sua loja.</p>
-        </div>
-        <Button onClick={() => setConvidarAberto(true)}>
+      <CabecalhoPagina titulo="Membros" subtitulo="Quem acessa o painel da sua loja." acao={<Button onClick={() => setConvidarAberto(true)}>
           <UserPlus className="mr-2 size-4" />
           Convidar membro
-        </Button>
-      </div>
+        </Button>} />
 
       <Dialog open={convidarAberto} onClose={() => setConvidarAberto(false)} title="Convidar membro">
         <ConvidarMembroDialog aoFechar={() => setConvidarAberto(false)} />
@@ -109,10 +109,10 @@ export function MembrosPage() {
       ) : error ? (
         <p className="p-6 text-destructive">Erro ao carregar membros: {error.message}</p>
       ) : (
-        <Card className="overflow-hidden">
+        <Superficie>
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[560px]">
-              <thead className="bg-muted/50 border-b">
+              <thead className="bg-white/[0.03] border-b border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
                 <tr className="text-left text-muted-foreground">
                   <th className="px-4 py-3 font-medium ui-uppercase">Nome</th>
                   <th className="px-4 py-3 font-medium ui-uppercase">E-mail</th>
@@ -130,16 +130,14 @@ export function MembrosPage() {
                   </tr>
                 ) : (
                   membros.map((m) => (
-                    <tr key={m.id} className="transition-colors hover:bg-muted/50">
-                      <td className="px-4 py-3 font-medium">{m.nome ?? '—'}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{m.email}</td>
+                    <tr key={m.id} className="transition-colors hover:bg-white/[0.03]">
+                      <td className="px-4 py-3 font-medium text-[var(--pnl-txt,#fff)]">{m.nome ?? '—'}</td>
+                      <td className="px-4 py-3 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{m.email}</td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                          {rotuloPapel(m.papel)}
-                        </span>
+                        <Selo tom="info">{rotuloPapel(m.papel)}</Selo>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-muted-foreground">{ROTULO_STATUS[m.status]}</span>
+                        <Selo tom={TOM_STATUS[m.status] ?? 'neutro'}>{ROTULO_STATUS[m.status]}</Selo>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
@@ -174,7 +172,7 @@ export function MembrosPage() {
               </tbody>
             </table>
           </div>
-        </Card>
+        </Superficie>
       )}
     </PageContainer>
   )

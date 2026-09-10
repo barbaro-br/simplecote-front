@@ -1,14 +1,22 @@
 import { useState } from 'react'
 import { Archive, BoxArrowUp, Pencil, PlusCircle, MagnifyingGlass } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
-import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
 import { Input } from '@/shared/components/ui/input'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie, ChipsFiltro, Selo, type OpcaoChip } from '@/shared/ui'
+import { useInsightProdutos } from '@/admin/analise/analise.api'
+import { HistoricoCompraProduto } from './HistoricoCompraProduto'
 import { useProdutos, useInativarProduto, useAtivarProduto } from './produtos.api'
 import { ProdutoForm } from './ProdutoForm'
 import type { Produto } from './produtos.schema'
+
+const FILTROS: OpcaoChip[] = [
+  { valor: 'todos', rotulo: 'Todos' },
+  { valor: 'ativos', rotulo: 'Ativos' },
+  { valor: 'inativos', rotulo: 'Inativos' },
+]
 
 function normalizar(termo: string): string {
   return termo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -20,11 +28,20 @@ export function ProdutosPage() {
   const ativar = useAtivarProduto()
   const [mostrarForm, setMostrarForm] = useState(false)
   const [produtoEditando, setProdutoEditando] = useState<Produto | undefined>(undefined)
+  const [historicoDe, setHistoricoDe] = useState<Produto | null>(null)
   const [busca, setBusca] = useState('')
+  const [filtro, setFiltro] = useState('todos')
+
+  // Histórico de compra do produto (última compra, nº de compras, fornecedores…)
+  // — mesmo dado do popover da grade ao vivo, agora acessível no catálogo.
+  // Só busca quando um histórico está aberto (lazy).
+  const insights = useInsightProdutos(historicoDe ? [historicoDe.id] : [])
 
   const termo = normalizar(busca.trim())
   const listaFiltrada = (produtos ?? [])
     .filter((p) => {
+      if (filtro === 'ativos' && !p.ativo) return false
+      if (filtro === 'inativos' && p.ativo) return false
       if (termo === '') return true
       return (
         normalizar(p.nome).includes(termo) ||
@@ -54,29 +71,37 @@ export function ProdutosPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-6">
-      <div className="sticky top-0 bg-background z-10 pb-4 pt-4 border-b border-border space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Catálogo de produtos</h1>
-            <p className="text-sm text-muted-foreground">Gerencie os produtos, códigos de barra e configurações de embalagem.</p>
+      <div className="sticky top-0 z-10 space-y-4 border-b border-border bg-card pb-4 pt-4">
+        <CabecalhoPagina
+          titulo="Catálogo de produtos"
+          subtitulo="Gerencie os produtos, códigos de barra e configurações de embalagem."
+          acao={
+            <Button onClick={abrirNovo}>
+              <PlusCircle className="mr-2 size-4" />
+              Novo produto
+            </Button>
+          }
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative max-w-xs flex-1">
+            <MagnifyingGlass
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              type="search"
+              aria-label="Buscar produto"
+              placeholder="Buscar por nome ou código de barras…"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="pl-9 pr-3"
+            />
           </div>
-          <Button onClick={abrirNovo}>
-            <PlusCircle className="mr-2 size-4" />
-            Novo produto
-          </Button>
-        </div>
-        <div className="relative max-w-xs">
-          <MagnifyingGlass
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            type="search"
-            aria-label="Buscar produto"
-            placeholder="Buscar por nome ou código de barras…"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="pl-9 pr-3"
+          <ChipsFiltro
+            opcoes={FILTROS}
+            valor={filtro}
+            aoTrocar={setFiltro}
+            className="border-b-0 p-0"
           />
         </div>
       </div>
@@ -90,16 +115,31 @@ export function ProdutosPage() {
         <ProdutoForm aoSalvar={fecharForm} produtoParaEditar={produtoEditando} />
       </Dialog>
 
-      <Card className="overflow-hidden">
+      <Dialog
+        open={historicoDe !== null}
+        onClose={() => setHistoricoDe(null)}
+        title={historicoDe ? `Histórico — ${historicoDe.nome}` : 'Histórico'}
+      >
+        {historicoDe &&
+          (insights.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando histórico…</p>
+          ) : (
+            <HistoricoCompraProduto
+              insight={insights.isError ? 'erro' : (insights.data?.[historicoDe.id] ?? null)}
+            />
+          ))}
+      </Dialog>
+
+      <Superficie>
         <div className="scrollbar-fina overflow-x-auto overflow-y-auto max-h-[calc(100vh-14rem)]">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase border-b">Nome</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase border-b">Código de barras</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase border-b">Embalagem</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase text-right border-b">Qtd.</th>
-                <th className="sticky top-0 bg-muted px-4 py-3 font-medium ui-uppercase text-right border-b border-l border-border">Ações</th>
+                <th className="sticky top-0 z-10 bg-card px-4 py-3 font-medium ui-uppercase border-b">Nome</th>
+                <th className="sticky top-0 z-10 bg-card px-4 py-3 font-medium ui-uppercase border-b">Código de barras</th>
+                <th className="sticky top-0 z-10 bg-card px-4 py-3 font-medium ui-uppercase border-b">Embalagem</th>
+                <th className="sticky top-0 z-10 bg-card px-4 py-3 font-medium ui-uppercase text-right border-b">Qtd.</th>
+                <th className="sticky top-0 z-10 bg-card px-4 py-3 font-medium ui-uppercase text-right border-b border-l border-border">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -122,8 +162,15 @@ export function ProdutosPage() {
                     className={`transition-colors hover:bg-muted/50 ${produto.ativo ? '' : 'opacity-60 bg-muted/10'}`}
                   >
                     <td className="px-4 py-3 font-medium ui-uppercase">
-                      {produto.nome}
-                      {!produto.ativo && <span className="ml-2 inline-flex items-center rounded-full bg-muted-foreground/10 px-2 py-0.5 text-xs font-medium text-muted-foreground">Inativo</span>}
+                      <button
+                        type="button"
+                        onClick={() => setHistoricoDe(produto)}
+                        title="Ver histórico de compras"
+                        className="text-left transition-colors hover:text-[var(--pnl-acento-hi,#6fe6ac)] hover:underline focus-visible:outline-none focus-visible:underline"
+                      >
+                        {produto.nome}
+                      </button>
+                      {!produto.ativo && <Selo tom="neutro" className="ml-2">Inativo</Selo>}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{produto.codigoBarras ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{produto.unidade}</td>
@@ -161,7 +208,7 @@ export function ProdutosPage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </Superficie>
     </PageContainer>
   )
 }

@@ -116,4 +116,18 @@ describe('AdicionarItemModal', () => {
     await user.click(await screen.findByRole('button', { name: 'Concluído' }))
     expect(onClose).toHaveBeenCalled()
   })
+
+  it('busca casa por código de barras, inclusive pelos últimos dígitos', async () => {
+    renderModal({}, [
+      ARROZ,
+      { id: 'p-2', nome: 'Feijão Carioca 1kg', codigoBarras: '7891234563412', unidade: 'Pacote', quantidadePorEmbalagem: 1, ativo: true },
+    ])
+    const user = userEvent.setup()
+    await screen.findByText('Arroz Tipo 1 5kg')
+
+    await user.type(screen.getByPlaceholderText(/Buscar por nome ou código/i), '3412')
+
+    expect(screen.getByText('Feijão Carioca 1kg')).toBeInTheDocument()
+    expect(screen.queryByText('Arroz Tipo 1 5kg')).not.toBeInTheDocument()
+  })
 })

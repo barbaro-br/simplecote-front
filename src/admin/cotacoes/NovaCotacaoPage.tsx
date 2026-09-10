@@ -5,13 +5,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Copy, PlusCircle } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
-import { Card } from '@/shared/components/ui/card'
 import { Combobox } from '@/shared/components/ui/combobox'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie } from '@/shared/ui'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { criarCotacaoSchema, type CriarCotacaoValues } from './cotacoes.schema'
 import { useCotacoes, useCriarCotacao, useDuplicarCotacao } from './cotacoes.api'
-import { NovaCotacaoWizard } from './NovaCotacaoWizard'
 
 export function NovaCotacaoPage() {
   const navigate = useNavigate()
@@ -21,7 +20,6 @@ export function NovaCotacaoPage() {
   const [erroServidor, setErroServidor] = useState<string | null>(null)
   const [origemId, setOrigemId] = useState('')
   const [modo, setModo] = useState<'branco' | 'duplicar'>('branco')
-  const [cotacaoCriadaId, setCotacaoCriadaId] = useState<string | null>(null)
 
   const {
     register,
@@ -39,7 +37,9 @@ export function NovaCotacaoPage() {
     setErroServidor(null)
     try {
       const nova = await criar.mutateAsync(values)
-      setCotacaoCriadaId(nova.id)
+      // Sem wizard: cai direto na tela da cotação (RASCUNHO), onde monta itens
+      // e convida representantes inline. (redesign-painel-dark, design.md §4.1)
+      navigate(`/admin/cotacoes/${nova.id}`)
     } catch (e) {
       tratarErro(e)
     }
@@ -56,18 +56,19 @@ export function NovaCotacaoPage() {
     }
   }
 
-  if (cotacaoCriadaId) {
-    return <NovaCotacaoWizard cotacaoId={cotacaoCriadaId} />
-  }
-
   return (
     <PageContainer maxWidth="lg" className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Nova cotação</h1>
-        <Link to="/admin/cotacoes" className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors">
-          ← Cancelar
-        </Link>
-      </div>
+      <CabecalhoPagina
+        titulo="Nova cotação"
+        acao={
+          <Link
+            to="/admin/cotacoes"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:underline"
+          >
+            ← Cancelar
+          </Link>
+        }
+      />
 
       {erroServidor && (
         <div role="alert" className="text-sm text-destructive font-medium bg-destructive/10 border border-destructive/20 p-3 rounded-md">
@@ -75,7 +76,7 @@ export function NovaCotacaoPage() {
         </div>
       )}
 
-      <Card>
+      <Superficie>
         <div
           role="tablist"
           aria-label="Modo de criação"
@@ -88,7 +89,7 @@ export function NovaCotacaoPage() {
             onClick={() => setModo('branco')}
             className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
               modo === 'branco'
-                ? 'bg-background text-foreground shadow-sm'
+                ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -101,7 +102,7 @@ export function NovaCotacaoPage() {
             onClick={() => setModo('duplicar')}
             className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
               modo === 'duplicar'
-                ? 'bg-background text-foreground shadow-sm'
+                ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -158,7 +159,7 @@ export function NovaCotacaoPage() {
             </div>
           )}
         </div>
-      </Card>
+      </Superficie>
     </PageContainer>
   )
 }

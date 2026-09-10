@@ -271,6 +271,35 @@
 }
 .flash-green { animation: flashBorder 0.7s ease-out forwards; }
 
+/* Grade ao vivo (admin) — célula do fornecedor com o menor preço (redesign-painel-dark).
+ * `grade-cel-lider` = estado assentado (fica em menta). `grade-cel-flash` = pulso
+ * ao assumir a liderança ou mudar de valor: 2 batidas em ~2s e assenta. */
+.grade-cel-lider {
+  background-color: color-mix(in srgb, var(--brand-mint) 14%, transparent);
+  border-color: color-mix(in srgb, var(--brand-mint) 40%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-mint) 28%, transparent);
+}
+
+/* Empate no menor preço: âmbar em vez de menta — não há "um" vencedor visual,
+ * o desempate (quem respondeu primeiro) acontece na apuração. */
+.grade-cel-empate {
+  background-color: color-mix(in srgb, var(--warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 38%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warning) 26%, transparent);
+}
+@keyframes gradeCelFlash {
+  0%, 100% { box-shadow: inset 0 0 0 1px transparent; }
+  30%, 70% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in srgb, var(--brand-mint) 65%, transparent),
+      0 0 14px color-mix(in srgb, var(--brand-mint) 45%, transparent);
+  }
+}
+.grade-cel-flash { animation: gradeCelFlash 1s ease-in-out 2; }
+@media (prefers-reduced-motion: reduce) {
+  .grade-cel-flash { animation: none; }
+}
+
 @keyframes popNum {
     0%   { transform: scale(1); }
     40%  { transform: scale(1.35); }
@@ -335,6 +364,8 @@
   .fade-in,
   .swipe-demo,
   .animate-shimmer,
+  .animate-ping,
+  .animate-pulse,
   [class*="animate-in"],
   [class*="zoom-in"],
   [class*="zoom-out"],
@@ -446,3 +477,59 @@
  * davam o tranco. As seções seguem marcadas com a utility `.snap-start` (só
  * como âncora pro JS; sem contêiner de snap, ela não tem efeito visual).
  */
+
+/* =========================================================================
+ * Tema "painel escuro" — change redesign-painel-dark (design.md §1).
+ * Escopo: um wrapper alto do app autenticado marcado com data-painel="dark".
+ * Nunca no <html> (não afeta o site institucional). Reusa os --brand-*.
+ * ========================================================================= */
+[data-painel='dark'] {
+  --pnl-superficie: var(--brand-navy-deep);
+  --pnl-superficie-2: rgba(255, 255, 255, 0.03);
+  --pnl-borda: rgba(255, 255, 255, 0.1);
+  --pnl-borda-fraca: rgba(255, 255, 255, 0.07);
+  --pnl-ring: rgba(255, 255, 255, 0.06);
+  --pnl-txt: #ffffff;
+  --pnl-txt-2: rgba(255, 255, 255, 0.7);
+  --pnl-txt-3: rgba(255, 255, 255, 0.45);
+  --pnl-txt-4: rgba(255, 255, 255, 0.3);
+  --pnl-acento: var(--brand-mint);
+  --pnl-acento-hi: var(--brand-mint-bright);
+  --pnl-atencao: var(--warning);
+  --pnl-perigo: var(--destructive);
+
+  /* Remapeia os tokens shadcn pro navy/mint — assim TODA a UI existente
+   * (Card, Button, Input, tabelas…) já renderiza escura ao entrar sob
+   * `data-painel="dark"`, antes de ser reescrita com os primitivos `--pnl-*`.
+   * Migração progressiva sem tela quebrada. */
+  --background: var(--brand-navy-deep);
+  --foreground: #ffffff;
+  --card: #163050;
+  --card-foreground: #ffffff;
+  --popover: #163050;
+  --popover-foreground: #ffffff;
+  --primary: var(--brand-mint);
+  --primary-foreground: var(--brand-navy-deep);
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #ffffff;
+  --muted: rgba(255, 255, 255, 0.06);
+  --muted-foreground: rgba(255, 255, 255, 0.55);
+  --accent: rgba(255, 255, 255, 0.08);
+  --accent-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: var(--brand-mint);
+  --sidebar: var(--brand-navy-deep);
+  --sidebar-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+
+  color-scheme: dark;
+  color: var(--pnl-txt-2);
+  background: linear-gradient(160deg, var(--brand-navy-deep), var(--brand-navy)) fixed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-painel='dark'] .flash-green {
+    animation: none !important;
+  }
+}

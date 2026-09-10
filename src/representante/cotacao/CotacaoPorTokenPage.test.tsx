@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -10,7 +10,6 @@ import type { LanceStatus } from '@/shared/domain/tipos-base'
 
 const TOKEN = 'tok-page'
 const CHAVE_FILA = `simplecote:fila:${TOKEN}`
-const CHAVE_TUTORIAL = 'simplecote:tutorial-preco:v1'
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 // debounce do ItemLanceCard é 800ms — espera com folga
 const APOS_DEBOUNCE = 950
@@ -76,39 +75,32 @@ Object.defineProperty(window, 'localStorage', {
 
 beforeEach(() => {
   window.localStorage.clear()
-  // Sem isto o tutorial de primeira visita cobriria todas as telas.
-  window.localStorage.setItem(CHAVE_TUTORIAL, '1')
 })
 
 test('token válido: mostra a saudação, o contexto e os itens, com a bolha de progresso', async () => {
   server.use(http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao())))
   renderPage()
 
-  // A saudação aparece duas vezes no DOM: no cabeçalho (só visível em desktop
-  // via CSS) e na barra inferior (só visível em mobile via CSS) — ambas
-  // renderizam sempre, a visibilidade é responsiva por classe, não por remontagem.
-  expect(await screen.findAllByText(/olá, francisco/i)).toHaveLength(2)
-  expect(screen.getAllByText(/Atacadão Central · cotação de Supermercado X/)).toHaveLength(2)
+  // Redesign: a saudação/contexto aparecem uma vez, na SubFaixa do card.
+  expect(await screen.findByText(/olá, francisco/i)).toHaveTextContent(
+    'Olá, Francisco · Atacadão Central · cotação de Supermercado X',
+  )
   expect(screen.getByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: /finalizar/i })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /enviar respostas/i })).toBeInTheDocument()
 
   // O item de mock está sem preço → bolha "0 de 1".
   expect(screen.getByRole('status', { name: /0 de 1 itens com preço/i })).toBeInTheDocument()
 })
 
-test('prazo alerta < 2h renderiza classe text-destructive', async () => {
+test('prazo alerta < 2h fica em destaque', async () => {
   const daquiUmPouco = new Date()
   daquiUmPouco.setMinutes(daquiUmPouco.getMinutes() + 60) // 1h no futuro
 
   server.use(http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao({ prazo: daquiUmPouco.toISOString() }))))
   renderPage()
 
-  // Aparece no cabeçalho (desktop) e na barra inferior (mobile); ambos alertam.
-  const prazoEls = await screen.findAllByText(/Prazo:/i)
-  expect(prazoEls).toHaveLength(2)
-  for (const el of prazoEls) {
-    expect(el).toHaveClass('text-destructive')
-  }
+  const prazoEl = await screen.findByText(/Prazo:/i)
+  expect(prazoEl).toHaveClass('font-semibold')
 })
 
 test('podeEditar falso: campos desabilitados e sem botão de finalizar/bolha', async () => {
@@ -121,7 +113,7 @@ test('podeEditar falso: campos desabilitados e sem botão de finalizar/bolha', a
 
   expect(await screen.findByText(/sua resposta já foi enviada/i)).toBeInTheDocument()
   expect(campoPreco()).toBeDisabled()
-  expect(screen.queryByRole('button', { name: /finalizar/i })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /enviar respostas/i })).not.toBeInTheDocument()
   expect(bolha()).not.toBeInTheDocument()
 })
 
@@ -155,7 +147,7 @@ test('autosave: digitar preço → 1 PUT só com aquele item → célula sincron
 
   await waitFor(() => expect(puts).toHaveLength(1))
   expect(puts[0]).toEqual({ lances: [{ itemCotacaoId: 'i-1', preco: 12.5 }] })
-  expect(await screen.findByText('✓ salvo')).toBeInTheDocument()
+  expect(await screen.findByLabelText('salvo')).toBeInTheDocument()
 })
 
 test('falha de rede: entrada persiste no localStorage e célula mostra "sem conexão"', async () => {
@@ -169,7 +161,7 @@ test('falha de rede: entrada persiste no localStorage e célula mostra "sem cone
   await user.type(await screen.findByLabelText(/^preço\b/i), '30')
   await sleep(APOS_DEBOUNCE)
 
-  expect(await screen.findByText(/sem conexão/i)).toBeInTheDocument()
+  expect(await screen.findByLabelText(/sem conexão/i)).toBeInTheDocument()
   const fila = JSON.parse(window.localStorage.getItem(CHAVE_FILA) ?? '{}')
   expect(fila['i-1']).toMatchObject({ preco: 30 })
 })
@@ -215,7 +207,7 @@ test('concorrência: duas edições rápidas no mesmo campo — estado final = �
   await user.type(campo, '2') // "12"
   await sleep(APOS_DEBOUNCE)
 
-  expect(await screen.findByText('✓ salvo')).toBeInTheDocument()
+  expect(await screen.findByLabelText('salvo')).toBeInTheDocument()
   expect(precos.at(-1)).toBe(12)
   expect(window.localStorage.getItem(CHAVE_FILA)).toBeNull()
 })
@@ -242,7 +234,7 @@ test('finalizar: bloqueado com pendência; libera (via online) e, após confirma
   putFalha = false
   window.dispatchEvent(new Event('online'))
 
-  const finalizarBtn = await screen.findByRole('button', { name: /^finalizar$/i })
+  const finalizarBtn = await screen.findByRole('button', { name: /enviar respostas/i })
   await waitFor(() => expect(finalizarBtn).toBeEnabled())
 
   await user.click(finalizarBtn)
@@ -262,7 +254,7 @@ test('Finalizar abre a confirmação; POST só sai após "Confirmar"; "Cancelar"
   const user = userEvent.setup()
   renderPage()
 
-  await user.click(await screen.findByRole('button', { name: /^finalizar$/i }))
+  await user.click(await screen.findByRole('button', { name: /enviar respostas/i }))
   expect(await screen.findByText('Enviar cotação?')).toBeInTheDocument()
   expect(posts).toBe(0)
 
@@ -270,7 +262,7 @@ test('Finalizar abre a confirmação; POST só sai após "Confirmar"; "Cancelar"
   await waitFor(() => expect(screen.queryByText('Enviar cotação?')).not.toBeInTheDocument())
   expect(posts).toBe(0)
 
-  await user.click(screen.getByRole('button', { name: /^finalizar$/i }))
+  await user.click(screen.getByRole('button', { name: /enviar respostas/i }))
   await user.click(await screen.findByRole('button', { name: /confirmar/i }))
   await waitFor(() => expect(posts).toBe(1))
 })
@@ -294,14 +286,14 @@ test('sucesso: 204 mostra "Cotação enviada!" e, ao fechar, a tela fica somente
   const user = userEvent.setup()
   renderPage()
 
-  await user.click(await screen.findByRole('button', { name: /^finalizar$/i }))
+  await user.click(await screen.findByRole('button', { name: /enviar respostas/i }))
   await user.click(await screen.findByRole('button', { name: /confirmar/i }))
 
   expect(await screen.findByText('Cotação enviada!')).toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: /fechar/i }))
   expect(await screen.findByText(/sua resposta já foi enviada/i)).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: /finalizar/i })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /enviar respostas/i })).not.toBeInTheDocument()
 })
 
 test('a bolha acompanha a digitação de preço', async () => {
@@ -321,24 +313,6 @@ test('a bolha destaca (bg-primary) quando todos os itens têm preço', async () 
 
   const el = await screen.findByRole('status', { name: /1 de 1 itens com preço/i })
   expect(el).toHaveClass('bg-primary')
-})
-
-test('primeira visita: mostra o tutorial; concluir grava a chave e não repete', async () => {
-  window.localStorage.removeItem(CHAVE_TUTORIAL)
-  server.use(http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao())))
-  const { unmount } = renderPage()
-
-  expect(await screen.findByText('Conheça o card de produto')).toBeInTheDocument()
-  // fireEvent (não userEvent): o overlay full-screen + a barra fixa confundem o
-  // hit-test do userEvent no jsdom; o clique do botão em si é coberto por TutorialOnboarding.test.tsx.
-  fireEvent.click(screen.getByRole('button', { name: /pular tutorial/i }))
-  await waitFor(() => expect(screen.queryByText('Conheça o card de produto')).not.toBeInTheDocument())
-  expect(window.localStorage.getItem(CHAVE_TUTORIAL)).not.toBeNull()
-
-  unmount()
-  renderPage()
-  expect(await screen.findByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
-  expect(screen.queryByText('Conheça o card de produto')).not.toBeInTheDocument()
 })
 
 test('preencher um item não marca os demais (presentes desde o início) como "Novo"', async () => {

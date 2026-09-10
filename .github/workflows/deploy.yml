@@ -2,7 +2,9 @@ name: CI e Deploy
 
 on:
   push:
-    branches: [main]
+    # `redesign/painel-dark` é a implantação de transição em novo.simplecote.app
+    # (job `deploy-novo`); `main` é a produção em simplecote.app (job `deploy`).
+    branches: [main, redesign/painel-dark]
     paths-ignore:
       - 'openspec/**'
       - 'docs/**'
@@ -109,3 +111,49 @@ jobs:
             exit 1
           fi
           echo "smoke ok — bundle chama $host, back /actuator/health 200"
+
+  # Implantação de transição do redesign: push em `redesign/painel-dark` publica
+  # novo.simplecote.app (projeto Vercel `simplecote-front-novo`). Espelha o job
+  # `deploy`, trocando só o projeto de destino. Reaproveita VERCEL_ORG_ID/TOKEN
+  # (o project id não é segredo — fixado abaixo).
+  deploy-novo:
+    needs: [ci]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/redesign/painel-dark'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-front-novo
+      cancel-in-progress: true
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: prj_NuP2d37VesrqJVpAWjUJewpK2WLq
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+      VITE_SENTRY_RELEASE: ${{ github.sha }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: francisco-montalvao
+      SENTRY_PROJECT: simple-cote-front
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Checar secrets da Vercel
+        run: |
+          for v in VERCEL_TOKEN VERCEL_ORG_ID; do
+            if [ -z "${!v}" ]; then echo "::error::secret $v vazio ou ausente no repositório"; exit 1; fi
+          done
+      - run: npm i -g vercel@latest
+      - run: vercel pull --yes --environment=production
+      - run: vercel build --prod
+      - run: vercel deploy --prebuilt --prod
+      - name: Smoke — novo.simplecote.app no ar
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://novo.simplecote.app/)
+            [ "$code" = "200" ] && { echo "smoke ok — novo.simplecote.app 200"; exit 0; }
+            echo "tentativa $i: novo.simplecote.app respondeu $code, aguardando…"
+            sleep 6
+          done
+          echo "::error::novo.simplecote.app não respondeu 200"
+          exit 1

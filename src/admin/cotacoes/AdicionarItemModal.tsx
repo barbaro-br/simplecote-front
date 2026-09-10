@@ -52,7 +52,14 @@ export function AdicionarItemModal({
   const filtrados = useMemo(() => {
     const ativos = (produtos ?? []).filter((p) => p.ativo)
     const s = search.trim().toLowerCase()
-    return s ? ativos.filter((p) => p.nome.toLowerCase().includes(s)) : ativos
+    if (!s) return ativos
+    // Casa por nome ou por código de barras — `includes` cobre "termina com"
+    // (a pessoa dita "os quatro últimos: 3412" no telefone com o representante).
+    return ativos.filter(
+      (p) =>
+        p.nome.toLowerCase().includes(s) ||
+        (p.codigoBarras != null && p.codigoBarras.toLowerCase().includes(s)),
+    )
   }, [produtos, search])
 
   // Trava só a linha cuja chamada está em voo — as outras seguem clicáveis.
@@ -134,7 +141,7 @@ export function AdicionarItemModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar pelo nome do produto..."
+              placeholder="Buscar por nome ou código de barras…"
               className="w-full pl-9 pr-3 py-1.5 text-[13px] border border-border rounded-md outline-none text-foreground focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
             />
           </div>

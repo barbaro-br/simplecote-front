@@ -3,7 +3,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from 'react-router-dom'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
-import { Card } from '@/shared/components/ui/card'
+import { Superficie } from '@/shared/ui'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { Check, Eye, EyeSlash, Warning } from '@phosphor-icons/react'
@@ -121,7 +121,7 @@ export function CadastroPage() {
 
   if (cadastrado) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
+      <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden">
         <HeroFundo variant="simples" />
         <div className="relative z-10 w-full max-w-sm space-y-6 px-4">
           <div className="flex flex-col items-center gap-3 text-center">
@@ -136,7 +136,7 @@ export function CadastroPage() {
               </p>
             </div>
           </div>
-          <Card className="space-y-4 border-white/10 bg-card/85 p-8 text-center backdrop-blur-xl">
+          <Superficie className="space-y-4 p-8 text-center backdrop-blur-xl">
             <p className="text-sm text-muted-foreground">
               Se o e-mail não chegar em alguns minutos, confira a caixa de spam.
             </p>
@@ -146,14 +146,14 @@ export function CadastroPage() {
             >
               Ir para o login
             </Link>
-          </Card>
+          </Superficie>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
+    <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden">
       <HeroFundo variant="simples" />
       <div className="relative z-10 w-full max-w-sm space-y-6 px-4 py-10">
         <div className="flex flex-col items-center gap-3 text-center">
@@ -164,7 +164,7 @@ export function CadastroPage() {
           </div>
         </div>
 
-        <Card className="border-white/10 bg-card/85 p-8 backdrop-blur-xl">
+        <Superficie className="p-8 backdrop-blur-xl">
           <form onSubmit={form.handleSubmit(aoEnviar)} noValidate className="space-y-5">
             <Campo
               id="cadastro-nome"
@@ -302,7 +302,7 @@ export function CadastroPage() {
               </Link>
             </p>
           </form>
-        </Card>
+        </Superficie>
       </div>
     </div>
   )

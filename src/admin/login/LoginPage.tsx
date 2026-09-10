@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useAuth } from '@/shared/auth/useAuth'
 import { useTenant } from '@/shared/tenant/useTenant'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
-import { Card } from '@/shared/components/ui/card'
+import { Superficie } from '@/shared/ui'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { RouteLoadingFallback } from '@/shared/components/ui/route-loading'
@@ -60,7 +60,7 @@ export function LoginPage() {
   // sem um formulário de login que só falharia.
   if (slug !== null && existe === false) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
+      <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden">
         <HeroFundo variant="simples" />
         <div className="relative z-10 w-full max-w-sm space-y-8 px-4">
           <div className="flex flex-col items-center gap-3 text-center">
@@ -70,22 +70,22 @@ export function LoginPage() {
               <p className="text-sm text-white/70">Cotações simplificadas</p>
             </div>
           </div>
-          <Card className="space-y-4 border-white/10 bg-card/85 p-8 text-center backdrop-blur-xl">
-            <p className="text-sm text-muted-foreground">Esse endereço de loja não existe.</p>
+          <Superficie className="space-y-4 p-8 text-center backdrop-blur-xl">
+            <p className="text-sm text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">Esse endereço de loja não existe.</p>
             <a
               href="https://simplecote.com.br"
               className="inline-block text-sm font-medium text-primary hover:underline"
             >
               Ir para o site
             </a>
-          </Card>
+          </Superficie>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
+    <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden">
       <HeroFundo variant="simples" />
       <div className="relative z-10 w-full max-w-sm space-y-8 px-4">
         {/* Logo / título — identidade do produto, igual para qualquer visitante */}
@@ -98,7 +98,7 @@ export function LoginPage() {
         </div>
 
         {/* Card do formulário */}
-        <Card className="space-y-6 border-white/10 bg-card/85 p-8 backdrop-blur-xl">
+        <Superficie className="space-y-6 p-8 backdrop-blur-xl">
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
             {/* E-mail */}
             <div className="space-y-1.5">
@@ -188,7 +188,7 @@ export function LoginPage() {
               {CREDITO_DESENVOLVEDOR.texto}
             </p>
           )}
-        </Card>
+        </Superficie>
       </div>
     </div>
   )

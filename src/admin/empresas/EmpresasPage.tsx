@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react'
 import { Eye, EyeSlash, Pencil, PlusCircle, Trash, UserMinus } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
-import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
 import { Tooltip } from '@/shared/components/ui/tooltip'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie, Selo, ChipsFiltro, type OpcaoChip } from '@/shared/ui'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { ConfirmarDialog } from '../cotacoes/ConfirmarDialog'
 import { useEmpresas, useInativarEmpresa, useAtivarEmpresa, useExcluirEmpresa } from './empresas.api'
@@ -14,6 +14,12 @@ import { useRepresentantes, useExcluirRepresentante } from '../representantes/re
 import { EmpresaForm } from './EmpresaForm'
 import type { Empresa } from './empresas.schema'
 import type { Representante } from '../representantes/representantes.schema'
+
+const FILTROS: OpcaoChip[] = [
+  { valor: 'todos', rotulo: 'Todos' },
+  { valor: 'ativos', rotulo: 'Ativos' },
+  { valor: 'inativos', rotulo: 'Inativos' },
+]
 
 export function EmpresasPage() {
   const { data: empresas, isLoading, error } = useEmpresas({ incluirInativos: true })
@@ -26,6 +32,7 @@ export function EmpresasPage() {
   const [empresaEditando, setEmpresaEditando] = useState<Empresa | undefined>(undefined)
   const [empresaParaExcluir, setEmpresaParaExcluir] = useState<Empresa | null>(null)
   const [representanteParaExcluir, setRepresentanteParaExcluir] = useState<Representante | null>(null)
+  const [filtro, setFiltro] = useState('todos')
 
   const representantePorEmpresa = useMemo(
     () => new Map((representantes ?? []).map((r) => [r.empresaId, r] as const)),
@@ -34,8 +41,11 @@ export function EmpresasPage() {
 
   // Ativas primeiro — inativa não compete por atenção no meio da lista.
   const empresasOrdenadas = useMemo(
-    () => [...(empresas ?? [])].sort((a, b) => Number(b.ativo) - Number(a.ativo)),
-    [empresas],
+    () =>
+      [...(empresas ?? [])]
+        .filter((e) => filtro === 'todos' || (filtro === 'ativos' ? e.ativo : !e.ativo))
+        .sort((a, b) => Number(b.ativo) - Number(a.ativo)),
+    [empresas, filtro],
   )
 
   if (isLoading) return <p className="p-6 text-muted-foreground">Carregando fornecedores…</p>
@@ -86,16 +96,10 @@ export function EmpresasPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Fornecedores (Empresas)</h1>
-          <p className="text-sm text-muted-foreground">Gerencie as empresas e seus respectivos representantes.</p>
-        </div>
-        <Button onClick={abrirNovo}>
+      <CabecalhoPagina titulo="Fornecedores (Empresas)" subtitulo="Gerencie as empresas e seus respectivos representantes." acao={<Button onClick={abrirNovo}>
           <PlusCircle className="mr-2 size-4" />
           Nova Empresa
-        </Button>
-      </div>
+        </Button>} />
 
       <Dialog
         open={mostrarForm}
@@ -134,20 +138,21 @@ export function EmpresasPage() {
         />
       )}
 
-      <Card className="overflow-hidden">
+      <Superficie>
+        <ChipsFiltro opcoes={FILTROS} valor={filtro} aoTrocar={setFiltro} />
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">
-            <thead className="bg-muted/50 border-b">
-              <tr className="text-left text-muted-foreground">
+            <thead className="bg-white/[0.03] border-b border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
+              <tr className="text-left text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
                 <th className="px-4 py-3 font-medium ui-uppercase">Nome</th>
                 <th className="px-4 py-3 font-medium ui-uppercase">Representante</th>
                 <th className="px-4 py-3 font-medium ui-uppercase text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
               {!empresas?.length ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={3} className="px-4 py-8 text-center text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">
                     Nenhum fornecedor cadastrado.
                   </td>
                 </tr>
@@ -157,24 +162,24 @@ export function EmpresasPage() {
                   return (
                     <tr
                       key={empresa.id}
-                      className={`transition-colors hover:bg-muted/50 ${empresa.ativo ? '' : 'opacity-60 bg-muted/10'}`}
+                      className={`transition-colors hover:bg-white/[0.03] ${empresa.ativo ? '' : 'opacity-60'}`}
                     >
-                      <td className="px-4 py-3 font-medium ui-uppercase">
+                      <td className="px-4 py-3 font-medium ui-uppercase text-[var(--pnl-txt,#fff)]">
                         {empresa.nome}
                         {!empresa.ativo && (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-muted-foreground/10 px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          <Selo tom="neutro" className="ml-2">
                             Inativa
-                          </span>
+                          </Selo>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                      <td className="px-4 py-3 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
                         {rep ? (
                           <div>
-                            <div className="font-medium text-foreground">{rep.nome}</div>
-                            <div className="text-xs text-muted-foreground">{rep.email}</div>
+                            <div className="font-medium text-[var(--pnl-txt,#fff)]">{rep.nome}</div>
+                            <div className="text-xs text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{rep.email}</div>
                           </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground/60">sem representante</span>
+                          <span className="text-xs text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">sem representante</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -236,7 +241,7 @@ export function EmpresasPage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </Superficie>
     </PageContainer>
   )
 }

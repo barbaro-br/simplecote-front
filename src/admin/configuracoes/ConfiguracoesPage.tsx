@@ -5,9 +5,9 @@ import { Check, Copy, Storefront, Palette, Sliders, ShieldCheck } from '@phospho
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
-import { Card } from '@/shared/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie } from '@/shared/ui'
 import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
 import { useAuth } from '@/shared/auth/useAuth'
 import { configuracaoSchema, type Configuracao, type ConfiguracaoFormValues } from './configuracoes.schema'
@@ -43,12 +43,12 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
   return (
     <form onSubmit={form.handleSubmit(aoEnviar)} noValidate className="flex flex-col h-full">
       <Tabs defaultValue="geral" className="flex-1 flex flex-col">
-        <TabsList className={`grid w-full mb-6 ${mostrarDados ? 'grid-cols-4' : 'grid-cols-3'}`}>
-          <TabsTrigger value="geral" className="flex gap-2"><Storefront className="size-4" /> Geral</TabsTrigger>
-          <TabsTrigger value="aparencia" className="flex gap-2"><Palette className="size-4" /> Aparência</TabsTrigger>
-          <TabsTrigger value="avancado" className="flex gap-2"><Sliders className="size-4" /> Avançado</TabsTrigger>
+        <TabsList className={`grid w-full mb-6 h-auto gap-1.5 p-1.5 ${mostrarDados ? 'grid-cols-4' : 'grid-cols-3'}`}>
+          <TabsTrigger value="geral" className="flex gap-2 py-1.5"><Storefront className="size-4" /> Geral</TabsTrigger>
+          <TabsTrigger value="aparencia" className="flex gap-2 py-1.5"><Palette className="size-4" /> Aparência</TabsTrigger>
+          <TabsTrigger value="avancado" className="flex gap-2 py-1.5"><Sliders className="size-4" /> Avançado</TabsTrigger>
           {mostrarDados && (
-            <TabsTrigger value="dados" className="flex gap-2"><ShieldCheck className="size-4" /> Dados</TabsTrigger>
+            <TabsTrigger value="dados" className="flex gap-2 py-1.5"><ShieldCheck className="size-4" /> Dados</TabsTrigger>
           )}
         </TabsList>
 
@@ -191,15 +191,14 @@ export function ConfiguracoesPage() {
   if (!data) return null
 
   return (
-    <PageContainer maxWidth="md" className="h-[calc(100vh-80px)] overflow-hidden">
-      <div className="mb-6 space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight ui-uppercase">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Gerencie as preferências da sua loja.</p>
+    <PageContainer maxWidth="lg" className="h-[calc(100vh-80px)] overflow-hidden">
+      <div className="mb-6">
+        <CabecalhoPagina titulo="Configurações" subtitulo="Gerencie as preferências da sua loja." />
       </div>
 
-      <Card className="p-6 h-[520px] flex flex-col">
+      <Superficie className="flex h-[520px] flex-col p-6">
         <ConfiguracoesForm configuracaoInicial={data} />
-      </Card>
+      </Superficie>
     </PageContainer>
   )
 }

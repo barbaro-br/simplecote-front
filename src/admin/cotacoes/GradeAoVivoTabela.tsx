@@ -5,13 +5,14 @@ import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
+import { sanitizarEntradaValor, valorParaNumero } from '@/shared/utils/preco'
 import type { CelulaGrid, GridAoVivo, ItemGrid } from './cotacoes.schema'
 import { useCorrigirLance, useAtualizarQuantidadeItem, useRemoverItem } from './cotacoes.api'
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
 import { useHighlightOnUpdate } from '@/shared/hooks/useHighlightOnUpdate'
 
-const LARGURA_ITEM_PADRAO = 240
+const LARGURA_ITEM_PADRAO = 280
 const LARGURA_ITEM_MIN = 140
 const LARGURA_ITEM_MAX = 520
 const LARGURA_ITEM_KEY = 'grade-largura-coluna-item'
@@ -115,6 +116,9 @@ type CelulaPrecoProps = {
   item: ItemGrid
   celula: CelulaGrid
   ehMenor: boolean
+  /** `true` quando 2+ células compartilham o menor preço unitário — não há
+   * vencedor único; o desempate (primeiro a responder) fica pra apuração. */
+  empateNoMenor: boolean
   aoCorrigir: (item: ItemGrid, celula: CelulaGrid) => void
 }
 
@@ -125,10 +129,12 @@ type CelulaPrecoProps = {
  * lance/correção, inclusive entrar ou sair de COTADO) e quando a célula assume
  * a liderança de menor preço.
  */
-const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, aoCorrigir }: CelulaPrecoProps) {
+const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, empateNoMenor, aoCorrigir }: CelulaPrecoProps) {
   const pulsoPreco = useHighlightOnUpdate(celula.preco)
   const pulsoLideranca = useHighlightOnUpdate(ehMenor) && ehMenor
   const destacado = pulsoPreco || pulsoLideranca
+  const lider = ehMenor && !empateNoMenor
+  const empatado = ehMenor && empateNoMenor
 
   return (
     <td className="px-2 py-1 min-w-[140px] border-b border-l shadow-[0_1px_0_0_var(--border)] bg-card group-hover:bg-muted/40">
@@ -137,16 +143,25 @@ const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, aoCorrigi
         onClick={() => aoCorrigir(item, celula)}
         aria-label={`Corrigir lance de ${celula.empresa} para ${item.nome}`}
         className={`w-full h-full min-h-[2rem] rounded-md px-2 py-1 text-right transition-colors duration-700 border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
-          destacado
-            ? 'bg-green-100/50 dark:bg-green-900/40 border-green-200'
-            : ehMenor
-              ? 'bg-success/5 border-success/20 ring-1 ring-success/20'
+          lider
+            ? 'grade-cel-lider'
+            : empatado
+              ? 'grade-cel-empate'
               : 'bg-card border-border hover:bg-muted/50'
-        }`}
+        } ${destacado ? 'grade-cel-flash' : ''}`}
       >
         {celula.status === 'COTADO' && celula.preco != null ? (
           <span className="tabular-nums flex flex-col items-end leading-tight">
-            <span className={`font-semibold whitespace-nowrap ${ehMenor ? 'text-success' : 'text-foreground'}`}>
+            {empatado && (
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-[var(--warning)]">
+                empate
+              </span>
+            )}
+            <span
+              className={`font-semibold whitespace-nowrap ${
+                lider ? 'text-[var(--brand-mint-bright)]' : empatado ? 'text-[var(--warning)]' : 'text-foreground'
+              }`}
+            >
               {moeda(celula.preco)}
             </span>
             {celula.precoUnitario != null && (
@@ -154,7 +169,17 @@ const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, aoCorrigi
             )}
           </span>
         ) : (
-          <span className="rounded-full bg-muted text-muted-foreground text-[10px] font-medium uppercase tracking-wider px-2 py-0.5">
+          // `whitespace-nowrap` + `inline-block`: em coluna estreita a pílula
+          // não quebra "Não / cotou" em duas linhas (engrossava a linha toda).
+          // `NAO_COTADO` fica um pouco mais apagado que `PENDENTE` — é resposta
+          // dada ("não vou cotar"), não ausência de resposta.
+          <span
+            className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
+              celula.status === 'NAO_COTADO'
+                ? 'bg-muted/60 text-muted-foreground/70'
+                : 'bg-muted text-muted-foreground'
+            }`}
+          >
             {rotuloStatus(celula.status)}
           </span>
         )}
@@ -189,7 +214,7 @@ const LinhaItem = memo(function LinhaItem({
 }: LinhaProps) {
   return (
     <tr className="group transition-colors hover:bg-muted/40">
-      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/40 px-4 py-2 border-b border-r shadow-[1px_1px_0_0_var(--border)]" style={{ width: 'var(--w-item)' }}>
+      <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/40 px-4 py-2 border-b border-r shadow-[1px_1px_0_0_var(--border)]" style={{ width: 'var(--w-item)' }}>
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <UltimaCompraPopover item={item} />
@@ -240,31 +265,46 @@ const LinhaItem = memo(function LinhaItem({
           )}
         </div>
       </td>
-      {colunas.map((col) => {
-        const celula = item.precos.find((c) => c.participanteId === col.participanteId)
-        if (!celula) {
+      {(() => {
+        // Quantas células empatam no menor preço unitário — 2+ = empate visual
+        // (âmbar), o desempate por ordem de resposta acontece na apuração.
+        const noMenor =
+          destacarMenorPreco && item.menorPrecoUnitario != null
+            ? item.precos.filter(
+                (c) =>
+                  c.status === 'COTADO' &&
+                  c.precoUnitario != null &&
+                  c.precoUnitario === item.menorPrecoUnitario,
+              ).length
+            : 0
+        const empateNoMenor = noMenor > 1
+        return colunas.map((col) => {
+          const celula = item.precos.find((c) => c.participanteId === col.participanteId)
+          if (!celula) {
+            return (
+              <td key={col.participanteId} className="px-4 py-3 text-muted-foreground text-center border-b border-l shadow-[0_1px_0_0_var(--border)] bg-card group-hover:bg-muted/40">
+                —
+              </td>
+            )
+          }
+          const ehMenor =
+            destacarMenorPreco &&
+            celula.status === 'COTADO' &&
+            celula.precoUnitario != null &&
+            item.menorPrecoUnitario != null &&
+            celula.precoUnitario === item.menorPrecoUnitario
           return (
-            <td key={col.participanteId} className="px-4 py-3 text-muted-foreground text-center border-b border-l shadow-[0_1px_0_0_var(--border)] bg-card group-hover:bg-muted/40">
-              —
-            </td>
+            <CelulaPreco
+              key={col.participanteId}
+              item={item}
+              celula={celula}
+              ehMenor={ehMenor}
+              empateNoMenor={empateNoMenor}
+              aoCorrigir={aoCorrigir}
+            />
           )
-        }
-        const ehMenor =
-          destacarMenorPreco &&
-          celula.status === 'COTADO' &&
-          celula.precoUnitario != null &&
-          item.menorPrecoUnitario != null &&
-          celula.precoUnitario === item.menorPrecoUnitario
-        return (
-          <CelulaPreco
-            key={col.participanteId}
-            item={item}
-            celula={celula}
-            ehMenor={ehMenor}
-            aoCorrigir={aoCorrigir}
-          />
-        )
-      })}
+        })
+      })()}
     </tr>
   )
 })
@@ -373,11 +413,18 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
   async function salvar() {
     if (!alvo) return
     setErro(null)
+    if (!naoCotado) {
+      const n = valorParaNumero(preco)
+      if (!Number.isFinite(n) || n < 0) {
+        setErro('Informe um preço válido (só números, no máximo 2 casas decimais).')
+        return
+      }
+    }
     try {
       await corrigir.mutateAsync({
         participanteId: alvo.celula.participanteId,
         itemId: alvo.item.itemCotacaoId,
-        ...(naoCotado ? { naoCotado: true } : { preco: Number(preco) }),
+        ...(naoCotado ? { naoCotado: true } : { preco: valorParaNumero(preco) }),
       })
       setAlvo(null)
     } catch (e) {
@@ -397,15 +444,15 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
           {erroQuantidade}
         </p>
       )}
-      <div className="rounded-md border bg-card text-card-foreground shadow-sm flex flex-col">
-        <div className="overflow-x-auto overflow-y-auto max-h-[65vh]">
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
           <table
             className="w-full text-sm border-separate border-spacing-0 table-fixed"
             style={{ '--w-item': `${larguraItem}px` } as CSSProperties}
           >
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="sticky top-0 left-0 z-30 bg-muted px-4 py-2 font-medium ui-uppercase border-b border-r shadow-[1px_0_0_0_var(--border)] whitespace-nowrap" style={{ width: 'var(--w-item)' }}>
+                <th className="sticky top-0 left-0 z-30 bg-card px-4 py-2 font-medium ui-uppercase border-b border-r shadow-[1px_0_0_0_var(--border)] whitespace-nowrap" style={{ width: 'var(--w-item)' }}>
                   Item
                   <span
                     data-testid="grade-resize-handle"
@@ -421,7 +468,7 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
                 {colunas.map((c) => (
                   <th
                     key={c.participanteId}
-                    className="sticky top-0 z-20 bg-muted px-2 py-2 font-medium ui-uppercase min-w-[140px] border-b border-l shadow-[0_1px_0_0_var(--border)] text-right whitespace-nowrap"
+                    className="sticky top-0 z-20 bg-card px-2 py-2 font-medium ui-uppercase min-w-[140px] border-b border-l shadow-[0_1px_0_0_var(--border)] text-right whitespace-nowrap"
                   >
                     {c.empresa}
                   </th>
@@ -462,12 +509,16 @@ export function GradeAoVivoTabela({ cotacaoId, grade }: { cotacaoId: string; gra
               </label>
               <Input
                 id="corr-preco"
-                type="number"
-                min={0}
-                step="0.01"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="0,00"
                 value={preco}
                 disabled={naoCotado}
-                onChange={(e) => setPreco(e.target.value)}
+                onChange={(e) => {
+                  const s = sanitizarEntradaValor(e.target.value)
+                  if (s !== null) setPreco(s)
+                }}
                 className="text-lg h-12"
               />
             </div>

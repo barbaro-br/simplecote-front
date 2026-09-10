@@ -53,9 +53,35 @@ function renderGuard(token: string) {
   )
 }
 
+const locationOriginal = window.location
+
+function stubHostname(hostname: string) {
+  const u = new URL(`https://${hostname}/admin`)
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: {
+      href: u.href,
+      origin: u.origin,
+      protocol: u.protocol,
+      host: u.host,
+      hostname: u.hostname,
+      pathname: u.pathname,
+      search: u.search,
+      hash: u.hash,
+      assign: vi.fn(),
+      replace: vi.fn(),
+      reload: vi.fn(),
+    },
+  })
+}
+
 beforeEach(() => {
   tenantMock.slug = null
   tenantMock.ehHostDoApp = false
+})
+
+afterEach(() => {
+  Object.defineProperty(window, 'location', { configurable: true, value: locationOriginal })
 })
 
 test('slug do hostname igual ao do JWT renderiza o painel', async () => {
@@ -87,6 +113,15 @@ test('host neutro do app com sessão redireciona (não renderiza)', async () => 
 test('fora do app (localhost/preview) não redireciona mesmo com slug divergente', async () => {
   tenantMock.slug = 'loja-b'
   tenantMock.ehHostDoApp = false
+  renderGuard(jwt('loja-a'))
+
+  expect(await screen.findByText('área admin')).toBeInTheDocument()
+})
+
+test('novo.simplecote.app (host de transição) não redireciona pro subdomínio da loja', async () => {
+  stubHostname('novo.simplecote.app')
+  tenantMock.slug = null
+  tenantMock.ehHostDoApp = true
   renderGuard(jwt('loja-a'))
 
   expect(await screen.findByText('área admin')).toBeInTheDocument()

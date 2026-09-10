@@ -16,6 +16,9 @@ export const SLUGS_RESERVADOS: ReadonlySet<string> = new Set([
   'help', 'suporte', 'support', 'dashboard', 'painel',
   'webhook', 'webhooks', 'billing', 'pagamento', 'account', 'conta',
   'system', 'sistema', 'root', 'admin-api', 'docs', 'api-docs',
+  // `novo` hospeda o layout novo durante a transição do redesign
+  // (`novo.simplecote.app`) — não é loja. TODO: espelhar no back.
+  'novo',
 ])
 
 export function slugReservado(slug: string): boolean {

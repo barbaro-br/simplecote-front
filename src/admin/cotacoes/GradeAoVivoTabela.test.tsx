@@ -172,7 +172,8 @@ test('célula NAO_COTADO renderiza o estado vazio como badge', () => {
   renderGrade(gradeNaoCotado)
 
   const badge = screen.getByText('Não cotou')
-  expect(badge).toHaveClass('rounded-full', 'bg-muted')
+  // pílula não quebra em coluna estreita; NAO_COTADO fica mais apagado que PENDENTE
+  expect(badge).toHaveClass('rounded-full', 'whitespace-nowrap', 'bg-muted/60')
 })
 
 test('célula COTADO mostra preço e unitário na mesma linha, sem "COTADO" nem "MENOR"', () => {
@@ -219,7 +220,7 @@ test('célula COTADO menor preço mantém destaque verde sem o texto "MENOR"', (
   renderGrade(gradeMenor)
 
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
-  expect(celula).toHaveClass('bg-success/5')
+  expect(celula).toHaveClass('grade-cel-lider')
   expect(screen.queryByText(/MENOR/i)).not.toBeInTheDocument()
 })
 
@@ -238,7 +239,7 @@ test('item com um único lance recebe destaque de menor preço quando a preferê
   await screen.findByText('Arroz')
 
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
-  await waitFor(() => expect(celula).toHaveClass('bg-success/5'))
+  await waitFor(() => expect(celula).toHaveClass('grade-cel-lider'))
 })
 
 test('o destaque de menor preço está sempre ligado (design fixo)', async () => {
@@ -256,7 +257,7 @@ test('o destaque de menor preço está sempre ligado (design fixo)', async () =>
   await screen.findByText('Arroz')
 
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
-  await waitFor(() => expect(celula).toHaveClass('bg-success/5'))
+  await waitFor(() => expect(celula).toHaveClass('grade-cel-lider'))
 })
 
 test('com múltiplos lances, apenas a célula de menor preço é destacada quando ligada', async () => {
@@ -283,8 +284,8 @@ test('com múltiplos lances, apenas a célula de menor preço é destacada quand
   const menor = screen.getByRole('button', { name: /Corrigir lance de Mercado Bom para Arroz/i })
 
   await waitFor(() => {
-    expect(menor).toHaveClass('bg-success/5')
-    expect(maior).not.toHaveClass('bg-success/5')
+    expect(menor).toHaveClass('grade-cel-lider')
+    expect(maior).not.toHaveClass('grade-cel-lider')
   })
 })
 
@@ -297,7 +298,7 @@ test('cabeçalho das Empresas e preço padrão alinhados à direita com cartão'
   expect(celula).toHaveClass('bg-card', 'border-border', 'text-right')
 })
 
-test('a grade tem contêiner de rolagem com limite de altura (65vh) e overflow nos dois eixos', () => {
+test('a grade tem contêiner de rolagem que preenche a altura e faz overflow nos dois eixos', () => {
   renderGrade(gradeBase)
 
   const table = screen.getByRole('table')
@@ -305,7 +306,7 @@ test('a grade tem contêiner de rolagem com limite de altura (65vh) e overflow n
 
   expect(container).toHaveClass('overflow-x-auto')
   expect(container).toHaveClass('overflow-y-auto')
-  expect(container).toHaveClass('max-h-[65vh]')
+  expect(container).toHaveClass('flex-1')
   expect(container).not.toHaveClass('relative')
 })
 
@@ -319,7 +320,7 @@ test('atualização simulada de preço dispara o flash verde na célula e some a
   await screen.findByText('Arroz')
 
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
-  expect(celula).not.toHaveClass('bg-green-100/50')
+  expect(celula).not.toHaveClass('grade-cel-flash')
 
   vi.useFakeTimers()
   try {
@@ -344,13 +345,13 @@ test('atualização simulada de preço dispara o flash verde na célula e some a
       </QueryClientProvider>,
     )
 
-    expect(screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })).toHaveClass('bg-green-100/50')
+    expect(screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })).toHaveClass('grade-cel-flash')
 
     act(() => {
       vi.advanceTimersByTime(800)
     })
 
-    expect(screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })).not.toHaveClass('bg-green-100/50')
+    expect(screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })).not.toHaveClass('grade-cel-flash')
   } finally {
     vi.useRealTimers()
   }
@@ -405,14 +406,14 @@ test('mudança de liderança também dispara o flash na célula que assumiu o me
     )
 
     const novoLider = screen.getByRole('button', { name: /Corrigir lance de Mercado Bom para Arroz/i })
-    expect(novoLider).toHaveClass('bg-green-100/50')
+    expect(novoLider).toHaveClass('grade-cel-flash')
 
     act(() => {
       vi.advanceTimersByTime(800)
     })
 
-    expect(novoLider).not.toHaveClass('bg-green-100/50')
-    expect(novoLider).toHaveClass('bg-success/5')
+    expect(novoLider).not.toHaveClass('grade-cel-flash')
+    expect(novoLider).toHaveClass('grade-cel-lider')
   } finally {
     vi.useRealTimers()
   }
@@ -493,11 +494,11 @@ function arrastar(handle: HTMLElement, de: number, para: number) {
 test('arrastar a alça muda a largura aplicada no DOM', () => {
   localStorage.clear()
   renderGrade(gradeBase)
-  expect(larguraAplicada()).toBe('240px')
+  expect(larguraAplicada()).toBe('280px')
 
   arrastar(alca(), 200, 300)
 
-  expect(larguraAplicada()).toBe('340px')
+  expect(larguraAplicada()).toBe('380px')
 })
 
 test('a largura respeita o mínimo e o máximo ao arrastar', () => {
@@ -517,12 +518,12 @@ test('a largura é persistida no localStorage e um novo render parte dela', () =
   localStorage.clear()
   const primeira = renderGrade(gradeBase)
   arrastar(alca(), 200, 300)
-  expect(localStorage.getItem('grade-largura-coluna-item')).toBe('340')
+  expect(localStorage.getItem('grade-largura-coluna-item')).toBe('380')
 
   // um novo render lê a largura salva (340), não o padrão
   primeira.unmount()
   renderGrade(gradeBase)
-  expect(larguraAplicada()).toBe('340px')
+  expect(larguraAplicada()).toBe('380px')
 })
 
 test('duplo-clique na alça restaura a largura padrão e limpa a chave', () => {
@@ -532,7 +533,7 @@ test('duplo-clique na alça restaura a largura padrão e limpa a chave', () => {
 
   fireEvent.doubleClick(alca())
 
-  expect(larguraAplicada()).toBe('240px')
+  expect(larguraAplicada()).toBe('280px')
   expect(localStorage.getItem('grade-largura-coluna-item')).toBeNull()
 })
 
@@ -546,12 +547,39 @@ test('localStorage indisponível usa o padrão sem quebrar e o arrasto segue fun
   })
   try {
     renderGrade(gradeBase)
-    expect(larguraAplicada()).toBe('240px')
+    expect(larguraAplicada()).toBe('280px')
 
     arrastar(alca(), 200, 300)
-    expect(larguraAplicada()).toBe('340px')
+    expect(larguraAplicada()).toBe('380px')
   } finally {
     getItem.mockRestore()
     setItem.mockRestore()
   }
+})
+
+test('empate no menor preço: as duas células ficam em "empate" (âmbar), não em líder', () => {
+  const gradeEmpate: GridAoVivo = {
+    ...gradeBase,
+    respondidos: 2,
+    totalParticipantes: 2,
+    itens: [
+      {
+        ...gradeBase.itens[0],
+        menorPrecoUnitario: 5,
+        precos: [
+          { participanteId: 'p1', empresaId: 'e1', empresa: 'Atacadão', preco: 100, precoUnitario: 5, status: 'COTADO' },
+          { participanteId: 'p2', empresaId: 'e2', empresa: 'Mercado Bom', preco: 100, precoUnitario: 5, status: 'COTADO' },
+        ],
+      },
+    ],
+  }
+
+  renderGrade(gradeEmpate)
+
+  const a = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
+  const b = screen.getByRole('button', { name: /Corrigir lance de Mercado Bom para Arroz/i })
+  expect(a).toHaveClass('grade-cel-empate')
+  expect(b).toHaveClass('grade-cel-empate')
+  expect(a).not.toHaveClass('grade-cel-lider')
+  expect(screen.getAllByText(/empate/i).length).toBeGreaterThanOrEqual(1)
 })
