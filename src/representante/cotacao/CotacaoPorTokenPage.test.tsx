@@ -452,6 +452,31 @@ test('primeiro carregamento semeia a contagem a partir de d.itens (mistura de co
   expect(await screen.findByRole('status', { name: /1 de 3 itens com preço/i })).toBeInTheDocument()
 })
 
+test('item novo vai pro fim da lista, mesmo vindo antes no alfabeto', async () => {
+  const inicial = cotacao({ itens: [itemDe('i-2', 'Banana'), itemDe('i-3', 'Cebola')] })
+  const comNovo = cotacao({
+    itens: [
+      itemDe('i-1', 'Abacaxi'),
+      { ...itemDe('i-2', 'Banana'), preco: 10, statusLance: 'COTADO' },
+      itemDe('i-3', 'Cebola'),
+    ],
+  })
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(inicial)),
+    http.put(`*/public/cotacoes/${TOKEN}/lances`, () => HttpResponse.json(comNovo)),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await screen.findByText('Banana')
+  await user.type(screen.getAllByLabelText(/^preço\b/i)[0], '10')
+  await sleep(APOS_DEBOUNCE)
+
+  await screen.findByText('Abacaxi')
+  const nomes = screen.getAllByText(/^(Abacaxi|Banana|Cebola)$/).map((el) => el.textContent)
+  expect(nomes).toEqual(['Banana', 'Cebola', 'Abacaxi'])
+})
+
 test('item que chega numa atualização depois do primeiro load é marcado "Novo"', async () => {
   const inicial = cotacao({ itens: [itemDe('i-1', 'Arroz Tipo 1 5kg')] })
   const atualizado = cotacao({

@@ -145,7 +145,15 @@ export function CotacaoPorTokenPage() {
   const total = d.itens.length
   const semPreco = total - comPreco
   const primeiroNome = d.representanteNome.split(' ')[0]
-  const primeiroSemPreco = d.itens.find((i) => i.preco == null)?.itemCotacaoId ?? null
+
+  // Itens que o comprador adicionou depois do 1º carregamento vão pro fim da
+  // lista (o `sort` é estável — os demais mantêm a ordem alfabética da API),
+  // pra o representante não ter que caçar o item novo no meio do alfabeto.
+  const conhecidos = idsConhecidos ?? new Set<string>()
+  const itensOrdenados = [...d.itens].sort(
+    (a, b) => Number(itemEhNovo(a, conhecidos)) - Number(itemEhNovo(b, conhecidos)),
+  )
+  const primeiroSemPreco = itensOrdenados.find((i) => i.preco == null)?.itemCotacaoId ?? null
 
   async function confirmarEnvio() {
     setConfirmando(false)
@@ -161,7 +169,12 @@ export function CotacaoPorTokenPage() {
     }
   }
 
-  if (finalizado) {
+  // Tela de sucesso enquanto a resposta continua fechada. Se o comprador
+  // adicionar item numa cotação já respondida, o back reabre a resposta
+  // (`podeEditar` volta a `true`, `somenteLeitura` a `false`) e o refetch
+  // periódico traz o representante de volta pra lista — sem recarregar nem
+  // ligar pro comprador.
+  if (finalizado && somenteLeitura) {
     return <TelaDeSucesso nome={primeiroNome} aoFechar={() => setFinalizado(false)} />
   }
 
@@ -204,7 +217,7 @@ export function CotacaoPorTokenPage() {
           </div>
         )}
 
-        {d.itens.map((item, i) => (
+        {itensOrdenados.map((item, i) => (
           <div key={item.itemCotacaoId} className="scroll-mt-4">
             <ItemLanceCard
               item={item}
