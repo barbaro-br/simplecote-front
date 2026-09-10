@@ -35,6 +35,7 @@ export function ChipsFiltro({
             onClick={() => aoTrocar(o.valor)}
             className={cn(
               'rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors',
+              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--pnl-acento,#57bf8e)]',
               ativo
                 ? 'bg-[var(--pnl-acento,#57bf8e)]/15 text-[var(--pnl-acento-hi,#6fe6ac)] ring-1 ring-inset ring-[var(--pnl-acento,#57bf8e)]/30'
                 : 'bg-white/[0.06] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] hover:text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]',

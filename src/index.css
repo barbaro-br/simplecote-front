@@ -356,6 +356,8 @@
   .fade-in,
   .swipe-demo,
   .animate-shimmer,
+  .animate-ping,
+  .animate-pulse,
   [class*="animate-in"],
   [class*="zoom-in"],
   [class*="zoom-out"],

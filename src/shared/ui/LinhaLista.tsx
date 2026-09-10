@@ -74,7 +74,11 @@ export function LinhaLista({
       <button
         type="button"
         onClick={onClick}
-        className={cn(base, 'transition-colors hover:bg-white/[0.03]')}
+        className={cn(
+          base,
+          'transition-colors hover:bg-white/[0.03]',
+          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--pnl-acento,#57bf8e)]',
+        )}
       >
         {conteudo}
       </button>

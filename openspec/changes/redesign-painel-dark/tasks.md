@@ -109,5 +109,7 @@ verde antes de mergear em `main`.
       modais do app ficam escuros de uma vez.
 - [ ] Remover `src/shared/components/ui/*` sem uso; `grep` por classes do tema
       claro órfãs.
-- [ ] Passe final de contraste/reduced-motion/foco em todo o app.
+- [~] Passe de reduced-motion/foco: `animate-ping`/`animate-pulse` entram na
+      lista de reduced-motion; anel de foco nos `ChipsFiltro` e nas
+      `LinhaLista` clicáveis. Falta varrer contraste tela a tela.
 - [ ] Atualizar `README`/`openspec/specs` afetadas; arquivar a change.

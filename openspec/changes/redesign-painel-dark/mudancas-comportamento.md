@@ -150,3 +150,14 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   marca no estado assentado e um pulso de ~2s (2 batidas + glow) ao assumir a
   liderança ou mudar de valor. Puramente visual; a lógica de "quem é o menor"
   é a mesma.
+
+## Acessibilidade
+
+- **Menos movimento também congela os pontos "ao vivo".** Com
+  `prefers-reduced-motion`, além das microanimações já cobertas, os pontos
+  pulsantes (`animate-ping`/`animate-pulse`) dos cabeçalhos de seção param —
+  vira um ponto estático. O spinner de sincronização (`animate-spin`)
+  continua girando de propósito.
+- **Anel de foco nos chips de filtro e nas linhas de lista.** Navegando por
+  teclado, os chips (Todos/Ativos/Inativos, período) e as `LinhaLista`
+  clicáveis agora mostram um anel de foco menta. Sem mudança no mouse.
