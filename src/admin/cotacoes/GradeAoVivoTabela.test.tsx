@@ -219,7 +219,7 @@ test('célula COTADO menor preço mantém destaque verde sem o texto "MENOR"', (
   renderGrade(gradeMenor)
 
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
-  expect(celula).toHaveClass('bg-success/5')
+  expect(celula).toHaveClass('grade-cel-lider')
   expect(screen.queryByText(/MENOR/i)).not.toBeInTheDocument()
 })
 
@@ -238,7 +238,7 @@ test('item com um único lance recebe destaque de menor preço quando a preferê
   await screen.findByText('Arroz')
 
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
-  await waitFor(() => expect(celula).toHaveClass('bg-success/5'))
+  await waitFor(() => expect(celula).toHaveClass('grade-cel-lider'))
 })
 
 test('o destaque de menor preço está sempre ligado (design fixo)', async () => {
@@ -256,7 +256,7 @@ test('o destaque de menor preço está sempre ligado (design fixo)', async () =>
   await screen.findByText('Arroz')
 
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
-  await waitFor(() => expect(celula).toHaveClass('bg-success/5'))
+  await waitFor(() => expect(celula).toHaveClass('grade-cel-lider'))
 })
 
 test('com múltiplos lances, apenas a célula de menor preço é destacada quando ligada', async () => {
@@ -283,8 +283,8 @@ test('com múltiplos lances, apenas a célula de menor preço é destacada quand
   const menor = screen.getByRole('button', { name: /Corrigir lance de Mercado Bom para Arroz/i })
 
   await waitFor(() => {
-    expect(menor).toHaveClass('bg-success/5')
-    expect(maior).not.toHaveClass('bg-success/5')
+    expect(menor).toHaveClass('grade-cel-lider')
+    expect(maior).not.toHaveClass('grade-cel-lider')
   })
 })
 
@@ -319,7 +319,7 @@ test('atualização simulada de preço dispara o flash verde na célula e some a
   await screen.findByText('Arroz')
 
   const celula = screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })
-  expect(celula).not.toHaveClass('bg-green-100/50')
+  expect(celula).not.toHaveClass('grade-cel-flash')
 
   vi.useFakeTimers()
   try {
@@ -344,13 +344,13 @@ test('atualização simulada de preço dispara o flash verde na célula e some a
       </QueryClientProvider>,
     )
 
-    expect(screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })).toHaveClass('bg-green-100/50')
+    expect(screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })).toHaveClass('grade-cel-flash')
 
     act(() => {
       vi.advanceTimersByTime(800)
     })
 
-    expect(screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })).not.toHaveClass('bg-green-100/50')
+    expect(screen.getByRole('button', { name: /Corrigir lance de Atacadão para Arroz/i })).not.toHaveClass('grade-cel-flash')
   } finally {
     vi.useRealTimers()
   }
@@ -405,14 +405,14 @@ test('mudança de liderança também dispara o flash na célula que assumiu o me
     )
 
     const novoLider = screen.getByRole('button', { name: /Corrigir lance de Mercado Bom para Arroz/i })
-    expect(novoLider).toHaveClass('bg-green-100/50')
+    expect(novoLider).toHaveClass('grade-cel-flash')
 
     act(() => {
       vi.advanceTimersByTime(800)
     })
 
-    expect(novoLider).not.toHaveClass('bg-green-100/50')
-    expect(novoLider).toHaveClass('bg-success/5')
+    expect(novoLider).not.toHaveClass('grade-cel-flash')
+    expect(novoLider).toHaveClass('grade-cel-lider')
   } finally {
     vi.useRealTimers()
   }

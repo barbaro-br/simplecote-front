@@ -271,6 +271,27 @@
 }
 .flash-green { animation: flashBorder 0.7s ease-out forwards; }
 
+/* Grade ao vivo (admin) — célula do fornecedor com o menor preço (redesign-painel-dark).
+ * `grade-cel-lider` = estado assentado (fica em menta). `grade-cel-flash` = pulso
+ * ao assumir a liderança ou mudar de valor: 2 batidas em ~2s e assenta. */
+.grade-cel-lider {
+  background-color: color-mix(in srgb, var(--brand-mint) 14%, transparent);
+  border-color: color-mix(in srgb, var(--brand-mint) 40%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-mint) 28%, transparent);
+}
+@keyframes gradeCelFlash {
+  0%, 100% { box-shadow: inset 0 0 0 1px transparent; }
+  30%, 70% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in srgb, var(--brand-mint) 65%, transparent),
+      0 0 14px color-mix(in srgb, var(--brand-mint) 45%, transparent);
+  }
+}
+.grade-cel-flash { animation: gradeCelFlash 1s ease-in-out 2; }
+@media (prefers-reduced-motion: reduce) {
+  .grade-cel-flash { animation: none; }
+}
+
 @keyframes popNum {
     0%   { transform: scale(1); }
     40%  { transform: scale(1.35); }

@@ -137,16 +137,18 @@ const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, aoCorrigi
         onClick={() => aoCorrigir(item, celula)}
         aria-label={`Corrigir lance de ${celula.empresa} para ${item.nome}`}
         className={`w-full h-full min-h-[2rem] rounded-md px-2 py-1 text-right transition-colors duration-700 border hover:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
-          destacado
-            ? 'bg-green-100/50 dark:bg-green-900/40 border-green-200'
-            : ehMenor
-              ? 'bg-success/5 border-success/20 ring-1 ring-success/20'
-              : 'bg-card border-border hover:bg-muted/50'
-        }`}
+          ehMenor
+            ? 'grade-cel-lider'
+            : 'bg-card border-border hover:bg-muted/50'
+        } ${destacado ? 'grade-cel-flash' : ''}`}
       >
         {celula.status === 'COTADO' && celula.preco != null ? (
           <span className="tabular-nums flex flex-col items-end leading-tight">
-            <span className={`font-semibold whitespace-nowrap ${ehMenor ? 'text-success' : 'text-foreground'}`}>
+            <span
+              className={`font-semibold whitespace-nowrap ${
+                ehMenor ? 'text-[var(--brand-mint-bright)]' : 'text-foreground'
+              }`}
+            >
               {moeda(celula.preco)}
             </span>
             {celula.precoUnitario != null && (
