@@ -354,6 +354,34 @@ test('3.2 — em ENCERRADA a grade não mostra "Adicionar item"', async () => {
   expect(screen.queryByRole('button', { name: 'Adicionar item' })).not.toBeInTheDocument()
 })
 
+test('ABERTA: "Estender prazo" abre o diálogo e faz PATCH /prazo ao salvar', async () => {
+  let patchPrazo = 0
+  setup('ABERTA', [novoItem('p-1', 5)])
+  server.use(
+    http.patch('*/api/cotacoes/c-1/prazo', async ({ request }) => {
+      const body = (await request.json()) as { prazo: string }
+      expect(typeof body.prazo).toBe('string')
+      patchPrazo += 1
+      return HttpResponse.json({})
+    }),
+  )
+  const user = userEvent.setup()
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+
+  await user.click(screen.getByRole('button', { name: /Estender prazo/i }))
+  const dialog = screen.getByRole('dialog', { name: 'Estender prazo' })
+  expect(patchPrazo).toBe(0)
+
+  await user.click(within(dialog).getByRole('button', { name: 'Salvar prazo' }))
+  await waitFor(() => expect(patchPrazo).toBe(1))
+})
+
+test('ABERTA com prazo vencido: o botão vira "Estender prazo vencido"', async () => {
+  setup('ABERTA', [novoItem('p-1', 5)], true)
+  await screen.findByRole('heading', { name: 'Compra semanal' })
+  expect(screen.getByRole('button', { name: 'Estender prazo vencido' })).toBeInTheDocument()
+})
+
 test('3.4 — Apurar só chama a API após confirmação no diálogo', async () => {
   const { chamadas } = setup('ENCERRADA')
   const user = userEvent.setup()

@@ -139,6 +139,19 @@ export function useAbrir(cotacaoId: string) {
   })
 }
 
+export function useAlterarPrazo(cotacaoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (valores: AbrirCotacaoValues) =>
+      api.patch<CotacaoDetalhe>(`/api/cotacoes/${cotacaoId}/prazo`, valores),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: detalheKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: aoVivoKey(cotacaoId) })
+      queryClient.invalidateQueries({ queryKey: listaKey })
+    },
+  })
+}
+
 export const useEncerrar = (id: string) => useTransicao(id, 'encerrar')
 export const useReabrir = (id: string) => useTransicao(id, 'reabrir')
 export const useCancelar = (id: string) => useTransicao(id, 'cancelar')

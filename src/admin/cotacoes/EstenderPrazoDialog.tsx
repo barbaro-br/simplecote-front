@@ -2,57 +2,49 @@ import { useState } from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { Calendar } from '@/shared/components/ui/calendar'
-import { Clock, PaperPlaneRight, X } from '@phosphor-icons/react'
+import { Clock, X } from '@phosphor-icons/react'
 import { dataHoraBr } from '@/shared/format/formatters'
 import { HORAS, MINUTOS, calcularPrazoIso, dataAmanha, estaNoPassado } from './prazo-sao-paulo'
 
 type Props = {
   pendente?: boolean
-  /** quantos itens a cotação tem no momento (para o resumo/aviso) */
-  totalItens?: number
-  /** quantos fornecedores serão convidados ao abrir */
-  totalFornecedores?: number
-  onAbrir: (prazoIso: string) => void
+  /** prazo atual (para contexto e para saber se já venceu) */
+  prazoAtualIso?: string | null
+  onEstender: (prazoIso: string) => void
   onCancelar: () => void
 }
 
-export function AbrirCotacaoDialog({
-  pendente,
-  totalItens,
-  totalFornecedores,
-  onAbrir,
-  onCancelar,
-}: Props) {
+export function EstenderPrazoDialog({ pendente, prazoAtualIso, onEstender, onCancelar }: Props) {
   const [data, setData] = useState<Date | undefined>(() => dataAmanha())
   const [hora, setHora] = useState('18')
   const [minuto, setMinuto] = useState('00')
   const [erro, setErro] = useState<string | null>(null)
 
   const prazoIso = calcularPrazoIso(data, hora, minuto)
+  const vencido = prazoAtualIso != null && estaNoPassado(prazoAtualIso)
 
   function confirmar() {
     if (!prazoIso) {
       setErro('Informe uma data válida.')
       return
     }
-
     if (estaNoPassado(prazoIso)) {
-      setErro('O prazo precisa ser no futuro.')
+      setErro('O novo prazo precisa ser no futuro.')
       return
     }
-
     setErro(null)
-    onAbrir(prazoIso)
+    onEstender(prazoIso)
   }
 
-  const faltaAlgo = totalItens === 0 || totalFornecedores === 0
-
   return (
-    // p-0 + flex-col: cabeçalho e rodapé fixos, só o miolo (calendário) rola —
-    // em telas baixas o botão "Abrir Cotação" nunca some.
-    <Dialog open onClose={onCancelar} ariaLabel="Abrir cotação" className="max-w-md p-0 flex flex-col overflow-hidden">
+    <Dialog
+      open
+      onClose={onCancelar}
+      ariaLabel="Estender prazo"
+      className="max-w-md p-0 flex flex-col overflow-hidden"
+    >
       <div className="flex shrink-0 items-start justify-between border-b px-5 py-3">
-        <h2 className="text-lg font-semibold ui-uppercase">Abrir cotação</h2>
+        <h2 className="text-lg font-semibold ui-uppercase">Estender prazo</h2>
         <button
           type="button"
           onClick={onCancelar}
@@ -65,31 +57,18 @@ export function AbrirCotacaoDialog({
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
         <p className="text-sm text-muted-foreground">
-          Os representantes convidados são notificados na hora e respondem até o prazo abaixo.
+          {vencido
+            ? 'O prazo já venceu. Defina um novo prazo para os representantes voltarem a responder — sem precisar encerrar a cotação.'
+            : 'Defina um novo prazo para a cotação. Quem ainda não finalizou continua respondendo até lá.'}
         </p>
 
-        {(totalItens != null || totalFornecedores != null) && (
+        {prazoAtualIso && (
           <p className="text-[13px] text-muted-foreground">
-            {totalItens != null && (
-              <>
-                <strong className="text-foreground">
-                  {totalItens} {totalItens === 1 ? 'item' : 'itens'}
-                </strong>
-                {totalFornecedores != null && ' · '}
-              </>
-            )}
-            {totalFornecedores != null && (
-              <strong className="text-foreground">
-                {totalFornecedores} {totalFornecedores === 1 ? 'fornecedor' : 'fornecedores'}
-              </strong>
-            )}
-            {faltaAlgo && (
-              <span className="ml-1 font-medium text-warning">
-                {totalItens === 0
-                  ? '— adicione itens antes de abrir.'
-                  : '— convide ao menos um fornecedor antes de abrir.'}
-              </span>
-            )}
+            Prazo atual:{' '}
+            <strong className={vencido ? 'text-warning' : 'text-foreground'}>
+              {dataHoraBr(prazoAtualIso)}
+            </strong>
+            {vencido && ' (vencido)'}
           </p>
         )}
 
@@ -129,7 +108,7 @@ export function AbrirCotacaoDialog({
 
         {prazoIso && (
           <p className="text-[13px] text-muted-foreground">
-            Expira {dataHoraBr(prazoIso)} (horário de Brasília)
+            Novo prazo: {dataHoraBr(prazoIso)} (horário de Brasília)
           </p>
         )}
 
@@ -140,9 +119,8 @@ export function AbrirCotacaoDialog({
         <Button variant="ghost" onClick={onCancelar} disabled={pendente}>
           Cancelar
         </Button>
-        <Button onClick={confirmar} disabled={pendente} className="gap-2">
-          {pendente ? 'Abrindo…' : 'Abrir Cotação'}
-          <PaperPlaneRight className="size-4" />
+        <Button onClick={confirmar} disabled={pendente}>
+          {pendente ? 'Salvando…' : 'Salvar prazo'}
         </Button>
       </div>
     </Dialog>

@@ -25,12 +25,14 @@ import { GradeAoVivoTabela } from './GradeAoVivoTabela'
 import { AdicionarItemModal } from './AdicionarItemModal'
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { AbrirCotacaoDialog } from './AbrirCotacaoDialog'
+import { EstenderPrazoDialog } from './EstenderPrazoDialog'
 import { RepresentantesModal } from './RepresentantesModal'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import { useEmpresas } from '@/admin/empresas/empresas.api'
 import type { Produto } from '@/admin/produtos/produtos.schema'
 import {
   useAbrir,
+  useAlterarPrazo,
   useApurar,
   useCancelar,
   useCotacao,
@@ -43,13 +45,14 @@ import {
   usePreviaApuracao
 } from './cotacoes.api'
 
-type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | 'encerrar' | null
+type DialogAberto = 'abrir' | 'apurar' | 'cancelar' | 'encerrar' | 'estender-prazo' | null
 
 export function CotacaoDetalhePage() {
   const { id = '' } = useParams()
   const { data: cotacao, isLoading, error } = useCotacao(id)
 
   const abrir = useAbrir(id)
+  const alterarPrazo = useAlterarPrazo(id)
   const encerrar = useEncerrar(id)
   const reabrir = useReabrir(id)
   const cancelar = useCancelar(id)
@@ -212,6 +215,16 @@ export function CotacaoDetalhePage() {
     <>
       {status === 'ABERTA' && (
         <BotaoFantasma onClick={() => setAdicionarItemAberto(true)}>Adicionar item</BotaoFantasma>
+      )}
+      {status === 'ABERTA' && (
+        <BotaoFantasma
+          onClick={() => setDialog('estender-prazo')}
+          className={
+            cotacao.prazoVencido ? 'text-[var(--pnl-atencao,#e0a030)]' : undefined
+          }
+        >
+          {cotacao.prazoVencido ? 'Estender prazo vencido' : 'Estender prazo'}
+        </BotaoFantasma>
       )}
       {(status === 'RASCUNHO' || status === 'ABERTA') && (
         <BotaoFantasma
@@ -406,6 +419,22 @@ export function CotacaoDetalhePage() {
                 setEmpresasSelecionadas([])
               }
               await abrir.mutateAsync({ prazo: prazoIso })
+              setDialog(null)
+            } catch (e) {
+              tratarErro(e)
+            }
+          }}
+        />
+      )}
+      {dialog === 'estender-prazo' && (
+        <EstenderPrazoDialog
+          pendente={alterarPrazo.isPending}
+          prazoAtualIso={cotacao.prazo}
+          onCancelar={() => setDialog(null)}
+          onEstender={async (prazoIso) => {
+            setErroAcao(null)
+            try {
+              await alterarPrazo.mutateAsync({ prazo: prazoIso })
               setDialog(null)
             } catch (e) {
               tratarErro(e)
