@@ -6,7 +6,17 @@ import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { dataHoraBr, moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
-import { StatusBadge } from '@/shared/components/StatusBadge'
+import {
+  Superficie,
+  SecaoCabecalho,
+  SubFaixa,
+  RodapeAcao,
+  CampoEstat,
+  Selo,
+  type TomSelo,
+  BotaoPrimario,
+  BotaoFantasma,
+} from '@/shared/ui'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { ErrorAlert } from '@/shared/components/ui/error-alert'
 import { Skeleton } from '@/shared/components/ui/skeleton'
@@ -186,109 +196,175 @@ export function CotacaoDetalhePage() {
     }
   }
 
+  const totalItens = cotacao.itens.length
+  const podeMontar = status === 'RASCUNHO'
+  const podeConvidar = status === 'RASCUNHO' || status === 'ABERTA'
+
+  const SELO_TOM: Record<string, TomSelo> = {
+    RASCUNHO: 'neutro',
+    ABERTA: 'info',
+    ENCERRADA: 'atencao',
+    PEDIDOS_GERADOS: 'sucesso',
+    CANCELADA: 'perigo',
+  }
+  const SELO_LABEL: Record<string, string> = {
+    RASCUNHO: 'Rascunho',
+    ABERTA: 'Aberta',
+    ENCERRADA: 'Encerrada',
+    PEDIDOS_GERADOS: 'Pedidos gerados',
+    CANCELADA: 'Cancelada',
+  }
+
   return (
-    <PageContainer maxWidth="full" className="space-y-6">
-      <div className="sticky top-0 z-10 mb-6 space-y-4 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-card/95 pb-4 pt-4 backdrop-blur">
+    <div data-painel="dark" className="min-h-screen">
+      <PageContainer maxWidth="4xl" className="space-y-4 py-6">
         <Breadcrumb
           items={[
             { label: 'Cotações', to: '/admin/cotacoes' },
             { label: cotacao.titulo },
           ]}
         />
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{cotacao.titulo}</h1>
-          <p className="text-sm text-muted-foreground flex items-center gap-2">
-            <StatusBadge status={status} />
-            {cotacao.prazo && <span>· Prazo: {dataHoraBr(cotacao.prazo)}</span>}
-            {(status === 'ABERTA' || status === 'ENCERRADA') && totalParticipantesConvite > 0 && (
-              <span className="flex items-center gap-1">
-                · {convitesEntregues} de {totalParticipantesConvite}{' '}
-                {totalParticipantesConvite === 1 ? 'convite entregue' : 'convites entregues'}
-                {convitesEntregues < totalParticipantesConvite && (
+
+        {erroAcao && <ErrorAlert>{erroAcao}</ErrorAlert>}
+
+        <Superficie>
+          <SecaoCabecalho
+            titulo={cotacao.titulo}
+            nivelTitulo={1}
+            pulso={status === 'ABERTA'}
+            acao={
+              <>
+                <Selo tom={SELO_TOM[status]}>{SELO_LABEL[status]}</Selo>
+                {status !== 'CANCELADA' && (
+                  <BotaoFantasma onClick={() => setModalConviteAberto(true)}>
+                    Representantes
+                  </BotaoFantasma>
+                )}
+              </>
+            }
+          />
+
+          <SubFaixa
+            esquerda={`${totalItens} ${totalItens === 1 ? 'item' : 'itens'}${
+              totalParticipantesConvite > 0
+                ? ` · ${totalParticipantesConvite} ${totalParticipantesConvite === 1 ? 'fornecedor' : 'fornecedores'}`
+                : ''
+            }`}
+            direita={cotacao.prazo ? `Prazo: ${dataHoraBr(cotacao.prazo)}` : undefined}
+          />
+
+          {(podeConvidar || (participantes.data ?? []).length > 0) && (
+            <div className="space-y-2 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] px-4 py-3 sm:px-5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(participantes.data ?? []).map((p) => (
+                  <span
+                    key={p.participanteId}
+                    className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]"
+                  >
+                    {p.empresaNome}
+                    {status === 'ABERTA' && p.conviteStatus !== 'ENVIADO' && (
+                      <span title="convite não entregue" className="text-[var(--pnl-atencao,#e0a030)]">
+                        !
+                      </span>
+                    )}
+                  </span>
+                ))}
+                {podeConvidar && (
                   <button
                     type="button"
                     onClick={() => setModalConviteAberto(true)}
-                    className="text-primary hover:underline"
+                    className="rounded-full px-2 py-1 text-[11px] font-medium text-[var(--pnl-acento-hi,#6fe6ac)] hover:underline"
                   >
-                    ver
+                    + convidar
                   </button>
                 )}
-              </span>
-            )}
-          </p>
-        </div>
+              </div>
+              {(status === 'ABERTA' || status === 'ENCERRADA') && totalParticipantesConvite > 0 && (
+                <p className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+                  {convitesEntregues} de {totalParticipantesConvite}{' '}
+                  {totalParticipantesConvite === 1 ? 'convite entregue' : 'convites entregues'}
+                  {convitesEntregues < totalParticipantesConvite && (
+                    <button
+                      type="button"
+                      onClick={() => setModalConviteAberto(true)}
+                      className="ml-1 text-[var(--pnl-acento-hi,#6fe6ac)] hover:underline"
+                    >
+                      ver
+                    </button>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
 
-        <div className="flex flex-wrap items-center gap-2">
-          {status === 'RASCUNHO' && (
-            <>
-              <Button onClick={() => setDialog('abrir')}>Abrir</Button>
-            </>
-          )}
-          {status === 'ABERTA' && (
-            <>
-              <Button onClick={() => setDialog('encerrar')} disabled={acaoPendente}>
-                Encerrar
-              </Button>
-            </>
-          )}
-          {status === 'ENCERRADA' && (
-            <>
-              <Button onClick={() => executar(() => reabrir.mutateAsync())} disabled={acaoPendente}>
-                Reabrir
-              </Button>
-              <Button onClick={() => setDialog('apurar')}>Apurar</Button>
-            </>
-          )}
-          {status === 'PEDIDOS_GERADOS' && (
-            <Link
-              to={`/admin/cotacoes/${id}/resultado`}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90"
+          {status === 'ABERTA' && cotacao.prazoVencido && (
+            <div
+              role="alert"
+              className="flex items-center gap-3 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-[var(--pnl-atencao,#e0a030)]/10 px-4 py-3 text-sm sm:px-5"
             >
-              Ver resultado
-            </Link>
+              <Warning className="size-5 shrink-0 text-[var(--pnl-atencao,#e0a030)]" aria-hidden />
+              <span className="font-medium text-[var(--pnl-atencao,#e0a030)]">
+                Prazo vencido — os representantes não podem mais responder. Encerre para apurar.
+              </span>
+            </div>
           )}
 
-          {status !== 'CANCELADA' && (
-            <Button variant="outline" onClick={() => setModalConviteAberto(true)}>
-              Representantes
-            </Button>
+          {(status === 'RASCUNHO' || status === 'CANCELADA' || status === 'PEDIDOS_GERADOS') && (
+            <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={podeMontar} />
+          )}
+          {(status === 'ABERTA' || status === 'ENCERRADA') && (
+            <GradeAoVivoContainer id={id} status={status} itens={cotacao.itens} />
           )}
 
-          <div className="ml-auto flex items-center gap-2">
-            {(status === 'RASCUNHO' || status === 'ABERTA') && (
-              <Button
-                variant="outline"
-                className="text-destructive border-destructive/40 hover:bg-destructive/10"
-                onClick={() => setDialog('cancelar')}
-              >
-                Cancelar
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {erroAcao && <ErrorAlert>{erroAcao}</ErrorAlert>}
-
-      {status === 'ABERTA' && cotacao.prazoVencido && (
-        <div
-          role="alert"
-          className="flex items-center gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm"
-        >
-          <Warning className="size-5 shrink-0 text-warning" aria-hidden />
-          <span className="font-medium text-warning">
-            Prazo vencido — os representantes não podem mais responder. Encerre para apurar.
-          </span>
-        </div>
-      )}
-
-      <div className="space-y-6">
-        {(status === 'RASCUNHO' || status === 'CANCELADA' || status === 'PEDIDOS_GERADOS') && (
-          <ItensSection cotacaoId={id} itens={cotacao.itens} editavel={status === 'RASCUNHO'} />
-        )}
-
-        {(status === 'ABERTA' || status === 'ENCERRADA') && <GradeAoVivoContainer id={id} status={status} itens={cotacao.itens} />}
-      </div>
+          <RodapeAcao
+            esquerda={
+              <CampoEstat
+                inline
+                rotulo={status === 'PEDIDOS_GERADOS' ? 'Cotação apurada' : 'Itens na cotação'}
+                valor={totalItens}
+              />
+            }
+            direita={
+              <div className="flex items-center gap-2">
+                {(status === 'RASCUNHO' || status === 'ABERTA') && (
+                  <BotaoFantasma
+                    className="text-[var(--pnl-perigo,#ff6b6b)]"
+                    onClick={() => setDialog('cancelar')}
+                  >
+                    Cancelar
+                  </BotaoFantasma>
+                )}
+                {status === 'ENCERRADA' && (
+                  <BotaoFantasma
+                    onClick={() => executar(() => reabrir.mutateAsync())}
+                    disabled={acaoPendente}
+                  >
+                    Reabrir
+                  </BotaoFantasma>
+                )}
+                {status === 'RASCUNHO' && (
+                  <BotaoPrimario onClick={() => setDialog('abrir')}>Abrir</BotaoPrimario>
+                )}
+                {status === 'ABERTA' && (
+                  <BotaoPrimario onClick={() => setDialog('encerrar')} disabled={acaoPendente}>
+                    Encerrar
+                  </BotaoPrimario>
+                )}
+                {status === 'ENCERRADA' && (
+                  <BotaoPrimario onClick={() => setDialog('apurar')}>Apurar</BotaoPrimario>
+                )}
+                {status === 'PEDIDOS_GERADOS' && (
+                  <Link
+                    to={`/admin/cotacoes/${id}/resultado`}
+                    className="inline-flex items-center justify-center rounded-lg bg-[var(--pnl-acento,#57bf8e)] px-3 py-1.5 text-xs font-semibold text-[var(--pnl-superficie,#12263f)] hover:brightness-110"
+                  >
+                    Ver resultado
+                  </Link>
+                )}
+              </div>
+            }
+          />
+        </Superficie>
 
       {dialog === 'abrir' && (
         <AbrirCotacaoDialog
@@ -429,6 +505,7 @@ export function CotacaoDetalhePage() {
         selecionadas={empresasSelecionadas}
         onToggle={(empresaId) => setEmpresasSelecionadas(s => s.includes(empresaId) ? s.filter(x => x !== empresaId) : [...s, empresaId])}
       />
-    </PageContainer>
+      </PageContainer>
+    </div>
   )
 }

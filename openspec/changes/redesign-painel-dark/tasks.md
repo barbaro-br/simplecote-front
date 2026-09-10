@@ -41,8 +41,12 @@ verde antes de mergear em `main`.
 - [x] Fim do wizard: `NovaCotacaoPage` cria e vai DIRETO pra `/admin/cotacoes/:id`
       (RASCUNHO). `NovaCotacaoWizard`(.test) removidos. A montagem (itens +
       representantes + prazo) já acontece inline na tela de detalhe.
-- [ ] `CotacaoPage` única (RASCUNHO → ABERTA → ENCERRADA → PEDIDOS_GERADOS na
-      mesma superfície).
+- [x] `CotacaoDetalhePage` reescrita como UMA `Superficie` igual em todo
+      estado: `SecaoCabecalho` (título + `Selo` + Representantes) + `SubFaixa`
+      (N itens · M fornecedores · prazo) + fila de chips de fornecedor
+      (+ convidar, "X de Y entregues") + corpo (itens/grade) + `RodapeAcao`
+      com `CampoEstat` + botão primário único por estado. `ItensSection`
+      deixa de ser Card (renderiza dentro da Superficie). 136 testes verdes.
 - [ ] Adicionar item inline na última linha da `GradeDados` (`POST /itens`).
 - [ ] Chip-input de fornecedores (`POST/DELETE /participantes`).
 - [ ] Botão primário único por estado; `AbrirCotacaoDialog` (prazo) mantido.

@@ -3,7 +3,6 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { AdicionarItemModal } from './AdicionarItemModal'
-import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Package, Trash, Plus, Minus } from '@phosphor-icons/react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
@@ -131,15 +130,17 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader>
-        <CardTitle>Itens</CardTitle>
-        {editavel && (
-          <Button   type="button" onClick={() => setFormAberto(true)} size="sm">
+    <div className="border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
+      {editavel && (
+        <div className="flex items-center justify-between border-b border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))] px-4 py-2.5 sm:px-5">
+          <span className="text-[11px] uppercase tracking-wide text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+            Itens
+          </span>
+          <Button type="button" onClick={() => setFormAberto(true)} size="sm">
             Adicionar item
           </Button>
-        )}
-      </CardHeader>
+        </div>
+      )}
 
       <AdicionarItemModal
         cotacaoId={cotacaoId}
@@ -234,7 +235,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
   )
 }
 
