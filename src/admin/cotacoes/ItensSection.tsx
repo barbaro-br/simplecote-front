@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
+import { BotaoIcone } from '@/shared/ui'
 import { AdicionarItemModal } from './AdicionarItemModal'
 import { Package, Trash, Plus, Minus } from '@phosphor-icons/react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
@@ -60,16 +61,15 @@ function Stepper({
 
   return (
     <div className="flex items-center gap-1">
-      <Button  
+      <BotaoIcone
         type="button"
-        variant="outline"
-        size="icon"
-        className="size-7 h-7 w-7 rounded-full shrink-0"
+        aria-label="Diminuir quantidade"
+        className="size-7 rounded-full"
         onClick={dec}
         disabled={disabled || (typeof localVal === 'number' && localVal <= 1)}
       >
         <Minus className="size-3" />
-      </Button>
+      </BotaoIcone>
       <Input
         type="number"
         min={1}
@@ -79,16 +79,15 @@ function Stepper({
         onBlur={handleBlur}
         disabled={disabled}
       />
-      <Button  
+      <BotaoIcone
         type="button"
-        variant="outline"
-        size="icon"
-        className="size-7 h-7 w-7 rounded-full shrink-0"
+        aria-label="Aumentar quantidade"
+        className="size-7 rounded-full"
         onClick={inc}
         disabled={disabled}
       >
         <Plus className="size-3" />
-      </Button>
+      </BotaoIcone>
     </div>
   )
 }
@@ -163,20 +162,20 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50">
-            <tr className="text-left text-muted-foreground">
+          <thead className="bg-white/[0.03]">
+            <tr className="text-left text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
               <th className="px-4 py-2 font-medium ui-uppercase">Produto</th>
               <th className="px-4 py-2 font-medium ui-uppercase">Embalagem</th>
               <th className="px-4 py-2 font-medium ui-uppercase">Qtd. solicitada</th>
               {editavel && <th className="px-4 py-2 font-medium ui-uppercase text-right">Ações</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
             {!itens.length ? (
               <tr>
-                <td colSpan={editavel ? 4 : 3} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={editavel ? 4 : 3} className="px-4 py-8 text-center text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <Package className="size-8 text-muted-foreground/50" />
+                    <Package className="size-8 text-[var(--pnl-txt-4,rgba(255,255,255,0.3))]" />
                     <p>Nenhum item adicionado.</p>
                   </div>
                 </td>
@@ -194,12 +193,12 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
                 const formatoEmbalagem = qt === 1 ? `${tipoUnidade} ${qt}` : `${tipoUnidade}${temCom ? "" : " COM"} ${qt}`;
 
                 return (
-                  <tr key={item.id} className="even:bg-muted/50 hover:bg-muted transition-colors group">
-                    <td className="px-4 py-2 font-medium">
+                  <tr key={item.id} className="transition-colors hover:bg-white/[0.03] group">
+                    <td className="px-4 py-2 font-medium text-[var(--pnl-txt,#fff)]">
                       <UltimaCompraPopover item={{ nome: item.nomeSnapshot } as any} insight={insight} />
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-[11px] font-semibold tracking-wide ring-1 ring-inset ring-border text-foreground">
+                      <span className="inline-flex items-center rounded-md bg-white/[0.06] px-2 py-1 text-[11px] font-semibold tracking-wide text-[var(--pnl-txt-2,rgba(255,255,255,0.7))] ring-1 ring-inset ring-[var(--pnl-borda,rgba(255,255,255,0.1))]">
                         {formatoEmbalagem}
                       </span>
                     </td>

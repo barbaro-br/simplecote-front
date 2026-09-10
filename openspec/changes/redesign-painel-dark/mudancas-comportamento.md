@@ -88,6 +88,13 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   some quando o mês anterior está zerado. Antes o dashboard só mostrava os
   dois valores lado a lado sem o percentual.
 
+## Montagem de itens da cotação (RASCUNHO)
+
+- **Botões +/- da quantidade ganham nome acessível.** Os controles de
+  stepper (aumentar/diminuir a "Qtd. solicitada") só tinham o ícone; agora
+  têm `aria-label` "Aumentar quantidade" / "Diminuir quantidade". Leitor de
+  tela e testes passam a conseguir mirá-los. Sem mudança visual/de fluxo.
+
 ## Grade ao vivo (admin)
 
 - **`10a4d84` — Célula do menor preço em menta + pulso.**
