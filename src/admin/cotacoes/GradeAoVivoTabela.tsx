@@ -11,7 +11,7 @@ import { ConfirmarDialog } from './ConfirmarDialog'
 import { UltimaCompraPopover } from './UltimaCompraPopover'
 import { useHighlightOnUpdate } from '@/shared/hooks/useHighlightOnUpdate'
 
-const LARGURA_ITEM_PADRAO = 240
+const LARGURA_ITEM_PADRAO = 280
 const LARGURA_ITEM_MIN = 140
 const LARGURA_ITEM_MAX = 520
 const LARGURA_ITEM_KEY = 'grade-largura-coluna-item'

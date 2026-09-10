@@ -47,6 +47,10 @@ verde antes de mergear em `main`.
       (+ convidar, "X de Y entregues") + corpo (itens/grade) + `RodapeAcao`
       com `CampoEstat` + botão primário único por estado. `ItensSection`
       deixa de ser Card (renderiza dentro da Superficie). 136 testes verdes.
+- [x] Cabeçalho da grade ao vivo (`GradeAoVivoContainer`) vira faixa de seção
+      da mesma `Superficie` (ponto pulsante + contador + "Adicionar item"),
+      sem o bloco solto com `mt-8`. Bug de sobreposição nome × stepper na
+      coluna "Item" corrigido (trunca) + largura padrão 240 → 280 px.
 - [ ] Adicionar item inline na última linha da `GradeDados` (`POST /itens`).
 - [ ] Chip-input de fornecedores (`POST/DELETE /participantes`).
 - [ ] Botão primário único por estado; `AbrirCotacaoDialog` (prazo) mantido.

@@ -73,18 +73,24 @@ function GradeAoVivoContainer({ id, status, itens }: { id: string; status: strin
   if (!grade) return null
 
   return (
-    <div className="space-y-4 mt-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold tracking-tight ui-uppercase">Grade de Respostas (Ao Vivo)</h2>
-        <div className="flex items-center gap-2">
-          {status === 'ABERTA' && (
-            <Button size="sm" onClick={() => setAdicionarItemAberto(true)}>
-              Adicionar item
-            </Button>
-          )}
-          <span className="text-sm text-muted-foreground font-medium bg-muted px-2.5 py-0.5 rounded-full">
-            {grade.respondidos} / {grade.totalParticipantes} respondidos
+    <div className="border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))] px-4 py-2.5 sm:px-5">
+        <div className="flex items-center gap-2 text-[13px] font-medium text-[var(--pnl-txt,#fff)]">
+          <span className="relative flex size-2 shrink-0">
+            {status === 'ABERTA' && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--pnl-acento,#57bf8e)]/70" />
+            )}
+            <span className="relative inline-flex size-2 rounded-full bg-[var(--pnl-acento,#57bf8e)]" />
           </span>
+          Grade de respostas · ao vivo
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+            {grade.respondidos} de {grade.totalParticipantes} responderam
+          </span>
+          {status === 'ABERTA' && (
+            <BotaoFantasma onClick={() => setAdicionarItemAberto(true)}>Adicionar item</BotaoFantasma>
+          )}
         </div>
       </div>
       <GradeAoVivoTabela cotacaoId={id} grade={grade} />

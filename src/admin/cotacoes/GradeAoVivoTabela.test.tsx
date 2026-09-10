@@ -493,11 +493,11 @@ function arrastar(handle: HTMLElement, de: number, para: number) {
 test('arrastar a alça muda a largura aplicada no DOM', () => {
   localStorage.clear()
   renderGrade(gradeBase)
-  expect(larguraAplicada()).toBe('240px')
+  expect(larguraAplicada()).toBe('280px')
 
   arrastar(alca(), 200, 300)
 
-  expect(larguraAplicada()).toBe('340px')
+  expect(larguraAplicada()).toBe('380px')
 })
 
 test('a largura respeita o mínimo e o máximo ao arrastar', () => {
@@ -517,12 +517,12 @@ test('a largura é persistida no localStorage e um novo render parte dela', () =
   localStorage.clear()
   const primeira = renderGrade(gradeBase)
   arrastar(alca(), 200, 300)
-  expect(localStorage.getItem('grade-largura-coluna-item')).toBe('340')
+  expect(localStorage.getItem('grade-largura-coluna-item')).toBe('380')
 
   // um novo render lê a largura salva (340), não o padrão
   primeira.unmount()
   renderGrade(gradeBase)
-  expect(larguraAplicada()).toBe('340px')
+  expect(larguraAplicada()).toBe('380px')
 })
 
 test('duplo-clique na alça restaura a largura padrão e limpa a chave', () => {
@@ -532,7 +532,7 @@ test('duplo-clique na alça restaura a largura padrão e limpa a chave', () => {
 
   fireEvent.doubleClick(alca())
 
-  expect(larguraAplicada()).toBe('240px')
+  expect(larguraAplicada()).toBe('280px')
   expect(localStorage.getItem('grade-largura-coluna-item')).toBeNull()
 })
 
@@ -546,10 +546,10 @@ test('localStorage indisponível usa o padrão sem quebrar e o arrasto segue fun
   })
   try {
     renderGrade(gradeBase)
-    expect(larguraAplicada()).toBe('240px')
+    expect(larguraAplicada()).toBe('280px')
 
     arrastar(alca(), 200, 300)
-    expect(larguraAplicada()).toBe('340px')
+    expect(larguraAplicada()).toBe('380px')
   } finally {
     getItem.mockRestore()
     setItem.mockRestore()

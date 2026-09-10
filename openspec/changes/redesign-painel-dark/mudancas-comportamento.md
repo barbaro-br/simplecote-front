@@ -114,6 +114,21 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
 
 ## Grade ao vivo (admin)
 
+- **Cabeçalho da grade dentro da mesma superfície.** Antes "Grade de Respostas
+  (Ao Vivo)" era um bloco à parte, com `mt-8`, título grande e um contador
+  cinza flutuante. Agora é uma faixa de seção da própria `Superficie` (ponto
+  menta pulsando quando ABERTA, contador "N de M responderam", botão
+  "Adicionar item"). Sem mudança de fluxo — os mesmos elementos, encaixados
+  no cartão único.
+
+- **Coluna "Item" mais larga por padrão (240 → 280 px).** O nome do produto
+  vinha espremido/sobreposto pelos controles de quantidade quando a coluna
+  estava no tamanho padrão. Agora o nome trunca com reticências e tudo se
+  alinha; a coluna continua redimensionável e o valor salvo no navegador
+  prevalece sobre o novo padrão.
+
+
+
 - **`10a4d84` — Célula do menor preço em menta + pulso.**
   Antes: fundo verde-claro fixo; no flash, um verde chapado. Depois: menta da
   marca no estado assentado e um pulso de ~2s (2 batidas + glow) ao assumir a
