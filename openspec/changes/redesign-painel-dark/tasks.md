@@ -52,6 +52,10 @@ verde antes de mergear em `main`.
 - [ ] Botão primário único por estado; `AbrirCotacaoDialog` (prazo) mantido.
 - [ ] `GradeDados` modo "resultado" (vencedor + economia/item) + `RodapeAcao`
       "Gerar pedidos" em ENCERRADA/PEDIDOS_GERADOS.
+- [~] `ResultadoPage` re-tematizada com `CabecalhoPagina` + `Superficie` +
+      `SubFaixa` + `Selo` (era `Card`/`CardHeader`/`CardTitle`). Só aparência —
+      margem, expandir pedidos, XLSX/PDF, enviar, recotar intactos. 20 testes
+      verdes. Falta ainda dobrar tudo dentro da tela de detalhe (modo resultado).
 - [ ] `CotacoesPage` = `Superficie` + `LinhaLista` + "+ Nova cotação".
 - [ ] Redirects: `/cotacoes/nova`, `/cotacoes/:id/resultado` → estado da tela.
 - [ ] Aposentar `NovaCotacaoWizard`, `NovaCotacaoPage`, `AdicionarItemModal`,

@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { CaretRight, FileArrowDown, ArrowsClockwise, PaperPlaneRight } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
-import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina, Superficie, SubFaixa, Selo, type TomSelo } from '@/shared/ui'
 import { Breadcrumb } from '@/shared/components/ui/breadcrumb'
 import { moeda } from '@/shared/format/formatters'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
@@ -35,13 +35,8 @@ function precoDeVenda(precoCusto: number, margemStr: string): number | null {
 }
 
 function PedidoStatusBadge({ status }: { status: string }) {
-  if (status === 'CONFIRMADO') {
-    return <span className="inline-flex items-center rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">{ROTULO_PEDIDO[status]}</span>
-  }
-  if (status === 'ENVIADO') {
-    return <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{ROTULO_PEDIDO[status]}</span>
-  }
-  return <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{ROTULO_PEDIDO[status] ?? status}</span>
+  const tom: TomSelo = status === 'CONFIRMADO' ? 'sucesso' : status === 'ENVIADO' ? 'info' : 'neutro'
+  return <Selo tom={tom}>{ROTULO_PEDIDO[status] ?? status}</Selo>
 }
 
 export function ResultadoPage() {
@@ -103,64 +98,61 @@ export function ResultadoPage() {
   const listaPedidos = pedidos.data ?? resultado.data.pedidos
 
   return (
-    <PageContainer maxWidth="5xl" className="space-y-8">
-      <Breadcrumb
-        items={[
-          { label: 'Cotações', to: '/admin/cotacoes' },
-          { label: cotacao.data?.titulo ?? '', to: `/admin/cotacoes/${id}` },
-          { label: 'Resultado' },
-        ]}
-      />
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Resultado da apuração</h1>
-          <p className="text-sm text-muted-foreground">Consulte os vencedores por item e acompanhe os pedidos.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setErro(null)
-              baixarResultadoXlsx(id).catch(tratarErro)
-            }}
-          >
-            <FileArrowDown className="mr-2 size-4" />
-            Baixar XLSX
-          </Button>
-        </div>
-      </div>
+    <div data-painel="dark" className="min-h-screen">
+      <PageContainer maxWidth="5xl" className="space-y-6 py-6">
+        <Breadcrumb
+          items={[
+            { label: 'Cotações', to: '/admin/cotacoes' },
+            { label: cotacao.data?.titulo ?? '', to: `/admin/cotacoes/${id}` },
+            { label: 'Resultado' },
+          ]}
+        />
+        <CabecalhoPagina
+          titulo="Resultado da apuração"
+          subtitulo="Consulte os vencedores por item e acompanhe os pedidos."
+          acao={
+            <Button
+              variant="outline"
+              onClick={() => {
+                setErro(null)
+                baixarResultadoXlsx(id).catch(tratarErro)
+              }}
+            >
+              <FileArrowDown className="mr-2 size-4" />
+              Baixar XLSX
+            </Button>
+          }
+        />
 
-      {erro && (
-        <div role="alert" className="text-sm text-destructive font-medium bg-destructive/10 border border-destructive/20 p-3 rounded-md">
-          {erro}
-        </div>
-      )}
-
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle>Pedidos Gerados</CardTitle>
-        </CardHeader>
-        <div className="px-4 py-3">
-          <label htmlFor="margem-global" className="text-sm font-medium ui-uppercase">
-            Margem de lucro (%)
-          </label>
-          <div className="mt-1 flex items-center gap-2">
-            <Input
-              id="margem-global"
-              value={margemGlobal}
-              onChange={(e) => setMargemGlobal(e.target.value)}
-              placeholder="Ex: 30"
-              inputMode="decimal"
-              className="max-w-40"
-            />
-            <span className="text-sm text-muted-foreground">%</span>
+        {erro && (
+          <div role="alert" className="text-sm text-destructive font-medium bg-destructive/10 border border-destructive/20 p-3 rounded-md">
+            {erro}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Prévia de preço de venda — não afeta o pedido enviado. Aplica a todos os itens e pode ser
-            ajustada por item.
-          </p>
-        </div>
-        <div className="overflow-x-auto border-t">
+        )}
+
+        <Superficie>
+          <SubFaixa esquerda="Pedidos Gerados" />
+          <div className="px-4 py-3">
+            <label htmlFor="margem-global" className="text-sm font-medium ui-uppercase">
+              Margem de lucro (%)
+            </label>
+            <div className="mt-1 flex items-center gap-2">
+              <Input
+                id="margem-global"
+                value={margemGlobal}
+                onChange={(e) => setMargemGlobal(e.target.value)}
+                placeholder="Ex: 30"
+                inputMode="decimal"
+                className="max-w-40"
+              />
+              <span className="text-sm text-muted-foreground">%</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Prévia de preço de venda — não afeta o pedido enviado. Aplica a todos os itens e pode ser
+              ajustada por item.
+            </p>
+          </div>
+          <div className="overflow-x-auto border-t">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr className="text-left text-muted-foreground">
@@ -316,7 +308,7 @@ export function ResultadoPage() {
             </div>
           </div>
         )}
-      </Card>
+        </Superficie>
 
       {confirmarRecotar && (
         <ConfirmarDialog
@@ -328,6 +320,8 @@ export function ResultadoPage() {
           onCancelar={() => setConfirmarRecotar(false)}
         />
       )}
-    </PageContainer>
+      </PageContainer>
+    </div>
   )
+
 }
