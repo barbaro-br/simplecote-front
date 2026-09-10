@@ -7,6 +7,7 @@ import { Card } from '@/shared/components/ui/card'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina } from '@/shared/ui'
 import { ConfirmarDialog } from '@/admin/cotacoes/ConfirmarDialog'
 import { ConvidarMembroDialog } from './ConvidarMembroDialog'
 import {
@@ -67,16 +68,10 @@ export function MembrosPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight ui-uppercase">Membros</h1>
-          <p className="text-sm text-muted-foreground">Quem acessa o painel da sua loja.</p>
-        </div>
-        <Button onClick={() => setConvidarAberto(true)}>
+      <CabecalhoPagina titulo="Membros" subtitulo="Quem acessa o painel da sua loja." acao={<Button onClick={() => setConvidarAberto(true)}>
           <UserPlus className="mr-2 size-4" />
           Convidar membro
-        </Button>
-      </div>
+        </Button>} />
 
       <Dialog open={convidarAberto} onClose={() => setConvidarAberto(false)} title="Convidar membro">
         <ConvidarMembroDialog aoFechar={() => setConvidarAberto(false)} />

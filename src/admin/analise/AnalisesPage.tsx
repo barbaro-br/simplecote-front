@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
+import { CabecalhoPagina } from '@/shared/ui'
 import { moeda, dataBr } from '@/shared/format/formatters'
 import { useCompras } from './analise.api'
 
@@ -42,10 +43,7 @@ export function AnalisesPage() {
   return (
     <PageContainer maxWidth="5xl" className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold ui-uppercase">Análises</h1>
-          <p className="text-sm text-muted-foreground">Histórico de compras apuradas por período.</p>
-        </div>
+        <CabecalhoPagina titulo="Análises" subtitulo="Histórico de compras apuradas por período." />
         <div className="flex flex-wrap gap-1.5">
           {PRESETS.map((p) => {
             const ativo = p.rotulo === preset.rotulo
