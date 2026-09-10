@@ -28,6 +28,17 @@ export function ehHostBackoffice(hostname: string): boolean {
 }
 
 /**
+ * `novo.simplecote.app` — host de transição do redesign (mudança
+ * `redesign-painel-dark`). É `.simplecote.app`, mas serve o painel para
+ * qualquer inquilino escopado pelo JWT, como um preview da Vercel: o guard
+ * slug × JWT NÃO pode redirecionar pro subdomínio da loja, senão joga quem
+ * clicou em "Experimentar o novo layout" de volta pro layout antigo.
+ */
+export function ehHostTransicaoLayout(hostname: string): boolean {
+  return subdominioDoApp(hostname) === 'novo'
+}
+
+/**
  * Extrai o slug de `<slug>.simplecote.app`. Retorna `null` para host neutro
  * (`app`/`www`/`backoffice`/apex), subdomínio multi-nível, `localhost`, preview
  * da Vercel (`*.vercel.app`) e qualquer outro host sem loja.

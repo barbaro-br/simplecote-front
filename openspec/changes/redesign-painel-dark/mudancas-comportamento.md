@@ -242,6 +242,24 @@ Formato: `[commit]` — o que mudou · antes → depois · por quê.
   desempate é "campeão = primeiro a responder com aquele preço", comparando
   o preço unitário arredondado a 4 casas.
 
+## Transição de layout (`novo.simplecote.app`)
+
+Durante o rollout gradual o layout novo roda em `novo.simplecote.app` e o antigo
+segue em `simplecote.app`. Isso exigiu dois ajustes de roteamento:
+
+- **`novo` virou subdomínio reservado.** Antes, ao abrir `novo.simplecote.app` o
+  app tratava `novo` como slug de loja e mostrava "Esse endereço de loja não
+  existe.". Depois: `novo` entra na mesma lista de `app`/`www`/`backoffice` —
+  host neutro, sem loja. (Espelhado no back em `SlugReservado`.)
+
+- **`novo.simplecote.app` não redireciona pro subdomínio da loja.** O
+  `AuthGuard` normalmente manda um usuário logado num host `.simplecote.app`
+  "neutro" para `sua-loja.simplecote.app`. Nesse host de transição esse
+  redirect está desligado (como já era em `localhost` e nos previews da
+  Vercel): quem clica em "Experimentar o novo layout" fica no layout novo em
+  vez de ser jogado de volta pro antigo. O back continua escopando tudo pelo
+  `compradorId` do JWT, então não há vazamento entre inquilinos.
+
 ## Acessibilidade
 
 - **Menos movimento também congela os pontos "ao vivo".** Com
