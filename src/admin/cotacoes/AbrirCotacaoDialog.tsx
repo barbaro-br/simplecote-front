@@ -119,7 +119,7 @@ export function AbrirCotacaoDialog({ pendente, onAbrir, onCancelar }: Props) {
     >
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-primary/10 blur-3xl rounded-full pointer-events-none" />
 
-      <div className="flex flex-col relative z-10">
+      <div className="flex flex-col relative z-10 min-h-0 max-h-[90vh] overflow-hidden">
         <div className="px-6 py-6 pb-4 shrink-0 flex flex-col items-center justify-center text-center">
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 ring-1 ring-primary/20 shadow-inner">
             <Rocket className="size-7" />
@@ -130,7 +130,7 @@ export function AbrirCotacaoDialog({ pendente, onAbrir, onCancelar }: Props) {
           </p>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background/40">
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center p-6 bg-background/40">
           <Calendar
             mode="single"
             selected={data}
@@ -163,13 +163,13 @@ export function AbrirCotacaoDialog({ pendente, onAbrir, onCancelar }: Props) {
         </div>
 
         {prazoIso && (
-          <p className="px-6 pb-3 text-center text-[13px] text-muted-foreground">
+          <p className="shrink-0 px-6 pb-3 pt-3 text-center text-[13px] text-muted-foreground">
             Expira {dataHoraBr(prazoIso)} (horário de Brasília)
           </p>
         )}
 
         {erro && (
-          <p className="px-6 pb-3 text-center text-[13px] text-destructive font-medium">
+          <p className="shrink-0 px-6 pb-3 text-center text-[13px] text-destructive font-medium">
             {erro}
           </p>
         )}
