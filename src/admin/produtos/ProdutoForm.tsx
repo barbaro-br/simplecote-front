@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Camera, MagnifyingGlass } from '@phosphor-icons/react'
@@ -64,6 +64,14 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
   // atual em vez de resetar via setState-em-effect (oxlint react(set-state-in-effect)).
   const [indiceAtivo, setIndiceAtivo] = useState(0)
   const indiceAtivoClamped = listaGlobal.length === 0 ? 0 : Math.min(indiceAtivo, listaGlobal.length - 1)
+  // Rolagem acompanha o item ativo (efeito de DOM, não setState — não cai na
+  // mesma regra do lint que a tentativa anterior de resetar índice em effect).
+  const itemAtivoRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    // Encadeado com `?.` no método também (não só na ref): jsdom não
+    // implementa scrollIntoView — sem isso o teste quebra ao abrir o painel.
+    itemAtivoRef.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [indiceAtivoClamped])
 
   function escolherSugestaoGlobal(s: SugestaoCatalogoGlobal) {
     form.setValue('nome', s.nome, { shouldDirty: true, shouldValidate: true })
@@ -261,6 +269,7 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
                       {listaGlobal.map((s, i) => (
                         <li key={s.codigoBarras} role="option" aria-selected={i === indiceAtivoClamped}>
                           <button
+                            ref={i === indiceAtivoClamped ? itemAtivoRef : undefined}
                             type="button"
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => escolherSugestaoGlobal(s)}
