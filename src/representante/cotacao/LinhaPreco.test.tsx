@@ -93,7 +93,12 @@ test('sem preço mostra o indicador "sem preço" (X apagado)', () => {
   expect(screen.getByLabelText('sem preço')).toBeInTheDocument()
 })
 
-test('preço unitário do servidor é exibido', () => {
-  renderLinha({ item: item({ preco: 174, precoUnitario: 29 }) })
-  expect(screen.getByText('R$ 29,00')).toBeInTheDocument()
+test('preço unitário aparece como dica quando a embalagem tem >1 unidade', () => {
+  renderLinha({ item: item({ preco: 174, quantidadePorEmbalagemSnapshot: 6, precoUnitario: 29 }) })
+  expect(screen.getByText(/≈\s*R\$\s29,00\/un/)).toBeInTheDocument()
+})
+
+test('embalagem de 1 unidade não mostra dica de unitário (seria o mesmo número)', () => {
+  renderLinha({ item: item({ preco: 29, quantidadePorEmbalagemSnapshot: 1, precoUnitario: 29 }) })
+  expect(screen.queryByText(/\/un/)).not.toBeInTheDocument()
 })

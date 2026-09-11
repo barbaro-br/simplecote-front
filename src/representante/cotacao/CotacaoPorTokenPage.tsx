@@ -215,12 +215,11 @@ export function CotacaoPorTokenPage() {
           )}
 
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left" style={{ minWidth: 360 }}>
+            <table className="w-full border-collapse text-left" style={{ minWidth: 320 }}>
               <thead>
                 <tr className="text-[10px] uppercase tracking-wide text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
                   <th className="px-4 py-2 font-medium sm:px-5">Item</th>
-                  <th className="px-2 py-2 text-right font-medium">Seu preço</th>
-                  <th className="px-2 py-2 pr-4 text-right font-medium sm:pr-5">Unitário</th>
+                  <th className="px-2 py-2 pr-4 text-right font-medium sm:pr-5">Seu preço</th>
                 </tr>
               </thead>
               <tbody>

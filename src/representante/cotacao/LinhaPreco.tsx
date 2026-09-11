@@ -173,12 +173,16 @@ export function LinhaPreco({
     item.unidade === 'Unidade'
       ? `${unitAbbr} · comprar ${item.quantidadeSolicitada}`
       : `${unitAbbr} c/ ${item.quantidadePorEmbalagemSnapshot} · comprar ${item.quantidadeSolicitada}`
-  const unitario =
+
+  // Um campo só. O preço por unidade vira uma dica discreta abaixo do campo,
+  // e só quando a embalagem tem >1 unidade (senão é o mesmo número — ruído).
+  const mostrarUnitario = item.quantidadePorEmbalagemSnapshot > 1
+  const dicaUnitario =
     item.precoUnitario != null
-      ? moeda(item.precoUnitario)
+      ? `≈ ${moeda(item.precoUnitario)}/un`
       : status === 'enviando' && temPreco
         ? 'calculando…'
-        : '—'
+        : null
 
   return (
     <tr className="border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))] align-top">
@@ -209,60 +213,56 @@ export function LinhaPreco({
         )}
       </td>
 
-      <td className="px-2 py-2.5">
-        <div className="flex items-center justify-end gap-1.5">
-          <span
-            className={cn(
-              'inline-flex items-center gap-1 rounded-md border px-2 py-1 transition-colors',
-              'border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-white/[0.04] focus-within:ring-1 focus-within:ring-[var(--pnl-acento,#57bf8e)]/50',
-              flash && 'flash-green',
+      <td className="px-2 py-2.5 pr-4 sm:pr-5">
+        <div className="flex items-start justify-end gap-1.5">
+          <div className="flex flex-col items-end gap-0.5">
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md border px-2 py-1 transition-colors',
+                'border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-white/[0.04] focus-within:ring-1 focus-within:ring-[var(--pnl-acento,#57bf8e)]/50',
+                flash && 'flash-green',
+              )}
+            >
+              <span className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">R$</span>
+              <label htmlFor={`preco-${item.itemCotacaoId}`} className="sr-only">
+                {item.unidade === 'Unidade'
+                  ? `Preço — ${item.nome}`
+                  : `Preço da embalagem (${unitAbbr} c/ ${item.quantidadePorEmbalagemSnapshot}) — ${item.nome}`}
+              </label>
+              <input
+                id={`preco-${item.itemCotacaoId}`}
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9.,]*"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                autoFocus={autoFocus}
+                value={texto}
+                disabled={!podeEditar}
+                placeholder="0,00"
+                onChange={(e) => alterar(e.target.value)}
+                className="w-16 bg-transparent text-right text-[16px] font-semibold tabular-nums text-[var(--pnl-txt,#fff)] outline-none placeholder:text-[var(--pnl-txt-4,rgba(255,255,255,0.3))] disabled:opacity-50 sm:text-[13px]"
+              />
+              {temPreco && podeEditar && (
+                <button
+                  type="button"
+                  aria-label={`Limpar preço de ${item.nome}`}
+                  onClick={() => alterar('')}
+                  className="text-[var(--pnl-txt-4,rgba(255,255,255,0.3))] transition-colors hover:text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]"
+                >
+                  <X className="size-3" weight="bold" aria-hidden />
+                </button>
+              )}
+            </span>
+            {mostrarUnitario && dicaUnitario && (
+              <span className="pr-1 text-[10px] tabular-nums text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+                {dicaUnitario}
+              </span>
             )}
-          >
-            <span className="text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">R$</span>
-            <label htmlFor={`preco-${item.itemCotacaoId}`} className="sr-only">
-              Preço da embalagem — {item.nome}
-            </label>
-            <input
-              id={`preco-${item.itemCotacaoId}`}
-              type="text"
-              inputMode="decimal"
-              pattern="[0-9.,]*"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              autoFocus={autoFocus}
-              value={texto}
-              disabled={!podeEditar}
-              placeholder="0,00"
-              onChange={(e) => alterar(e.target.value)}
-              className="w-16 bg-transparent text-right text-[13px] font-semibold tabular-nums text-[var(--pnl-txt,#fff)] outline-none placeholder:text-[var(--pnl-txt-4,rgba(255,255,255,0.3))] disabled:opacity-50"
-            />
-            {temPreco && podeEditar && (
-              <button
-                type="button"
-                aria-label={`Limpar preço de ${item.nome}`}
-                onClick={() => alterar('')}
-                className="text-[var(--pnl-txt-4,rgba(255,255,255,0.3))] transition-colors hover:text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]"
-              >
-                <X className="size-3" weight="bold" aria-hidden />
-              </button>
-            )}
-          </span>
+          </div>
           <StatusPreco status={status} temErro={mensagemErro != null} temPreco={temPreco} />
         </div>
-      </td>
-
-      <td className="whitespace-nowrap px-2 py-2.5 pr-4 text-right sm:pr-5">
-        <span
-          className={cn(
-            'tabular-nums',
-            item.precoUnitario != null
-              ? 'text-[13px] font-semibold text-[var(--pnl-txt,#fff)]'
-              : 'text-[11px] text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]',
-          )}
-        >
-          {unitario}
-        </span>
       </td>
     </tr>
   )
