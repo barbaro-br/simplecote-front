@@ -3,7 +3,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { BotaoIcone } from '@/shared/ui'
-import { AdicionarItemModal } from './AdicionarItemModal'
+import { AdicionarItemModal, type PrefillCadastro } from './AdicionarItemModal'
 import { Package, Trash, Plus, Minus, PencilSimple } from '@phosphor-icons/react'
 import { useProdutos } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
@@ -102,6 +102,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   const [formAberto, setFormAberto] = useState(false)
   const [cadastroAberto, setCadastroAberto] = useState(false)
   const [produtoParaEditar, setProdutoParaEditar] = useState<Produto | undefined>(undefined)
+  const [prefillCadastro, setPrefillCadastro] = useState<PrefillCadastro | undefined>(undefined)
   
   const ids = itens.map(i => i.produtoId)
   const query = useInsightProdutos(ids)
@@ -114,7 +115,8 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   // fechar `formAberto`. Fechar e reabrir faria o AdicionarItemModal zerar os
   // `drafts` (seleção ainda não salva) na transição de `open`, e o usuário
   // perderia todos os produtos que tinha marcado.
-  function abrirCadastro() {
+  function abrirCadastro(prefill?: PrefillCadastro) {
+    setPrefillCadastro(prefill)
     setCadastroAberto(true)
   }
 
@@ -126,6 +128,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
   function aoCadastrarProduto() {
     setCadastroAberto(false)
     setProdutoParaEditar(undefined)
+    setPrefillCadastro(undefined)
   }
 
   return (
@@ -157,7 +160,7 @@ export function ItensSection({ cotacaoId, itens, editavel }: Props) {
         size="lg"
         ariaLabel="Cadastrar novo produto"
       >
-        <ProdutoForm aoSalvar={aoCadastrarProduto} produtoParaEditar={produtoParaEditar} />
+        <ProdutoForm aoSalvar={aoCadastrarProduto} produtoParaEditar={produtoParaEditar} valoresIniciais={prefillCadastro} />
       </Dialog>
 
       <div className="max-h-[70vh] overflow-auto">

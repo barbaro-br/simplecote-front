@@ -2,19 +2,25 @@ import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
-import { useProdutos } from '@/admin/produtos/produtos.api'
-import { MagnifyingGlass, X, Package, CircleNotch, Plus, Check, Trash, Pencil } from '@phosphor-icons/react'
+import { useProdutos, useSugestoesCadastro, type SugestaoCatalogoGlobal } from '@/admin/produtos/produtos.api'
+import { MagnifyingGlass, X, Package, CircleNotch, Plus, Check, Trash, Pencil, Sparkle } from '@phosphor-icons/react'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { useAdicionarItem, useRemoverItem } from './cotacoes.api'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 import type { ItemCotacao } from './cotacoes.schema'
-import type { Produto } from '@/admin/produtos/produtos.schema'
+import type { Produto, ValoresIniciaisProduto } from '@/admin/produtos/produtos.schema'
+
+// Reexportado com esse nome aqui porque é onde os consumidores (ItensSection,
+// CotacaoDetalhePage) já importam de — o tipo em si mora em produtos.schema
+// (ProdutoForm usa o mesmo, sem duplicar).
+export type { ValoresIniciaisProduto as PrefillCadastro }
 
 type Props = {
   cotacaoId: string
   itens: ItemCotacao[]
   open: boolean
   onClose: () => void
-  aoCadastrarProduto: () => void
+  aoCadastrarProduto: (prefill?: ValoresIniciaisProduto) => void
   aoEditarProduto: (produto: Produto) => void
 }
 
@@ -61,6 +67,18 @@ export function AdicionarItemModal({
         (p.codigoBarras != null && p.codigoBarras.toLowerCase().includes(s)),
     )
   }, [produtos, search])
+
+  // Sem nada no próprio catálogo: sugere do catálogo global (change catalogo-
+  // global-de-produtos) — mesmo endpoint do cadastro, só o grupo compartilhado
+  // interessa aqui (o "já no seu catálogo" já é o que `filtrados` mostraria).
+  const searchDebounced = useDebounce(search, 300)
+  const semResultadoProprio = filtrados.length === 0 && searchDebounced.trim().length > 0
+  const sugestoesGlobais = useSugestoesCadastro(semResultadoProprio ? searchDebounced : '')
+  const listaGlobal = sugestoesGlobais.data?.doCatalogoGlobal ?? []
+
+  function cadastrarDaSugestao(s: SugestaoCatalogoGlobal) {
+    aoCadastrarProduto({ nome: s.nome, codigoBarras: s.codigoBarras })
+  }
 
   // Trava só a linha cuja chamada está em voo — as outras seguem clicáveis.
   const [emVoo, setEmVoo] = useState<Set<string>>(new Set())
@@ -248,11 +266,36 @@ export function AdicionarItemModal({
             })}
 
             {filtrados.length === 0 && search && (
-              <div className="py-10 text-center flex flex-col items-center justify-center gap-2">
-                <div className="text-[13px] text-muted-foreground">Nenhum produto encontrado.</div>
+              <div className="py-10 flex flex-col items-center justify-center gap-3 px-6">
+                <div className="text-[13px] text-muted-foreground">Nenhum produto encontrado no seu catálogo.</div>
+
+                {listaGlobal.length > 0 && (
+                  <div className="w-full max-w-sm rounded-lg border border-border bg-muted/30 p-2">
+                    <p className="flex items-center gap-1 px-1 pb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      <Sparkle className="size-3" weight="fill" /> Achado na base compartilhada
+                    </p>
+                    <ul>
+                      {listaGlobal.map((s) => (
+                        <li key={s.codigoBarras}>
+                          <button
+                            type="button"
+                            onClick={() => cadastrarDaSugestao(s)}
+                            className="flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                          >
+                            <span className="font-medium">{s.nome}</span>
+                            <span className="text-[11px] text-muted-foreground">
+                              {s.codigoBarras}{s.marca ? ` · ${s.marca}` : ''} — clique pra cadastrar e adicionar
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <button
                   type="button"
-                  onClick={aoCadastrarProduto}
+                  onClick={() => aoCadastrarProduto()}
                   className="text-[13px] text-primary hover:underline font-medium"
                 >
                   Cadastrar novo produto
@@ -264,7 +307,7 @@ export function AdicionarItemModal({
               <div className="py-4 text-center">
                 <button
                   type="button"
-                  onClick={aoCadastrarProduto}
+                  onClick={() => aoCadastrarProduto()}
                   className="text-xs text-primary hover:underline"
                 >
                   Não achou? Cadastrar novo produto

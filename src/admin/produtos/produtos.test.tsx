@@ -294,6 +294,61 @@ test('sugestão ao digitar o nome: seta pra baixo + Enter navega e escolhe sem u
   expect(dialog.getByLabelText(/Código de barras/i)).toHaveValue('7899999999992')
 })
 
+test('sugestão ao digitar o nome: bater no limite de resultados avisa pra refinar a busca', async () => {
+  const dezSugestoes = Array.from({ length: 10 }, (_, i) => ({
+    codigoBarras: `789999900000${i}`,
+    nome: `Coco ${i}`,
+    marca: null,
+  }))
+  server.use(
+    http.get('*/api/produtos/sugestoes', ({ request }) => {
+      const q = new URL(request.url).searchParams.get('q')
+      if (q === 'coco') {
+        return HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: dezSugestoes })
+      }
+      return HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: [] })
+    }),
+  )
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Nome do produto'), 'coco')
+  await sleep(APOS_DEBOUNCE_SUGESTAO)
+
+  await dialog.findByText(/digite mais letras/i)
+})
+
+test('sugestão ao digitar o nome: menos de 10 resultados não mostra o aviso de refinar', async () => {
+  server.use(
+    http.get('*/api/produtos/sugestoes', ({ request }) => {
+      const q = new URL(request.url).searchParams.get('q')
+      if (q === 'Feij') {
+        return HttpResponse.json({
+          doProprioCatalogo: [],
+          doCatalogoGlobal: [{ codigoBarras: '7899999999999', nome: 'Feijão Preto 1kg', marca: 'Marca Z' }],
+        })
+      }
+      return HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: [] })
+    }),
+  )
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Nome do produto'), 'Feij')
+  await sleep(APOS_DEBOUNCE_SUGESTAO)
+
+  await dialog.findByText('Feijão Preto 1kg')
+  expect(dialog.queryByText(/digite mais letras/i)).not.toBeInTheDocument()
+})
+
 test('sugestão ao digitar o nome: "já no seu catálogo" é só aviso, não preenche nada ao aparecer', async () => {
   server.use(
     http.get('*/api/produtos/sugestoes', ({ request }) => {
