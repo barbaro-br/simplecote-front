@@ -54,15 +54,38 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
   const nome = useWatch({ control: form.control, name: 'nome' })
   const nomeDebounced = useDebounce(nome, 300)
   const sugestoes = useSugestoesCadastro(!isEdit && nomeFocado ? nomeDebounced : '')
-  const temSugestao =
-    (sugestoes.data?.doProprioCatalogo.length ?? 0) > 0 || (sugestoes.data?.doCatalogoGlobal.length ?? 0) > 0
+  const listaGlobal = sugestoes.data?.doCatalogoGlobal ?? []
+  const temSugestao = (sugestoes.data?.doProprioCatalogo.length ?? 0) > 0 || listaGlobal.length > 0
   const mostrarSugestoes = nomeFocado && !isEdit && temSugestao
+
+  // Navegação por teclado (seta cima/baixo + Enter) entre as sugestões
+  // clicáveis (catálogo global) — "já no seu catálogo" é só aviso, não entra
+  // no ciclo. Derivado (não um effect): grampeia dentro do tamanho da lista
+  // atual em vez de resetar via setState-em-effect (oxlint react(set-state-in-effect)).
+  const [indiceAtivo, setIndiceAtivo] = useState(0)
+  const indiceAtivoClamped = listaGlobal.length === 0 ? 0 : Math.min(indiceAtivo, listaGlobal.length - 1)
 
   function escolherSugestaoGlobal(s: SugestaoCatalogoGlobal) {
     form.setValue('nome', s.nome, { shouldDirty: true, shouldValidate: true })
     form.setValue('codigoBarras', s.codigoBarras, { shouldDirty: true, shouldValidate: true })
     setLookupStatus('sugerido-por-nome')
     setNomeFocado(false)
+  }
+
+  function aoTeclarNoNome(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!mostrarSugestoes || listaGlobal.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setIndiceAtivo(Math.min(indiceAtivoClamped + 1, listaGlobal.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setIndiceAtivo(Math.max(indiceAtivoClamped - 1, 0))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      escolherSugestaoGlobal(listaGlobal[indiceAtivoClamped])
+    } else if (e.key === 'Escape') {
+      setNomeFocado(false)
+    }
   }
 
   async function handleLookup() {
@@ -195,6 +218,10 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
               })}
               onFocus={() => setNomeFocado(true)}
               onBlur={() => setTimeout(() => setNomeFocado(false), 150)}
+              onKeyDown={aoTeclarNoNome}
+              role="combobox"
+              aria-expanded={mostrarSugestoes}
+              aria-controls="sugestoes-catalogo-global"
               placeholder="Ex: Arroz Branco 5kg"
               className={form.formState.errors.nome ? "border-destructive focus-visible:ring-destructive" : ""}
             />
@@ -210,7 +237,7 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
                 sozinho; sugestão do catálogo global preenche nome+código ao
                 clicar, igual a busca por código de barras já faz. */}
             {mostrarSugestoes && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
+              <div className="absolute z-10 mt-1 max-h-72 w-full overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md">
                 {sugestoes.data!.doProprioCatalogo.length > 0 && (
                   <div className="border-b p-2">
                     <p className="px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -225,19 +252,22 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
                     </ul>
                   </div>
                 )}
-                {sugestoes.data!.doCatalogoGlobal.length > 0 && (
+                {listaGlobal.length > 0 && (
                   <div className="p-2">
                     <p className="px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                       Sugestão da base compartilhada
                     </p>
-                    <ul>
-                      {sugestoes.data!.doCatalogoGlobal.map((s) => (
-                        <li key={s.codigoBarras}>
+                    <ul id="sugestoes-catalogo-global" role="listbox">
+                      {listaGlobal.map((s, i) => (
+                        <li key={s.codigoBarras} role="option" aria-selected={i === indiceAtivoClamped}>
                           <button
                             type="button"
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => escolherSugestaoGlobal(s)}
-                            className="flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                            onMouseEnter={() => setIndiceAtivo(i)}
+                            className={`flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm ${
+                              i === indiceAtivoClamped ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                            }`}
                           >
                             <span>{s.nome}</span>
                             <span className="text-[11px] text-muted-foreground">
