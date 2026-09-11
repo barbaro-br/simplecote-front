@@ -260,6 +260,40 @@ test('sugestão ao digitar o nome: escolher sugestão do catálogo global preenc
   expect(dialog.getByText(/preenchidos da base compartilhada/i)).toBeInTheDocument()
 })
 
+test('sugestão ao digitar o nome: seta pra baixo + Enter navega e escolhe sem usar o mouse', async () => {
+  server.use(
+    http.get('*/api/produtos/sugestoes', ({ request }) => {
+      const q = new URL(request.url).searchParams.get('q')
+      if (q === 'Feij') {
+        return HttpResponse.json({
+          doProprioCatalogo: [],
+          doCatalogoGlobal: [
+            { codigoBarras: '7899999999991', nome: 'Feijão Preto 1kg', marca: null },
+            { codigoBarras: '7899999999992', nome: 'Feijão Carioca 1kg', marca: null },
+          ],
+        })
+      }
+      return HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: [] })
+    }),
+  )
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Nome do produto'), 'Feij')
+  await sleep(APOS_DEBOUNCE_SUGESTAO)
+  await dialog.findByText('Feijão Preto 1kg')
+
+  // Sem seta: Enter escolhe o primeiro (índice ativo começa em 0).
+  await user.keyboard('{ArrowDown}{Enter}')
+
+  expect(dialog.getByLabelText('Nome do produto')).toHaveValue('Feijão Carioca 1kg')
+  expect(dialog.getByLabelText(/Código de barras/i)).toHaveValue('7899999999992')
+})
+
 test('sugestão ao digitar o nome: "já no seu catálogo" é só aviso, não preenche nada ao aparecer', async () => {
   server.use(
     http.get('*/api/produtos/sugestoes', ({ request }) => {
