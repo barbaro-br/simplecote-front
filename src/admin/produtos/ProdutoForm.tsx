@@ -5,7 +5,7 @@ import { Camera, MagnifyingGlass } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
-import { produtoSchema, tiposDeEmbalagem, type ProdutoFormValues, type Produto } from './produtos.schema'
+import { produtoSchema, tiposDeEmbalagem, type ProdutoFormValues, type Produto, type ValoresIniciaisProduto } from './produtos.schema'
 import {
   useCriarProduto,
   useAtualizarProduto,
@@ -23,24 +23,37 @@ const LeitorCodigoBarras = lazy(() =>
 
 type LookupStatus = 'idle' | 'buscando' | 'sugerido' | 'sugerido-por-nome' | 'nao-encontrado'
 
-export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produtoCriado?: Produto) => void, produtoParaEditar?: Produto }) {
+// Espelha o limite de GET /api/produtos/sugestoes (findTop10... no back) — só
+// pra saber quando avisar "digite mais" (achado real: "coco" sozinho bate
+// nesse teto antes de mostrar "Coco Ralado").
+const LIMITE_SUGESTOES = 10
+
+type Props = {
+  aoSalvar: (produtoCriado?: Produto) => void
+  produtoParaEditar?: Produto
+  /** Vindo de uma sugestão do catálogo global (ex.: "Adicionar item" sem
+   * achar no próprio catálogo) — só se aplica ao cadastro de um produto novo. */
+  valoresIniciais?: ValoresIniciaisProduto
+}
+
+export function ProdutoForm({ aoSalvar, produtoParaEditar, valoresIniciais }: Props) {
   const isEdit = !!produtoParaEditar
   const criar = useCriarProduto()
   const atualizar = useAtualizarProduto()
   const lookup = useLookupProdutoPorGtin()
   const [genericError, setGenericError] = useState<string | null>(null)
-  const [lookupStatus, setLookupStatus] = useState<LookupStatus>('idle')
+  const [lookupStatus, setLookupStatus] = useState<LookupStatus>(valoresIniciais ? 'sugerido-por-nome' : 'idle')
   const [bipando, setBipando] = useState(false)
   const [confirmandoSemCodigo, setConfirmandoSemCodigo] = useState(false)
   const [valoresPendentes, setValoresPendentes] = useState<ProdutoFormValues | null>(null)
-  
+
   const form = useForm<ProdutoFormValues>({
     resolver: zodResolver(produtoSchema),
-    defaultValues: { 
-      nome: produtoParaEditar?.nome ?? '', 
-      codigoBarras: produtoParaEditar?.codigoBarras ?? '', 
-      unidade: produtoParaEditar?.unidade ?? 'Unidade', 
-      quantidadePorEmbalagem: produtoParaEditar?.quantidadePorEmbalagem ?? 1 
+    defaultValues: {
+      nome: produtoParaEditar?.nome ?? valoresIniciais?.nome ?? '',
+      codigoBarras: produtoParaEditar?.codigoBarras ?? valoresIniciais?.codigoBarras ?? '',
+      unidade: produtoParaEditar?.unidade ?? 'Unidade',
+      quantidadePorEmbalagem: produtoParaEditar?.quantidadePorEmbalagem ?? 1
     },
   })
 
@@ -245,48 +258,59 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
                 sozinho; sugestão do catálogo global preenche nome+código ao
                 clicar, igual a busca por código de barras já faz. */}
             {mostrarSugestoes && (
-              <div className="absolute z-10 mt-1 max-h-72 w-full overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md">
-                {sugestoes.data!.doProprioCatalogo.length > 0 && (
-                  <div className="border-b p-2">
-                    <p className="px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                      Já no seu catálogo
-                    </p>
-                    <ul>
-                      {sugestoes.data!.doProprioCatalogo.map((p) => (
-                        <li key={p.id} className="px-2 py-1 text-sm text-muted-foreground">
-                          {p.nome}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {listaGlobal.length > 0 && (
-                  <div className="p-2">
-                    <p className="px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                      Sugestão da base compartilhada
-                    </p>
-                    <ul id="sugestoes-catalogo-global" role="listbox">
-                      {listaGlobal.map((s, i) => (
-                        <li key={s.codigoBarras} role="option" aria-selected={i === indiceAtivoClamped}>
-                          <button
-                            ref={i === indiceAtivoClamped ? itemAtivoRef : undefined}
-                            type="button"
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => escolherSugestaoGlobal(s)}
-                            onMouseEnter={() => setIndiceAtivo(i)}
-                            className={`flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm ${
-                              i === indiceAtivoClamped ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground'
-                            }`}
-                          >
-                            <span>{s.nome}</span>
-                            <span className="text-[11px] text-muted-foreground">
-                              {s.codigoBarras}{s.marca ? ` · ${s.marca}` : ''}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+              <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
+                <div className="max-h-72 overflow-y-auto">
+                  {sugestoes.data!.doProprioCatalogo.length > 0 && (
+                    <div className="border-b p-2">
+                      <p className="px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Já no seu catálogo
+                      </p>
+                      <ul>
+                        {sugestoes.data!.doProprioCatalogo.map((p) => (
+                          <li key={p.id} className="px-2 py-1 text-sm text-muted-foreground">
+                            {p.nome}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {listaGlobal.length > 0 && (
+                    <div className="p-2">
+                      <p className="px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Sugestão da base compartilhada
+                      </p>
+                      <ul id="sugestoes-catalogo-global" role="listbox">
+                        {listaGlobal.map((s, i) => (
+                          <li key={s.codigoBarras} role="option" aria-selected={i === indiceAtivoClamped}>
+                            <button
+                              ref={i === indiceAtivoClamped ? itemAtivoRef : undefined}
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => escolherSugestaoGlobal(s)}
+                              onMouseEnter={() => setIndiceAtivo(i)}
+                              className={`flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm ${
+                                i === indiceAtivoClamped ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                              }`}
+                            >
+                              <span>{s.nome}</span>
+                              <span className="text-[11px] text-muted-foreground">
+                                {s.codigoBarras}{s.marca ? ` · ${s.marca}` : ''}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                {/* O back limita a 10 por grupo — bateu no teto, o resultado
+                    pode estar incompleto (termo comum tipo "coco" tem mais
+                    de 10 produtos). Avisa pra refinar em vez de parecer que
+                    "não achou o que eu queria". */}
+                {(sugestoes.data!.doProprioCatalogo.length >= LIMITE_SUGESTOES || listaGlobal.length >= LIMITE_SUGESTOES) && (
+                  <p className="border-t px-3 py-1.5 text-[11px] text-muted-foreground">
+                    Muitos resultados — digite mais letras pra afinar a busca.
+                  </p>
                 )}
               </div>
             )}

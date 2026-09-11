@@ -22,7 +22,7 @@ import { Skeleton } from '@/shared/components/ui/skeleton'
 import { Breadcrumb } from '@/shared/components/ui/breadcrumb'
 import { ItensSection } from './ItensSection'
 import { GradeAoVivoTabela } from './GradeAoVivoTabela'
-import { AdicionarItemModal } from './AdicionarItemModal'
+import { AdicionarItemModal, type PrefillCadastro } from './AdicionarItemModal'
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { AbrirCotacaoDialog } from './AbrirCotacaoDialog'
 import { EstenderPrazoDialog } from './EstenderPrazoDialog'
@@ -70,6 +70,7 @@ export function CotacaoDetalhePage() {
   const [adicionarItemAberto, setAdicionarItemAberto] = useState(false)
   const [cadastroProdutoAberto, setCadastroProdutoAberto] = useState(false)
   const [produtoParaEditar, setProdutoParaEditar] = useState<Produto | undefined>(undefined)
+  const [prefillCadastro, setPrefillCadastro] = useState<PrefillCadastro | undefined>(undefined)
   const [finalizandoMassa, setFinalizandoMassa] = useState(false)
 
   const previaApuracao = usePreviaApuracao(id, { enabled: dialog === 'apurar' })
@@ -91,7 +92,8 @@ export function CotacaoDetalhePage() {
 
   // O modal de cadastro/edição de produto abre EMPILHADO sobre o de itens (sem
   // fechar `adicionarItemAberto`) — fechar e reabrir zeraria a seleção.
-  function aoCadastrarProduto() {
+  function aoCadastrarProduto(prefill?: PrefillCadastro) {
+    setPrefillCadastro(prefill)
     setCadastroProdutoAberto(true)
   }
   function aoEditarProduto(produto: Produto) {
@@ -101,6 +103,7 @@ export function CotacaoDetalhePage() {
   function aoSalvarProduto() {
     setCadastroProdutoAberto(false)
     setProdutoParaEditar(undefined)
+    setPrefillCadastro(undefined)
   }
 
   if (isLoading) return <p className="p-6 text-muted-foreground">Carregando cotação…</p>
@@ -579,7 +582,7 @@ export function CotacaoDetalhePage() {
             size="lg"
             ariaLabel="Cadastrar novo produto"
           >
-            <ProdutoForm aoSalvar={aoSalvarProduto} produtoParaEditar={produtoParaEditar} />
+            <ProdutoForm aoSalvar={aoSalvarProduto} produtoParaEditar={produtoParaEditar} valoresIniciais={prefillCadastro} />
           </Dialog>
         </>
       )}

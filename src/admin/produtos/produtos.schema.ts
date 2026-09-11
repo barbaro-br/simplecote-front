@@ -25,3 +25,10 @@ export type Produto = {
   quantidadePorEmbalagem: number
   ativo: boolean
 }
+
+/** Pré-preenchimento do cadastro (nome + código) a partir de uma sugestão do
+ * catálogo global — embalagem/quantidade continuam sempre do admin. */
+export type ValoresIniciaisProduto = {
+  nome: string
+  codigoBarras: string
+}
