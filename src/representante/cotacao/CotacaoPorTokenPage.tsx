@@ -137,6 +137,23 @@ export function CotacaoPorTokenPage() {
   )
   const primeiroSemPreco = itensOrdenados.find((i) => i.preco == null)?.itemCotacaoId ?? null
 
+  function temPrecoAgora(id: string, precoDoServidor: number | null): boolean {
+    return temPrecoLocal ? Boolean(temPrecoLocal[id]) : precoDoServidor != null
+  }
+
+  // "Pulado": item sem preço com outro DEPOIS dele (na ordem exibida) já
+  // preenchido — o representante claramente já passou por ele. Só um aviso
+  // visual (não grava nada); ninguém precisa marcar "não cotado" à mão. Ao
+  // finalizar, o back converte o que sobrar em NAO_COTADO de verdade.
+  const pulados = new Set<string>()
+  let algumDepoisTemPreco = false
+  for (let i = itensOrdenados.length - 1; i >= 0; i--) {
+    const item = itensOrdenados[i]
+    const temPreco = temPrecoAgora(item.itemCotacaoId, item.preco)
+    if (!temPreco && algumDepoisTemPreco) pulados.add(item.itemCotacaoId)
+    algumDepoisTemPreco = algumDepoisTemPreco || temPreco
+  }
+
   async function confirmarEnvio() {
     setConfirmando(false)
     setErroFinal(null)
@@ -214,30 +231,24 @@ export function CotacaoPorTokenPage() {
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left" style={{ minWidth: 320 }}>
-              <thead>
-                <tr className="text-[10px] uppercase tracking-wide text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
-                  <th className="px-4 py-2 font-medium sm:px-5">Item</th>
-                  <th className="px-2 py-2 pr-4 text-right font-medium sm:pr-5">Seu preço</th>
-                </tr>
-              </thead>
-              <tbody>
-                {itensOrdenados.map((item) => (
-                  <LinhaPreco
-                    key={item.itemCotacaoId}
-                    item={item}
-                    podeEditar={d.podeEditar}
-                    autoFocus={item.itemCotacaoId === primeiroSemPreco}
-                    status={fila.statusPorItem[item.itemCotacaoId]}
-                    erro={fila.errosPorItem[item.itemCotacaoId]}
-                    novo={itemEhNovo(item, idsConhecidos ?? new Set())}
-                    aoAssentar={(patch) => fila.gravarEEnviar(item.itemCotacaoId, patch)}
-                    onPrecoChange={onPrecoChange}
-                  />
-                ))}
-              </tbody>
-            </table>
+          {/* Cartão por item, não tabela: o nome usa a largura toda (só quebra
+              se for realmente comprido) e o preço tem linha própria embaixo —
+              nada disputando coluna com nome nenhum. */}
+          <div className="flex flex-col gap-2 p-4 sm:p-5">
+            {itensOrdenados.map((item) => (
+              <LinhaPreco
+                key={item.itemCotacaoId}
+                item={item}
+                podeEditar={d.podeEditar}
+                autoFocus={item.itemCotacaoId === primeiroSemPreco}
+                status={fila.statusPorItem[item.itemCotacaoId]}
+                erro={fila.errosPorItem[item.itemCotacaoId]}
+                novo={itemEhNovo(item, idsConhecidos ?? new Set())}
+                pulado={pulados.has(item.itemCotacaoId)}
+                aoAssentar={(patch) => fila.gravarEEnviar(item.itemCotacaoId, patch)}
+                onPrecoChange={onPrecoChange}
+              />
+            ))}
           </div>
         </Superficie>
       </div>

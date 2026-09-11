@@ -24,17 +24,14 @@ function item(over: Partial<ItemLance> = {}): ItemLance {
 
 function renderLinha(props: Partial<React.ComponentProps<typeof LinhaPreco>> = {}) {
   const aoAssentar = vi.fn()
-  const utils = render(
-    <table>
-      <tbody>
-        <LinhaPreco item={item()} podeEditar aoAssentar={aoAssentar} {...props} />
-      </tbody>
-    </table>,
-  )
+  const utils = render(<LinhaPreco item={item()} podeEditar aoAssentar={aoAssentar} {...props} />)
   return { aoAssentar, ...utils }
 }
 
 const campo = () => screen.getByLabelText(/preço da embalagem/i)
+// O estado (vazio/pulado/salvando/salvo/offline/erro) não tem mais um ícone
+// fixo pra mirar — vive só na cor da borda do campo, via `data-estado`.
+const campoChip = () => campo().closest('[data-estado]') as HTMLElement
 
 test('mostra nome, embalagem e código de barras', () => {
   renderLinha()
@@ -74,23 +71,36 @@ test('somente leitura: input desabilitado, sem botão limpar', () => {
   expect(screen.queryByRole('button', { name: /limpar preço/i })).not.toBeInTheDocument()
 })
 
-test('selo "Novo" e status de sincronização (ícone, não texto)', () => {
+test('selo "Novo" e status de sincronização (cor da borda, não ícone fixo)', () => {
   renderLinha({ novo: true, status: 'sincronizado' })
   expect(screen.getByText('Novo')).toBeInTheDocument()
-  expect(screen.getByLabelText('salvo')).toBeInTheDocument()
+  expect(campoChip()).toHaveAttribute('data-estado', 'salvo')
 })
 
 test('status "enviando" mostra spinner; "falhou" mostra ícone de sem conexão', () => {
   const { unmount } = renderLinha({ item: item({ preco: 40 }), status: 'enviando' })
   expect(screen.getByLabelText('salvando')).toBeInTheDocument()
+  expect(campoChip()).toHaveAttribute('data-estado', 'salvando')
   unmount()
   renderLinha({ item: item({ preco: 40 }), status: 'falhou' })
   expect(screen.getByLabelText(/sem conexão/i)).toBeInTheDocument()
+  expect(campoChip()).toHaveAttribute('data-estado', 'offline')
 })
 
-test('sem preço mostra o indicador "sem preço" (X apagado)', () => {
+test('sem preço fica no estado "vazio" — nada no slot, sem botão de limpar', () => {
   renderLinha()
-  expect(screen.getByLabelText('sem preço')).toBeInTheDocument()
+  expect(campoChip()).toHaveAttribute('data-estado', 'vazio')
+  expect(screen.queryByRole('button', { name: /limpar/i })).not.toBeInTheDocument()
+})
+
+test('"pulado": sem preço mas outro item depois dele já foi respondido', () => {
+  renderLinha({ pulado: true })
+  expect(campoChip()).toHaveAttribute('data-estado', 'pulado')
+})
+
+test('"pulado" não se aplica a item que já tem preço', () => {
+  renderLinha({ pulado: true, item: item({ preco: 12 }) })
+  expect(campoChip()).toHaveAttribute('data-estado', 'salvo')
 })
 
 test('preço unitário aparece como dica quando a embalagem tem >1 unidade', () => {

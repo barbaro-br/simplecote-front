@@ -147,7 +147,8 @@ test('autosave: digitar preço → 1 PUT só com aquele item → célula sincron
 
   await waitFor(() => expect(puts).toHaveLength(1))
   expect(puts[0]).toEqual({ lances: [{ itemCotacaoId: 'i-1', preco: 12.5 }] })
-  expect(await screen.findByLabelText('salvo')).toBeInTheDocument()
+  // Sem mais ícone fixo de "salvo" — o estado vive na cor da borda, via `data-estado`.
+  await waitFor(() => expect(campoPreco().closest('[data-estado]')).toHaveAttribute('data-estado', 'salvo'))
 })
 
 test('falha de rede: entrada persiste no localStorage e célula mostra "sem conexão"', async () => {
@@ -207,7 +208,7 @@ test('concorrência: duas edições rápidas no mesmo campo — estado final = �
   await user.type(campo, '2') // "12"
   await sleep(APOS_DEBOUNCE)
 
-  expect(await screen.findByLabelText('salvo')).toBeInTheDocument()
+  await waitFor(() => expect(campoPreco().closest('[data-estado]')).toHaveAttribute('data-estado', 'salvo'))
   expect(precos.at(-1)).toBe(12)
   expect(window.localStorage.getItem(CHAVE_FILA)).toBeNull()
 })
