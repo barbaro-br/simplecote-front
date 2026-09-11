@@ -15,3 +15,10 @@
 - [x] 3.1 Escolher sugestão do catálogo global preenche nome e código de barras, mostra o aviso
 - [x] 3.2 "Já no seu catálogo" aparece só como aviso — não preenche nada sozinho
 - [x] 3.3 `npx tsc --noEmit`, `oxlint`, `vitest run` verdes
+
+## 4. Navegação por teclado e scroll (feedback do uso real)
+
+- [x] 4.1 Seta pra cima/baixo navega entre as sugestões clicáveis (catálogo global); "já no seu catálogo" fica fora do ciclo (é só aviso)
+- [x] 4.2 Enter escolhe a sugestão ativa; Escape fecha o painel
+- [x] 4.3 Painel ganha altura máxima com scroll (`max-h-72 overflow-y-auto`) — antes não tinha como rolar quando vinham vários resultados
+- [x] 4.4 Teste: seta pra baixo + Enter escolhe a segunda sugestão sem usar o mouse

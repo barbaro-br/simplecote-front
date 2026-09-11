@@ -2,7 +2,7 @@
 
 ### Requirement: Sugestão ao digitar o nome no cadastro
 
-Ao cadastrar um produto novo (não na edição), o sistema SHALL sugerir produtos conforme o usuário digita no campo "Nome do produto" (a partir de 2 caracteres, com debounce), consultando `GET /api/produtos/sugestoes?q=`. A sugestão SHALL trazer dois grupos: produtos já cadastrados pelo próprio Comprador que combinam com o texto ("Já no seu catálogo") e sugestões do catálogo global que o Comprador ainda não tem ("Sugestão da base compartilhada"). O grupo "Já no seu catálogo" SHALL ser somente informativo — nenhuma interação nele preenche o formulário. Escolher uma sugestão do grupo "Sugestão da base compartilhada" SHALL preencher nome e código de barras, nunca tipo de embalagem nem quantidade por embalagem.
+Ao cadastrar um produto novo (não na edição), o sistema SHALL sugerir produtos conforme o usuário digita no campo "Nome do produto" (a partir de 2 caracteres, com debounce), consultando `GET /api/produtos/sugestoes?q=`. A sugestão SHALL trazer dois grupos: produtos já cadastrados pelo próprio Comprador que combinam com o texto ("Já no seu catálogo") e sugestões do catálogo global que o Comprador ainda não tem ("Sugestão da base compartilhada"). O grupo "Já no seu catálogo" SHALL ser somente informativo — nenhuma interação nele preenche o formulário. Escolher uma sugestão do grupo "Sugestão da base compartilhada" SHALL preencher nome e código de barras, nunca tipo de embalagem nem quantidade por embalagem. O painel de sugestão SHALL ser navegável só pelo teclado: seta para baixo/cima move o item ativo entre as sugestões da base compartilhada (o grupo "já no seu catálogo" não participa do ciclo), Enter escolhe o item ativo, e Escape fecha o painel sem alterar o formulário. Quando o número de sugestões exceder o espaço visível, o painel SHALL ter sua própria rolagem, sem redimensionar o restante do formulário.
 
 #### Scenario: Escolher sugestão do catálogo global preenche nome e código
 
@@ -18,3 +18,8 @@ Ao cadastrar um produto novo (não na edição), o sistema SHALL sugerir produto
 
 - **WHEN** o usuário abre o formulário para editar um produto já cadastrado e altera o nome
 - **THEN** nenhum painel de sugestão aparece
+
+#### Scenario: Navegar e escolher só pelo teclado
+
+- **WHEN** o painel de sugestão está aberto com mais de uma sugestão da base compartilhada e o usuário pressiona seta para baixo e depois Enter
+- **THEN** o item seguinte ao primeiro é escolhido, preenchendo nome e código de barras, sem precisar do mouse
