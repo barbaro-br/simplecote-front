@@ -70,3 +70,30 @@ export function useLookupProdutoPorGtin() {
       }),
   })
 }
+
+/** Shape de `SugestaoCatalogoGlobalDTO` — nunca traz embalagem/quantidade (spec.md §10.6). */
+export type SugestaoCatalogoGlobal = {
+  codigoBarras: string
+  nome: string
+  marca: string | null
+}
+
+/** Shape de `SugestoesCadastroDTO` (change catalogo-global-de-produtos). */
+export type SugestoesCadastro = {
+  doProprioCatalogo: Produto[]
+  doCatalogoGlobal: SugestaoCatalogoGlobal[]
+}
+
+// Sugestão ao digitar no cadastro (produto/sugestao-de-cadastro): nome ou
+// trecho de código de barras. `enabled` corta a chamada com texto curto demais
+// (evita busca a cada tecla) — o back também recusa dígitos com <4 caracteres,
+// mas aqui evita a viagem de rede pra qualquer texto de 0-1 caractere.
+export function useSugestoesCadastro(q: string) {
+  const termo = q.trim()
+  return useQuery({
+    queryKey: [...chave, 'sugestoes', termo] as const,
+    queryFn: () => api.get<SugestoesCadastro>(`/api/produtos/sugestoes?q=${encodeURIComponent(termo)}`),
+    enabled: termo.length >= 2,
+    staleTime: 30_000,
+  })
+}
