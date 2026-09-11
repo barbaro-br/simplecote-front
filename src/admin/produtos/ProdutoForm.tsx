@@ -6,7 +6,14 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { produtoSchema, tiposDeEmbalagem, type ProdutoFormValues, type Produto } from './produtos.schema'
-import { useCriarProduto, useAtualizarProduto, useLookupProdutoPorGtin } from './produtos.api'
+import {
+  useCriarProduto,
+  useAtualizarProduto,
+  useLookupProdutoPorGtin,
+  useSugestoesCadastro,
+  type SugestaoCatalogoGlobal,
+} from './produtos.api'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 import { SessaoExpiradaError } from '@/shared/api/api-client'
 
 // Lazy: @zxing/browser só é baixado quando o admin realmente bipa um produto.
@@ -14,7 +21,7 @@ const LeitorCodigoBarras = lazy(() =>
   import('@/shared/components/LeitorCodigoBarras').then((m) => ({ default: m.LeitorCodigoBarras })),
 )
 
-type LookupStatus = 'idle' | 'buscando' | 'sugerido' | 'nao-encontrado'
+type LookupStatus = 'idle' | 'buscando' | 'sugerido' | 'sugerido-por-nome' | 'nao-encontrado'
 
 export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produtoCriado?: Produto) => void, produtoParaEditar?: Produto }) {
   const isEdit = !!produtoParaEditar
@@ -40,6 +47,23 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
   const isPending = criar.isPending || atualizar.isPending
 
   const codigoBarras = useWatch({ control: form.control, name: 'codigoBarras' })
+
+  // Sugestão ao digitar (produto/sugestao-de-cadastro): só no cadastro de um
+  // produto novo — editar um já existente não precisa de sugestão de nome.
+  const [nomeFocado, setNomeFocado] = useState(false)
+  const nome = useWatch({ control: form.control, name: 'nome' })
+  const nomeDebounced = useDebounce(nome, 300)
+  const sugestoes = useSugestoesCadastro(!isEdit && nomeFocado ? nomeDebounced : '')
+  const temSugestao =
+    (sugestoes.data?.doProprioCatalogo.length ?? 0) > 0 || (sugestoes.data?.doCatalogoGlobal.length ?? 0) > 0
+  const mostrarSugestoes = nomeFocado && !isEdit && temSugestao
+
+  function escolherSugestaoGlobal(s: SugestaoCatalogoGlobal) {
+    form.setValue('nome', s.nome, { shouldDirty: true, shouldValidate: true })
+    form.setValue('codigoBarras', s.codigoBarras, { shouldDirty: true, shouldValidate: true })
+    setLookupStatus('sugerido-por-nome')
+    setNomeFocado(false)
+  }
 
   async function handleLookup() {
     const gtin = form.getValues('codigoBarras')?.trim()
@@ -159,18 +183,73 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar }: { aoSalvar: (produt
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="relative space-y-2">
             <label htmlFor="nome" className="text-sm font-medium ui-uppercase">
               Nome do produto
             </label>
-            <Input 
-              id="nome" 
-              {...form.register('nome')} 
-              placeholder="Ex: Arroz Branco 5kg" 
+            <Input
+              id="nome"
+              autoComplete="off"
+              {...form.register('nome', {
+                onChange: () => lookupStatus === 'sugerido-por-nome' && setLookupStatus('idle'),
+              })}
+              onFocus={() => setNomeFocado(true)}
+              onBlur={() => setTimeout(() => setNomeFocado(false), 150)}
+              placeholder="Ex: Arroz Branco 5kg"
               className={form.formState.errors.nome ? "border-destructive focus-visible:ring-destructive" : ""}
             />
             {form.formState.errors.nome && (
               <p className="text-[13px] text-destructive font-medium">{form.formState.errors.nome.message}</p>
+            )}
+            {lookupStatus === 'sugerido-por-nome' && (
+              <p className="text-[13px] text-success font-medium">Nome e código de barras preenchidos da base compartilhada.</p>
+            )}
+
+            {/* Sugestão ao digitar (produto/sugestao-de-cadastro): "já no seu
+                catálogo" é só aviso (evita recadastrar) — nunca preenche nada
+                sozinho; sugestão do catálogo global preenche nome+código ao
+                clicar, igual a busca por código de barras já faz. */}
+            {mostrarSugestoes && (
+              <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
+                {sugestoes.data!.doProprioCatalogo.length > 0 && (
+                  <div className="border-b p-2">
+                    <p className="px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Já no seu catálogo
+                    </p>
+                    <ul>
+                      {sugestoes.data!.doProprioCatalogo.map((p) => (
+                        <li key={p.id} className="px-2 py-1 text-sm text-muted-foreground">
+                          {p.nome}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {sugestoes.data!.doCatalogoGlobal.length > 0 && (
+                  <div className="p-2">
+                    <p className="px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Sugestão da base compartilhada
+                    </p>
+                    <ul>
+                      {sugestoes.data!.doCatalogoGlobal.map((s) => (
+                        <li key={s.codigoBarras}>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => escolherSugestaoGlobal(s)}
+                            className="flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                          >
+                            <span>{s.nome}</span>
+                            <span className="text-[11px] text-muted-foreground">
+                              {s.codigoBarras}{s.marca ? ` · ${s.marca}` : ''}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 

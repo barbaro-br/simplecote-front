@@ -6,6 +6,8 @@ import { vi } from 'vitest'
 import { server } from '@/setupTests'
 import { ProdutosPage } from './ProdutosPage'
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
 vi.mock('@/shared/components/LeitorCodigoBarras', () => ({
   LeitorCodigoBarras: ({ onRead, onClose }: any) => (
     <div>
@@ -53,9 +55,14 @@ beforeEach(() => {
     }),
     http.post('*/api/produtos/:id/inativar', () => {
       return new HttpResponse(null, { status: 204 })
-    })
+    }),
+    http.get('*/api/produtos/sugestoes', () =>
+      HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: [] }),
+    ),
   )
 })
+
+const APOS_DEBOUNCE_SUGESTAO = 400
 
 function renderComQuery(ui: React.ReactNode) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -220,6 +227,65 @@ test('lookup por código de barras: acha → preenche o nome e avisa que foi sug
     expect(dialog.getByLabelText('Nome do produto')).toHaveValue('Arroz Tio João 5kg')
   })
   expect(dialog.getByText(/sugerido pelo código de barras/i)).toBeInTheDocument()
+})
+
+test('sugestão ao digitar o nome: escolher sugestão do catálogo global preenche nome e código', async () => {
+  server.use(
+    http.get('*/api/produtos/sugestoes', ({ request }) => {
+      const q = new URL(request.url).searchParams.get('q')
+      if (q === 'Feij') {
+        return HttpResponse.json({
+          doProprioCatalogo: [],
+          doCatalogoGlobal: [{ codigoBarras: '7899999999999', nome: 'Feijão Preto 1kg', marca: 'Marca Z' }],
+        })
+      }
+      return HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: [] })
+    }),
+  )
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Nome do produto'), 'Feij')
+  await sleep(APOS_DEBOUNCE_SUGESTAO)
+
+  const sugestao = await dialog.findByText('Feijão Preto 1kg')
+  await user.click(sugestao)
+
+  expect(dialog.getByLabelText('Nome do produto')).toHaveValue('Feijão Preto 1kg')
+  expect(dialog.getByLabelText(/Código de barras/i)).toHaveValue('7899999999999')
+  expect(dialog.getByText(/preenchidos da base compartilhada/i)).toBeInTheDocument()
+})
+
+test('sugestão ao digitar o nome: "já no seu catálogo" é só aviso, não preenche nada ao aparecer', async () => {
+  server.use(
+    http.get('*/api/produtos/sugestoes', ({ request }) => {
+      const q = new URL(request.url).searchParams.get('q')
+      if (q === 'Arroz Novo') {
+        return HttpResponse.json({
+          doProprioCatalogo: [{ id: '1', nome: 'Arroz 5kg', codigoBarras: '1234567890123', unidade: 'Fardo', quantidadePorEmbalagem: 30, ativo: true }],
+          doCatalogoGlobal: [],
+        })
+      }
+      return HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: [] })
+    }),
+  )
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Nome do produto'), 'Arroz Novo')
+  await sleep(APOS_DEBOUNCE_SUGESTAO)
+
+  await dialog.findByText('Já no seu catálogo')
+  expect(dialog.getByLabelText(/Código de barras/i)).toHaveValue('')
+  expect(dialog.getByLabelText('Nome do produto')).toHaveValue('Arroz Novo')
 })
 
 test('Enter no campo de código de barras aciona a busca, sem submeter o formulário', async () => {
