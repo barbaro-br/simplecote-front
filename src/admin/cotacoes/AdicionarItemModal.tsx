@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { Button } from '@/shared/components/ui/button'
@@ -80,6 +80,45 @@ export function AdicionarItemModal({
     aoCadastrarProduto({ nome: s.nome, codigoBarras: s.codigoBarras })
   }
 
+  // Navegação por teclado (seta cima/baixo + Enter) na lista visível — o
+  // próprio catálogo quando tem resultado, senão a base compartilhada (mesmo
+  // padrão de ProdutoForm.tsx: índice derivado/grampeado, não resetado por
+  // effect, pra não cair no lint react(set-state-in-effect)).
+  const usandoSugestoesGlobais = filtrados.length === 0 && listaGlobal.length > 0
+  const totalNavegavel = usandoSugestoesGlobais ? listaGlobal.length : filtrados.length
+  const [indiceAtivo, setIndiceAtivo] = useState(0)
+  const indiceAtivoClamped = totalNavegavel === 0 ? 0 : Math.min(indiceAtivo, totalNavegavel - 1)
+  const itemAtivoRef = useRef<HTMLLIElement>(null)
+  useEffect(() => {
+    itemAtivoRef.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [indiceAtivoClamped, usandoSugestoesGlobais])
+
+  function selecionarNoIndice(i: number) {
+    if (usandoSugestoesGlobais) {
+      const s = listaGlobal[i]
+      if (s) cadastrarDaSugestao(s)
+    } else {
+      const p = filtrados[i]
+      if (!p || emVoo.has(p.id)) return
+      if (itemPorProduto.has(p.id)) removerProduto(p.id)
+      else adicionarProduto(p.id)
+    }
+  }
+
+  function aoTeclarNaBusca(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (totalNavegavel === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setIndiceAtivo(Math.min(indiceAtivoClamped + 1, totalNavegavel - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setIndiceAtivo(Math.max(indiceAtivoClamped - 1, 0))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      selecionarNoIndice(indiceAtivoClamped)
+    }
+  }
+
   // Trava só a linha cuja chamada está em voo — as outras seguem clicáveis.
   const [emVoo, setEmVoo] = useState<Set<string>>(new Set())
   const marcarEmVoo = (id: string, ligado: boolean) =>
@@ -158,7 +197,11 @@ export function AdicionarItemModal({
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setIndiceAtivo(0)
+              }}
+              onKeyDown={aoTeclarNaBusca}
               placeholder="Buscar por nome ou código de barras…"
               className="w-full pl-9 pr-3 py-1.5 text-[13px] border border-border rounded-md outline-none text-foreground focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
             />
@@ -171,13 +214,16 @@ export function AdicionarItemModal({
             {filtrados.map((p, idx) => {
               const naCotacao = itemPorProduto.has(p.id)
               const ocupado = emVoo.has(p.id)
+              const ativo = !usandoSugestoesGlobais && idx === indiceAtivoClamped
 
               return (
                 <li
                   key={p.id}
+                  ref={ativo ? itemAtivoRef : undefined}
                   onClick={() => !ocupado && (naCotacao ? removerProduto(p.id) : adicionarProduto(p.id))}
+                  onMouseEnter={() => setIndiceAtivo(idx)}
                   className={`flex items-center gap-3 px-5 py-2.5 border-b border-muted transition-colors cursor-pointer ${
-                    naCotacao ? 'bg-primary/5' : idx % 2 === 0 ? 'bg-background' : 'bg-muted/50'
+                    ativo ? 'bg-accent' : naCotacao ? 'bg-primary/5' : idx % 2 === 0 ? 'bg-background' : 'bg-muted/50'
                   }`}
                 >
                   {/* Ícone do produto */}
@@ -266,45 +312,79 @@ export function AdicionarItemModal({
             })}
 
             {filtrados.length === 0 && search && (
-              <div className="py-10 flex flex-col items-center justify-center gap-3 px-6">
-                <div className="text-[13px] text-muted-foreground">Nenhum produto encontrado no seu catálogo.</div>
+              <>
+                <li className="px-6 pt-6 pb-1 text-center text-[13px] text-muted-foreground">
+                  Nenhum produto encontrado no seu catálogo.
+                </li>
 
                 {listaGlobal.length > 0 && (
-                  <div className="w-full max-w-sm rounded-lg border border-border bg-muted/30 p-2">
-                    <p className="flex items-center gap-1 px-1 pb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <>
+                    <li className="flex items-center gap-1 px-5 pt-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                       <Sparkle className="size-3" weight="fill" /> Achado na base compartilhada
-                    </p>
-                    <ul>
-                      {listaGlobal.map((s) => (
-                        <li key={s.codigoBarras}>
-                          <button
+                    </li>
+                    {/* Mesmo layout de linha do próprio catálogo (ícone, nome,
+                        subtítulo, botão à direita) — só o ícone e a ação mudam,
+                        pra não parecer uma lista "diferente" dentro do modal. */}
+                    {listaGlobal.map((s, idx) => {
+                      const ativo = usandoSugestoesGlobais && idx === indiceAtivoClamped
+                      return (
+                        <li
+                          key={s.codigoBarras}
+                          ref={ativo ? itemAtivoRef : undefined}
+                          onClick={() => cadastrarDaSugestao(s)}
+                          onMouseEnter={() => setIndiceAtivo(idx)}
+                          className={`flex items-center gap-3 px-5 py-2.5 border-b border-muted transition-colors cursor-pointer ${
+                            ativo ? 'bg-accent' : idx % 2 === 0 ? 'bg-background' : 'bg-muted/50'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center bg-muted text-muted-foreground">
+                            <Sparkle className="size-4" weight="fill" />
+                          </div>
+
+                          <div className="flex flex-col flex-1 min-w-0 mr-2">
+                            <div className="text-[13px] font-medium text-foreground truncate ui-uppercase">
+                              {s.nome}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                              {s.codigoBarras}
+                              {s.marca ? ` · ${s.marca}` : ''}
+                            </div>
+                          </div>
+
+                          <Button
                             type="button"
-                            onClick={() => cadastrarDaSugestao(s)}
-                            className="flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                            variant="outline"
+                            size="sm"
+                            aria-label={`Cadastrar e adicionar ${s.nome}`}
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              cadastrarDaSugestao(s)
+                            }}
+                            className="h-7 shrink-0 text-xs px-2.5 gap-1"
                           >
-                            <span className="font-medium">{s.nome}</span>
-                            <span className="text-[11px] text-muted-foreground">
-                              {s.codigoBarras}{s.marca ? ` · ${s.marca}` : ''} — clique pra cadastrar e adicionar
-                            </span>
-                          </button>
+                            <Plus className="size-3.5" />
+                            Adicionar
+                          </Button>
                         </li>
-                      ))}
-                    </ul>
-                  </div>
+                      )
+                    })}
+                  </>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => aoCadastrarProduto()}
-                  className="text-[13px] text-primary hover:underline font-medium"
-                >
-                  Cadastrar novo produto
-                </button>
-              </div>
+                <li className="py-4 text-center">
+                  <button
+                    type="button"
+                    onClick={() => aoCadastrarProduto()}
+                    className="text-[13px] text-primary hover:underline font-medium"
+                  >
+                    Cadastrar novo produto
+                  </button>
+                </li>
+              </>
             )}
 
             {filtrados.length > 0 && !search && (
-              <div className="py-4 text-center">
+              <li className="py-4 text-center">
                 <button
                   type="button"
                   onClick={() => aoCadastrarProduto()}
@@ -312,7 +392,7 @@ export function AdicionarItemModal({
                 >
                   Não achou? Cadastrar novo produto
                 </button>
-              </div>
+              </li>
             )}
           </ul>
         </div>
