@@ -151,7 +151,7 @@ const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, empateNoM
         } ${destacado ? 'grade-cel-flash' : ''}`}
       >
         {celula.status === 'COTADO' && celula.preco != null ? (
-          <span className="tabular-nums flex flex-col items-end leading-tight">
+          <span className="tabular-nums flex w-full flex-col items-end leading-tight">
             {empatado && (
               <span className="text-[9px] font-semibold uppercase tracking-wider text-[var(--warning)]">
                 empate
@@ -164,8 +164,13 @@ const CelulaPreco = memo(function CelulaPreco({ item, celula, ehMenor, empateNoM
             >
               {moeda(celula.preco)}
             </span>
+            {/* Coluna estreita (tabela com muitas colunas de fornecedor) —
+                achado real: o cifrão do preço unitário vazava pra fora do
+                card. Fonte menor + `truncate` (precisa do `w-full` acima
+                pra ter largura contra a qual truncar) como rede de
+                segurança em vez de vazar. */}
             {celula.precoUnitario != null && (
-              <span className="text-xs text-muted-foreground whitespace-nowrap">{moeda(celula.precoUnitario)} / un</span>
+              <span className="w-full truncate text-[11px] text-muted-foreground">{moeda(celula.precoUnitario)} / un</span>
             )}
           </span>
         ) : (

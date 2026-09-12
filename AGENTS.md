@@ -3,6 +3,8 @@
 Lido por qualquer agente de código que trabalhe neste repositório (Antigravity, Claude Code, opencode…).
 Regras curtas e duras. Se uma bater de frente com o que você "acha melhor": as regras ganham.
 
+**Idioma da conversa:** responda sempre em pt-BR (texto de chat, updates, resumos, perguntas) — nunca em inglês, mesmo que a saída de uma tool venha em inglês.
+
 ## O que é este projeto
 
 SimpleCote é uma plataforma de **cotação competitiva (leilão reverso)**: um Comprador (supermercado)

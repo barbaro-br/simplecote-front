@@ -40,6 +40,19 @@ test('mostra nome, embalagem e código de barras', () => {
   expect(screen.getByText('7896006711234')).toBeInTheDocument()
 })
 
+// Regressão: achado real — o representante não sabia se era preço da unidade
+// ou da embalagem inteira (a instrução completa existia, mas só pra leitor de
+// tela, `sr-only`). Agora é visível em cima do campo.
+test('instrução visível do que digitar: embalagem com mais de 1 unidade', () => {
+  renderLinha({ item: item({ unidade: 'Caixa', quantidadePorEmbalagemSnapshot: 12 }) })
+  expect(screen.getByText('Preço da caixa com 12')).toBeInTheDocument()
+})
+
+test('instrução visível do que digitar: unidade única', () => {
+  renderLinha({ item: item({ unidade: 'Unidade', quantidadePorEmbalagemSnapshot: 1 }) })
+  expect(screen.getByText('Preço de 1 unidade')).toBeInTheDocument()
+})
+
 test('digitar preço (com vírgula) assenta depois do debounce', async () => {
   const { aoAssentar } = renderLinha()
   const user = userEvent.setup()

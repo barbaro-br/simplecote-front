@@ -140,6 +140,15 @@ export function LinhaPreco({
       ? `${unitAbbr} · comprar ${item.quantidadeSolicitada}`
       : `${unitAbbr} c/ ${item.quantidadePorEmbalagemSnapshot} · comprar ${item.quantidadeSolicitada}`
 
+  // Instrução explícita do que digitar, visível em cima do campo — achado
+  // real: o representante não sabia se era preço da unidade ou da caixa
+  // inteira. A versão completa já existia (label sr-only abaixo, só pra
+  // leitor de tela); essa é a mesma frase, só que visível.
+  const instrucaoPreco =
+    item.unidade === 'Unidade'
+      ? 'Preço de 1 unidade'
+      : `Preço d${item.unidade === 'Caixa' ? 'a caixa' : item.unidade === 'Fardo' ? 'o fardo' : 'a cartela'} com ${item.quantidadePorEmbalagemSnapshot}`
+
   // Um campo só. O preço por unidade vira uma dica discreta abaixo do campo,
   // e só quando a embalagem tem >1 unidade (senão é o mesmo número — ruído).
   const mostrarUnitario = item.quantidadePorEmbalagemSnapshot > 1
@@ -231,6 +240,9 @@ export function LinhaPreco({
         </span>
 
         <div className="flex shrink-0 flex-col items-end gap-0.5">
+          <span className="text-[10px] font-medium text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
+            {instrucaoPreco}
+          </span>
           {/* `data-estado`: gancho de teste (o estado não tem mais ícone fixo
               pra mirar — vive só na cor da borda). */}
           <span
