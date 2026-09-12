@@ -126,6 +126,32 @@ test('exibe o link do colaborador e o botão de copiar escreve na área de trans
   expect(writeText).toHaveBeenCalledWith(linkEsperado)
 })
 
+test('aba Cond. Pagamento mostra o catálogo e não dispara o "Salvar configurações" da aba Geral', async () => {
+  server.use(
+    http.get('*/api/condicoes-pagamento', () =>
+      HttpResponse.json([{ id: '123e4567-e89b-12d3-a456-426614174000', descricao: '14/21/28', ativo: true }]),
+    ),
+  )
+  const putConfiguracoes = vi.fn()
+  server.use(
+    http.put('*/api/configuracoes', async ({ request }) => {
+      putConfiguracoes(await request.json())
+      return HttpResponse.json(mockConfig)
+    }),
+  )
+
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.click(await screen.findByRole('tab', { name: /Cond. Pagamento/i }))
+
+  expect(await screen.findByText('14/21/28')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Nova Condição/i }))
+  expect(await screen.findByRole('dialog')).toBeInTheDocument()
+
+  expect(putConfiguracoes).not.toHaveBeenCalled()
+})
+
 test('tema renderiza os dois radios, reflete o valor atual e persiste ao salvar', async () => {
   const user = userEvent.setup()
   const { unmount } = renderPage()

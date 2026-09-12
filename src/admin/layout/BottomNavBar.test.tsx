@@ -65,7 +65,6 @@ test('largura larga: itens direto, sem botão Mais', () => {
   expect(screen.getByRole('link', { name: 'Produtos' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Pedidos' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Empresas' })).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Cond. Pagamento' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Usuários' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Membros' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Análises' })).toBeInTheDocument()

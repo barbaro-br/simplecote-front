@@ -81,4 +81,45 @@ describe('Combobox', () => {
     expect(onChange).not.toHaveBeenCalled()
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
   })
+
+  it('onCriarNova: aparece "Criar…" quando o texto não bate com nenhuma opção, e chama onCriarNova (não onChange) ao clicar', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const onCriarNova = vi.fn()
+    render(<Combobox options={options} value="" onChange={onChange} onCriarNova={onCriarNova} />)
+
+    await user.click(screen.getByRole('button', { name: 'Selecione…' }))
+    await user.type(screen.getByPlaceholderText('Buscar…'), 'Damasco')
+
+    const criar = screen.getByRole('option', { name: 'Criar "Damasco"' })
+    expect(criar).toBeInTheDocument()
+    await user.click(criar)
+
+    expect(onCriarNova).toHaveBeenCalledWith('Damasco')
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  it('onCriarNova: some quando o texto já bate com uma opção existente', async () => {
+    const user = userEvent.setup()
+    render(<Combobox options={options} value="" onChange={vi.fn()} onCriarNova={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: 'Selecione…' }))
+    await user.type(screen.getByPlaceholderText('Buscar…'), 'Banana')
+
+    expect(screen.queryByRole('option', { name: /^Criar/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Banana' })).toBeInTheDocument()
+  })
+
+  it('onCriarNova: Enter no item de criar (topo da lista) também cria', async () => {
+    const user = userEvent.setup()
+    const onCriarNova = vi.fn()
+    render(<Combobox options={options} value="" onChange={vi.fn()} onCriarNova={onCriarNova} />)
+
+    await user.click(screen.getByRole('button', { name: 'Selecione…' }))
+    await user.type(screen.getByPlaceholderText('Buscar…'), 'Damasco')
+    await user.keyboard('{Enter}')
+
+    expect(onCriarNova).toHaveBeenCalledWith('Damasco')
+  })
 })

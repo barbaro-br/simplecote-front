@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
-import { CondicoesPagamentoPage } from './CondicoesPagamentoPage'
+import { CondicoesPagamentoSecao } from './CondicoesPagamentoSecao'
 
 const ID_A = '123e4567-e89b-12d3-a456-426614174000'
 const ID_B = '223e4567-e89b-12d3-a456-426614174000'
@@ -28,12 +28,12 @@ beforeEach(() => {
 })
 
 test('lista as condições de pagamento', async () => {
-  renderComQuery(<CondicoesPagamentoPage />)
+  renderComQuery(<CondicoesPagamentoSecao />)
   expect(await screen.findByText('14/21/28')).toBeInTheDocument()
 })
 
 test('cadastra uma nova condição de pagamento', async () => {
-  renderComQuery(<CondicoesPagamentoPage />)
+  renderComQuery(<CondicoesPagamentoSecao />)
   const user = userEvent.setup()
 
   expect(await screen.findByText('14/21/28')).toBeInTheDocument()
@@ -62,7 +62,7 @@ test('condição inativa aparece apagada com "Ativar"; clicar reativa', async ()
     }),
   )
 
-  renderComQuery(<CondicoesPagamentoPage />)
+  renderComQuery(<CondicoesPagamentoSecao />)
   const user = userEvent.setup()
 
   expect(await screen.findByText('À vista')).toBeInTheDocument()
@@ -86,7 +86,7 @@ test('inativar uma condição ativa chama a API', async () => {
     }),
   )
 
-  renderComQuery(<CondicoesPagamentoPage />)
+  renderComQuery(<CondicoesPagamentoSecao />)
   const user = userEvent.setup()
 
   expect(await screen.findByText('14/21/28')).toBeInTheDocument()
