@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { BottomNavBar } from './BottomNavBar'
 
@@ -62,12 +63,43 @@ test('largura larga: itens direto, sem botão Mais', () => {
   expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Cotações' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Produtos' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Pedido avulso' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Empresas' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Usuários' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Membros' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Análises' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Configurações' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Mais' })).not.toBeInTheDocument()
+})
+
+// Regressão: achado real — em tela larga (estiloNavegacao INFERIOR/rodapé
+// >=768px) não tem menu "Mais" (todos os itens vão direto na barra), e o
+// botão de sair só existia dentro desse menu — sumia por completo nesse caso.
+test('largura larga: tem botão de sair direto na barra (sem menu Mais pra guardá-lo)', () => {
+  telaLarga = true
+  const onLogout = vi.fn()
+  const router = createMemoryRouter(
+    [{ path: '/', element: <BottomNavBar onLogout={onLogout} mostrarMembros={true} /> }],
+    { initialEntries: ['/'] },
+  )
+  render(<RouterProvider router={router} />)
+
+  const botaoSair = screen.getByRole('button', { name: 'Sair' })
+  expect(botaoSair).toBeInTheDocument()
+
+  botaoSair.click()
+
+  expect(onLogout).toHaveBeenCalledOnce()
+})
+
+test('largura estreita: item "Pedido avulso" aparece dentro do menu Mais', async () => {
+  telaLarga = false
+  const user = userEvent.setup()
+  renderBarra()
+
+  await user.click(screen.getByRole('button', { name: 'Mais' }))
+
+  expect(screen.getByRole('menuitem', { name: /Pedido avulso/ })).toBeInTheDocument()
 })
 
 test('mostrarMembros=false esconde o item Membros', () => {
