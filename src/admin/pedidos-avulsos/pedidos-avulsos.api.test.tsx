@@ -46,9 +46,10 @@ describe('pedidos-avulsos.api', () => {
       produtoId: PRODUTO_ID,
       precoEmbalagem: 125,
       quantidade: 2,
+      empresaId: 'emp-1',
     })
 
-    expect(corpo).toEqual({ produtoId: PRODUTO_ID, precoEmbalagem: 125, quantidade: 2 })
+    expect(corpo).toEqual({ produtoId: PRODUTO_ID, precoEmbalagem: 125, quantidade: 2, empresaId: 'emp-1' })
     expect(pedido.id).toBe(UUID)
   })
 
