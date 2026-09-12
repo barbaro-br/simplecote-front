@@ -28,6 +28,7 @@ export type PedidoAvulso = {
 // atualizar esses campos num pedido avulso já criado) — no máximo um dos dois
 // de condição de pagamento preenchido (design.md - Decisão 2).
 export type CondicoesPedidoAvulso = {
+  empresaId: string
   condicaoPagamentoId?: string
   condicaoPagamentoTexto?: string
   prazoEntregaEstimado?: string

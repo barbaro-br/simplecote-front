@@ -21,7 +21,9 @@ import {
 } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import type { Produto, ValoresIniciaisProduto } from '@/admin/produtos/produtos.schema'
-import { useCondicoesPagamento } from '@/admin/condicoes-pagamento/condicoes-pagamento.api'
+import { useCondicoesPagamento, useCriarCondicaoPagamento } from '@/admin/condicoes-pagamento/condicoes-pagamento.api'
+import { useEmpresas } from '@/admin/empresas/empresas.api'
+import { useRepresentantes } from '@/admin/representantes/representantes.api'
 import { useCriarPedidoAvulso, useAdicionarItemPedidoAvulso, useFecharPedidoAvulso } from './pedidos-avulsos.api'
 import { itemPedidoAvulsoSchema, type ItemPedidoAvulsoFormValues, type PedidoAvulso } from './pedidos-avulsos.schema'
 
@@ -57,10 +59,27 @@ export function NovoPedidoAvulsoPage() {
   // ficam editáveis até o 1º item ser confirmado; a partir daí viram leitura
   // do que já foi salvo (`pedido.condicaoPagamento`/`prazoEntregaEstimado`).
   const { data: condicoesPagamento } = useCondicoesPagamento()
-  const [condicaoModo, setCondicaoModo] = useState<'catalogo' | 'texto'>('catalogo')
+  const criarCondicao = useCriarCondicaoPagamento()
   const [condicaoPagamentoId, setCondicaoPagamentoId] = useState('')
-  const [condicaoPagamentoTexto, setCondicaoPagamentoTexto] = useState('')
   const [prazoEntregaEstimado, setPrazoEntregaEstimado] = useState('')
+
+  const { data: empresas } = useEmpresas()
+  const { data: representantes } = useRepresentantes()
+  const [empresaId, setEmpresaId] = useState('')
+  const representante = empresaId ? representantes?.find((r) => r.empresaId === empresaId) : null
+
+  // Combobox com criação inline (Combobox - onCriarNova): não digita "ad-hoc"
+  // por fora do catálogo — toda condição nova já nasce cadastrada, pra ficar
+  // disponível pra próxima cotação/pedido também (é global pra loja inteira).
+  function aoCriarCondicaoPagamento(descricao: string) {
+    criarCondicao.mutate(
+      { descricao },
+      {
+        onSuccess: (criada) => setCondicaoPagamentoId(criada.id),
+        onError: (e) => tratarErro(e),
+      },
+    )
+  }
 
   const form = useForm<ItemPedidoAvulsoFormValues>({
     resolver: zodResolver(itemPedidoAvulsoSchema),
@@ -126,10 +145,13 @@ export function NovoPedidoAvulsoPage() {
     const itemRect = item.getBoundingClientRect()
     const itemTopo = itemRect.top - containerRect.top + container.scrollTop
     const itemBase = itemTopo + itemRect.height
+    // Folga de 8px: sem isso o item ativo parava exatamente na borda do
+    // contêiner (achado real: parecia "não ter rolado" mesmo tendo rolado).
+    const FOLGA = 8
     if (itemTopo < container.scrollTop) {
-      container.scrollTop = itemTopo
+      container.scrollTop = Math.max(0, itemTopo - FOLGA)
     } else if (itemBase > container.scrollTop + container.clientHeight) {
-      container.scrollTop = itemBase - container.clientHeight
+      container.scrollTop = itemBase - container.clientHeight + FOLGA
     }
     if (indiceAtivoClamped >= totalNavegavel - 3) {
       carregarMaisDoCatalogoGlobal()
@@ -208,12 +230,10 @@ export function NovoPedidoAvulsoPage() {
       if (pedidoId) {
         resultado = await adicionarItem.mutateAsync(valores)
       } else {
-        const condicaoTexto = condicaoModo === 'texto' ? condicaoPagamentoTexto.trim() : ''
-        const condicaoId = condicaoModo === 'catalogo' ? condicaoPagamentoId : ''
         resultado = await criar.mutateAsync({
           ...valores,
-          ...(condicaoId && { condicaoPagamentoId: condicaoId }),
-          ...(condicaoTexto && { condicaoPagamentoTexto: condicaoTexto }),
+          empresaId,
+          ...(condicaoPagamentoId && { condicaoPagamentoId }),
           ...(prazoEntregaEstimado.trim() && { prazoEntregaEstimado: prazoEntregaEstimado.trim() }),
         })
       }
@@ -276,69 +296,83 @@ export function NovoPedidoAvulsoPage() {
         }
       />
 
+      {/* Cabeçalho único: condição de pagamento + prazo de entrega + o total
+          corrente — tudo que não é "item em si" fica junto aqui, pra não
+          espalhar informação em cartões separados (achado real: o total só
+          aparecia lá embaixo, longe de onde a decisão de fechar é tomada). */}
       <Superficie className="p-6 space-y-4">
-        <h2 className="text-sm font-semibold ui-uppercase text-muted-foreground">Condições do pedido</h2>
-
-        {pedidoId ? (
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
-            <span>
-              Cond. pagamento: <strong className="text-foreground">{pedido?.condicaoPagamento ?? '—'}</strong>
-            </span>
-            <span>
-              Prazo de entrega: <strong className="text-foreground">{pedido?.prazoEntregaEstimado ?? '—'}</strong>
-            </span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          {pedidoId ? (
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
+              <span>
+                Cond. pagamento: <strong className="text-foreground">{pedido?.condicaoPagamento ?? '—'}</strong>
+              </span>
+              <span>
+                Prazo de entrega: <strong className="text-foreground">{pedido?.prazoEntregaEstimado ?? '—'}</strong>
+              </span>
+            </div>
+          ) : (
+            <div className="grid flex-1 grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="empresa" className="text-sm font-medium ui-uppercase">
+                  Empresa
+                </label>
+                <Combobox
+                  id="empresa"
+                  options={(empresas ?? []).map((e) => ({ value: e.id, label: e.nome }))}
+                  value={empresaId}
+                  onChange={setEmpresaId}
+                  placeholder="Selecione..."
+                  emptyMessage="Nenhuma empresa encontrada"
+                />
+                {representante && (
+                  <p className="text-[13px] text-muted-foreground truncate">
+                    Rep: {representante.nome}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
                 <label htmlFor="condicaoPagamento" className="text-sm font-medium ui-uppercase">
                   Condição de pagamento
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setCondicaoModo(condicaoModo === 'catalogo' ? 'texto' : 'catalogo')}
-                  className="text-[11px] text-primary hover:underline"
-                >
-                  {condicaoModo === 'catalogo' ? 'Digitar outra' : 'Escolher do catálogo'}
-                </button>
-              </div>
-              {condicaoModo === 'catalogo' ? (
                 <Combobox
                   id="condicaoPagamento"
                   options={(condicoesPagamento ?? []).map((c) => ({ value: c.id, label: c.descricao }))}
                   value={condicaoPagamentoId}
                   onChange={setCondicaoPagamentoId}
+                  onCriarNova={aoCriarCondicaoPagamento}
                   placeholder="Nenhuma"
                   emptyMessage="Nenhuma condição de pagamento cadastrada"
                 />
-              ) : (
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="prazoEntrega" className="text-sm font-medium ui-uppercase">
+                  Prazo de entrega
+                </label>
                 <Input
-                  id="condicaoPagamento"
-                  value={condicaoPagamentoTexto}
-                  onChange={(e) => setCondicaoPagamentoTexto(e.target.value)}
-                  placeholder="Ex: 10 dias direto"
+                  id="prazoEntrega"
+                  value={prazoEntregaEstimado}
+                  onChange={(e) => setPrazoEntregaEstimado(e.target.value)}
+                  placeholder="Ex: 3 dias úteis"
                 />
-              )}
+              </div>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="prazoEntrega" className="text-sm font-medium ui-uppercase">
-                Prazo de entrega
-              </label>
-              <Input
-                id="prazoEntrega"
-                value={prazoEntregaEstimado}
-                onChange={(e) => setPrazoEntregaEstimado(e.target.value)}
-                placeholder="Ex: 3 dias úteis"
-              />
+          )}
+
+          <div className="shrink-0 text-right">
+            <div className="text-xs text-muted-foreground ui-uppercase">
+              {quantidadeItens} {quantidadeItens === 1 ? 'item' : 'itens'}
             </div>
+            <div className="text-2xl font-semibold tracking-tight">{moeda(total)}</div>
           </div>
-        )}
+        </div>
       </Superficie>
 
-      <Superficie className="p-6 space-y-4">
-        <h2 className="text-sm font-semibold ui-uppercase text-muted-foreground">Adicionar item</h2>
-
+      <Superficie className="p-0">
+        {/* Primeira linha da lista: o próprio ponto de adicionar item — não é
+            um cartão separado com título acima, é a linha 1 da mesma lista
+            onde os itens confirmados vão entrando embaixo. */}
+        <div className="p-6 space-y-4">
         {!produtoSelecionado ? (
           <div className="relative">
             <div className="relative">
@@ -378,8 +412,14 @@ export function NovoPedidoAvulsoPage() {
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => selecionarProduto(p)}
                               onMouseEnter={() => setIndiceAtivo(i)}
-                              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-                                i === indiceAtivoClamped ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                              // `bg-accent` no tema escuro do painel é branco a 8% de
+                              // opacidade — quase invisível numa lista compacta (achado
+                              // real: navegação parecia não estar funcionando). Aqui o
+                              // item ativo usa a cor de marca com contraste de verdade.
+                              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                                i === indiceAtivoClamped
+                                  ? 'bg-primary/15 text-foreground ring-1 ring-inset ring-primary/40'
+                                  : 'hover:bg-primary/10'
                               }`}
                             >
                               <Package className="size-4 shrink-0 text-muted-foreground" />
@@ -410,8 +450,10 @@ export function NovoPedidoAvulsoPage() {
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => abrirCadastroDaSugestao(s)}
                                 onMouseEnter={() => setIndiceAtivo(idx)}
-                                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-                                  idx === indiceAtivoClamped ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                                  idx === indiceAtivoClamped
+                                    ? 'bg-primary/15 text-foreground ring-1 ring-inset ring-primary/40'
+                                    : 'hover:bg-primary/10'
                                 }`}
                               >
                                 <Sparkle className="size-4 shrink-0 text-muted-foreground" weight="fill" />
@@ -504,15 +546,24 @@ export function NovoPedidoAvulsoPage() {
               </div>
             )}
 
-            <Button type="submit" disabled={salvandoItem} className="w-full">
+            {!pedidoId && (!empresaId || !condicaoPagamentoId) && (
+              <div role="alert" className="text-[13px] text-amber-600 dark:text-amber-500 font-medium bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 p-3 rounded-md">
+                {!empresaId && !condicaoPagamentoId
+                  ? 'Escolha a Empresa e a condição de pagamento pra confirmar o primeiro item.'
+                  : !empresaId
+                  ? 'Escolha a Empresa pra confirmar o primeiro item.'
+                  : 'Escolha a condição de pagamento pra confirmar o primeiro item.'}
+              </div>
+            )}
+
+            <Button type="submit" disabled={salvandoItem || (!pedidoId && (!empresaId || !condicaoPagamentoId))} className="w-full">
               {salvandoItem ? 'Adicionando…' : 'Adicionar item'}
             </Button>
           </form>
         )}
-      </Superficie>
+        </div>
 
-      <Superficie className="p-0">
-        <ul className="divide-y">
+        <ul className="divide-y border-t">
           {itens.length === 0 && <li className="p-6 text-center text-sm text-muted-foreground">Nenhum item adicionado ainda.</li>}
           {itens.map((item) => (
             <li key={item.id} className="flex items-center justify-between gap-3 p-4">
@@ -526,12 +577,6 @@ export function NovoPedidoAvulsoPage() {
             </li>
           ))}
         </ul>
-        <div className="flex items-center justify-between border-t bg-muted/20 p-4">
-          <div className="text-sm text-muted-foreground">
-            {quantidadeItens} {quantidadeItens === 1 ? 'item' : 'itens'}
-          </div>
-          <div className="text-lg font-semibold">{moeda(total)}</div>
-        </div>
       </Superficie>
 
       <div className="flex justify-end">
