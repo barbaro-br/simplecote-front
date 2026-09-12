@@ -1,7 +1,7 @@
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
-import { Check, Copy, Storefront, Palette, Sliders, ShieldCheck } from '@phosphor-icons/react'
+import { Check, Copy, Storefront, Palette, Sliders, ShieldCheck, CreditCard } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -14,6 +14,7 @@ import { configuracaoSchema, type Configuracao, type ConfiguracaoFormValues } fr
 import { useConfiguracaoLoja, useAtualizarConfiguracao } from './configuracoes.api'
 import { ExportarDadosCard } from './ExportarDadosCard'
 import { EncerrarContaCard } from './EncerrarContaCard'
+import { CondicoesPagamentoSecao } from '../condicoes-pagamento/CondicoesPagamentoSecao'
 
 function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Configuracao }) {
   const atualizar = useAtualizarConfiguracao()
@@ -41,18 +42,23 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
   }
 
   return (
-    <form onSubmit={form.handleSubmit(aoEnviar)} noValidate className="flex flex-col h-full">
-      <Tabs defaultValue="geral" className="flex-1 flex flex-col">
-        <TabsList className={`grid w-full mb-6 h-auto gap-1.5 p-1.5 ${mostrarDados ? 'grid-cols-4' : 'grid-cols-3'}`}>
+    // O envio deste form é só das abas Geral/Aparência/Avançado — Cond.
+    // Pagamento e Dados têm suas próprias ações (mutações independentes), mas
+    // ficam no mesmo <form> por simplicidade; por isso todo botão delas é
+    // `type="button"` explícito (nunca "submit" por acidente).
+    <form onSubmit={form.handleSubmit(aoEnviar)} noValidate>
+      <Tabs defaultValue="geral">
+        <TabsList className={`grid w-full mb-6 h-auto gap-1.5 p-1.5 ${mostrarDados ? 'grid-cols-5' : 'grid-cols-4'}`}>
           <TabsTrigger value="geral" className="flex gap-2 py-1.5"><Storefront className="size-4" /> Geral</TabsTrigger>
           <TabsTrigger value="aparencia" className="flex gap-2 py-1.5"><Palette className="size-4" /> Aparência</TabsTrigger>
+          <TabsTrigger value="pagamento" className="flex gap-2 py-1.5"><CreditCard className="size-4" /> Cond. Pagamento</TabsTrigger>
           <TabsTrigger value="avancado" className="flex gap-2 py-1.5"><Sliders className="size-4" /> Avançado</TabsTrigger>
           {mostrarDados && (
             <TabsTrigger value="dados" className="flex gap-2 py-1.5"><ShieldCheck className="size-4" /> Dados</TabsTrigger>
           )}
         </TabsList>
 
-        <div className="flex-1 min-h-[320px]">
+        <div className="min-h-[320px]">
           {/* ABA GERAL */}
           <TabsContent value="geral" className="space-y-6 mt-0">
             <div className="grid gap-6 md:grid-cols-2">
@@ -78,6 +84,12 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
 
             <div className="pt-4">
               <LinkColaboradorSection token={configuracaoInicial.linkColaboradorToken} />
+            </div>
+
+            <div className="flex justify-end pt-4 border-t">
+              <Button type="submit" disabled={atualizar.isPending} className="min-w-[140px]">
+                {atualizar.isPending ? 'Salvando…' : 'Salvar configurações'}
+              </Button>
             </div>
           </TabsContent>
 
@@ -108,6 +120,18 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
                 </div>
               </div>
             </div>
+
+            <div className="flex justify-end pt-4 border-t">
+              <Button type="submit" disabled={atualizar.isPending} className="min-w-[140px]">
+                {atualizar.isPending ? 'Salvando…' : 'Salvar configurações'}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* ABA CONDIÇÕES DE PAGAMENTO — catálogo com mutação própria, não
+              participa do "Salvar configurações" das outras abas. */}
+          <TabsContent value="pagamento" className="mt-0">
+            <CondicoesPagamentoSecao />
           </TabsContent>
 
           {/* ABA AVANÇADO */}
@@ -122,6 +146,12 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
                 placeholder="Texto/template usado nos e-mails enviados aos representantes."
               />
               {errors.layoutEmail && <p className="text-[13px] text-destructive">{errors.layoutEmail.message}</p>}
+            </div>
+
+            <div className="flex justify-end pt-4 border-t">
+              <Button type="submit" disabled={atualizar.isPending} className="min-w-[140px]">
+                {atualizar.isPending ? 'Salvando…' : 'Salvar configurações'}
+              </Button>
             </div>
           </TabsContent>
 
@@ -138,13 +168,6 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
           )}
         </div>
       </Tabs>
-
-      {/* BOTÃO FIXO NO RODAPÉ DO CARD */}
-      <div className="flex justify-end pt-6 mt-auto border-t">
-        <Button type="submit" disabled={atualizar.isPending} className="min-w-[140px]">
-          {atualizar.isPending ? 'Salvando…' : 'Salvar configurações'}
-        </Button>
-      </div>
     </form>
   )
 }
@@ -191,12 +214,10 @@ export function ConfiguracoesPage() {
   if (!data) return null
 
   return (
-    <PageContainer maxWidth="lg" className="h-[calc(100vh-80px)] overflow-hidden">
-      <div className="mb-6">
-        <CabecalhoPagina titulo="Configurações" subtitulo="Gerencie as preferências da sua loja." />
-      </div>
+    <PageContainer maxWidth="lg" className="space-y-6 pb-10">
+      <CabecalhoPagina titulo="Configurações" subtitulo="Gerencie as preferências da sua loja." />
 
-      <Superficie className="flex h-[520px] flex-col p-6">
+      <Superficie className="p-6">
         <ConfiguracoesForm configuracaoInicial={data} />
       </Superficie>
     </PageContainer>

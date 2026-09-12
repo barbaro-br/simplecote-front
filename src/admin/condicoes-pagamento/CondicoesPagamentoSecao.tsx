@@ -3,8 +3,7 @@ import { Eye, EyeSlash, PlusCircle } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { IconButton } from '@/shared/components/ui/icon-button'
-import { PageContainer } from '@/shared/components/layout/PageContainer'
-import { CabecalhoPagina, Superficie, Selo, ChipsFiltro, type OpcaoChip } from '@/shared/ui'
+import { Superficie, Selo, ChipsFiltro, type OpcaoChip } from '@/shared/ui'
 import { useCondicoesPagamento, useInativarCondicaoPagamento, useAtivarCondicaoPagamento } from './condicoes-pagamento.api'
 import { CondicaoPagamentoForm } from './CondicaoPagamentoForm'
 
@@ -14,7 +13,12 @@ const FILTROS: OpcaoChip[] = [
   { valor: 'inativos', rotulo: 'Inativos' },
 ]
 
-export function CondicoesPagamentoPage() {
+// Conteúdo puro (sem casca de página) — embutido na aba "Cond. Pagamento" de
+// Configurações. Todo botão daqui é `type="button"` de propósito: esta seção
+// vive dentro do <form> de Configurações, e um botão sem type vira "submit"
+// por padrão do HTML — clicar em "Nova Condição" não pode disparar o
+// "Salvar configurações" da aba Geral.
+export function CondicoesPagamentoSecao() {
   const { data: condicoes, isLoading, error } = useCondicoesPagamento({ incluirInativos: true })
   const inativar = useInativarCondicaoPagamento()
   const ativar = useAtivarCondicaoPagamento()
@@ -29,21 +33,23 @@ export function CondicoesPagamentoPage() {
     [condicoes, filtro],
   )
 
-  if (isLoading) return <p className="p-6 text-muted-foreground">Carregando condições de pagamento…</p>
-  if (error) return <p className="p-6 text-destructive">Erro ao carregar condições de pagamento: {error.message}</p>
+  if (isLoading) return <p className="py-6 text-sm text-muted-foreground">Carregando condições de pagamento…</p>
+  if (error) return <p className="py-6 text-sm text-destructive">Erro ao carregar condições de pagamento: {error.message}</p>
 
   return (
-    <PageContainer maxWidth="5xl" className="space-y-6">
-      <CabecalhoPagina
-        titulo="Condições de Pagamento"
-        subtitulo="Catálogo de condições oferecidas na cotação, na resposta do representante e no pedido avulso."
-        acao={
-          <Button onClick={() => setMostrarForm(true)}>
-            <PlusCircle className="mr-2 size-4" />
-            Nova Condição
-          </Button>
-        }
-      />
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-medium ui-uppercase">Condições de pagamento</h3>
+          <p className="text-xs text-muted-foreground">
+            Catálogo oferecido na cotação, na resposta do representante e no pedido avulso.
+          </p>
+        </div>
+        <Button type="button" size="sm" onClick={() => setMostrarForm(true)}>
+          <PlusCircle className="mr-2 size-4" />
+          Nova Condição
+        </Button>
+      </div>
 
       <Dialog open={mostrarForm} onClose={() => setMostrarForm(false)} size="lg" ariaLabel="Nova condição de pagamento">
         <CondicaoPagamentoForm aoSalvar={() => setMostrarForm(false)} />
@@ -106,6 +112,6 @@ export function CondicoesPagamentoPage() {
           </table>
         </div>
       </Superficie>
-    </PageContainer>
+    </div>
   )
 }

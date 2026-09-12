@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   UserGear,
   Users,
+  ClipboardText,
 } from '@phosphor-icons/react'
 import { useAuth } from '@/shared/auth/useAuth'
 import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
@@ -30,6 +31,7 @@ const ITENS = [
   { to: '/admin', label: 'Dashboard', Icon: SquaresFour, end: true },
   { to: '/admin/cotacoes', label: 'Cotações', Icon: FileText, end: false },
   { to: '/admin/produtos', label: 'Produtos', Icon: Package, end: false },
+  { to: '/admin/pedidos', label: 'Pedidos', Icon: ClipboardText, end: false },
   { to: '/admin/empresas', label: 'Empresas', Icon: Buildings, end: false },
   { to: '/admin/usuarios', label: 'Usuários', Icon: UserGear, end: false },
   { to: '/admin/membros', label: 'Membros', Icon: Users, end: false },

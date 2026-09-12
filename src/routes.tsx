@@ -111,11 +111,6 @@ export const routes = createBrowserRouter([
             lazy: () => import('./admin/empresas/EmpresasPage').then(m => ({ Component: m.EmpresasPage })),
           },
           {
-            path: 'condicoes-pagamento',
-            lazy: () =>
-              import('./admin/condicoes-pagamento/CondicoesPagamentoPage').then(m => ({ Component: m.CondicoesPagamentoPage })),
-          },
-          {
             path: 'usuarios',
             lazy: () => import('./admin/usuarios/UsuariosPage').then(m => ({ Component: m.UsuariosPage })),
           },
