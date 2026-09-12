@@ -1,7 +1,8 @@
 import { z } from 'zod'
 
-// Espelha CriarProdutoRequest do backend (spec.md §16)
-export const tiposDeEmbalagem = ['Fardo', 'Caixa', 'Cartela', 'Unidade'] as const
+// Espelha CriarProdutoRequest do backend (spec.md §16) — lá `unidade` é só
+// `@NotBlank String` (sem enum), então esta lista fixa é decisão só do front.
+export const tiposDeEmbalagem = ['Fardo', 'Caixa', 'Cartela', 'Dúzia', 'Unidade'] as const
 export type TipoDeEmbalagem = (typeof tiposDeEmbalagem)[number]
 
 export const produtoSchema = z.object({

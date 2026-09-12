@@ -8,7 +8,7 @@ import { useBiparItemCotacao, useCotacao } from '../cotacoes.api'
 import { useCriarProduto } from '../../produtos/produtos.api'
 import { ProdutoForm } from '../../produtos/ProdutoForm'
 import { Dialog } from '@/shared/components/ui/dialog'
-import { tiposDeEmbalagem } from '../../produtos/produtos.schema'
+import { tiposDeEmbalagem, type TipoDeEmbalagem } from '../../produtos/produtos.schema'
 import { ApiError } from '@/shared/api/api-client'
 import { Input } from '@/shared/components/ui/input'
 
@@ -36,7 +36,7 @@ export function BipagemPage() {
   const [show404, setShow404] = useState(false)
 
   // 202 Form State
-  const [unidade, setUnidade] = useState<"Fardo" | "Caixa" | "Cartela" | "Unidade">('Unidade')
+  const [unidade, setUnidade] = useState<TipoDeEmbalagem>('Unidade')
   const [qtd, setQtd] = useState<number>(1)
 
   const handleScan = useCallback(
@@ -265,7 +265,7 @@ export function BipagemPage() {
                 <select 
                   id="unidade-202"
                   value={unidade}
-                  onChange={e => setUnidade(e.target.value as "Fardo" | "Caixa" | "Cartela" | "Unidade")}
+                  onChange={e => setUnidade(e.target.value as TipoDeEmbalagem)}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   {tiposDeEmbalagem.map(t => <option key={t} value={t}>{t}</option>)}
