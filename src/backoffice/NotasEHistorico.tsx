@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { createElement, useState } from 'react'
 import {
   Calendar,
+  ClockCounterClockwise,
   EnvelopeSimple,
   Lifebuoy,
   LockOpen,
@@ -14,8 +15,15 @@ import { toast } from 'sonner'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
+import { Dialog } from '@/shared/components/ui/dialog'
 import { dataHoraBr } from '@/shared/format/formatters'
 import { useAdicionarNota, useNotas, useRemoverNota, useTimeline } from './backoffice.api'
+import type { TimelineItem } from './backoffice.schema'
+
+// Mostra só as mais recentes na própria tela (a API já devolve mais novo
+// primeiro) — o resto fica atrás de "Ver histórico completo", pra uma loja
+// com centenas/milhares de eventos não esticar a página de detalhe inteira.
+const LIMITE_INLINE = 6
 
 const ROTULO_TIPO_EVENTO: Record<string, string> = {
   cadastro: 'Cadastro',
@@ -66,6 +74,28 @@ function mensagemDeErro(e: unknown): string {
   return e instanceof ApiError ? e.message : 'Erro inesperado. Tente novamente.'
 }
 
+function ItemTimeline({ item }: { item: TimelineItem }) {
+  // `createElement` (em vez de `<Icone .../>`) evita o falso positivo do lint
+  // "static-components": `Icone` é uma referência já existente vinda de um
+  // lookup, não um componente novo sendo criado a cada render.
+  const icone = createElement(iconePorTipoEvento(item.tipo), {
+    className: 'mt-0.5 size-4 shrink-0 text-muted-foreground',
+    'aria-hidden': true,
+  })
+  return (
+    <li data-testid="timeline-item" className="flex gap-3">
+      {icone}
+      <div className="space-y-0.5">
+        <p className="text-sm font-medium">{rotuloTipoEvento(item.tipo)}</p>
+        <p className="text-xs text-muted-foreground" title={dataHoraBr(item.quando)}>
+          {tempoRelativo(item.quando)} · {item.ator ?? 'Sistema'}
+        </p>
+        <p className="text-sm text-muted-foreground">{item.descricao}</p>
+      </div>
+    </li>
+  )
+}
+
 export function NotasEHistorico({ compradorId }: { compradorId: string }) {
   const notas = useNotas(compradorId)
   const timeline = useTimeline(compradorId)
@@ -74,6 +104,7 @@ export function NotasEHistorico({ compradorId }: { compradorId: string }) {
 
   const [texto, setTexto] = useState('')
   const [notaARemover, setNotaARemover] = useState<string | null>(null)
+  const [historicoAberto, setHistoricoAberto] = useState(false)
 
   async function enviarNota() {
     try {
@@ -165,23 +196,35 @@ export function NotasEHistorico({ compradorId }: { compradorId: string }) {
         ) : !timeline.data?.length ? (
           <p className="py-3 text-sm text-muted-foreground">Nenhum evento registrado.</p>
         ) : (
-          <ol className="space-y-4">
-            {timeline.data.map((item, i) => {
-              const Icone = iconePorTipoEvento(item.tipo)
-              return (
-                <li key={`${item.tipo}-${item.quando}-${i}`} data-testid="timeline-item" className="flex gap-3">
-                  <Icone className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium">{rotuloTipoEvento(item.tipo)}</p>
-                    <p className="text-xs text-muted-foreground" title={dataHoraBr(item.quando)}>
-                      {tempoRelativo(item.quando)} · {item.ator ?? 'Sistema'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{item.descricao}</p>
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
+          <>
+            <ol className="space-y-4">
+              {timeline.data.slice(0, LIMITE_INLINE).map((item, i) => (
+                <ItemTimeline key={`${item.tipo}-${item.quando}-${i}`} item={item} />
+              ))}
+            </ol>
+
+            {timeline.data.length > LIMITE_INLINE && (
+              <div className="mt-4 flex justify-center">
+                <Button variant="ghost" size="sm" onClick={() => setHistoricoAberto(true)}>
+                  <ClockCounterClockwise className="mr-2 size-4" />
+                  Ver histórico completo ({timeline.data.length})
+                </Button>
+              </div>
+            )}
+
+            <Dialog
+              open={historicoAberto}
+              onClose={() => setHistoricoAberto(false)}
+              title="Histórico completo"
+              size="lg"
+            >
+              <ol className="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
+                {timeline.data.map((item, i) => (
+                  <ItemTimeline key={`${item.tipo}-${item.quando}-${i}`} item={item} />
+                ))}
+              </ol>
+            </Dialog>
+          </>
         )}
       </div>
     </Card>

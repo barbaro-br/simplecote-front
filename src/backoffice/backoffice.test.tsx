@@ -805,6 +805,27 @@ describe('CompradorDetalhePage', () => {
     expect(items[2]).toHaveTextContent('Cadastro')
     expect(items[2]).toHaveTextContent('Sistema')
   })
+
+  test('histórico longo mostra só os mais recentes, com botão pra ver tudo num modal', async () => {
+    const user = userEvent.setup()
+    const eventos = Array.from({ length: 9 }, (_, i) => ({
+      tipo: 'nota',
+      quando: `2026-09-${String(9 - i).padStart(2, '0')}T10:00:00Z`,
+      ator: 'Super admin',
+      descricao: `Evento ${i}`,
+    }))
+    renderDetalhe([], DETALHE, [], eventos)
+
+    await screen.findByText('Mercado do Zé')
+    expect(await screen.findAllByTestId('timeline-item')).toHaveLength(6)
+    expect(screen.queryByText('Evento 8')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Ver histórico completo (9)' }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getAllByTestId('timeline-item')).toHaveLength(9)
+    expect(within(dialog).getByText('Evento 8')).toBeInTheDocument()
+  })
 })
 
 describe('impersonação (entrar/sair do modo suporte)', () => {
