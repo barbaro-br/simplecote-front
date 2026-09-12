@@ -37,16 +37,19 @@ export function ProdutosPage() {
   // Só busca quando um histórico está aberto (lazy).
   const insights = useInsightProdutos(historicoDe ? [historicoDe.id] : [])
 
-  const termo = normalizar(busca.trim())
+  // Por palavra, não frase inteira (mesmo achado/fix do back, produtos.api.ts
+  // — GET /produtos/sugestoes): "azeitona sache" tem que achar "Azeitona 100g
+  // La Violetera Sache" mesmo com marca/peso no meio. Nome + código de barras
+  // concatenados num só texto de busca — cada palavra pode casar em qualquer
+  // um dos dois, não precisa ser sempre no mesmo campo.
+  const palavras = normalizar(busca.trim()).split(/\s+/).filter(Boolean)
   const listaFiltrada = (produtos ?? [])
     .filter((p) => {
       if (filtro === 'ativos' && !p.ativo) return false
       if (filtro === 'inativos' && p.ativo) return false
-      if (termo === '') return true
-      return (
-        normalizar(p.nome).includes(termo) ||
-        (p.codigoBarras != null && normalizar(p.codigoBarras).includes(termo))
-      )
+      if (palavras.length === 0) return true
+      const alvo = `${normalizar(p.nome)} ${p.codigoBarras != null ? normalizar(p.codigoBarras) : ''}`
+      return palavras.every((palavra) => alvo.includes(palavra))
     })
     // Ativos primeiro — inativo não compete por atenção no meio da lista.
     .sort((a, b) => Number(b.ativo) - Number(a.ativo))
