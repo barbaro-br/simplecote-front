@@ -110,6 +110,26 @@ test('busca filtra por código de barras parcial', async () => {
   expect(screen.queryByText('Feijão 1kg')).not.toBeInTheDocument()
 })
 
+// Regressão (mesmo achado/fix do back — GET /produtos/sugestoes): "azeitona
+// sache" tinha que achar "Azeitona 100g La Violetera Sache", palavras não-
+// adjacentes (marca/peso no meio), não só nome onde estão coladas.
+test('busca casa palavras em qualquer ordem e posição, não só frase colada', async () => {
+  const lista = [
+    { id: '1', nome: 'Azeitona 100g La Violetera Sache', codigoBarras: '111', unidade: 'Unidade', quantidadePorEmbalagem: 1, ativo: true },
+    { id: '2', nome: 'Molho De Tomate 340g Com Azeitona Sache', codigoBarras: '222', unidade: 'Unidade', quantidadePorEmbalagem: 1, ativo: true },
+  ]
+  server.use(http.get('*/api/produtos', () => HttpResponse.json(lista)))
+
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+  expect(await screen.findByText('Azeitona 100g La Violetera Sache')).toBeInTheDocument()
+
+  await user.type(screen.getByRole('searchbox', { name: 'Buscar produto' }), 'azeitona sache')
+
+  expect(screen.getByText('Azeitona 100g La Violetera Sache')).toBeInTheDocument()
+  expect(screen.getByText('Molho De Tomate 340g Com Azeitona Sache')).toBeInTheDocument()
+})
+
 test('limpar a busca restaura a lista completa', async () => {
   const lista = [
     { id: '1', nome: 'Arroz 5kg', codigoBarras: '123', unidade: 'Fardo', quantidadePorEmbalagem: 30, ativo: true },
