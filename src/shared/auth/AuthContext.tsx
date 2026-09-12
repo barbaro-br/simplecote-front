@@ -19,15 +19,76 @@ let tokenSuperAdminGuardado: string | null = null
 // O token de suporte (impersonação) não é renovável pelo cookie — um reload
 // perdia essa variável de módulo e o boot normal restaurava o SUPER_ADMIN via
 // `renovarSessao`, jogando o admin de volta pro backoffice no meio do
-// atendimento. Guardamos uma cópia em `sessionStorage` (escopo da aba, some ao
-// fechar) só pra sobreviver ao reload: se o token já tiver expirado, a 1ª
-// chamada autenticada cai no 401 tratado por `SessaoExpiradaBridge`
-// (sairModoSuporte + volta ao backoffice com aviso) — mesmo caminho de sempre.
-const CHAVE_TOKEN_SUPORTE = 'simplecote:token-suporte'
+// atendimento. Guardamos uma cópia fora do estado do React só pra sobreviver
+// ao reload: se o token já tiver expirado, a 1ª chamada autenticada cai no 401
+// tratado por `SessaoExpiradaBridge` (sairModoSuporte + volta ao backoffice
+// com aviso) — mesmo caminho de sempre.
+//
+// Era `sessionStorage` (escopo da aba, some ao fechar) — mas os logs do back
+// mostraram sessões de suporte trocando pro SUPER_ADMIN sozinhas em pleno F5,
+// bem antes dos 30min de expiração do token (ex.: 19min, 26min, 42min depois
+// de "entrar como suporte"), sempre no mesmo padrão: refresh pelo cookie do
+// SUPER_ADMIN tendo sucesso (`renovarSessao` só recusa esse cookie quando o
+// token de impersonação ainda está em memória) seguido de `AuthGuard`
+// mandando o SUPER_ADMIN de volta pro `/backoffice`. Ou seja, o `sessionStorage`
+// não estava sendo lido de volta num F5 real — consistente com o Chrome
+// descartando a aba em segundo plano (memory saver) e recarregando-a como uma
+// navegação nova, o que na prática zera o `sessionStorage` apesar da aba
+// continuar "a mesma" pro usuário.
+//
+// `localStorage` sobrevive a isso, mas é compartilhado entre abas — trocar
+// direto pra `localStorage` faria duas abas de suporte em lojas diferentes
+// pisarem uma na chave da outra (um F5 na aba mais antiga passaria a mostrar a
+// loja da aba mais nova). Pra ter a durabilidade do `localStorage` sem esse
+// vazamento entre abas, a chave é sufixada por um id de aba guardado em
+// `window.name`: diferente do `sessionStorage`, `window.name` é uma
+// propriedade do próprio *browsing context* (a aba), não da página, e
+// sobrevive a navegações/reloads dessa aba — é a mesma técnica usada há muito
+// tempo por bibliotecas como transporte entre reloads (window.name transport)
+// justamente por ser mais resiliente que `sessionStorage` nesses casos.
+// O token continua de curta duração (TTL do backend) e é limpo explicitamente
+// ao sair do modo suporte, fazer logout ou expirar; `limparTokensExpirados`
+// varre entradas de outras abas (ou desta, se `window.name` foi perdido) que
+// já expiraram, pra não acumular lixo indefinidamente no `localStorage`.
+const PREFIXO_CHAVE_TOKEN_SUPORTE = 'simplecote:token-suporte:'
+const PREFIXO_ID_ABA = 'simplecote-aba:'
+
+function idDaAba(): string {
+  try {
+    if (window.name.startsWith(PREFIXO_ID_ABA)) return window.name.slice(PREFIXO_ID_ABA.length)
+    const id = crypto.randomUUID()
+    window.name = `${PREFIXO_ID_ABA}${id}`
+    return id
+  } catch {
+    // `window.name` inacessível (raríssimo) — sem id estável, cada leitura
+    // "própria" desta função vira uma aba nova; só afeta a sobrevivência ao
+    // reload, não a segurança (a chave nunca colide com a de outra aba real).
+    return crypto.randomUUID()
+  }
+}
+
+function chaveTokenSuporte(): string {
+  return `${PREFIXO_CHAVE_TOKEN_SUPORTE}${idDaAba()}`
+}
+
+function limparTokensExpirados(): void {
+  try {
+    const agora = Date.now()
+    for (const chave of Object.keys(localStorage)) {
+      if (!chave.startsWith(PREFIXO_CHAVE_TOKEN_SUPORTE)) continue
+      const claims = decodificarClaims(localStorage.getItem(chave))
+      if (!claims?.exp || claims.exp * 1000 <= agora) {
+        localStorage.removeItem(chave)
+      }
+    }
+  } catch {
+    // storage indisponível — nada a limpar
+  }
+}
 
 function lerTokenSuporteSalvo(): string | null {
   try {
-    return sessionStorage.getItem(CHAVE_TOKEN_SUPORTE)
+    return localStorage.getItem(chaveTokenSuporte())
   } catch {
     return null
   }
@@ -35,8 +96,9 @@ function lerTokenSuporteSalvo(): string | null {
 
 function salvarTokenSuporte(token: string | null): void {
   try {
-    if (token) sessionStorage.setItem(CHAVE_TOKEN_SUPORTE, token)
-    else sessionStorage.removeItem(CHAVE_TOKEN_SUPORTE)
+    if (token) localStorage.setItem(chaveTokenSuporte(), token)
+    else localStorage.removeItem(chaveTokenSuporte())
+    limparTokensExpirados()
   } catch {
     // modo privado / storage indisponível — só não sobrevive a um reload
   }
