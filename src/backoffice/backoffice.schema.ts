@@ -154,3 +154,30 @@ export const timelineItemSchema = z.object({
 })
 export const timelineListaSchema = z.array(timelineItemSchema)
 export type TimelineItem = z.infer<typeof timelineItemSchema>
+
+// Catálogo global — revisão e métrica de uso (change revisao-e-metrica-catalogo-global).
+export const catalogoGlobalItemSchema = z.object({
+  id: z.string().uuid(),
+  codigoBarras: z.string(),
+  nome: z.string(),
+  marca: z.string().nullable(),
+  revisado: z.boolean(),
+  criadoEm: z.string(),
+})
+export type CatalogoGlobalItem = z.infer<typeof catalogoGlobalItemSchema>
+
+export const paginaCatalogoGlobalSchema = z.object({
+  itens: z.array(catalogoGlobalItemSchema),
+  total: z.number(),
+  pagina: z.number(),
+  tamanhoPagina: z.number(),
+})
+export type PaginaCatalogoGlobal = z.infer<typeof paginaCatalogoGlobalSchema>
+
+export const metricasCatalogoGlobalSchema = z.object({
+  totalProdutos: z.number(),
+  totalReaproveitamentos: z.number(),
+  compradoresQueReaproveitaram: z.number(),
+  naoRevisados: z.number(),
+})
+export type MetricasCatalogoGlobal = z.infer<typeof metricasCatalogoGlobalSchema>

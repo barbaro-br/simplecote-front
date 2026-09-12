@@ -13,6 +13,7 @@ import { CompradorDetalhePage } from './CompradorDetalhePage'
 import { ModoSuporteBanner } from './ModoSuporteBanner'
 import { ResumoPage } from './ResumoPage'
 import { AvisosPage } from './AvisosPage'
+import { CatalogoGlobalPage } from './CatalogoGlobalPage'
 
 function jwt(claims: Record<string, unknown>): string {
   const payload = btoa(JSON.stringify(claims)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -214,6 +215,11 @@ describe('ResumoPage', () => {
   function renderResumo() {
     server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: TOKEN_SUPER_ADMIN })))
     server.use(http.get('*/api/admin/resumo', () => HttpResponse.json(RESUMO)))
+    server.use(
+      http.get('*/api/admin/catalogo-global/metricas', () =>
+        HttpResponse.json({ totalProdutos: 0, totalReaproveitamentos: 0, compradoresQueReaproveitaram: 0, naoRevisados: 0 }),
+      ),
+    )
     const router = createMemoryRouter(
       [
         { path: '/backoffice', element: <ResumoPage /> },
@@ -357,6 +363,112 @@ describe('AvisosPage', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar remoção' }))
 
     await waitFor(() => expect(deletou).toBe(AVISO_1))
+  })
+})
+
+describe('CatalogoGlobalPage', () => {
+  const ITEM_1 = {
+    id: 'eeeeeeee-eeee-4eee-8eee-000000000001',
+    codigoBarras: '7891000000001',
+    nome: 'Arroz 5kg',
+    marca: null,
+    revisado: false,
+    criadoEm: '2026-09-10T10:00:00Z',
+  }
+  const METRICAS = { totalProdutos: 71582, totalReaproveitamentos: 40, compradoresQueReaproveitaram: 5, naoRevisados: 3 }
+
+  function renderCatalogoGlobal(itens: unknown[] = [ITEM_1]) {
+    server.use(http.post('*/api/auth/refresh', () => HttpResponse.json({ token: TOKEN_SUPER_ADMIN })))
+    server.use(http.get('*/api/admin/catalogo-global/metricas', () => HttpResponse.json(METRICAS)))
+    server.use(
+      http.get('*/api/admin/catalogo-global', () =>
+        HttpResponse.json({ itens, total: itens.length, pagina: 0, tamanhoPagina: 30 }),
+      ),
+    )
+    const router = createMemoryRouter([{ path: '/backoffice/catalogo-global', element: <CatalogoGlobalPage /> }], {
+      initialEntries: ['/backoffice/catalogo-global'],
+    })
+    return render(
+      <QueryClientProvider client={createQueryClient()}>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </QueryClientProvider>,
+    )
+  }
+
+  test('mostra as métricas e a lista de itens', async () => {
+    renderCatalogoGlobal()
+
+    expect(await screen.findByText('71.582')).toBeInTheDocument()
+    expect(screen.getByText('Arroz 5kg')).toBeInTheDocument()
+    expect(screen.getByText('7891000000001')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Marcar revisado' })).toBeInTheDocument()
+  })
+
+  test('editar corrige nome e marca via PUT', async () => {
+    let corpo: { nome: string; marca: string | null } | null = null
+    server.use(
+      http.put('*/api/admin/catalogo-global/:id', async ({ request }) => {
+        corpo = (await request.json()) as typeof corpo
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const user = userEvent.setup()
+    renderCatalogoGlobal()
+    await screen.findByText('Arroz 5kg')
+
+    await user.click(screen.getByRole('button', { name: 'Editar' }))
+    const nomeInput = screen.getByDisplayValue('Arroz 5kg')
+    await user.clear(nomeInput)
+    await user.type(nomeInput, 'Arroz 5kg Corrigido')
+    await user.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() => expect(corpo).toEqual({ nome: 'Arroz 5kg Corrigido', marca: null }))
+  })
+
+  test('marcar revisado chama POST /revisar', async () => {
+    let chamado = false
+    server.use(
+      http.post('*/api/admin/catalogo-global/:id/revisar', () => {
+        chamado = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const user = userEvent.setup()
+    renderCatalogoGlobal()
+    await screen.findByText('Arroz 5kg')
+
+    await user.click(screen.getByRole('button', { name: 'Marcar revisado' }))
+
+    await waitFor(() => expect(chamado).toBe(true))
+  })
+
+  test('item já revisado mostra o selo em vez do botão', async () => {
+    renderCatalogoGlobal([{ ...ITEM_1, revisado: true }])
+
+    expect(await screen.findByText('Revisado')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Marcar revisado' })).not.toBeInTheDocument()
+  })
+
+  test('busca envia o termo pra API', async () => {
+    const user = userEvent.setup()
+    renderCatalogoGlobal()
+    await screen.findByText('Arroz 5kg')
+
+    // Depois de renderCatalogoGlobal (que já registra um default) — server.use
+    // mais recente vence, então essa sobreposição precisa vir por último.
+    let termoRecebido: string | null = null
+    server.use(
+      http.get('*/api/admin/catalogo-global', ({ request }) => {
+        termoRecebido = new URL(request.url).searchParams.get('q')
+        return HttpResponse.json({ itens: [], total: 0, pagina: 0, tamanhoPagina: 30 })
+      }),
+    )
+
+    await user.type(screen.getByPlaceholderText(/Buscar por nome ou código/i), 'coco')
+
+    await waitFor(() => expect(termoRecebido).toBe('coco'))
   })
 })
 
