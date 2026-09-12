@@ -294,17 +294,20 @@ test('sugestão ao digitar o nome: seta pra baixo + Enter navega e escolhe sem u
   expect(dialog.getByLabelText(/Código de barras/i)).toHaveValue('7899999999992')
 })
 
-test('sugestão ao digitar o nome: bater no limite de resultados avisa pra refinar a busca', async () => {
-  const dezSugestoes = Array.from({ length: 10 }, (_, i) => ({
-    codigoBarras: `789999900000${i}`,
-    nome: `Coco ${i}`,
-    marca: null,
+test('sugestão ao digitar o nome: bater no limite do catálogo próprio avisa pra refinar a busca', async () => {
+  const trintaProprios = Array.from({ length: 30 }, (_, i) => ({
+    id: `id-coco-${i}`,
+    nome: `Coco Próprio ${i}`,
+    codigoBarras: null,
+    unidade: 'Unidade',
+    quantidadePorEmbalagem: 1,
+    ativo: true,
   }))
   server.use(
     http.get('*/api/produtos/sugestoes', ({ request }) => {
       const q = new URL(request.url).searchParams.get('q')
       if (q === 'coco') {
-        return HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: dezSugestoes })
+        return HttpResponse.json({ doProprioCatalogo: trintaProprios, doCatalogoGlobal: [] })
       }
       return HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: [] })
     }),
@@ -320,6 +323,49 @@ test('sugestão ao digitar o nome: bater no limite de resultados avisa pra refin
   await sleep(APOS_DEBOUNCE_SUGESTAO)
 
   await dialog.findByText(/digite mais letras/i)
+})
+
+// Scroll infinito (change scroll-infinito-sugestao-catalogo-global): o
+// catálogo global não avisa "digite mais letras" — carrega a próxima página
+// sozinho ao navegar perto do fim da página já carregada.
+test('sugestão do catálogo global: navegar perto do fim da página carrega a próxima automaticamente', async () => {
+  const paginaZero = Array.from({ length: 30 }, (_, i) => ({
+    codigoBarras: `7899999${String(i).padStart(6, '0')}`,
+    nome: `Coco ${i}`,
+    marca: null,
+  }))
+  const paginaUm = [{ codigoBarras: '7899999999998', nome: 'Coco Extra', marca: null }]
+  server.use(
+    http.get('*/api/produtos/sugestoes', ({ request }) => {
+      const q = new URL(request.url).searchParams.get('q')
+      if (q === 'coco') {
+        return HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: paginaZero })
+      }
+      return HttpResponse.json({ doProprioCatalogo: [], doCatalogoGlobal: [] })
+    }),
+    http.get('*/api/produtos/sugestoes/catalogo-global', ({ request }) => {
+      const url = new URL(request.url)
+      if (url.searchParams.get('q') === 'coco' && url.searchParams.get('pagina') === '1') {
+        return HttpResponse.json(paginaUm)
+      }
+      return HttpResponse.json([])
+    }),
+  )
+  renderComQuery(<ProdutosPage />)
+  const user = userEvent.setup()
+
+  expect(await screen.findByText('Arroz 5kg')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Novo produto/i }))
+
+  const dialog = within(screen.getByRole('dialog'))
+  await user.type(dialog.getByLabelText('Nome do produto'), 'coco')
+  await sleep(APOS_DEBOUNCE_SUGESTAO)
+  await dialog.findByText('Coco 0')
+  expect(dialog.queryByText(/digite mais letras/i)).not.toBeInTheDocument()
+
+  await user.keyboard('{ArrowDown}'.repeat(28))
+
+  await dialog.findByText('Coco Extra')
 })
 
 test('sugestão ao digitar o nome: menos de 10 resultados não mostra o aviso de refinar', async () => {

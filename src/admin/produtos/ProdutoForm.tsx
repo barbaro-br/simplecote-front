@@ -11,6 +11,7 @@ import {
   useAtualizarProduto,
   useLookupProdutoPorGtin,
   useSugestoesCadastro,
+  useMaisSugestoesDoCatalogoGlobal,
   type SugestaoCatalogoGlobal,
 } from './produtos.api'
 import { useDebounce } from '@/shared/hooks/useDebounce'
@@ -23,10 +24,10 @@ const LeitorCodigoBarras = lazy(() =>
 
 type LookupStatus = 'idle' | 'buscando' | 'sugerido' | 'sugerido-por-nome' | 'nao-encontrado'
 
-// Espelha o limite de GET /api/produtos/sugestoes (findTop10... no back) — só
-// pra saber quando avisar "digite mais" (achado real: "coco" sozinho bate
-// nesse teto antes de mostrar "Coco Ralado").
-const LIMITE_SUGESTOES = 10
+// Espelha o limite de GET /api/produtos/sugestoes (findTop30... no back) — só
+// pra saber quando avisar "digite mais" (achado real: categoria grande
+// — "amaciante" 255 linhas, "bala" 1337 — enterra marca/tamanho fora do teto).
+const LIMITE_SUGESTOES = 30
 
 type Props = {
   aoSalvar: (produtoCriado?: Produto) => void
@@ -67,9 +68,47 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar, valoresIniciais }: Pr
   const nome = useWatch({ control: form.control, name: 'nome' })
   const nomeDebounced = useDebounce(nome, 300)
   const sugestoes = useSugestoesCadastro(!isEdit && nomeFocado ? nomeDebounced : '')
-  const listaGlobal = sugestoes.data?.doCatalogoGlobal ?? []
+  const paginaZeroGlobal = sugestoes.data?.doCatalogoGlobal ?? []
+
+  // "Scroll infinito" do catálogo global (change scroll-infinito-sugestao-
+  // catalogo-global): páginas além da 0 (que já vem no `sugestoes` acima)
+  // acumuladas aqui, buscadas sob demanda ao chegar no fim da lista — não
+  // precisa vir pré-carregado. Reseta a cada busca nova (termo mudou).
+  const maisSugestoes = useMaisSugestoesDoCatalogoGlobal()
+  const [paginasExtras, setPaginasExtras] = useState<SugestaoCatalogoGlobal[]>([])
+  const [proximaPagina, setProximaPagina] = useState(1)
+  // Só a última página EXTRA veio incompleta — não dá pra guardar isso num
+  // boolean resetado a partir de `paginaZeroGlobal.length` (que ainda está
+  // vazio, resposta antiga, no exato instante em que o termo muda e este
+  // efeito dispara — sinalizava "acabou" antes mesmo da página 0 chegar).
+  // "Acabou" fica só derivado abaixo, sem estado próprio pra evitar essa corrida.
+  const [ultimaPaginaExtraParcial, setUltimaPaginaExtraParcial] = useState(false)
+  useEffect(() => {
+    setPaginasExtras([])
+    setProximaPagina(1)
+    setUltimaPaginaExtraParcial(false)
+  }, [nomeDebounced])
+
+  const listaGlobal = [...paginaZeroGlobal, ...paginasExtras]
+  const acabouCatalogoGlobal = paginasExtras.length > 0
+    ? ultimaPaginaExtraParcial
+    : paginaZeroGlobal.length > 0 && paginaZeroGlobal.length < 30
   const temSugestao = (sugestoes.data?.doProprioCatalogo.length ?? 0) > 0 || listaGlobal.length > 0
   const mostrarSugestoes = nomeFocado && !isEdit && temSugestao
+
+  function carregarMaisDoCatalogoGlobal() {
+    if (acabouCatalogoGlobal || maisSugestoes.isPending || nomeDebounced.trim().length < 2) return
+    maisSugestoes.mutate(
+      { q: nomeDebounced.trim(), pagina: proximaPagina },
+      {
+        onSuccess: (pagina) => {
+          setPaginasExtras((atual) => [...atual, ...pagina])
+          setProximaPagina((atual) => atual + 1)
+          setUltimaPaginaExtraParcial(pagina.length < 30)
+        },
+      },
+    )
+  }
 
   // Navegação por teclado (seta cima/baixo + Enter) entre as sugestões
   // clicáveis (catálogo global) — "já no seu catálogo" é só aviso, não entra
@@ -77,14 +116,46 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar, valoresIniciais }: Pr
   // atual em vez de resetar via setState-em-effect (oxlint react(set-state-in-effect)).
   const [indiceAtivo, setIndiceAtivo] = useState(0)
   const indiceAtivoClamped = listaGlobal.length === 0 ? 0 : Math.min(indiceAtivo, listaGlobal.length - 1)
-  // Rolagem acompanha o item ativo (efeito de DOM, não setState — não cai na
-  // mesma regra do lint que a tentativa anterior de resetar índice em effect).
+  // Rolagem acompanha o item ativo. Cálculo manual (não `scrollIntoView`) —
+  // `offsetTop` do botão é relativo ao ancestral posicionado mais próximo
+  // (o painel `absolute` alguns níveis acima), não ao container de scroll,
+  // então `getBoundingClientRect` dos dois é o jeito confiável de saber a
+  // posição do item DENTRO do container (achado real: navegar até perto do
+  // fim da lista "perdia" o item ativo pra fora da área visível).
+  const containerRef = useRef<HTMLDivElement>(null)
   const itemAtivoRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
-    // Encadeado com `?.` no método também (não só na ref): jsdom não
-    // implementa scrollIntoView — sem isso o teste quebra ao abrir o painel.
-    itemAtivoRef.current?.scrollIntoView?.({ block: 'nearest' })
+    const container = containerRef.current
+    const item = itemAtivoRef.current
+    // jsdom não implementa layout real (getBoundingClientRect sempre zero) —
+    // sem essa guarda o teste que abre o painel quebra sozinho.
+    if (!container || !item || !container.getBoundingClientRect) return
+    const containerRect = container.getBoundingClientRect()
+    const itemRect = item.getBoundingClientRect()
+    const itemTopo = itemRect.top - containerRect.top + container.scrollTop
+    const itemBase = itemTopo + itemRect.height
+    if (itemTopo < container.scrollTop) {
+      container.scrollTop = itemTopo
+    } else if (itemBase > container.scrollTop + container.clientHeight) {
+      container.scrollTop = itemBase - container.clientHeight
+    }
+    // Perto do fim da lista carregada (dentro de 3 itens) — carrega a próxima
+    // página antes do usuário realmente bater no último item, pra seta não
+    // "travar" esperando a resposta.
+    if (indiceAtivoClamped >= listaGlobal.length - 3) {
+      carregarMaisDoCatalogoGlobal()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- carregarMaisDoCatalogoGlobal fecha sobre estado que muda a cada chamada; sua própria guarda de "isPending"/"acabou" evita disparo duplicado
   }, [indiceAtivoClamped])
+
+  // Scroll infinito também pelo mouse: chegando perto do fim do container
+  // visível (não só via teclado).
+  function aoRolarSugestoes(e: React.UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 48) {
+      carregarMaisDoCatalogoGlobal()
+    }
+  }
 
   function escolherSugestaoGlobal(s: SugestaoCatalogoGlobal) {
     form.setValue('nome', s.nome, { shouldDirty: true, shouldValidate: true })
@@ -259,7 +330,7 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar, valoresIniciais }: Pr
                 clicar, igual a busca por código de barras já faz. */}
             {mostrarSugestoes && (
               <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
-                <div className="max-h-72 overflow-y-auto">
+                <div ref={containerRef} onScroll={aoRolarSugestoes} className="max-h-72 overflow-y-auto">
                   {sugestoes.data!.doProprioCatalogo.length > 0 && (
                     <div className="border-b p-2">
                       <p className="px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -299,17 +370,21 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar, valoresIniciais }: Pr
                             </button>
                           </li>
                         ))}
+                        {maisSugestoes.isPending && (
+                          <li className="px-2 py-1.5 text-[11px] text-muted-foreground">Carregando mais…</li>
+                        )}
                       </ul>
                     </div>
                   )}
                 </div>
-                {/* O back limita a 10 por grupo — bateu no teto, o resultado
-                    pode estar incompleto (termo comum tipo "coco" tem mais
-                    de 10 produtos). Avisa pra refinar em vez de parecer que
-                    "não achou o que eu queria". */}
-                {(sugestoes.data!.doProprioCatalogo.length >= LIMITE_SUGESTOES || listaGlobal.length >= LIMITE_SUGESTOES) && (
+                {/* Catálogo próprio não pagina (raro passar de 30 produtos
+                    parecidos) — bateu no teto, avisa pra refinar em vez de
+                    parecer que "não achou o que eu queria". O catálogo global
+                    não precisa desse aviso: rola/navega até o fim que ele
+                    mesmo carrega mais (scroll infinito). */}
+                {sugestoes.data!.doProprioCatalogo.length >= LIMITE_SUGESTOES && (
                   <p className="border-t px-3 py-1.5 text-[11px] text-muted-foreground">
-                    Muitos resultados — digite mais letras pra afinar a busca.
+                    Muitos resultados no seu catálogo — digite mais letras pra afinar a busca.
                   </p>
                 )}
               </div>

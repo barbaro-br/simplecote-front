@@ -97,3 +97,17 @@ export function useSugestoesCadastro(q: string) {
     staleTime: 30_000,
   })
 }
+
+// "Scroll infinito" do catálogo global (change scroll-infinito-sugestao-
+// catalogo-global): busca sob demanda — só quando o usuário rola/navega até o
+// fim da página já carregada — em vez de trazer tudo de uma vez. `mutateAsync`
+// (não `useQuery`) porque quem chama controla o acúmulo de páginas e quando
+// parar (lista vazia = fim); ver `ProdutoForm`.
+export function useMaisSugestoesDoCatalogoGlobal() {
+  return useMutation({
+    mutationFn: ({ q, pagina }: { q: string, pagina: number }) =>
+      api.get<SugestaoCatalogoGlobal[]>(
+        `/api/produtos/sugestoes/catalogo-global?q=${encodeURIComponent(q)}&pagina=${pagina}`,
+      ),
+  })
+}
