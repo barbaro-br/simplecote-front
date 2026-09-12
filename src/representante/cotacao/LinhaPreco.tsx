@@ -12,6 +12,7 @@ const UNIT_ABBR: Record<string, string> = {
   Fardo: 'fd',
   Caixa: 'cx',
   Cartela: 'crt',
+  Dúzia: 'dz',
   Unidade: 'un',
 }
 

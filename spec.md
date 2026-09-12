@@ -297,8 +297,9 @@ Implemente exatamente neste formato e replique nas demais features do admin. Pas
 import { z } from 'zod'
 
 // Espelha CriarProdutoRequest do backend (spec.md §16) — mesmas constraints,
-// mesmas mensagens em pt-BR sempre que possível.
-export const tiposDeEmbalagem = ['Fardo', 'Caixa', 'Cartela', 'Unidade'] as const
+// mesmas mensagens em pt-BR sempre que possível. Lá `unidade` é só
+// `@NotBlank String` (sem enum); esta lista fixa é decisão só do front.
+export const tiposDeEmbalagem = ['Fardo', 'Caixa', 'Cartela', 'Dúzia', 'Unidade'] as const
 export type TipoDeEmbalagem = (typeof tiposDeEmbalagem)[number]
 
 export const produtoSchema = z.object({
