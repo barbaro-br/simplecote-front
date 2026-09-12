@@ -11,6 +11,7 @@ export interface ClaimsSessao {
   slug: string | null
   compradorId: string | null
   impersonatedBy: string | null
+  exp: number | null
 }
 
 const PAPEIS: readonly Papel[] = ['OWNER', 'ADMIN', 'OPERADOR', 'SUPER_ADMIN']
@@ -33,6 +34,7 @@ export function decodificarClaims(token: string | null): ClaimsSessao | null {
       slug: typeof json.slug === 'string' ? json.slug : null,
       compradorId: typeof json.compradorId === 'string' ? json.compradorId : null,
       impersonatedBy: typeof json.impersonatedBy === 'string' ? json.impersonatedBy : null,
+      exp: typeof json.exp === 'number' ? json.exp : null,
     }
   } catch {
     return null

@@ -14,6 +14,7 @@ describe('decodificarClaims', () => {
       slug: 'loja-1',
       compradorId: 'c1',
       impersonatedBy: 'sa-1',
+      exp: null,
     })
   })
 
@@ -25,7 +26,14 @@ describe('decodificarClaims', () => {
       slug: 'loja-1',
       compradorId: 'c1',
       impersonatedBy: null,
+      exp: null,
     })
+  })
+
+  it('decodifica exp quando presente', () => {
+    const token = `x.${payloadBase64Url({ papel: 'ADMIN', exp: 1234567890 })}.sig`
+
+    expect(decodificarClaims(token)?.exp).toBe(1234567890)
   })
 
   it('retorna null para token vazio ou lixo', () => {
@@ -43,6 +51,7 @@ describe('decodificarClaims', () => {
       slug: 'loja-1',
       compradorId: null,
       impersonatedBy: null,
+      exp: null,
     })
   })
 })
