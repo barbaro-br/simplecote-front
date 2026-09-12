@@ -163,6 +163,8 @@ export function ResultadoPage() {
                 <th className="px-4 py-3 font-medium ui-uppercase">Empresa</th>
                 <th className="px-4 py-3 font-medium ui-uppercase">Status</th>
                 <th className="px-4 py-3 font-medium ui-uppercase text-right">Total</th>
+                <th className="px-4 py-3 font-medium ui-uppercase">Cond. pagamento</th>
+                <th className="px-4 py-3 font-medium ui-uppercase">Prazo entrega</th>
                 <th className="px-4 py-3 font-medium ui-uppercase text-right">Ações</th>
               </tr>
             </thead>
@@ -190,6 +192,8 @@ export function ResultadoPage() {
                         <PedidoStatusBadge status={pedido.status} />
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums text-foreground">{moeda(pedido.total)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{pedido.condicaoPagamento ?? '—'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{pedido.prazoEntregaEstimado ?? '—'}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -221,7 +225,7 @@ export function ResultadoPage() {
                     </tr>
                     {expandido && (
                       <tr>
-                        <td colSpan={4} className="px-4 py-3 bg-muted/20">
+                        <td colSpan={6} className="px-4 py-3 bg-muted/20">
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="text-left text-muted-foreground">
@@ -284,7 +288,7 @@ export function ResultadoPage() {
               })}
               {listaPedidos.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     Nenhum pedido foi gerado nesta apuração.
                   </td>
                 </tr>

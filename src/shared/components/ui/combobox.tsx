@@ -12,6 +12,7 @@ export type ComboboxProps = {
   placeholder?: string
   emptyMessage?: string
   id?: string
+  disabled?: boolean
 }
 
 export function Combobox({
@@ -21,6 +22,7 @@ export function Combobox({
   placeholder = 'Selecione…',
   emptyMessage = 'Nenhum resultado encontrado',
   id,
+  disabled = false,
 }: ComboboxProps) {
   const [aberto, setAberto] = useState(false)
   const [filtro, setFiltro] = useState('')
@@ -59,8 +61,9 @@ export function Combobox({
 
   return (
     <Popover.Root
-      open={aberto}
+      open={aberto && !disabled}
       onOpenChange={(open) => {
+        if (disabled) return
         if (open) {
           setFiltro('')
           setIndice(0)
@@ -70,6 +73,7 @@ export function Combobox({
     >
       <Popover.Trigger
         id={id}
+        disabled={disabled}
         className={cn(
           'flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
         )}

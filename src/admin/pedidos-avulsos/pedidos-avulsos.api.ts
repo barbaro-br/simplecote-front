@@ -1,14 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/api-client'
-import type { ItemPedidoAvulsoFormValues, PedidoAvulso } from './pedidos-avulsos.schema'
+import type { CondicoesPedidoAvulso, ItemPedidoAvulsoFormValues, PedidoAvulso } from './pedidos-avulsos.schema'
 
 const chave = ['pedidos-avulsos'] as const
 
 // Cria o Pedido avulso já com o primeiro item (design.md da change `pedido-avulso`
-// no simplecote-back - Decisão 5): `POST /api/pedidos/avulsos`.
+// no simplecote-back - Decisão 5): `POST /api/pedidos/avulsos`. Condição de
+// pagamento/prazo de entrega só podem ir aqui — o back não tem endpoint pra
+// atualizá-los depois (por isso ficam de fora de `useAdicionarItemPedidoAvulso`).
 export function useCriarPedidoAvulso() {
   return useMutation({
-    mutationFn: (valores: ItemPedidoAvulsoFormValues) =>
+    mutationFn: (valores: ItemPedidoAvulsoFormValues & CondicoesPedidoAvulso) =>
       api.post<PedidoAvulso>('/api/pedidos/avulsos', valores),
   })
 }

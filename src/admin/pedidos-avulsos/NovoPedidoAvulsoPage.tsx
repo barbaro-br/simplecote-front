@@ -7,6 +7,7 @@ import { MagnifyingGlass, Package, Sparkle } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
+import { Combobox } from '@/shared/components/ui/combobox'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { CabecalhoPagina, Superficie } from '@/shared/ui'
 import { ConfirmarDialog } from '@/admin/cotacoes/ConfirmarDialog'
@@ -20,6 +21,7 @@ import {
 } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import type { Produto, ValoresIniciaisProduto } from '@/admin/produtos/produtos.schema'
+import { useCondicoesPagamento } from '@/admin/condicoes-pagamento/condicoes-pagamento.api'
 import { useCriarPedidoAvulso, useAdicionarItemPedidoAvulso, useFecharPedidoAvulso } from './pedidos-avulsos.api'
 import { itemPedidoAvulsoSchema, type ItemPedidoAvulsoFormValues, type PedidoAvulso } from './pedidos-avulsos.schema'
 
@@ -49,6 +51,16 @@ export function NovoPedidoAvulsoPage() {
   const [confirmandoFechar, setConfirmandoFechar] = useState(false)
   const [cadastroAberto, setCadastroAberto] = useState(false)
   const [prefillCadastro, setPrefillCadastro] = useState<ValoresIniciaisProduto | undefined>(undefined)
+
+  // Condição de pagamento/prazo de entrega: só dá pra mandar no `POST` que cria
+  // o pedido (o back não tem endpoint pra atualizar depois) — por isso só
+  // ficam editáveis até o 1º item ser confirmado; a partir daí viram leitura
+  // do que já foi salvo (`pedido.condicaoPagamento`/`prazoEntregaEstimado`).
+  const { data: condicoesPagamento } = useCondicoesPagamento()
+  const [condicaoModo, setCondicaoModo] = useState<'catalogo' | 'texto'>('catalogo')
+  const [condicaoPagamentoId, setCondicaoPagamentoId] = useState('')
+  const [condicaoPagamentoTexto, setCondicaoPagamentoTexto] = useState('')
+  const [prazoEntregaEstimado, setPrazoEntregaEstimado] = useState('')
 
   const form = useForm<ItemPedidoAvulsoFormValues>({
     resolver: zodResolver(itemPedidoAvulsoSchema),
@@ -192,7 +204,19 @@ export function NovoPedidoAvulsoPage() {
   async function aoConfirmarItem(valores: ItemPedidoAvulsoFormValues) {
     setErroItem(null)
     try {
-      const resultado = pedidoId ? await adicionarItem.mutateAsync(valores) : await criar.mutateAsync(valores)
+      let resultado: PedidoAvulso
+      if (pedidoId) {
+        resultado = await adicionarItem.mutateAsync(valores)
+      } else {
+        const condicaoTexto = condicaoModo === 'texto' ? condicaoPagamentoTexto.trim() : ''
+        const condicaoId = condicaoModo === 'catalogo' ? condicaoPagamentoId : ''
+        resultado = await criar.mutateAsync({
+          ...valores,
+          ...(condicaoId && { condicaoPagamentoId: condicaoId }),
+          ...(condicaoTexto && { condicaoPagamentoTexto: condicaoTexto }),
+          ...(prazoEntregaEstimado.trim() && { prazoEntregaEstimado: prazoEntregaEstimado.trim() }),
+        })
+      }
       setPedido(resultado)
       trocarProduto()
     } catch (e) {
@@ -251,6 +275,66 @@ export function NovoPedidoAvulsoPage() {
           </Link>
         }
       />
+
+      <Superficie className="p-6 space-y-4">
+        <h2 className="text-sm font-semibold ui-uppercase text-muted-foreground">Condições do pedido</h2>
+
+        {pedidoId ? (
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
+            <span>
+              Cond. pagamento: <strong className="text-foreground">{pedido?.condicaoPagamento ?? '—'}</strong>
+            </span>
+            <span>
+              Prazo de entrega: <strong className="text-foreground">{pedido?.prazoEntregaEstimado ?? '—'}</strong>
+            </span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="condicaoPagamento" className="text-sm font-medium ui-uppercase">
+                  Condição de pagamento
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setCondicaoModo(condicaoModo === 'catalogo' ? 'texto' : 'catalogo')}
+                  className="text-[11px] text-primary hover:underline"
+                >
+                  {condicaoModo === 'catalogo' ? 'Digitar outra' : 'Escolher do catálogo'}
+                </button>
+              </div>
+              {condicaoModo === 'catalogo' ? (
+                <Combobox
+                  id="condicaoPagamento"
+                  options={(condicoesPagamento ?? []).map((c) => ({ value: c.id, label: c.descricao }))}
+                  value={condicaoPagamentoId}
+                  onChange={setCondicaoPagamentoId}
+                  placeholder="Nenhuma"
+                  emptyMessage="Nenhuma condição de pagamento cadastrada"
+                />
+              ) : (
+                <Input
+                  id="condicaoPagamento"
+                  value={condicaoPagamentoTexto}
+                  onChange={(e) => setCondicaoPagamentoTexto(e.target.value)}
+                  placeholder="Ex: 10 dias direto"
+                />
+              )}
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="prazoEntrega" className="text-sm font-medium ui-uppercase">
+                Prazo de entrega
+              </label>
+              <Input
+                id="prazoEntrega"
+                value={prazoEntregaEstimado}
+                onChange={(e) => setPrazoEntregaEstimado(e.target.value)}
+                placeholder="Ex: 3 dias úteis"
+              />
+            </div>
+          </div>
+        )}
+      </Superficie>
 
       <Superficie className="p-6 space-y-4">
         <h2 className="text-sm font-semibold ui-uppercase text-muted-foreground">Adicionar item</h2>
