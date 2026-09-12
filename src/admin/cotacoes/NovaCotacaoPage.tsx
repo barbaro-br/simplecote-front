@@ -9,6 +9,7 @@ import { Combobox } from '@/shared/components/ui/combobox'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { CabecalhoPagina, Superficie } from '@/shared/ui'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
+import { useCondicoesPagamento } from '@/admin/condicoes-pagamento/condicoes-pagamento.api'
 import { criarCotacaoSchema, type CriarCotacaoValues } from './cotacoes.schema'
 import { useCotacoes, useCriarCotacao, useDuplicarCotacao } from './cotacoes.api'
 
@@ -17,8 +18,10 @@ export function NovaCotacaoPage() {
   const criar = useCriarCotacao()
   const duplicar = useDuplicarCotacao()
   const { data: cotacoes } = useCotacoes()
+  const { data: condicoesPagamento } = useCondicoesPagamento()
   const [erroServidor, setErroServidor] = useState<string | null>(null)
   const [origemId, setOrigemId] = useState('')
+  const [condicaoPagamentoId, setCondicaoPagamentoId] = useState('')
   const [modo, setModo] = useState<'branco' | 'duplicar'>('branco')
 
   const {
@@ -36,7 +39,10 @@ export function NovaCotacaoPage() {
   async function aoCriar(values: CriarCotacaoValues) {
     setErroServidor(null)
     try {
-      const nova = await criar.mutateAsync(values)
+      const nova = await criar.mutateAsync({
+        titulo: values.titulo,
+        condicaoPagamentoPreferencialId: condicaoPagamentoId || undefined,
+      })
       // Sem wizard: cai direto na tela da cotação (RASCUNHO), onde monta itens
       // e convida representantes inline. (redesign-painel-dark, design.md §4.1)
       navigate(`/admin/cotacoes/${nova.id}`)
@@ -126,6 +132,20 @@ export function NovaCotacaoPage() {
                 {errors.titulo && (
                   <p className="text-[13px] text-destructive font-medium">{errors.titulo.message}</p>
                 )}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="condicaoPagamento" className="text-sm font-medium ui-uppercase">
+                  Condição de pagamento preferencial{' '}
+                  <span className="text-muted-foreground font-normal">(opcional)</span>
+                </label>
+                <Combobox
+                  id="condicaoPagamento"
+                  options={(condicoesPagamento ?? []).map((c) => ({ value: c.id, label: c.descricao }))}
+                  value={condicaoPagamentoId}
+                  onChange={setCondicaoPagamentoId}
+                  placeholder="Nenhuma"
+                  emptyMessage="Nenhuma condição de pagamento cadastrada"
+                />
               </div>
               <Button type="submit" disabled={isSubmitting || criar.isPending} className="w-full">
                 <PlusCircle className="mr-2 size-4" />

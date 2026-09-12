@@ -6,6 +6,7 @@ import { cn } from '@/shared/lib/utils'
 import { Superficie, SecaoCabecalho, SubFaixa, Selo, BotaoPrimario } from '@/shared/ui'
 import { usePullToRefresh } from '@/shared/hooks/usePullToRefresh'
 import { LinhaPreco } from './LinhaPreco'
+import { CondicoesResposta } from './CondicoesResposta'
 import { ConfirmarEnvioDialog } from './ConfirmarEnvioDialog'
 import { TelaDeSucesso } from './TelaDeSucesso'
 import { useCotacaoPorToken, useFinalizar } from './cotacao-token.api'
@@ -230,6 +231,14 @@ export function CotacaoPorTokenPage() {
                 : 'Esta cotação não está aberta para respostas.'}
             </div>
           )}
+
+          <CondicoesResposta
+            token={token}
+            condicaoPagamento={d.condicaoPagamento}
+            prazoEntregaEstimado={d.prazoEntregaEstimado}
+            condicoesPagamentoDisponiveis={d.condicoesPagamentoDisponiveis}
+            podeEditar={d.podeEditar}
+          />
 
           {/* Cartão por item, não tabela: o nome usa a largura toda (só quebra
               se for realmente comprido) e o preço tem linha própria embaixo —

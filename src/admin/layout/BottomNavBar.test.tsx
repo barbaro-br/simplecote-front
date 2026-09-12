@@ -63,8 +63,9 @@ test('largura larga: itens direto, sem botão Mais', () => {
   expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Cotações' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Produtos' })).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Pedido avulso' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Pedidos' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Empresas' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Cond. Pagamento' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Usuários' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Membros' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Análises' })).toBeInTheDocument()
@@ -92,14 +93,14 @@ test('largura larga: tem botão de sair direto na barra (sem menu Mais pra guard
   expect(onLogout).toHaveBeenCalledOnce()
 })
 
-test('largura estreita: item "Pedido avulso" aparece dentro do menu Mais', async () => {
+test('largura estreita: item "Pedidos" aparece dentro do menu Mais', async () => {
   telaLarga = false
   const user = userEvent.setup()
   renderBarra()
 
   await user.click(screen.getByRole('button', { name: 'Mais' }))
 
-  expect(screen.getByRole('menuitem', { name: /Pedido avulso/ })).toBeInTheDocument()
+  expect(screen.getByRole('menuitem', { name: /Pedidos/ })).toBeInTheDocument()
 })
 
 test('mostrarMembros=false esconde o item Membros', () => {

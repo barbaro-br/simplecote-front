@@ -20,6 +20,17 @@ export type PedidoAvulso = {
   quantidadeItens: number
   total: number
   geradoEm: string
+  condicaoPagamento: string | null
+  prazoEntregaEstimado: string | null
+}
+
+// Só aceitos por `CriarPedidoAvulsoRequest` (o back não tem endpoint pra
+// atualizar esses campos num pedido avulso já criado) — no máximo um dos dois
+// de condição de pagamento preenchido (design.md - Decisão 2).
+export type CondicoesPedidoAvulso = {
+  condicaoPagamentoId?: string
+  condicaoPagamentoTexto?: string
+  prazoEntregaEstimado?: string
 }
 
 // Espelha CriarPedidoAvulsoRequest/AdicionarItemPedidoAvulsoRequest do backend

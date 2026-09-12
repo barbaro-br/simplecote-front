@@ -15,6 +15,12 @@ export type ItemLance = {
   statusLance: LanceStatus
 }
 
+export type CondicaoPagamentoDisponivel = {
+  id: string
+  descricao: string
+  ativo: boolean
+}
+
 export type CotacaoPorToken = {
   cotacaoId: string
   titulo: string
@@ -26,6 +32,16 @@ export type CotacaoPorToken = {
   empresaNome: string
   compradorNome: string
   itens: ItemLance[]
+  condicaoPagamento: string | null
+  prazoEntregaEstimado: string | null
+  condicoesPagamentoDisponiveis: CondicaoPagamentoDisponivel[]
+}
+
+// PUT /public/cotacoes/{token}/condicoes — envia só o campo alterado; o campo
+// ausente/`null` preserva o valor já salvo (RegistrarCondicoesRequest, back).
+export type PatchCondicoes = {
+  condicaoPagamentoId?: string | null
+  prazoEntregaEstimado?: string | null
 }
 
 // Um item do PUT /public/cotacoes/{token}/lances (o front manda sempre 1).

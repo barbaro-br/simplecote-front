@@ -25,6 +25,9 @@ function base() {
     representanteNome: 'Francisco Almeida',
     empresaNome: 'Atacadão Central',
     compradorNome: 'Supermercado X',
+    condicaoPagamento: null as string | null,
+    prazoEntregaEstimado: null as string | null,
+    condicoesPagamentoDisponiveis: [] as { id: string; descricao: string; ativo: boolean }[],
     itens: [
       {
         itemCotacaoId: 'i-1',
@@ -113,8 +116,90 @@ test('podeEditar falso: campos desabilitados e sem botão de finalizar/bolha', a
 
   expect(await screen.findByText(/sua resposta já foi enviada/i)).toBeInTheDocument()
   expect(campoPreco()).toBeDisabled()
+  expect(screen.getByLabelText('Prazo de entrega estimado')).toBeDisabled()
+  expect(screen.getByLabelText('Condição de pagamento')).toBeDisabled()
   expect(screen.queryByRole('button', { name: /enviar respostas/i })).not.toBeInTheDocument()
   expect(bolha()).not.toBeInTheDocument()
+})
+
+const CONDICOES_DISPONIVEIS = [
+  { id: 'cp-1', descricao: '14/21/28', ativo: true },
+  { id: 'cp-2', descricao: 'À vista', ativo: true },
+]
+
+test('escolher condição de pagamento chama PUT /condicoes com o id escolhido', async () => {
+  const puts: unknown[] = []
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () =>
+      HttpResponse.json(cotacao({ condicoesPagamentoDisponiveis: CONDICOES_DISPONIVEIS })),
+    ),
+    http.put(`*/public/cotacoes/${TOKEN}/condicoes`, async ({ request }) => {
+      puts.push(await request.json())
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.click(await screen.findByLabelText('Condição de pagamento'))
+  await user.click(await screen.findByRole('option', { name: '14/21/28' }))
+  await sleep(APOS_DEBOUNCE)
+
+  await waitFor(() => expect(puts).toEqual([{ condicaoPagamentoId: 'cp-1' }]))
+})
+
+test('digitar prazo de entrega chama PUT /condicoes só com o prazo', async () => {
+  const puts: unknown[] = []
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao())),
+    http.put(`*/public/cotacoes/${TOKEN}/condicoes`, async ({ request }) => {
+      puts.push(await request.json())
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(await screen.findByLabelText('Prazo de entrega estimado'), '5 dias úteis')
+  await sleep(APOS_DEBOUNCE)
+
+  await waitFor(() => expect(puts).toEqual([{ prazoEntregaEstimado: '5 dias úteis' }]))
+})
+
+test('campos pré-preenchidos ao reabrir com condição e prazo já salvos', async () => {
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () =>
+      HttpResponse.json(
+        cotacao({
+          condicaoPagamento: 'À vista',
+          prazoEntregaEstimado: '3 dias',
+          condicoesPagamentoDisponiveis: CONDICOES_DISPONIVEIS,
+        }),
+      ),
+    ),
+  )
+  renderPage()
+
+  expect(await screen.findByText('À vista')).toBeInTheDocument()
+  expect(screen.getByLabelText('Prazo de entrega estimado')).toHaveValue('3 dias')
+})
+
+test('finalizar funciona sem condição de pagamento nem prazo de entrega preenchidos', async () => {
+  let posts = 0
+  server.use(
+    http.get(`*/public/cotacoes/${TOKEN}`, () => HttpResponse.json(cotacao())),
+    http.post(`*/public/cotacoes/${TOKEN}/finalizar`, () => {
+      posts += 1
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.click(await screen.findByRole('button', { name: /enviar respostas/i }))
+  await user.click(await screen.findByRole('button', { name: /confirmar/i }))
+
+  await waitFor(() => expect(posts).toBe(1))
 })
 
 test('token inválido: estado de link inválido', async () => {

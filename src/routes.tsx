@@ -103,8 +103,17 @@ export const routes = createBrowserRouter([
             lazy: () => import('./admin/pedidos-avulsos/NovoPedidoAvulsoPage').then(m => ({ Component: m.NovoPedidoAvulsoPage })),
           },
           {
+            path: 'pedidos',
+            lazy: () => import('./admin/pedidos/PedidosPage').then(m => ({ Component: m.PedidosPage })),
+          },
+          {
             path: 'empresas',
             lazy: () => import('./admin/empresas/EmpresasPage').then(m => ({ Component: m.EmpresasPage })),
+          },
+          {
+            path: 'condicoes-pagamento',
+            lazy: () =>
+              import('./admin/condicoes-pagamento/CondicoesPagamentoPage').then(m => ({ Component: m.CondicoesPagamentoPage })),
           },
           {
             path: 'usuarios',

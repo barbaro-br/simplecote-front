@@ -46,6 +46,18 @@ const REFRIGERANTE = {
   ativo: true,
 }
 
+const ITEM_SARDINHA = {
+  id: 'item-1',
+  produtoId: 'p-sardinha',
+  nomeSnapshot: 'Sardinha X',
+  unidadeSnapshot: 'Caixa',
+  quantidadePorEmbalagemSnapshot: 50,
+  precoEmbalagem: 125,
+  precoUnitario: 2.5,
+  quantidade: 2,
+  subtotal: 250,
+}
+
 async function buscarESelecionar(user: ReturnType<typeof userEvent.setup>, termo: string, nomeProduto: string) {
   const campo = screen.getByPlaceholderText(/Buscar produto/i)
   await user.clear(campo)
@@ -53,6 +65,14 @@ async function buscarESelecionar(user: ReturnType<typeof userEvent.setup>, termo
   await sleep(APOS_DEBOUNCE)
   await user.click(await screen.findByText(nomeProduto))
 }
+
+beforeEach(() => {
+  server.use(
+    http.get('*/api/condicoes-pagamento', () =>
+      HttpResponse.json([{ id: 'cp-1', descricao: '14/21/28', ativo: true }]),
+    ),
+  )
+})
 
 test('abre vazia: sem itens, "Fechar pedido" desabilitado', async () => {
   renderPage()
@@ -258,6 +278,123 @@ test('fechar exige confirmação nomeando total e contagem, e trava novos itens 
   expect(screen.getByText(/pedido ped-2/)).toBeInTheDocument()
   expect(screen.queryByPlaceholderText(/Buscar produto/i)).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Fechar pedido' })).not.toBeInTheDocument()
+})
+
+test('escolher condição de pagamento do catálogo envia condicaoPagamentoId ao criar', async () => {
+  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }))
+  let corpo: any
+  server.use(
+    http.post('*/api/pedidos/avulsos', async ({ request }) => {
+      corpo = await request.json()
+      return HttpResponse.json(
+        { id: 'ped-4', status: 'ABERTO', itens: [ITEM_SARDINHA], quantidadeItens: 1, total: 250, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: '14/21/28', prazoEntregaEstimado: null },
+        { status: 201 },
+      )
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.click(await screen.findByLabelText('Condição de pagamento'))
+  await user.click(await screen.findByRole('option', { name: '14/21/28' }))
+
+  await buscarESelecionar(user, 'sardinha', 'Sardinha X')
+  await user.type(screen.getByLabelText('Preço da embalagem'), '125')
+  await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
+  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+
+  await screen.findByText('Sardinha X')
+  expect(corpo).toEqual({ produtoId: 'p-sardinha', precoEmbalagem: 125, quantidade: 2, condicaoPagamentoId: 'cp-1' })
+})
+
+test('digitar condição de pagamento ad-hoc envia condicaoPagamentoTexto ao criar', async () => {
+  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }))
+  let corpo: any
+  server.use(
+    http.post('*/api/pedidos/avulsos', async ({ request }) => {
+      corpo = await request.json()
+      return HttpResponse.json(
+        { id: 'ped-5', status: 'ABERTO', itens: [ITEM_SARDINHA], quantidadeItens: 1, total: 250, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: '10 dias direto', prazoEntregaEstimado: null },
+        { status: 201 },
+      )
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.click(screen.getByRole('button', { name: 'Digitar outra' }))
+  await user.type(screen.getByLabelText('Condição de pagamento'), '10 dias direto')
+
+  await buscarESelecionar(user, 'sardinha', 'Sardinha X')
+  await user.type(screen.getByLabelText('Preço da embalagem'), '125')
+  await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
+  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+
+  await screen.findByText('Sardinha X')
+  expect(corpo).toEqual({
+    produtoId: 'p-sardinha',
+    precoEmbalagem: 125,
+    quantidade: 2,
+    condicaoPagamentoTexto: '10 dias direto',
+  })
+})
+
+test('digitar prazo de entrega em texto livre envia prazoEntregaEstimado ao criar', async () => {
+  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }))
+  let corpo: any
+  server.use(
+    http.post('*/api/pedidos/avulsos', async ({ request }) => {
+      corpo = await request.json()
+      return HttpResponse.json(
+        { id: 'ped-6', status: 'ABERTO', itens: [ITEM_SARDINHA], quantidadeItens: 1, total: 250, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: null, prazoEntregaEstimado: '3 dias úteis' },
+        { status: 201 },
+      )
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Prazo de entrega'), '3 dias úteis')
+
+  await buscarESelecionar(user, 'sardinha', 'Sardinha X')
+  await user.type(screen.getByLabelText('Preço da embalagem'), '125')
+  await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
+  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+
+  await screen.findByText('Sardinha X')
+  expect(corpo).toEqual({
+    produtoId: 'p-sardinha',
+    precoEmbalagem: 125,
+    quantidade: 2,
+    prazoEntregaEstimado: '3 dias úteis',
+  })
+})
+
+test('pedido sem condição de pagamento nem prazo: cria e fecha normalmente', async () => {
+  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }))
+  let corpo: any
+  server.use(
+    http.post('*/api/pedidos/avulsos', async ({ request }) => {
+      corpo = await request.json()
+      return HttpResponse.json(
+        { id: 'ped-7', status: 'ABERTO', itens: [ITEM_SARDINHA], quantidadeItens: 1, total: 250, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: null, prazoEntregaEstimado: null },
+        { status: 201 },
+      )
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await buscarESelecionar(user, 'sardinha', 'Sardinha X')
+  await user.type(screen.getByLabelText('Preço da embalagem'), '125')
+  await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
+  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+
+  await screen.findByText('Sardinha X')
+  expect(corpo).toEqual({ produtoId: 'p-sardinha', precoEmbalagem: 125, quantidade: 2 })
+  // Depois de criado, os campos viram leitura do que foi salvo (aqui, nenhum).
+  expect(screen.getAllByText(/Cond\. pagamento:/).length).toBeGreaterThan(0)
+  expect(screen.getAllByText('—')).toHaveLength(2)
 })
 
 test('fluxo completo: dois itens de embalagens diferentes, total geral e confirmação final', async () => {

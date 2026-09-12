@@ -11,7 +11,8 @@ import {
   Gear,
   UserGear,
   Users,
-  Receipt,
+  CreditCard,
+  ClipboardText,
 } from '@phosphor-icons/react'
 
 const ITENS_FIXOS = [
@@ -21,8 +22,9 @@ const ITENS_FIXOS = [
 ] as const
 
 const ITENS_MAIS = [
-  { to: '/admin/pedidos-avulsos/novo', label: 'Pedido avulso', Icon: Receipt, end: false },
+  { to: '/admin/pedidos', label: 'Pedidos', Icon: ClipboardText, end: false },
   { to: '/admin/empresas', label: 'Empresas', Icon: Buildings, end: false },
+  { to: '/admin/condicoes-pagamento', label: 'Cond. Pagamento', Icon: CreditCard, end: false },
   { to: '/admin/usuarios', label: 'Usuários', Icon: UserGear, end: false },
   { to: '/admin/membros', label: 'Membros', Icon: Users, end: false },
   { to: '/admin/analises', label: 'Análises', Icon: ChartBar, end: false },

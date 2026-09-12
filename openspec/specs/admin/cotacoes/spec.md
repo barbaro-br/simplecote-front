@@ -33,22 +33,23 @@ O sistema SHALL exibir, em `/admin/cotacoes`, a lista de Cotações do Comprador
 ### Requirement: Criar e duplicar Cotação
 
 O sistema SHALL permitir criar uma Cotação informando o título (`POST /api/cotacoes`,
-nasce em `RASCUNHO`) e SHALL permitir duplicar uma Cotação existente
-(`POST /api/cotacoes/{id}/duplicar`, retorna a nova Cotação e a lista de itens
-omitidos).
+nasce em `RASCUNHO`) e, opcionalmente, uma condição de pagamento preferencial (do
+catálogo de `admin/condicoes-pagamento`), e SHALL permitir duplicar uma Cotação
+existente (`POST /api/cotacoes/{id}/duplicar`, retorna a nova Cotação e a lista de
+itens omitidos).
 
 A ação **"Duplicar"** SHALL estar disponível **só** a partir do formulário de Nova
 Cotação (modo "Duplicar existente") — não na lista de Cotações nem na tela de
 detalhe de uma Cotação. O formulário de Nova Cotação SHALL apresentar os dois modos
 ("Em branco" e "Duplicar existente") como uma escolha única dentro de um só
 formulário — não dois cards separados por um divisor — mostrando apenas o campo
-relevante ao modo selecionado (Título para "Em branco"; seleção de cotação de
-origem para "Duplicar existente"), com um único controle de submit cujo rótulo e
-ação acompanham o modo escolhido. A seleção da cotação de origem SHALL usar um
-combobox com busca (filtra a lista pelo título digitado), não um `<select>` nativo
-do navegador. Ao ser acionada, o sistema SHALL chamar
-`POST /api/cotacoes/{id}/duplicar` e, no sucesso, navegar para o detalhe da Cotação
-recém-criada (que nasce em `RASCUNHO`).
+relevante ao modo selecionado (Título e condição de pagamento preferencial para
+"Em branco"; seleção de cotação de origem para "Duplicar existente"), com um único
+controle de submit cujo rótulo e ação acompanham o modo escolhido. A seleção da
+cotação de origem SHALL usar um combobox com busca (filtra a lista pelo título
+digitado), não um `<select>` nativo do navegador. Ao ser acionada, o sistema SHALL
+chamar `POST /api/cotacoes/{id}/duplicar` e, no sucesso, navegar para o detalhe da
+Cotação recém-criada (que nasce em `RASCUNHO`).
 
 Enquanto a chamada de duplicação está em andamento, o controle acionado SHALL indicar
 o progresso ("Duplicando…") e ficar desabilitado, impedindo disparo duplicado.
@@ -74,7 +75,7 @@ SHALL ser exibido. Quando a duplicação falha, o sistema SHALL exibir a mensage
 #### Scenario: Formulário de Nova Cotação alterna entre os dois modos num único card
 
 - **WHEN** o Comprador abre "Nova Cotação" e alterna entre "Em branco" e "Duplicar existente"
-- **THEN** o campo relevante ao modo muda (Título, ou a seleção de cotação de origem), dentro do mesmo card, sem navegar pra outra tela nem exibir os dois formulários simultaneamente
+- **THEN** o campo relevante ao modo muda (Título e condição de pagamento preferencial, ou a seleção de cotação de origem), dentro do mesmo card, sem navegar pra outra tela nem exibir os dois formulários simultaneamente
 
 #### Scenario: Duplicar a partir da lista e do detalhe
 
@@ -101,6 +102,16 @@ SHALL ser exibido. Quando a duplicação falha, o sistema SHALL exibir a mensage
 
 - **WHEN** o Comprador abre o combobox de "Cotação de origem" e digita parte do título de uma cotação anterior
 - **THEN** a lista mostra só as cotações cujo título contém o texto digitado, e selecionar uma delas preenche `origemId` como antes
+
+#### Scenario: Criar com condição de pagamento preferencial
+
+- **WHEN** o Comprador, no modo "Em branco", escolhe "14/21/28" no campo de condição de pagamento preferencial e confirma
+- **THEN** a Cotação é criada com essa condição de pagamento preferencial associada
+
+#### Scenario: Criar sem condição de pagamento preferencial
+
+- **WHEN** o Comprador cria uma Cotação sem escolher condição de pagamento preferencial
+- **THEN** a Cotação é criada normalmente, sem nenhuma condição associada — comportamento idêntico ao de antes desta change
 
 ### Requirement: Montar itens da Cotação
 O sistema SHALL permitir, enquanto a Cotação está em `RASCUNHO`, adicionar itens escolhendo um Produto do catálogo (`POST /api/cotacoes/{id}/itens`), ajustar a quantidade solicitada diretamente na listagem de itens e remover itens (`DELETE /api/cotacoes/{id}/itens/{itemId}`). A listagem de itens SHALL exibir claramente a embalagem do produto juntamente com a sua quantidade por embalagem (ex.: Caixa (12x)). Fora de `RASCUNHO` a edição de quantidade e a remoção de itens SHALL ficar indisponível. Quando o Produto desejado ainda não existe no catálogo, o sistema SHALL permitir cadastrá-lo **sem sair da tela de montagem da Cotação** e usá-lo imediatamente no item. Enquanto a Cotação está `ABERTA`, o sistema SHALL também permitir adicionar um novo item — a partir da tela de acompanhamento da grade ao vivo, não da listagem de montagem — reaproveitando o mesmo formulário de escolha de Produto. O sistema SHALL, do mesmo jeito, permitir **editar** um Produto já existente diretamente da lista de escolha de produtos, sem sair da tela de montagem.
@@ -373,7 +384,7 @@ O modal "Representantes" SHALL reaproveitar, também quando a Cotação está `A
 ### Requirement: Resultado da apuração e pedidos
 O sistema SHALL exibir o resultado de uma Cotação apurada (`GET /api/cotacoes/{id}/resultado`): vencedor por item identificado pelo **nome da Empresa** (não do representante), preço da embalagem e preço unitário derivado que já vêm prontos da API. SHALL listar os pedidos gerados (`GET /api/cotacoes/{id}/pedidos`), permitir enviar um pedido (`POST /api/pedidos/{id}/enviar`), baixar o resultado em XLSX (`GET /api/cotacoes/{id}/resultado.xlsx`) e baixar o PDF de um pedido (`GET /api/pedidos/{id}.pdf`). Quando a API indicar que um item foi `decididoPorDesempate`, a tela SHALL exibir um indicador visual junto ao preço desse item, sem recalcular ou inferir o empate.
 
-A lista de pedidos e o vencedor por item SHALL ser apresentados numa única lista de pedidos (não duas tabelas separadas). Cada linha de pedido (Empresa, status, total, ações) SHALL ter um controle de expandir/recolher; ao expandir, os itens vencidos daquele pedido (produto, **quantidade comprada**, preço da embalagem, preço unitário — com o indicador de empate quando aplicável — e subtotal) SHALL aparecer inline, abaixo da linha do pedido, sem navegar para outra tela. A quantidade comprada SHALL vir pronta da API (`quantidade` do item do pedido) — o front não recalcula. Itens sem vencedor (sem lance algum, portanto sem pedido associado) SHALL continuar sendo listados à parte, abaixo da lista de pedidos.
+A lista de pedidos e o vencedor por item SHALL ser apresentados numa única lista de pedidos (não duas tabelas separadas). Cada linha de pedido (Empresa, status, total, condição de pagamento, prazo de entrega, ações) SHALL ter um controle de expandir/recolher; ao expandir, os itens vencidos daquele pedido (produto, **quantidade comprada**, preço da embalagem, preço unitário — com o indicador de empate quando aplicável — e subtotal) SHALL aparecer inline, abaixo da linha do pedido, sem navegar para outra tela. A quantidade comprada SHALL vir pronta da API (`quantidade` do item do pedido) — o front não recalcula. A condição de pagamento e o prazo de entrega SHALL vir prontos da API (`condicaoPagamento`/`prazoEntregaEstimado` do pedido) e SHALL exibir "—" quando ausentes, sem o front inferir ou calcular nada. Itens sem vencedor (sem lance algum, portanto sem pedido associado) SHALL continuar sendo listados à parte, abaixo da lista de pedidos.
 
 A tela SHALL oferecer um campo de **margem de lucro (%)** global, acima da lista de pedidos. Quando preenchido, cada item exibido nas linhas expandidas SHALL mostrar, além do preço de custo já existente, um **preço de venda sugerido** (`preço de custo × (1 + margem / 100)`), calculado inteiramente no front a partir do preço de custo já apurado pela API — sem alterar, recalcular ou substituir o preço de custo, o vencedor ou qualquer outro dado da apuração. Cada item SHALL permitir sobrescrever a margem global com uma margem própria; um item com margem própria SHALL manter seu valor mesmo que a margem global mude depois. A margem (global e por item) SHALL ser efêmera — mantida só no estado da tela, sem ser persistida no backend, sem ser enviada em nenhuma chamada de API, e sem aparecer no XLSX/PDF exportados (que continuam vindo prontos do backend). A interface SHALL deixar claro que o preço de venda é uma sugestão/prévia, não o preço de custo real do pedido.
 
@@ -436,6 +447,16 @@ A tela SHALL oferecer um campo de **margem de lucro (%)** global, acima da lista
 
 - **WHEN** o Comprador preenche uma margem, envia um pedido ou baixa o XLSX/PDF, e depois recarrega a página do Resultado
 - **THEN** nenhuma chamada de API (envio de pedido, exportação) inclui a margem ou o preço de venda sugerido, e ao recarregar a página o campo de margem volta a ficar vazio
+
+#### Scenario: Linha do pedido mostra condição de pagamento e prazo de entrega
+
+- **WHEN** o resultado traz um pedido com `condicaoPagamento` "14/21/28" e `prazoEntregaEstimado` "5 dias úteis"
+- **THEN** a linha do pedido (mesmo recolhida) mostra os dois valores
+
+#### Scenario: Pedido sem condição de pagamento ou prazo mostra traço
+
+- **WHEN** um pedido do resultado vem com `condicaoPagamento`/`prazoEntregaEstimado` nulos
+- **THEN** a linha mostra "—" nesses campos, sem erro
 
 ### Requirement: Grade ao vivo da Cotação
 

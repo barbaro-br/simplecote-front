@@ -76,6 +76,8 @@ export type Pedido = {
   confirmadoEm: string | null
   itens: ItemPedido[]
   total: number
+  condicaoPagamento: string | null
+  prazoEntregaEstimado: string | null
 }
 
 export type Resultado = {
@@ -87,6 +89,7 @@ export type Resultado = {
 
 export const criarCotacaoSchema = z.object({
   titulo: z.string().min(1, 'Informe o título da cotação'),
+  condicaoPagamentoPreferencialId: z.string().optional(),
 })
 export type CriarCotacaoValues = z.infer<typeof criarCotacaoSchema>
 

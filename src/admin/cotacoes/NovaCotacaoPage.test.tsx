@@ -7,7 +7,12 @@ import { server } from '@/setupTests'
 import { NovaCotacaoPage } from './NovaCotacaoPage'
 
 function renderPage(cotacoes: unknown[] = []) {
-  server.use(http.get('*/api/cotacoes', () => HttpResponse.json(cotacoes)))
+  server.use(
+    http.get('*/api/cotacoes', () => HttpResponse.json(cotacoes)),
+    http.get('*/api/condicoes-pagamento', () =>
+      HttpResponse.json([{ id: 'cp-1', descricao: '14/21/28', ativo: true }]),
+    ),
+  )
   const router = createMemoryRouter(
     [
       { path: '/admin/cotacoes/nova', element: <NovaCotacaoPage /> },
@@ -40,6 +45,50 @@ test('criar com título válido vai direto pra tela da cotação', async () => {
   await user.click(screen.getByRole('button', { name: /criar cotação/i }))
 
   expect(await screen.findByText('detalhe')).toBeInTheDocument()
+})
+
+test('criar com condição de pagamento preferencial', async () => {
+  let corpo: any
+  server.use(
+    http.post('*/api/cotacoes', async ({ request }) => {
+      corpo = await request.json()
+      return HttpResponse.json(
+        { id: 'nova-2', titulo: corpo.titulo, status: 'RASCUNHO', prazo: null, criadaEm: '2026-08-28T12:00:00Z', encerradaEm: null, itens: [] },
+        { status: 201 },
+      )
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Título'), 'Compra semanal')
+  await user.click(screen.getByLabelText(/Condição de pagamento preferencial/i))
+  await user.click(await screen.findByRole('option', { name: '14/21/28' }))
+  await user.click(screen.getByRole('button', { name: /criar cotação/i }))
+
+  expect(await screen.findByText('detalhe')).toBeInTheDocument()
+  expect(corpo).toEqual({ titulo: 'Compra semanal', condicaoPagamentoPreferencialId: 'cp-1' })
+})
+
+test('criar sem condição de pagamento preferencial: comportamento idêntico a antes', async () => {
+  let corpo: any
+  server.use(
+    http.post('*/api/cotacoes', async ({ request }) => {
+      corpo = await request.json()
+      return HttpResponse.json(
+        { id: 'nova-3', titulo: corpo.titulo, status: 'RASCUNHO', prazo: null, criadaEm: '2026-08-28T12:00:00Z', encerradaEm: null, itens: [] },
+        { status: 201 },
+      )
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Título'), 'Compra semanal')
+  await user.click(screen.getByRole('button', { name: /criar cotação/i }))
+
+  expect(await screen.findByText('detalhe')).toBeInTheDocument()
+  expect(corpo).toEqual({ titulo: 'Compra semanal', condicaoPagamentoPreferencialId: undefined })
 })
 
 test('título vazio bloqueia o envio', async () => {

@@ -38,7 +38,12 @@ function item(overrides: Record<string, unknown> = {}) {
   }
 }
 
-function pedido(status: string, decididoPorDesempate?: boolean, itens: ReturnType<typeof item>[] = [item()]) {
+function pedido(
+  status: string,
+  decididoPorDesempate?: boolean,
+  itens: ReturnType<typeof item>[] = [item()],
+  extra: { condicaoPagamento?: string | null; prazoEntregaEstimado?: string | null } = {},
+) {
   return {
     id: 'p1',
     cotacaoId: 'c-1',
@@ -50,6 +55,8 @@ function pedido(status: string, decididoPorDesempate?: boolean, itens: ReturnTyp
     enviadoEm: null,
     confirmadoEm: null,
     total: 100,
+    condicaoPagamento: extra.condicaoPagamento ?? null,
+    prazoEntregaEstimado: extra.prazoEntregaEstimado ?? null,
     itens: itens.map((i) => (decididoPorDesempate === undefined ? i : { ...i, decididoPorDesempate })),
   }
 }
@@ -60,6 +67,7 @@ function setup(
   decididoPorDesempate?: boolean,
   itensSemVencedor: Array<{ id: string; nomeSnapshot: string }> = [],
   itens: ReturnType<typeof item>[] = [item()],
+  extra: { condicaoPagamento?: string | null; prazoEntregaEstimado?: string | null } = {},
 ) {
   const state = { status: 'GERADO' }
   let xlsxChamado = false
@@ -67,7 +75,7 @@ function setup(
   server.use(
     http.get('*/api/cotacoes/c-1/resultado', () =>
       HttpResponse.json({
-        pedidos: [pedido(state.status, decididoPorDesempate, itens)],
+        pedidos: [pedido(state.status, decididoPorDesempate, itens, extra)],
         itensSemVencedor,
       }),
     ),
@@ -83,7 +91,7 @@ function setup(
       }),
     ),
     http.get('*/api/cotacoes/c-1/pedidos', () =>
-      HttpResponse.json([pedido(state.status, decididoPorDesempate, itens)]),
+      HttpResponse.json([pedido(state.status, decididoPorDesempate, itens, extra)]),
     ),
     http.post('*/api/pedidos/p1/enviar', async ({ request }) => {
       enviarBody = await request.text()
@@ -232,7 +240,10 @@ test('sem nenhuma margem, a coluna de preço de venda mostra "—"', async () =>
   await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
   await screen.findByText('Arroz Tipo 1 5kg')
 
-  expect(screen.getByText('—')).toBeInTheDocument()
+  // Escopado à linha do item: a linha do pedido (recolhida) também mostra "—"
+  // agora para condição de pagamento/prazo de entrega ausentes.
+  const linhaItem = screen.getByText('Arroz Tipo 1 5kg').closest('tr')!
+  expect(within(linhaItem).getByText('—')).toBeInTheDocument()
 })
 
 const doisItens = [
@@ -363,6 +374,22 @@ test('erro na recotação mostra a mensagem da API', async () => {
   await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recotar' }))
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Não é possível recotar.')
+})
+
+test('linha do pedido mostra condição de pagamento e prazo de entrega', async () => {
+  setup(undefined, [], [item()], { condicaoPagamento: '14/21/28', prazoEntregaEstimado: '5 dias úteis' })
+  await screen.findByText('Atacadão Central')
+
+  expect(screen.getByText('14/21/28')).toBeInTheDocument()
+  expect(screen.getByText('5 dias úteis')).toBeInTheDocument()
+})
+
+test('pedido sem condição de pagamento ou prazo mostra traço', async () => {
+  setup(undefined, [], [item()], { condicaoPagamento: null, prazoEntregaEstimado: null })
+  await screen.findByText('Atacadão Central')
+
+  const linha = screen.getByText('Atacadão Central').closest('tr')!
+  expect(within(linha).getAllByText('—')).toHaveLength(2)
 })
 
 test('expandir um pedido mostra a quantidade comprada de cada item', async () => {

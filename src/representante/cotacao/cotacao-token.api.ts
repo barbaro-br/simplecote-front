@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/api-client'
-import type { CotacaoPorToken } from './cotacao-token.schema'
+import type { CotacaoPorToken, PatchCondicoes } from './cotacao-token.schema'
 
 export const cotacaoKey = (token: string) => ['public-cotacao', token] as const
 
@@ -16,6 +16,14 @@ export function useCotacaoPorToken(token: string) {
     refetchInterval: (query) =>
       query.state.data?.status === 'ABERTA' ? 40_000 : false,
     refetchOnWindowFocus: true,
+  })
+}
+
+export function useAtualizarCondicoes(token: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (patch: PatchCondicoes) => api.put<void>(`/public/cotacoes/${token}/condicoes`, patch),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: cotacaoKey(token) }),
   })
 }
 
