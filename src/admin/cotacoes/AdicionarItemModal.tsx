@@ -88,9 +88,26 @@ export function AdicionarItemModal({
   const totalNavegavel = usandoSugestoesGlobais ? listaGlobal.length : filtrados.length
   const [indiceAtivo, setIndiceAtivo] = useState(0)
   const indiceAtivoClamped = totalNavegavel === 0 ? 0 : Math.min(indiceAtivo, totalNavegavel - 1)
+  // Cálculo manual (não `scrollIntoView`) — mesmo achado/fix de ProdutoForm.tsx:
+  // navegar perto do fim da lista "perdia" o item ativo pra fora da área
+  // visível; `getBoundingClientRect` dos dois elementos é o jeito confiável de
+  // saber a posição do item DENTRO do container de scroll.
+  const containerRef = useRef<HTMLDivElement>(null)
   const itemAtivoRef = useRef<HTMLLIElement>(null)
   useEffect(() => {
-    itemAtivoRef.current?.scrollIntoView?.({ block: 'nearest' })
+    const container = containerRef.current
+    const item = itemAtivoRef.current
+    // jsdom não implementa layout real (getBoundingClientRect sempre zero).
+    if (!container || !item || !container.getBoundingClientRect) return
+    const containerRect = container.getBoundingClientRect()
+    const itemRect = item.getBoundingClientRect()
+    const itemTopo = itemRect.top - containerRect.top + container.scrollTop
+    const itemBase = itemTopo + itemRect.height
+    if (itemTopo < container.scrollTop) {
+      container.scrollTop = itemTopo
+    } else if (itemBase > container.scrollTop + container.clientHeight) {
+      container.scrollTop = itemBase - container.clientHeight
+    }
   }, [indiceAtivoClamped, usandoSugestoesGlobais])
 
   function selecionarNoIndice(i: number) {
@@ -209,7 +226,7 @@ export function AdicionarItemModal({
         </div>
 
         {/* Lista */}
-        <div className="flex-1 overflow-y-auto min-h-0 bg-background/50 relative">
+        <div ref={containerRef} className="flex-1 overflow-y-auto min-h-0 bg-background/50 relative">
           <ul className="m-0 p-0 list-none">
             {filtrados.map((p, idx) => {
               const naCotacao = itemPorProduto.has(p.id)
