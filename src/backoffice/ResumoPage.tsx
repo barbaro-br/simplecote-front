@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Card } from '@/shared/components/ui/card'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { moeda } from '@/shared/format/formatters'
-import { useResumoSaas } from './backoffice.api'
+import { useMetricasCatalogoGlobal, useResumoSaas } from './backoffice.api'
 import { MetricaCard } from './MetricaCard'
 import type { FunilAtivacao } from './backoffice.schema'
 
@@ -15,6 +15,7 @@ const DEGRAUS: { rotulo: string; chave: keyof FunilAtivacao }[] = [
 
 export function ResumoPage() {
   const { data, isLoading, error } = useResumoSaas()
+  const { data: metricasCatalogoGlobal } = useMetricasCatalogoGlobal()
 
   if (isLoading) {
     return (
@@ -86,6 +87,28 @@ export function ResumoPage() {
               />
             ))}
           </div>
+        )}
+      </Card>
+
+      <Card className="p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold ui-uppercase">Catálogo global</h2>
+          <Link to="/backoffice/catalogo-global" className="text-sm font-medium text-primary hover:underline">
+            Ver e revisar →
+          </Link>
+        </div>
+        {metricasCatalogoGlobal ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricaCard rotulo="Produtos no catálogo" valor={metricasCatalogoGlobal.totalProdutos.toLocaleString('pt-BR')} />
+            <MetricaCard rotulo="Reaproveitamentos" valor={metricasCatalogoGlobal.totalReaproveitamentos.toLocaleString('pt-BR')} />
+            <MetricaCard
+              rotulo="Lojas que reaproveitaram"
+              valor={metricasCatalogoGlobal.compradoresQueReaproveitaram.toLocaleString('pt-BR')}
+            />
+            <MetricaCard rotulo="Aguardando revisão" valor={metricasCatalogoGlobal.naoRevisados.toLocaleString('pt-BR')} />
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Carregando…</p>
         )}
       </Card>
 

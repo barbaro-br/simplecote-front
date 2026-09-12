@@ -39,6 +39,9 @@ export function BackofficeLayout() {
               <NavLink to="/backoffice/avisos" className={classeNav}>
                 Avisos
               </NavLink>
+              <NavLink to="/backoffice/catalogo-global" className={classeNav}>
+                Catálogo Global
+              </NavLink>
             </nav>
           </div>
           <div className="flex items-center gap-3">

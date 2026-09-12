@@ -4,7 +4,9 @@ import {
   compradorAdminDetalheSchema,
   compradorAdminListaSchema,
   cotacaoResumoListaSchema,
+  metricasCatalogoGlobalSchema,
   notaListaSchema,
+  paginaCatalogoGlobalSchema,
   resumoSaasSchema,
   timelineListaSchema,
   type CompradorAdmin,
@@ -164,5 +166,47 @@ export function useRemoverNota(id: string) {
   return useMutation({
     mutationFn: (notaId: string) => api.delete<void>(`/api/admin/compradores/${id}/notas/${notaId}`),
     onSuccess: () => invalidarNotasETimeline(queryClient, id),
+  })
+}
+
+// Catálogo global — revisão e métrica de uso (change revisao-e-metrica-catalogo-global).
+const chaveCatalogoGlobal = ['admin', 'catalogo-global'] as const
+
+export function useCatalogoGlobal(opts: { q?: string; apenasNaoRevisados?: boolean; pagina?: number; tamanho?: number }) {
+  const { q = '', apenasNaoRevisados = false, pagina = 0, tamanho = 30 } = opts
+  const params = new URLSearchParams()
+  if (q.trim()) params.set('q', q.trim())
+  if (apenasNaoRevisados) params.set('apenasNaoRevisados', 'true')
+  params.set('pagina', String(pagina))
+  params.set('tamanho', String(tamanho))
+  return useQuery({
+    queryKey: [...chaveCatalogoGlobal, q.trim(), apenasNaoRevisados, pagina, tamanho],
+    queryFn: () =>
+      api.get<unknown>(`/api/admin/catalogo-global?${params}`).then((d) => paginaCatalogoGlobalSchema.parse(d)),
+  })
+}
+
+export function useMetricasCatalogoGlobal() {
+  return useQuery({
+    queryKey: [...chaveCatalogoGlobal, 'metricas'],
+    queryFn: () =>
+      api.get<unknown>('/api/admin/catalogo-global/metricas').then((d) => metricasCatalogoGlobalSchema.parse(d)),
+  })
+}
+
+export function useCorrigirCatalogoGlobal() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, nome, marca }: { id: string; nome: string; marca: string | null }) =>
+      api.put<void>(`/api/admin/catalogo-global/${id}`, { nome, marca }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: chaveCatalogoGlobal }),
+  })
+}
+
+export function useMarcarRevisadoCatalogoGlobal() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.post<void>(`/api/admin/catalogo-global/${id}/revisar`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: chaveCatalogoGlobal }),
   })
 }

@@ -166,6 +166,10 @@ export const routes = createBrowserRouter([
             lazy: () => import('./backoffice/AvisosPage').then(m => ({ Component: m.AvisosPage })),
           },
           {
+            path: 'catalogo-global',
+            lazy: () => import('./backoffice/CatalogoGlobalPage').then(m => ({ Component: m.CatalogoGlobalPage })),
+          },
+          {
             path: 'compradores/:id',
             lazy: () => import('./backoffice/CompradorDetalhePage').then(m => ({ Component: m.CompradorDetalhePage })),
           },
