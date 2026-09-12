@@ -167,6 +167,74 @@ describe('AdicionarItemModal', () => {
     expect(aoCadastrarProduto).toHaveBeenCalledWith({ nome: 'Coco Ralado 100g', codigoBarras: '7891234567890' })
   })
 
+  it('sugestão do catálogo global usa o mesmo layout de linha do próprio catálogo (ícone + nome + botão Adicionar)', async () => {
+    renderModal()
+    const user = userEvent.setup()
+    await screen.findByText('Arroz Tipo 1 5kg')
+
+    server.use(
+      http.get('*/api/produtos/sugestoes', () =>
+        HttpResponse.json({
+          doProprioCatalogo: [],
+          doCatalogoGlobal: [{ codigoBarras: '7891234567890', nome: 'Coco Ralado 100g', marca: 'Marca X' }],
+        }),
+      ),
+    )
+
+    await user.type(screen.getByPlaceholderText(/Buscar por nome ou código/i), 'coco')
+    await sleep(APOS_DEBOUNCE)
+
+    const linha = (await screen.findByText('Coco Ralado 100g')).closest('li') as HTMLElement
+    expect(within(linha).getByText(/7891234567890/)).toBeInTheDocument()
+    expect(within(linha).getByRole('button', { name: 'Cadastrar e adicionar Coco Ralado 100g' })).toBeInTheDocument()
+  })
+
+  it('seta pra baixo + Enter seleciona o item ativo na lista do próprio catálogo', async () => {
+    let body: { produtoId: string; quantidade: number } | null = null
+    server.use(
+      http.post('*/api/cotacoes/c-1/itens', async ({ request }) => {
+        body = (await request.json()) as typeof body
+        return HttpResponse.json({})
+      }),
+    )
+    renderModal({}, [
+      ARROZ,
+      { id: 'p-2', nome: 'Feijão Carioca 1kg', codigoBarras: null, unidade: 'Pacote', quantidadePorEmbalagem: 1, ativo: true },
+    ])
+    const user = userEvent.setup()
+    await screen.findByText('Feijão Carioca 1kg')
+
+    const campo = screen.getByPlaceholderText(/Buscar por nome ou código/i)
+    await user.click(campo)
+    await user.keyboard('{ArrowDown}{Enter}')
+
+    await waitFor(() => expect(body).toEqual({ produtoId: 'p-2', quantidade: 1 }))
+  })
+
+  it('Enter na base compartilhada (sem digitar seta) cadastra a primeira sugestão', async () => {
+    const { aoCadastrarProduto } = renderModal()
+    const user = userEvent.setup()
+    await screen.findByText('Arroz Tipo 1 5kg')
+
+    server.use(
+      http.get('*/api/produtos/sugestoes', () =>
+        HttpResponse.json({
+          doProprioCatalogo: [],
+          doCatalogoGlobal: [{ codigoBarras: '7891234567890', nome: 'Coco Ralado 100g', marca: null }],
+        }),
+      ),
+    )
+
+    const campo = screen.getByPlaceholderText(/Buscar por nome ou código/i)
+    await user.type(campo, 'coco')
+    await sleep(APOS_DEBOUNCE)
+    await screen.findByText('Coco Ralado 100g')
+
+    await user.keyboard('{Enter}')
+
+    expect(aoCadastrarProduto).toHaveBeenCalledWith({ nome: 'Coco Ralado 100g', codigoBarras: '7891234567890' })
+  })
+
   it('achar no próprio catálogo não busca sugestão do catálogo global', async () => {
     let chamouSugestoes = false
     server.use(
