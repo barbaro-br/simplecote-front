@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useAuth } from './useAuth'
 import { useTenant } from '@/shared/tenant/useTenant'
 import { decodificarClaims } from './jwt'
@@ -17,6 +19,23 @@ import { RouteLoadingFallback } from '@/shared/components/ui/route-loading'
 export function AuthGuard() {
   const { isAutenticado, carregando, token } = useAuth()
   const { slug: hostnameSlug, ehHostDoApp } = useTenant()
+  const claims = decodificarClaims(token)
+
+  // SUPER_ADMIN não tem Comprador — o painel do lojista dá 403 em tudo. Manda pro
+  // backoffice. (Em modo suporte o token tem papel=ADMIN, então não cai aqui.)
+  // Isso também é o que acontece se um token de suporte salvo (localStorage,
+  // AuthContext.tsx) não for encontrado nesta aba num reload — o boot cai no
+  // SUPER_ADMIN via cookie e para aqui. Não dá pra distinguir com certeza dos
+  // dois casos (SUPER_ADMIN navegando direto pro /admin por engano é raro, mas
+  // possível), então o aviso é neutro: explica por que o backoffice apareceu em
+  // vez de deixar a troca de painel silenciosa.
+  const ehSuperAdminNoAdmin = isAutenticado && !carregando && claims?.papel === 'SUPER_ADMIN'
+
+  useEffect(() => {
+    if (ehSuperAdminNoAdmin) {
+      toast.warning('Sessão de suporte não encontrada nesta aba — entre novamente pelo backoffice.')
+    }
+  }, [ehSuperAdminNoAdmin])
 
   if (carregando) {
     return <RouteLoadingFallback />
@@ -26,11 +45,7 @@ export function AuthGuard() {
     return <Navigate to="/login" replace />
   }
 
-  const claims = decodificarClaims(token)
-
-  // SUPER_ADMIN não tem Comprador — o painel do lojista dá 403 em tudo. Manda pro
-  // backoffice. (Em modo suporte o token tem papel=ADMIN, então não cai aqui.)
-  if (claims?.papel === 'SUPER_ADMIN') {
+  if (ehSuperAdminNoAdmin) {
     return <Navigate to="/backoffice" replace />
   }
 
