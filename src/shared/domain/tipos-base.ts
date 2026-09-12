@@ -2,6 +2,7 @@ export type StatusCotacao = 'RASCUNHO' | 'ABERTA' | 'ENCERRADA' | 'PEDIDOS_GERAD
 export type ParticipanteStatus = 'CONVIDADO' | 'VISUALIZOU' | 'RESPONDIDO'
 export type LanceStatus = 'PENDENTE' | 'COTADO' | 'NAO_COTADO'
 export type PedidoStatus = 'GERADO' | 'ENVIADO' | 'CONFIRMADO'
+export type StatusPedidoAvulso = 'ABERTO' | 'FECHADO'
 
 export interface InvalidParam {
   name: string

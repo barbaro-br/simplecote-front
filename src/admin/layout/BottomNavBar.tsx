@@ -11,6 +11,7 @@ import {
   Gear,
   UserGear,
   Users,
+  Receipt,
 } from '@phosphor-icons/react'
 
 const ITENS_FIXOS = [
@@ -20,6 +21,7 @@ const ITENS_FIXOS = [
 ] as const
 
 const ITENS_MAIS = [
+  { to: '/admin/pedidos-avulsos/novo', label: 'Pedido avulso', Icon: Receipt, end: false },
   { to: '/admin/empresas', label: 'Empresas', Icon: Buildings, end: false },
   { to: '/admin/usuarios', label: 'Usuários', Icon: UserGear, end: false },
   { to: '/admin/membros', label: 'Membros', Icon: Users, end: false },
@@ -92,6 +94,22 @@ export function BottomNavBar({
           >
             <DotsThree className="size-6 shrink-0" aria-hidden />
             <span className="whitespace-nowrap ui-uppercase">Mais</span>
+          </button>
+        )}
+
+        {/* Tela larga não tem menu "Mais" (todos os itens já vão direto na
+            barra) — sem isso o botão de sair não existia em lugar nenhum
+            nesse caso (achado real: sumia ao trocar `estiloNavegacao` pra
+            INFERIOR numa tela >=768px). */}
+        {ehLarga && (
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="Sair"
+            className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs text-muted-foreground transition-colors hover:text-destructive"
+          >
+            <SignOut className="size-6 shrink-0" aria-hidden />
+            <span className="whitespace-nowrap ui-uppercase">Sair</span>
           </button>
         )}
       </nav>
