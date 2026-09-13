@@ -699,3 +699,34 @@ test('seta pra baixo move o foco entre linhas e Enter abre a edição', async ()
   await user.keyboard('{Enter}')
   expect(await screen.findByRole('dialog', { name: /editar item — refrigerante lata/i })).toBeInTheDocument()
 })
+
+test('buscar um produto que já está no pedido mostra o selo "Já no pedido"', async () => {
+  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }))
+  server.use(
+    http.post('*/api/pedidos/avulsos', () =>
+      HttpResponse.json(
+        { id: 'ped-10', status: 'ABERTO', itens: [ITEM_SARDINHA], quantidadeItens: 1, total: 250, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: '14/21/28', prazoEntregaEstimado: null },
+        { status: 201 },
+      ),
+    ),
+  )
+
+  const user = userEvent.setup()
+  renderPage()
+
+  await preencherObrigatorios(user)
+  await buscarESelecionar(user, 'sardinha', 'Sardinha X')
+  await user.type(screen.getByLabelText('Preço da embalagem'), '125')
+  await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
+  await confirmarItemNoModal(user)
+  await screen.findByText('1 item')
+
+  await abrirModalItem(user)
+  const dialog = within(screen.getByRole('dialog', { name: /adicionar item/i }))
+  const campo = dialog.getByPlaceholderText(/Buscar produto/i)
+  await user.clear(campo)
+  await user.type(campo, 'sardinha')
+  await sleep(APOS_DEBOUNCE)
+
+  expect(await dialog.findByText('Já no pedido')).toBeInTheDocument()
+})

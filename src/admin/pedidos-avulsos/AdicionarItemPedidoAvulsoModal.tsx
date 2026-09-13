@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CaretDown, CaretUp, CircleNotch, MagnifyingGlass, Package, Sparkle, X } from '@phosphor-icons/react'
+import { CaretDown, CaretUp, Check, CircleNotch, MagnifyingGlass, Package, Sparkle, X } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
@@ -17,7 +17,12 @@ import {
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import type { Produto, ValoresIniciaisProduto } from '@/admin/produtos/produtos.schema'
 import { useCriarPedidoAvulso, useAdicionarItemPedidoAvulso } from './pedidos-avulsos.api'
-import { itemPedidoAvulsoSchema, type ItemPedidoAvulsoFormValues, type PedidoAvulso } from './pedidos-avulsos.schema'
+import {
+  itemPedidoAvulsoSchema,
+  type ItemPedidoAvulso,
+  type ItemPedidoAvulsoFormValues,
+  type PedidoAvulso,
+} from './pedidos-avulsos.schema'
 
 const LIMITE_SUGESTOES = 30
 
@@ -34,6 +39,7 @@ type Props = {
   empresaId: string
   condicaoPagamentoId: string
   prazoEntregaEstimado: string
+  itens: ItemPedidoAvulso[]
   quantidadeItens: number
   total: number
   onPedidoAtualizado: (pedido: PedidoAvulso) => void
@@ -53,12 +59,18 @@ export function AdicionarItemPedidoAvulsoModal({
   empresaId,
   condicaoPagamentoId,
   prazoEntregaEstimado,
+  itens,
   quantidadeItens,
   total,
   onPedidoAtualizado,
 }: Props) {
   const criar = useCriarPedidoAvulso()
   const adicionarItem = useAdicionarItemPedidoAvulso(pedidoId ?? '')
+
+  // Produtos já adicionados a este pedido — só avisa (change atalhos-de-
+  // pesquisa-do-item), não bloqueia: pode ser legítimo pedir de novo o
+  // mesmo item (ex.: um segundo lote com preço diferente).
+  const produtosNoPedido = new Set(itens.map((i) => i.produtoId))
 
   const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null)
   const [busca, setBusca] = useState('')
@@ -312,28 +324,37 @@ export function AdicionarItemPedidoAvulsoModal({
                           Seu catálogo
                         </p>
                         <ul id="sugestoes-pedido-avulso-modal" role="listbox">
-                          {doProprioCatalogo.map((p, i) => (
-                            <li key={p.id} role="option" aria-selected={i === indiceAtivoClamped}>
-                              <button
-                                ref={i === indiceAtivoClamped ? itemAtivoRef : undefined}
-                                type="button"
-                                onMouseDown={(e) => e.preventDefault()}
-                                onClick={() => selecionarProduto(p)}
-                                onMouseEnter={() => setIndiceAtivo(i)}
-                                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
-                                  i === indiceAtivoClamped
-                                    ? 'bg-primary/15 text-foreground ring-1 ring-inset ring-primary/40'
-                                    : 'hover:bg-primary/10'
-                                }`}
-                              >
-                                <Package className="size-4 shrink-0 text-muted-foreground" />
-                                <span className="flex min-w-0 flex-col">
-                                  <span className="truncate">{p.nome}</span>
-                                  <span className="text-[11px] text-muted-foreground">{rotuloEmbalagem(p)}</span>
-                                </span>
-                              </button>
-                            </li>
-                          ))}
+                          {doProprioCatalogo.map((p, i) => {
+                            const jaNoPedido = produtosNoPedido.has(p.id)
+                            return (
+                              <li key={p.id} role="option" aria-selected={i === indiceAtivoClamped}>
+                                <button
+                                  ref={i === indiceAtivoClamped ? itemAtivoRef : undefined}
+                                  type="button"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => selecionarProduto(p)}
+                                  onMouseEnter={() => setIndiceAtivo(i)}
+                                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                                    i === indiceAtivoClamped
+                                      ? 'bg-primary/15 text-foreground ring-1 ring-inset ring-primary/40'
+                                      : 'hover:bg-primary/10'
+                                  }`}
+                                >
+                                  <Package className="size-4 shrink-0 text-muted-foreground" />
+                                  <span className="flex min-w-0 flex-1 flex-col">
+                                    <span className="truncate">{p.nome}</span>
+                                    <span className="text-[11px] text-muted-foreground">{rotuloEmbalagem(p)}</span>
+                                  </span>
+                                  {jaNoPedido && (
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                      <Check className="size-3" />
+                                      Já no pedido
+                                    </span>
+                                  )}
+                                </button>
+                              </li>
+                            )
+                          })}
                         </ul>
                       </div>
                     )}
