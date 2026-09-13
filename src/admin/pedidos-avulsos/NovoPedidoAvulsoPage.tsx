@@ -147,21 +147,28 @@ export function NovoPedidoAvulsoPage() {
         <SecaoCabecalho
           titulo="Itens do pedido"
           acao={
-            <Button
-              variant="default"
-              size="sm"
-              disabled={itens.length === 0 || fechar.isPending}
-              onClick={() => setConfirmandoFechar(true)}
-            >
-              Fechar pedido
-            </Button>
+            <>
+              <Button type="button" size="sm" onClick={() => setModalItemAberto(true)} className="gap-1.5">
+                <Plus className="size-4" />
+                Adicionar item
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={itens.length === 0 || fechar.isPending}
+                onClick={() => setConfirmandoFechar(true)}
+              >
+                Fechar pedido
+              </Button>
+            </>
           }
         />
 
         {/* Barra de contexto: condição de pagamento/prazo (editável só até o
-            1º item, depois vira leitura do que já foi salvo) + o gatilho do
-            modal de adicionar item — tudo numa faixa só, largura toda, em vez
-            de cartões separados espalhando a informação pela tela. */}
+            1º item, depois vira leitura do que já foi salvo) — o gatilho de
+            adicionar item já mora no cabeçalho acima, junto do "Fechar
+            pedido" (achado real: os dois empilhados em linhas separadas, os
+            dois botões verdes um em cima do outro, pareciam quebrados). */}
         <div className="flex flex-wrap items-end gap-4 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] px-4 py-3 sm:px-5">
           {pedidoId ? (
             <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
@@ -228,13 +235,6 @@ export function NovoPedidoAvulsoPage() {
               </div>
             </div>
           )}
-
-          <div className="ml-auto shrink-0">
-            <Button type="button" onClick={() => setModalItemAberto(true)} className="gap-1.5">
-              <Plus className="size-4" />
-              Adicionar item
-            </Button>
-          </div>
         </div>
 
         {/* Tabela de itens — mesmo padrão visual/estrutural da grade ao vivo
