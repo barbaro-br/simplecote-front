@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Plus } from '@phosphor-icons/react'
+import { ArrowLeft, Plus } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Combobox } from '@/shared/components/ui/combobox'
@@ -14,8 +14,9 @@ import { useCondicoesPagamento, useCriarCondicaoPagamento } from '@/admin/condic
 import { useEmpresas } from '@/admin/empresas/empresas.api'
 import { useRepresentantes } from '@/admin/representantes/representantes.api'
 import { useFecharPedidoAvulso } from './pedidos-avulsos.api'
-import type { PedidoAvulso } from './pedidos-avulsos.schema'
+import type { ItemPedidoAvulso, PedidoAvulso } from './pedidos-avulsos.schema'
 import { AdicionarItemPedidoAvulsoModal } from './AdicionarItemPedidoAvulsoModal'
+import { EditarItemPedidoAvulsoModal } from './EditarItemPedidoAvulsoModal'
 
 // Tela de montagem de um Pedido avulso (venda fechada por telefone, sem
 // Cotação por trás) — rota própria, não modal (design.md - Decisão 1): o
@@ -33,6 +34,24 @@ export function NovoPedidoAvulsoPage() {
 
   const [confirmandoFechar, setConfirmandoFechar] = useState(false)
   const [modalItemAberto, setModalItemAberto] = useState(false)
+  const [itemEmEdicao, setItemEmEdicao] = useState<ItemPedidoAvulso | null>(null)
+
+  // Navegação por teclado nas linhas da tabela (seta cima/baixo move o foco
+  // entre linhas, Enter/Espaço abre a edição) — mesma ideia de outras listas
+  // navegáveis do painel, adaptada pra `<tr>` em vez de `<button>`.
+  const linhaRefs = useRef<(HTMLTableRowElement | null)[]>([])
+  function aoTeclarNaLinha(e: React.KeyboardEvent<HTMLTableRowElement>, indice: number, item: ItemPedidoAvulso) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      linhaRefs.current[indice + 1]?.focus()
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      linhaRefs.current[indice - 1]?.focus()
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      setItemEmEdicao(item)
+    }
+  }
 
   // Condição de pagamento/prazo de entrega: só dá pra mandar no `POST` que cria
   // o pedido (o back não tem endpoint pra atualizar depois) — por isso só
@@ -84,9 +103,9 @@ export function NovoPedidoAvulsoPage() {
   if (fechado && pedido) {
     return (
       <PageContainer maxWidth="lg" className="space-y-6">
-        <CabecalhoPagina titulo="Pedido avulso fechado" />
+        <CabecalhoPagina titulo="Pedido fechado" />
         <Superficie className="p-6 space-y-3 text-center">
-          <p className="text-sm text-muted-foreground">Pedido avulso registrado com sucesso.</p>
+          <p className="text-sm text-muted-foreground">Pedido registrado com sucesso.</p>
           <p className="text-3xl font-semibold tracking-tight">{moeda(total)}</p>
           <p className="text-sm text-muted-foreground">
             {quantidadeItens} {quantidadeItens === 1 ? 'item' : 'itens'} · pedido {pedido.id}
@@ -96,7 +115,7 @@ export function NovoPedidoAvulsoPage() {
               <Button variant="outline">Ir para o Dashboard</Button>
             </Link>
             <Link to="/admin/pedidos-avulsos/novo" reloadDocument>
-              <Button>Novo pedido avulso</Button>
+              <Button>Novo pedido</Button>
             </Link>
           </div>
         </Superficie>
@@ -107,11 +126,15 @@ export function NovoPedidoAvulsoPage() {
   return (
     <PageContainer maxWidth="full" className="flex h-full min-h-0 flex-col gap-3 py-2">
       <CabecalhoPagina
-        titulo="Novo pedido avulso"
+        titulo="Novo pedido"
         subtitulo="Venda fechada por telefone com um Representante, fora do fluxo de cotação."
         acao={
-          <Link to="/admin" className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:underline">
-            ← Cancelar
+          <Link
+            to="/admin"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground hover:underline"
+          >
+            <ArrowLeft className="size-4 shrink-0" />
+            Cancelar
           </Link>
         }
       />
@@ -253,8 +276,17 @@ export function NovoPedidoAvulsoPage() {
                     </td>
                   </tr>
                 )}
-                {itens.map((item) => (
-                  <tr key={item.id} className="hover:bg-muted/40">
+                {itens.map((item, indice) => (
+                  <tr
+                    key={item.id}
+                    ref={(el) => { linhaRefs.current[indice] = el }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Editar item ${item.nomeSnapshot}`}
+                    onClick={() => setItemEmEdicao(item)}
+                    onKeyDown={(e) => aoTeclarNaLinha(e, indice, item)}
+                    className="cursor-pointer outline-none hover:bg-muted/40 focus-visible:bg-primary/10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary/40"
+                  >
                     <td className="truncate border-b px-4 py-2 ui-uppercase">{item.nomeSnapshot}</td>
                     <td className="truncate border-b px-2 py-2 text-right text-muted-foreground">
                       {item.unidadeSnapshot} c/ {item.quantidadePorEmbalagemSnapshot}
@@ -287,6 +319,15 @@ export function NovoPedidoAvulsoPage() {
         total={total}
         onPedidoAtualizado={setPedido}
       />
+
+      {pedidoId && (
+        <EditarItemPedidoAvulsoModal
+          pedidoId={pedidoId}
+          item={itemEmEdicao}
+          onClose={() => setItemEmEdicao(null)}
+          onPedidoAtualizado={setPedido}
+        />
+      )}
 
       {confirmandoFechar && (
         <ConfirmarDialog

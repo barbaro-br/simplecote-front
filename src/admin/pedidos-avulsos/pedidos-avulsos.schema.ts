@@ -49,3 +49,9 @@ export const itemPedidoAvulsoSchema = z.object({
 })
 
 export type ItemPedidoAvulsoFormValues = z.infer<typeof itemPedidoAvulsoSchema>
+
+// Espelha EditarItemPedidoAvulsoRequest do backend — não troca o produto, só
+// corrige preço da embalagem/quantidade de um item já adicionado.
+export const editarItemPedidoAvulsoSchema = itemPedidoAvulsoSchema.omit({ produtoId: true })
+
+export type EditarItemPedidoAvulsoFormValues = z.infer<typeof editarItemPedidoAvulsoSchema>

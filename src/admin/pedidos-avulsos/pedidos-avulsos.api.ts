@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/api/api-client'
-import type { CondicoesPedidoAvulso, ItemPedidoAvulsoFormValues, PedidoAvulso } from './pedidos-avulsos.schema'
+import type {
+  CondicoesPedidoAvulso,
+  EditarItemPedidoAvulsoFormValues,
+  ItemPedidoAvulsoFormValues,
+  PedidoAvulso,
+} from './pedidos-avulsos.schema'
 
 const chave = ['pedidos-avulsos'] as const
 
@@ -21,6 +26,25 @@ export function useAdicionarItemPedidoAvulso(pedidoId: string) {
   return useMutation({
     mutationFn: (valores: ItemPedidoAvulsoFormValues) =>
       api.post<PedidoAvulso>(`/api/pedidos/avulsos/${pedidoId}/itens`, valores),
+    onSuccess: (pedido) => queryClient.setQueryData([...chave, pedidoId], pedido),
+  })
+}
+
+// Edita preço da embalagem/quantidade de um item já adicionado (ainda `ABERTO`).
+export function useEditarItemPedidoAvulso(pedidoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ itemId, ...valores }: EditarItemPedidoAvulsoFormValues & { itemId: string }) =>
+      api.put<PedidoAvulso>(`/api/pedidos/avulsos/${pedidoId}/itens/${itemId}`, valores),
+    onSuccess: (pedido) => queryClient.setQueryData([...chave, pedidoId], pedido),
+  })
+}
+
+// Remove um item de um Pedido avulso ainda `ABERTO`.
+export function useRemoverItemPedidoAvulso(pedidoId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (itemId: string) => api.delete<PedidoAvulso>(`/api/pedidos/avulsos/${pedidoId}/itens/${itemId}`),
     onSuccess: (pedido) => queryClient.setQueryData([...chave, pedidoId], pedido),
   })
 }

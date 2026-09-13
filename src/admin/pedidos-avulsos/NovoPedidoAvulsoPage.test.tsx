@@ -110,7 +110,7 @@ beforeEach(() => {
 test('abre vazia: sem itens, "Fechar pedido" desabilitado', async () => {
   renderPage()
 
-  expect(screen.getByRole('heading', { name: 'Novo pedido avulso' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Novo pedido' })).toBeInTheDocument()
   expect(screen.getByText('Nenhum item adicionado ainda.')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Fechar pedido' })).toBeDisabled()
 })
@@ -312,7 +312,7 @@ test('fechar exige confirmação nomeando total e contagem, e trava novos itens 
   expect(dialog.getByText(/1 item, total R\$\s*250,00/)).toBeInTheDocument()
   await user.click(dialog.getByRole('button', { name: 'Fechar pedido' }))
 
-  expect(await screen.findByRole('heading', { name: 'Pedido avulso fechado' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Pedido fechado' })).toBeInTheDocument()
   expect(screen.getByText(/pedido ped-2/)).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Adicionar item' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Fechar pedido' })).not.toBeInTheDocument()
@@ -541,7 +541,161 @@ test('fluxo completo: dois itens de embalagens diferentes, total geral e confirm
   const dialog = within(screen.getByRole('dialog', { name: /fechar pedido avulso/i }))
   await user.click(dialog.getByRole('button', { name: 'Fechar pedido' }))
 
-  expect(await screen.findByRole('heading', { name: 'Pedido avulso fechado' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Pedido fechado' })).toBeInTheDocument()
   expect(screen.getByText(/R\$\s*276,70/)).toBeInTheDocument()
   expect(screen.getByText(/pedido ped-3/)).toBeInTheDocument()
+})
+
+test('clicar numa linha abre a edição pré-preenchida e salvar atualiza preço/quantidade/total', async () => {
+  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }))
+  let corpoEdicao: any
+  server.use(
+    http.post('*/api/pedidos/avulsos', () =>
+      HttpResponse.json(
+        { id: 'ped-7', status: 'ABERTO', itens: [ITEM_SARDINHA], quantidadeItens: 1, total: 250, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: '14/21/28', prazoEntregaEstimado: null },
+        { status: 201 },
+      ),
+    ),
+    http.put('*/api/pedidos/avulsos/:id/itens/:itemId', async ({ request, params }) => {
+      corpoEdicao = await request.json()
+      expect(params.itemId).toBe('item-1')
+      return HttpResponse.json({
+        id: 'ped-7',
+        status: 'ABERTO',
+        itens: [{ ...ITEM_SARDINHA, precoEmbalagem: 200, precoUnitario: 4, quantidade: 5, subtotal: 1000 }],
+        quantidadeItens: 1,
+        total: 1000,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '14/21/28',
+        prazoEntregaEstimado: null,
+      })
+    }),
+  )
+
+  const user = userEvent.setup()
+  renderPage()
+
+  await preencherObrigatorios(user)
+  await buscarESelecionar(user, 'sardinha', 'Sardinha X')
+  await user.type(screen.getByLabelText('Preço da embalagem'), '125')
+  await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
+  await confirmarItemNoModal(user)
+  await fecharModal(user)
+
+  await user.click(await screen.findByText('Sardinha X'))
+  const dialogEdicao = within(await screen.findByRole('dialog', { name: /editar item/i }))
+  expect(dialogEdicao.getByLabelText('Preço da embalagem')).toHaveValue(125)
+  expect(dialogEdicao.getByLabelText('Quantidade de embalagens')).toHaveValue(2)
+
+  await user.clear(dialogEdicao.getByLabelText('Preço da embalagem'))
+  await user.type(dialogEdicao.getByLabelText('Preço da embalagem'), '200')
+  await user.clear(dialogEdicao.getByLabelText('Quantidade de embalagens'))
+  await user.type(dialogEdicao.getByLabelText('Quantidade de embalagens'), '5')
+  await user.click(dialogEdicao.getByRole('button', { name: 'Salvar' }))
+
+  expect(corpoEdicao).toEqual({ precoEmbalagem: 200, quantidade: 5 })
+  expect(await screen.findByText(/R\$\s*4,00/)).toBeInTheDocument()
+  expect(await screen.findAllByText(/R\$\s*1\.000,00/)).toHaveLength(2)
+})
+
+test('remover item exige confirmação e some da tabela e do total', async () => {
+  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }))
+  let removeuItemId: string | undefined
+  server.use(
+    http.post('*/api/pedidos/avulsos', () =>
+      HttpResponse.json(
+        { id: 'ped-8', status: 'ABERTO', itens: [ITEM_SARDINHA], quantidadeItens: 1, total: 250, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: '14/21/28', prazoEntregaEstimado: null },
+        { status: 201 },
+      ),
+    ),
+    http.delete('*/api/pedidos/avulsos/:id/itens/:itemId', ({ params }) => {
+      removeuItemId = params.itemId as string
+      return HttpResponse.json({
+        id: 'ped-8',
+        status: 'ABERTO',
+        itens: [],
+        quantidadeItens: 0,
+        total: 0,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '14/21/28',
+        prazoEntregaEstimado: null,
+      })
+    }),
+  )
+
+  const user = userEvent.setup()
+  renderPage()
+
+  await preencherObrigatorios(user)
+  await buscarESelecionar(user, 'sardinha', 'Sardinha X')
+  await user.type(screen.getByLabelText('Preço da embalagem'), '125')
+  await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
+  await confirmarItemNoModal(user)
+  await fecharModal(user)
+
+  await user.click(await screen.findByText('Sardinha X'))
+  const dialogEdicao = within(await screen.findByRole('dialog', { name: /editar item/i }))
+  await user.click(dialogEdicao.getByRole('button', { name: 'Remover item' }))
+
+  const confirmar = within(await screen.findByRole('dialog', { name: /remover item/i }))
+  await user.click(confirmar.getByRole('button', { name: 'Remover item' }))
+
+  expect(removeuItemId).toBe('item-1')
+  await screen.findByText('Nenhum item adicionado ainda.')
+  expect(screen.getByText('0 itens')).toBeInTheDocument()
+})
+
+test('seta pra baixo move o foco entre linhas e Enter abre a edição', async () => {
+  server.use(
+    sugestoesHandler({
+      sardinha: { doProprioCatalogo: [SARDINHA] },
+      refri: { doProprioCatalogo: [REFRIGERANTE] },
+    }),
+  )
+  server.use(
+    http.post('*/api/pedidos/avulsos', () =>
+      HttpResponse.json(
+        { id: 'ped-9', status: 'ABERTO', itens: [ITEM_SARDINHA], quantidadeItens: 1, total: 250, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: '14/21/28', prazoEntregaEstimado: null },
+        { status: 201 },
+      ),
+    ),
+    http.post('*/api/pedidos/avulsos/:id/itens', () =>
+      HttpResponse.json({
+        id: 'ped-9',
+        status: 'ABERTO',
+        itens: [
+          ITEM_SARDINHA,
+          { id: 'item-2', produtoId: 'p-refri', nomeSnapshot: 'Refrigerante Lata', unidadeSnapshot: 'Unidade', quantidadePorEmbalagemSnapshot: 1, precoEmbalagem: 8.9, precoUnitario: 8.9, quantidade: 3, subtotal: 26.7 },
+        ],
+        quantidadeItens: 2,
+        total: 276.7,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '14/21/28',
+        prazoEntregaEstimado: null,
+      }),
+    ),
+  )
+
+  const user = userEvent.setup()
+  renderPage()
+
+  await preencherObrigatorios(user)
+  await buscarESelecionar(user, 'sardinha', 'Sardinha X')
+  await user.type(screen.getByLabelText('Preço da embalagem'), '125')
+  await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
+  await confirmarItemNoModal(user)
+  await buscarESelecionar(user, 'refri', 'Refrigerante Lata')
+  await user.type(screen.getByLabelText('Preço da embalagem'), '8.90')
+  await user.type(screen.getByLabelText('Quantidade de embalagens'), '3')
+  await confirmarItemNoModal(user)
+  await fecharModal(user)
+
+  const linhaSardinha = (await screen.findByText('Sardinha X')).closest('tr') as HTMLElement
+  linhaSardinha.focus()
+  await user.keyboard('{ArrowDown}')
+  const linhaRefri = screen.getByText('Refrigerante Lata').closest('tr') as HTMLElement
+  expect(linhaRefri).toHaveFocus()
+
+  await user.keyboard('{Enter}')
+  expect(await screen.findByRole('dialog', { name: /editar item — refrigerante lata/i })).toBeInTheDocument()
 })
