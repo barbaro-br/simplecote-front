@@ -5,6 +5,8 @@ import { server } from '@/setupTests'
 import {
   useCriarPedidoAvulso,
   useAdicionarItemPedidoAvulso,
+  useEditarItemPedidoAvulso,
+  useRemoverItemPedidoAvulso,
   useFecharPedidoAvulso,
   usePedidoAvulso,
 } from './pedidos-avulsos.api'
@@ -32,7 +34,7 @@ function createWrapper() {
 }
 
 describe('pedidos-avulsos.api', () => {
-  it('useCriarPedidoAvulso: POST /api/pedidos/avulsos com {produtoId,precoEmbalagem,quantidade}', async () => {
+  it('useCriarPedidoAvulso: POST /api/pedidos/avulsos com o pedido vazio (sem item)', async () => {
     let corpo: any
     server.use(
       http.post('*/api/pedidos/avulsos', async ({ request }) => {
@@ -43,13 +45,11 @@ describe('pedidos-avulsos.api', () => {
 
     const { result } = renderHook(() => useCriarPedidoAvulso(), { wrapper: createWrapper() })
     const pedido = await result.current.mutateAsync({
-      produtoId: PRODUTO_ID,
-      precoEmbalagem: 125,
-      quantidade: 2,
       empresaId: 'emp-1',
+      condicaoPagamentoId: 'cp-1',
     })
 
-    expect(corpo).toEqual({ produtoId: PRODUTO_ID, precoEmbalagem: 125, quantidade: 2, empresaId: 'emp-1' })
+    expect(corpo).toEqual({ empresaId: 'emp-1', condicaoPagamentoId: 'cp-1' })
     expect(pedido.id).toBe(UUID)
   })
 
@@ -72,6 +72,41 @@ describe('pedidos-avulsos.api', () => {
 
     expect(corpo).toEqual({ produtoId: PRODUTO_ID, precoEmbalagem: 8.9, quantidade: 3 })
     expect(pedido.quantidadeItens).toBe(1)
+  })
+
+  it('useEditarItemPedidoAvulso: PUT /api/pedidos/avulsos/{id}/itens/{itemId}', async () => {
+    let corpo: any
+    const ITEM_ID = '323e4567-e89b-12d3-a456-426614174000'
+    server.use(
+      http.put('*/api/pedidos/avulsos/:id/itens/:itemId', async ({ request, params }) => {
+        expect(params.id).toBe(UUID)
+        expect(params.itemId).toBe(ITEM_ID)
+        corpo = await request.json()
+        return HttpResponse.json(pedidoAvulsoDe({ quantidadeItens: 1, total: 1000 }))
+      }),
+    )
+
+    const { result } = renderHook(() => useEditarItemPedidoAvulso(UUID), { wrapper: createWrapper() })
+    const pedido = await result.current.mutateAsync({ itemId: ITEM_ID, precoEmbalagem: 200, quantidade: 5 })
+
+    expect(corpo).toEqual({ precoEmbalagem: 200, quantidade: 5 })
+    expect(pedido.total).toBe(1000)
+  })
+
+  it('useRemoverItemPedidoAvulso: DELETE /api/pedidos/avulsos/{id}/itens/{itemId}', async () => {
+    const ITEM_ID = '323e4567-e89b-12d3-a456-426614174000'
+    server.use(
+      http.delete('*/api/pedidos/avulsos/:id/itens/:itemId', ({ params }) => {
+        expect(params.id).toBe(UUID)
+        expect(params.itemId).toBe(ITEM_ID)
+        return HttpResponse.json(pedidoAvulsoDe())
+      }),
+    )
+
+    const { result } = renderHook(() => useRemoverItemPedidoAvulso(UUID), { wrapper: createWrapper() })
+    const pedido = await result.current.mutateAsync(ITEM_ID)
+
+    expect(pedido.quantidadeItens).toBe(0)
   })
 
   it('useFecharPedidoAvulso: POST /api/pedidos/avulsos/{id}/fechar', async () => {
