@@ -7,20 +7,6 @@
       "main": false
     }
   },
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "app.simplecote.com.br" }],
-      "destination": "https://simplecote.app/$1",
-      "permanent": false
-    },
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "app.simplecote.app" }],
-      "destination": "https://simplecote.app/$1",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
