@@ -9,7 +9,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { Combobox } from '@/shared/components/ui/combobox'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
-import { CabecalhoPagina, Superficie } from '@/shared/ui'
+import { CabecalhoPagina, SecaoCabecalho, SubFaixa, Superficie } from '@/shared/ui'
 import { ConfirmarDialog } from '@/admin/cotacoes/ConfirmarDialog'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { moeda } from '@/shared/format/formatters'
@@ -285,7 +285,7 @@ export function NovoPedidoAvulsoPage() {
   }
 
   return (
-    <PageContainer maxWidth="lg" className="space-y-6">
+    <PageContainer maxWidth="full" className="flex h-full min-h-0 flex-col gap-3 py-2">
       <CabecalhoPagina
         titulo="Novo pedido avulso"
         subtitulo="Venda fechada por telefone com um Representante, fora do fluxo de cotação."
@@ -296,14 +296,40 @@ export function NovoPedidoAvulsoPage() {
         }
       />
 
-      {/* Cabeçalho único: condição de pagamento + prazo de entrega + o total
-          corrente — tudo que não é "item em si" fica junto aqui, pra não
-          espalhar informação em cartões separados (achado real: o total só
-          aparecia lá embaixo, longe de onde a decisão de fechar é tomada). */}
-      <Superficie className="p-6 space-y-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* Cockpit: cabeçalho e rodapé fixos, só a tabela de itens rola por
+          dentro — mesmo padrão da grade ao vivo de Cotação
+          (GradeAoVivoTabela), pra não repetir o "tranco" de rolagem que essa
+          tela tinha com cartões empilhados. */}
+      <Superficie className="flex min-h-0 flex-1 flex-col">
+        <SecaoCabecalho
+          titulo="Itens do pedido"
+          acao={
+            <Button
+              variant="default"
+              size="sm"
+              disabled={itens.length === 0 || fechar.isPending}
+              onClick={() => setConfirmandoFechar(true)}
+            >
+              Fechar pedido
+            </Button>
+          }
+        />
+
+        {/* Barra de contexto: condição de pagamento/prazo (editável só até o
+            1º item, depois vira leitura do que já foi salvo) + a busca que
+            adiciona itens — tudo numa faixa só, largura toda, em vez de
+            cartões separados espalhando a informação pela tela. */}
+        <div className="flex flex-wrap items-end gap-4 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] px-4 py-3 sm:px-5">
           {pedidoId ? (
             <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
+              <span>
+                Empresa: <strong className="text-foreground">{empresas?.find((e) => e.id === empresaId)?.nome ?? '—'}</strong>
+              </span>
+              {representante && (
+                <span>
+                  Representante: <strong className="text-foreground">{representante.nome}</strong>
+                </span>
+              )}
               <span>
                 Cond. pagamento: <strong className="text-foreground">{pedido?.condicaoPagamento ?? '—'}</strong>
               </span>
@@ -312,9 +338,9 @@ export function NovoPedidoAvulsoPage() {
               </span>
             </div>
           ) : (
-            <div className="grid flex-1 grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="empresa" className="text-sm font-medium ui-uppercase">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:min-w-[520px]">
+              <div className="space-y-1.5">
+                <label htmlFor="empresa" className="text-xs font-medium ui-uppercase text-muted-foreground">
                   Empresa
                 </label>
                 <Combobox
@@ -331,8 +357,8 @@ export function NovoPedidoAvulsoPage() {
                   </p>
                 )}
               </div>
-              <div className="space-y-2">
-                <label htmlFor="condicaoPagamento" className="text-sm font-medium ui-uppercase">
+              <div className="space-y-1.5">
+                <label htmlFor="condicaoPagamento" className="text-xs font-medium ui-uppercase text-muted-foreground">
                   Condição de pagamento
                 </label>
                 <Combobox
@@ -345,12 +371,13 @@ export function NovoPedidoAvulsoPage() {
                   emptyMessage="Nenhuma condição de pagamento cadastrada"
                 />
               </div>
-              <div className="space-y-2">
-                <label htmlFor="prazoEntrega" className="text-sm font-medium ui-uppercase">
+              <div className="space-y-1.5">
+                <label htmlFor="prazoEntrega" className="text-xs font-medium ui-uppercase text-muted-foreground">
                   Prazo de entrega
                 </label>
                 <Input
                   id="prazoEntrega"
+                  autoComplete="off"
                   value={prazoEntregaEstimado}
                   onChange={(e) => setPrazoEntregaEstimado(e.target.value)}
                   placeholder="Ex: 3 dias úteis"
@@ -358,21 +385,12 @@ export function NovoPedidoAvulsoPage() {
               </div>
             </div>
           )}
-
-          <div className="shrink-0 text-right">
-            <div className="text-xs text-muted-foreground ui-uppercase">
-              {quantidadeItens} {quantidadeItens === 1 ? 'item' : 'itens'}
-            </div>
-            <div className="text-2xl font-semibold tracking-tight">{moeda(total)}</div>
-          </div>
         </div>
-      </Superficie>
 
-      <Superficie className="p-0">
-        {/* Primeira linha da lista: o próprio ponto de adicionar item — não é
-            um cartão separado com título acima, é a linha 1 da mesma lista
-            onde os itens confirmados vão entrando embaixo. */}
-        <div className="p-6 space-y-4">
+        {/* Busca: primeira linha da própria lista de itens, não um cartão à
+            parte — é daqui que o produto selecionado vira a linha "em
+            montagem" da tabela logo abaixo. */}
+        <div className="border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] px-4 py-3 sm:px-5">
         {!produtoSelecionado ? (
           <div className="relative">
             <div className="relative">
@@ -381,6 +399,10 @@ export function NovoPedidoAvulsoPage() {
               </span>
               <Input
                 autoFocus
+                autoComplete="off"
+                name="busca-produto-pedido-avulso"
+                data-1p-ignore
+                data-lpignore="true"
                 value={busca}
                 onChange={(e) => {
                   setBusca(e.target.value)
@@ -479,111 +501,147 @@ export function NovoPedidoAvulsoPage() {
             )}
           </div>
         ) : (
-          <form onSubmit={form.handleSubmit(aoConfirmarItem)} noValidate className="space-y-4">
-            <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+          <form onSubmit={form.handleSubmit(aoConfirmarItem)} noValidate className="flex flex-wrap items-end gap-4">
+            <div className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2 sm:min-w-[240px] sm:flex-none sm:basis-72">
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium ui-uppercase">{produtoSelecionado.nome}</div>
                 <div className="text-[11px] text-muted-foreground">{rotuloEmbalagem(produtoSelecionado)}</div>
               </div>
               <Button type="button" variant="ghost" size="sm" onClick={trocarProduto}>
-                Trocar produto
+                Trocar
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="precoEmbalagem" className="text-sm font-medium ui-uppercase">
-                  Preço da embalagem
-                </label>
-                <Input
-                  id="precoEmbalagem"
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  autoFocus
-                  {...form.register('precoEmbalagem', { valueAsNumber: true })}
-                  placeholder="Ex: 125,00"
-                  className={form.formState.errors.precoEmbalagem ? 'border-destructive focus-visible:ring-destructive' : ''}
-                />
-                {form.formState.errors.precoEmbalagem && (
-                  <p className="text-[13px] text-destructive font-medium">{form.formState.errors.precoEmbalagem.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="quantidade" className="text-sm font-medium ui-uppercase">
-                  Quantidade de embalagens
-                </label>
-                <Input
-                  id="quantidade"
-                  type="number"
-                  min={1}
-                  {...form.register('quantidade', { valueAsNumber: true })}
-                  placeholder="Ex: 2"
-                  className={form.formState.errors.quantidade ? 'border-destructive focus-visible:ring-destructive' : ''}
-                />
-                {form.formState.errors.quantidade && (
-                  <p className="text-[13px] text-destructive font-medium">{form.formState.errors.quantidade.message}</p>
-                )}
-              </div>
+            <div className="space-y-1.5">
+              <label htmlFor="precoEmbalagem" className="text-xs font-medium ui-uppercase text-muted-foreground">
+                Preço da embalagem
+              </label>
+              <Input
+                id="precoEmbalagem"
+                type="number"
+                step="0.01"
+                min={0}
+                autoFocus
+                autoComplete="off"
+                {...form.register('precoEmbalagem', { valueAsNumber: true })}
+                placeholder="Ex: 125,00"
+                className={`w-36 ${form.formState.errors.precoEmbalagem ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="quantidade" className="text-xs font-medium ui-uppercase text-muted-foreground">
+                Quantidade de embalagens
+              </label>
+              <Input
+                id="quantidade"
+                type="number"
+                min={1}
+                autoComplete="off"
+                {...form.register('quantidade', { valueAsNumber: true })}
+                placeholder="Ex: 2"
+                className={`w-24 ${form.formState.errors.quantidade ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+              />
             </div>
 
             {(precoUnitarioPreview != null || totalLinhaPreview != null) && (
-              <div className="flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm">
+              <div className="flex items-center gap-4 rounded-md bg-primary/5 px-3 py-2 text-sm">
                 <span className="text-muted-foreground">
-                  Preço unitário:{' '}
-                  <strong className="text-foreground">{precoUnitarioPreview != null ? moeda(precoUnitarioPreview) : '—'}</strong>
+                  Unitário: <strong className="text-foreground">{precoUnitarioPreview != null ? moeda(precoUnitarioPreview) : '—'}</strong>
                 </span>
                 <span className="text-muted-foreground">
-                  Total do item:{' '}
-                  <strong className="text-foreground">{totalLinhaPreview != null ? moeda(totalLinhaPreview) : '—'}</strong>
+                  Total: <strong className="text-foreground">{totalLinhaPreview != null ? moeda(totalLinhaPreview) : '—'}</strong>
                 </span>
               </div>
             )}
 
+            <Button type="submit" disabled={salvandoItem || (!pedidoId && (!empresaId || !condicaoPagamentoId))}>
+              {salvandoItem ? 'Adicionando…' : 'Adicionar item'}
+            </Button>
+
+            {(form.formState.errors.precoEmbalagem || form.formState.errors.quantidade) && (
+              <p className="w-full text-[13px] text-destructive font-medium">
+                {form.formState.errors.precoEmbalagem?.message ?? form.formState.errors.quantidade?.message}
+              </p>
+            )}
             {erroItem && (
-              <div role="alert" className="text-[13px] text-destructive font-medium bg-destructive/10 border border-destructive/20 p-3 rounded-md">
+              <p role="alert" className="w-full text-[13px] text-destructive font-medium">
                 {erroItem}
-              </div>
+              </p>
             )}
-
             {!pedidoId && (!empresaId || !condicaoPagamentoId) && (
-              <div role="alert" className="text-[13px] text-amber-600 dark:text-amber-500 font-medium bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 p-3 rounded-md">
+              <p role="alert" className="w-full text-[13px] text-amber-600 dark:text-amber-500 font-medium">
                 {!empresaId && !condicaoPagamentoId
                   ? 'Escolha a Empresa e a condição de pagamento pra confirmar o primeiro item.'
                   : !empresaId
                   ? 'Escolha a Empresa pra confirmar o primeiro item.'
                   : 'Escolha a condição de pagamento pra confirmar o primeiro item.'}
-              </div>
+              </p>
             )}
-
-            <Button type="submit" disabled={salvandoItem || (!pedidoId && (!empresaId || !condicaoPagamentoId))} className="w-full">
-              {salvandoItem ? 'Adicionando…' : 'Adicionar item'}
-            </Button>
           </form>
         )}
         </div>
 
-        <ul className="divide-y border-t">
-          {itens.length === 0 && <li className="p-6 text-center text-sm text-muted-foreground">Nenhum item adicionado ainda.</li>}
-          {itens.map((item) => (
-            <li key={item.id} className="flex items-center justify-between gap-3 p-4">
-              <div className="min-w-0">
-                <div className="truncate text-sm font-medium ui-uppercase">{item.nomeSnapshot}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {item.quantidade}× {moeda(item.precoUnitario)}/un
-                </div>
-              </div>
-              <div className="shrink-0 text-sm font-semibold">{moeda(item.subtotal)}</div>
-            </li>
-          ))}
-        </ul>
-      </Superficie>
+        {/* Tabela de itens — mesmo padrão visual/estrutural da grade ao vivo
+            de Cotação: cabeçalho fixo, só o corpo rola. */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <table className="w-full table-fixed border-separate border-spacing-0 text-sm">
+              <colgroup>
+                <col />
+                <col className="w-40" />
+                <col className="w-32" />
+                <col className="w-28" />
+                <col className="w-32" />
+              </colgroup>
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="sticky top-0 z-10 border-b bg-[var(--pnl-superficie,#12263f)] px-4 py-2 font-medium ui-uppercase">
+                    Nome item
+                  </th>
+                  <th className="sticky top-0 z-10 border-b bg-[var(--pnl-superficie,#12263f)] px-2 py-2 text-right font-medium ui-uppercase">
+                    Emb./Quant.
+                  </th>
+                  <th className="sticky top-0 z-10 border-b bg-[var(--pnl-superficie,#12263f)] px-2 py-2 text-right font-medium ui-uppercase">
+                    Quant. pedido
+                  </th>
+                  <th className="sticky top-0 z-10 border-b bg-[var(--pnl-superficie,#12263f)] px-2 py-2 text-right font-medium ui-uppercase">
+                    Unitário
+                  </th>
+                  <th className="sticky top-0 z-10 border-b bg-[var(--pnl-superficie,#12263f)] px-4 py-2 text-right font-medium ui-uppercase">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {itens.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-sm text-muted-foreground">
+                      Nenhum item adicionado ainda.
+                    </td>
+                  </tr>
+                )}
+                {itens.map((item) => (
+                  <tr key={item.id} className="hover:bg-muted/40">
+                    <td className="truncate border-b px-4 py-2 ui-uppercase">{item.nomeSnapshot}</td>
+                    <td className="truncate border-b px-2 py-2 text-right text-muted-foreground">
+                      {item.unidadeSnapshot} c/ {item.quantidadePorEmbalagemSnapshot}
+                    </td>
+                    <td className="border-b px-2 py-2 text-right tabular-nums">{item.quantidade}</td>
+                    <td className="border-b px-2 py-2 text-right tabular-nums">{moeda(item.precoUnitario)}</td>
+                    <td className="border-b px-4 py-2 text-right font-semibold tabular-nums">{moeda(item.subtotal)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      <div className="flex justify-end">
-        <Button variant="default" disabled={itens.length === 0 || fechar.isPending} onClick={() => setConfirmandoFechar(true)}>
-          Fechar pedido
-        </Button>
-      </div>
+        <SubFaixa
+          esquerda={`${quantidadeItens} ${quantidadeItens === 1 ? 'item' : 'itens'}`}
+          direita={<span className="text-base font-semibold text-foreground">{moeda(total)}</span>}
+          className="border-b-0 border-t pr-20 sm:pr-24"
+        />
+      </Superficie>
 
       {confirmandoFechar && (
         <ConfirmarDialog
