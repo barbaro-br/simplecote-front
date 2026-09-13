@@ -18,9 +18,14 @@ on:
 # próprio domínio da Vercel -> 405 no POST /api/auth/login; o guard em vite.config.ts falha o
 # build de produção nesse caso. Nível de workflow: o `ci` (que roda `npm run build`) e o
 # `deploy` (build + smoke) precisam da mesma var.
-# Domínio custom: api.simplecote.com.br (CNAME -> Heroku app immense-badlands-31311).
+# Domínio custom: api.simplecote.app (CNAME -> Heroku app immense-badlands-31311).
+# Mesmo site (eTLD+1) do app (*.simplecote.app): o cookie de refresh (httpOnly,
+# Domain=.simplecote.app) fica first-party, sem depender de bloqueio de cookie
+# de terceiros do navegador — antes a API respondia em api.simplecote.com.br
+# (site diferente do app) e o refresh falhava silenciosamente em qualquer
+# navegação de página inteira, jogando o usuário de volta pro /login.
 env:
-  VITE_API_BASE_URL: https://api.simplecote.com.br
+  VITE_API_BASE_URL: https://api.simplecote.app
 
 jobs:
   ci:

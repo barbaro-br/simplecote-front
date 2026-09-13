@@ -3,6 +3,15 @@
 > Criado em 2026-09-06. Serve de runbook pro domínio e de estacionamento pros temas
 > que decidimos ver depois (email, VPS, multi-tenant, modelagem de representante).
 
+> **Atualização 2026-09-13:** a topologia real ficou diferente do §1/§2 abaixo —
+> `simplecote.com.br`/`www.` viraram o site institucional (projeto Vercel
+> `simplecote-institucional`, não este), o app roda em `*.simplecote.app` (não
+> `.com.br`), e a API é `api.simplecote.app` (mudou de `api.simplecote.com.br`
+> pra tirar o cookie de refresh do escopo de "cookie de terceiros" entre sites
+> diferentes — RISCOS-TRANSVERSAIS.md §D). Os passos 2/3/3.x abaixo são
+> histórico de como o domínio `.com.br` foi ligado originalmente; não refletem
+> mais o estado atual do `VITE_API_BASE_URL` nem do `Domain` do cookie.
+
 ---
 
 ## 1. Estado atual (fatos)

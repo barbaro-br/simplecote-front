@@ -16,7 +16,7 @@ Decidido em set/2026. Muitas changes ainda dizem `<slug>.simplecote.com.br` / `a
 | **Host neutro do app** (login sem loja, rotas públicas por token, destino de sessão órfã) | `app.simplecote.app` | idem |
 | **Backoffice** (`SUPER_ADMIN`) | `backoffice.simplecote.app` | idem (host reservado no parser de slug) |
 | **Site institucional / marketing** | `simplecote.com.br` + `www.simplecote.com.br` | Vercel, mesmo projeto |
-| **API** | `api.simplecote.com.br` | Heroku — **não muda** |
+| **API** | `api.simplecote.app` | Heroku — mesmo site do app (mudou de `api.simplecote.com.br` em 13/set/2026: ver nota abaixo) |
 | **Envio de e-mail** | `mail.simplecote.com.br` | Brevo — **não muda** |
 
 Porquê `.app` e não `.com.br` para o app: domínio wildcard na Vercel exige os nameservers da Vercel; delegar `simplecote.com.br` inteiro é arriscado (e-mail + API vivem nele). `simplecote.app` é um domínio novo, sem e-mail nem API, delegado 100% à Vercel — risco zero. Marketing e API continuam em `.com.br`.
@@ -24,7 +24,7 @@ Porquê `.app` e não `.com.br` para o app: domínio wildcard na Vercel exige os
 **Consequências para as changes:**
 - Parser de hostname (`tenant-por-subdominio`): sufixo do app = `.simplecote.app` (não `.simplecote.com.br`). `app`, `www`, `backoffice` = hosts sem slug.
 - Redirect pós-verificação de e-mail (`cadastro-publico-*`): `https://<slug>.simplecote.app/login`. **Wildcard já no ar** (07/set/2026 — `*.simplecote.app` + `app.simplecote.app` no projeto `simplecote-front`). Follow-up: `urlLoginDaLoja` no front ainda está hardcoded; devia ler o sufixo de env pra não vazar `.simplecote.app` em preview/local.
-- **Cookie do refresh** (`auth-refresh-token`): setado **pela API** (`api.simplecote.com.br`) → `Domain` é da própria API (`.simplecote.com.br` ou host-only). Não muda com o app em `.app`. O app em `<slug>.simplecote.app` só precisa de `credentials: 'include'`; o browser envia o cookie para a API via `SameSite=None` independentemente da origem. O que muda é o **CORS**: `allowedOriginPatterns` tem que aceitar `https://*.simplecote.app` **e** `https://simplecote.com.br` (marketing) — padrão `^https://([a-z0-9-]+\.)?simplecote\.(com\.br|app)$`.
+- **Cookie do refresh** (`auth-refresh-token`): setado **pela API** (`api.simplecote.app`) → `Domain=.simplecote.app`, mesmo site (eTLD+1) do app — cookie first-party. **Correção 13/set/2026:** até então a API respondia em `api.simplecote.com.br` (site diferente do app) e a suposição antes registrada aqui — "o browser envia o cookie pra API via `SameSite=None` independentemente da origem" — **era falsa na prática**: navegadores com bloqueio de cookie de terceiros ativo por padrão (Safari, Firefox) ou em rollout (Chrome) recusavam o cookie mesmo com `SameSite=None`, e o refresh falhava silenciosamente depois de qualquer navegação de página inteira (ex.: o redirect de tenant do `AuthGuard` pro subdomínio da loja) — o usuário parecia deslogado sozinho e tinha que logar de novo. Ver §D. O que ainda muda com o app em `.app` é o **CORS**: `allowedOriginPatterns` tem que aceitar `https://*.simplecote.app` **e** `https://simplecote.com.br` (marketing) — padrão `^https://([a-z0-9-]+\.)?simplecote\.(com\.br|app)$`.
 - `backoffice-*`: host `backoffice.simplecote.app`; impersonar redireciona para `<slug-do-alvo>.simplecote.app/admin`.
 - **Infra (fase 4, não antes):** `simplecote.app` JÁ COMPRADO via Vercel (set/2026, NS da Vercel). Falta só adicionar `*.simplecote.app` + `app.simplecote.app` + `backoffice.simplecote.app` ao projeto `simplecote-front`. Até lá tudo serve de `app.simplecote.com.br` como hoje e o slug fica inerte.
 
@@ -62,7 +62,9 @@ Cada adição: **grep de todo `switch (papel)` / `hasRole` / `hasAuthority` / us
 
 ## §D. Cookie `SameSite=None; Secure` e dev local
 
-`auth-refresh-token`: em produção o cookie do refresh é `SameSite=None; Secure; Domain=.simplecote.com.br`. Em `http://localhost` isso não roda (Secure sobre http). **Fallback no perfil dev/teste:** `SameSite=Lax`, sem `Secure`, sem `Domain`. Config: `simplecote.auth.cookie.*` com valores diferentes por perfil.
+`auth-refresh-token`: em produção o cookie do refresh é `SameSite=None; Secure; Domain=.simplecote.app`. Em `http://localhost` isso não roda (Secure sobre http). **Fallback no perfil dev/teste:** `SameSite=Lax`, sem `Secure`, sem `Domain`. Config: `simplecote.auth.cookie.*` com valores diferentes por perfil.
+
+**Histórico:** até 2026-09-13 a API respondia em `api.simplecote.com.br` — um site (eTLD+1) diferente do app (`*.simplecote.app`) — e por isso esse cookie, mesmo com `SameSite=None`, era tratado como cookie de terceiros por navegadores com bloqueio ativado (Safari/Firefox por padrão, Chrome em rollout). Login funcionava (o token de acesso vem no corpo da resposta), mas qualquer navegação de página inteira depois (ex.: o redirect de tenant do `AuthGuard` do front pro subdomínio da loja) perdia a sessão porque o refresh via cookie falhava silenciosamente, mandando o usuário de volta pro `/login`. Corrigido apontando a API pra `api.simplecote.app` (mesmo site do app) e o `Domain` do cookie pra `.simplecote.app` — cookie first-party, sem depender de bloqueio de terceiros. `api.simplecote.com.br` continua registrado no Heroku por compatibilidade, mas não deve mais ser usado como `VITE_API_BASE_URL`.
 
 **CSRF:** só `POST /api/auth/refresh` e `POST /api/auth/logout` leem o cookie. **Todo o resto de `/api/**` confia só no header `Authorization`** — nunca no cookie. Um POST cross-site forçado no `refresh` só consegue disparar uma rotação (chato, não catastrófico) e não lê a resposta (token novo vai no corpo, não em cookie).
 
