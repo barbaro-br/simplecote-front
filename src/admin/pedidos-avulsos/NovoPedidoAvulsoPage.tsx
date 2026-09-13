@@ -439,7 +439,7 @@ export function NovoPedidoAvulsoPage() {
             </div>
 
             {mostrarSugestoes && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
+              <div className="absolute z-30 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
                 <div ref={containerRef} onScroll={aoRolarSugestoes} className="max-h-72 overflow-y-auto">
                   {doProprioCatalogo.length > 0 && (
                     <div className="p-2">
