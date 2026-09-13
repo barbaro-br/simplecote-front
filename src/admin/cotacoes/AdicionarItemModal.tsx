@@ -7,6 +7,7 @@ import { MagnifyingGlass, X, Package, CircleNotch, Plus, Check, Trash, Pencil, S
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { useAdicionarItem, useRemoverItem } from './cotacoes.api'
 import { useDebounce } from '@/shared/hooks/useDebounce'
+import { useAtrasarIndicador } from '@/shared/hooks/useAtrasarIndicador'
 import type { ItemCotacao } from './cotacoes.schema'
 import type { Produto, ValoresIniciaisProduto } from '@/admin/produtos/produtos.schema'
 
@@ -75,6 +76,12 @@ export function AdicionarItemModal({
   const semResultadoProprio = filtrados.length === 0 && searchDebounced.trim().length > 0
   const sugestoesGlobais = useSugestoesCadastro(semResultadoProprio ? searchDebounced : '')
   const listaGlobal = sugestoesGlobais.data?.doCatalogoGlobal ?? []
+
+  // Spinner só depois de um pequeno atraso (evita flicker quando a resposta
+  // já volta rápido) — só faz sentido enquanto está indo atrás da base
+  // compartilhada (o filtro no próprio catálogo é local, instantâneo).
+  const carregandoBusca = semResultadoProprio && (search !== searchDebounced || sugestoesGlobais.isFetching)
+  const mostrarSpinnerBusca = useAtrasarIndicador(carregandoBusca)
 
   function cadastrarDaSugestao(s: SugestaoCatalogoGlobal) {
     aoCadastrarProduto({ nome: s.nome, codigoBarras: s.codigoBarras })
@@ -209,7 +216,11 @@ export function AdicionarItemModal({
         <div className="px-6 py-3 border-b border-muted shrink-0">
           <div className="relative">
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 pointer-events-none">
-              <MagnifyingGlass className="size-4" />
+              {mostrarSpinnerBusca ? (
+                <CircleNotch className="size-4 animate-spin" />
+              ) : (
+                <MagnifyingGlass className="size-4" />
+              )}
             </span>
             <input
               type="text"
