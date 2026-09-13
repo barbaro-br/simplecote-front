@@ -103,6 +103,14 @@ export const routes = createBrowserRouter([
             lazy: () => import('./admin/pedidos-avulsos/NovoPedidoAvulsoPage').then(m => ({ Component: m.NovoPedidoAvulsoPage })),
           },
           {
+            // Pedido já criado (change persistencia-antecipada-de-pedido-avulso):
+            // a página troca a URL pra cá assim que Empresa+condição de
+            // pagamento são escolhidos, antes do primeiro item — um F5 recupera
+            // via GET /{id} em vez de perder o pedido em andamento.
+            path: 'pedidos-avulsos/:id',
+            lazy: () => import('./admin/pedidos-avulsos/NovoPedidoAvulsoPage').then(m => ({ Component: m.NovoPedidoAvulsoPage })),
+          },
+          {
             path: 'pedidos',
             lazy: () => import('./admin/pedidos/PedidosPage').then(m => ({ Component: m.PedidosPage })),
           },
