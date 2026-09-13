@@ -16,7 +16,7 @@ import {
 } from '@/admin/produtos/produtos.api'
 import { ProdutoForm } from '@/admin/produtos/ProdutoForm'
 import type { Produto, ValoresIniciaisProduto } from '@/admin/produtos/produtos.schema'
-import { useCriarPedidoAvulso, useAdicionarItemPedidoAvulso } from './pedidos-avulsos.api'
+import { useAdicionarItemPedidoAvulso } from './pedidos-avulsos.api'
 import {
   itemPedidoAvulsoSchema,
   type ItemPedidoAvulso,
@@ -35,10 +35,7 @@ function rotuloEmbalagem(p: Produto): string {
 type Props = {
   open: boolean
   onClose: () => void
-  pedidoId: string | undefined
-  empresaId: string
-  condicaoPagamentoId: string
-  prazoEntregaEstimado: string
+  pedidoId: string
   itens: ItemPedidoAvulso[]
   quantidadeItens: number
   total: number
@@ -56,16 +53,12 @@ export function AdicionarItemPedidoAvulsoModal({
   open,
   onClose,
   pedidoId,
-  empresaId,
-  condicaoPagamentoId,
-  prazoEntregaEstimado,
   itens,
   quantidadeItens,
   total,
   onPedidoAtualizado,
 }: Props) {
-  const criar = useCriarPedidoAvulso()
-  const adicionarItem = useAdicionarItemPedidoAvulso(pedidoId ?? '')
+  const adicionarItem = useAdicionarItemPedidoAvulso(pedidoId)
 
   // Produtos já adicionados a este pedido — só avisa (change atalhos-de-
   // pesquisa-do-item), não bloqueia: pode ser legítimo pedir de novo o
@@ -242,23 +235,12 @@ export function AdicionarItemPedidoAvulsoModal({
     }
   }
 
-  const salvandoItem = criar.isPending || adicionarItem.isPending
-  const faltamDadosDoPedido = !pedidoId && (!empresaId || !condicaoPagamentoId)
+  const salvandoItem = adicionarItem.isPending
 
   async function aoConfirmarItem(valores: ItemPedidoAvulsoFormValues) {
     setErroItem(null)
     try {
-      let resultado: PedidoAvulso
-      if (pedidoId) {
-        resultado = await adicionarItem.mutateAsync(valores)
-      } else {
-        resultado = await criar.mutateAsync({
-          ...valores,
-          empresaId,
-          ...(condicaoPagamentoId && { condicaoPagamentoId }),
-          ...(prazoEntregaEstimado.trim() && { prazoEntregaEstimado: prazoEntregaEstimado.trim() }),
-        })
-      }
+      const resultado = await adicionarItem.mutateAsync(valores)
       onPedidoAtualizado(resultado)
       trocarProduto()
     } catch (e) {
@@ -506,13 +488,7 @@ export function AdicionarItemPedidoAvulsoModal({
                 </div>
               )}
 
-              {faltamDadosDoPedido && (
-                <div role="alert" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-[13px] font-medium text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-500">
-                  Escolha a Empresa e a condição de pagamento antes de confirmar o primeiro item.
-                </div>
-              )}
-
-              <Button type="submit" disabled={salvandoItem || faltamDadosDoPedido} className="w-full">
+              <Button type="submit" disabled={salvandoItem} className="w-full">
                 {salvandoItem ? 'Adicionando…' : 'Adicionar item'}
               </Button>
             </form>

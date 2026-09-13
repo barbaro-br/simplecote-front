@@ -22,6 +22,8 @@ export type PedidoAvulso = {
   geradoEm: string
   condicaoPagamento: string | null
   prazoEntregaEstimado: string | null
+  empresaNome: string | null
+  representanteNome: string | null
 }
 
 // Só aceitos por `CriarPedidoAvulsoRequest` (o back não tem endpoint pra

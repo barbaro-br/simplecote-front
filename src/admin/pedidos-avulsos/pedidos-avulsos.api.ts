@@ -9,14 +9,18 @@ import type {
 
 const chave = ['pedidos-avulsos'] as const
 
-// Cria o Pedido avulso já com o primeiro item (design.md da change `pedido-avulso`
-// no simplecote-back - Decisão 5): `POST /api/pedidos/avulsos`. Condição de
-// pagamento/prazo de entrega só podem ir aqui — o back não tem endpoint pra
+// Cria o Pedido avulso vazio (change persistencia-antecipada-de-pedido-avulso
+// no simplecote-back): `POST /api/pedidos/avulsos` sem produtoId/precoEmbalagem/
+// quantidade — assim que Empresa + condição de pagamento são escolhidos, antes
+// de buscar qualquer produto. Dá um id real cedo: um F5 no meio da busca do
+// primeiro item recupera o pedido (GET /{id}) em vez de perder tudo. Condição
+// de pagamento/prazo de entrega só podem ir aqui — o back não tem endpoint pra
 // atualizá-los depois (por isso ficam de fora de `useAdicionarItemPedidoAvulso`).
 export function useCriarPedidoAvulso() {
+  const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (valores: ItemPedidoAvulsoFormValues & CondicoesPedidoAvulso) =>
-      api.post<PedidoAvulso>('/api/pedidos/avulsos', valores),
+    mutationFn: (valores: CondicoesPedidoAvulso) => api.post<PedidoAvulso>('/api/pedidos/avulsos', valores),
+    onSuccess: (pedido) => queryClient.setQueryData([...chave, pedido.id], pedido),
   })
 }
 
@@ -63,5 +67,10 @@ export function usePedidoAvulso(pedidoId: string | undefined) {
     queryKey: [...chave, pedidoId] as const,
     queryFn: () => api.get<PedidoAvulso>(`/api/pedidos/avulsos/${pedidoId}`),
     enabled: !!pedidoId,
+    // As mutações (criar/adicionar/editar/remover/fechar item) já escrevem o
+    // resultado fresco direto nesta mesma chave — sem isso, cada uma delas
+    // dispararia também um refetch imediato e redundante (a página troca de
+    // URL logo depois de criar, remontando e assinando a query de novo).
+    staleTime: 30_000,
   })
 }
