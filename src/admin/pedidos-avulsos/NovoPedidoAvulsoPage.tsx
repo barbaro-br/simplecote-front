@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MagnifyingGlass, Package, Sparkle } from '@phosphor-icons/react'
+import { CaretDown, CaretUp, MagnifyingGlass, Package, Sparkle } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
@@ -159,11 +159,32 @@ export function NovoPedidoAvulsoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- carregarMaisDoCatalogoGlobal fecha sobre estado que muda a cada chamada; sua própria guarda de "isPending"/"acabou" evita disparo duplicado
   }, [indiceAtivoClamped])
 
+  // Indicação visual de que a lista rola (setas no topo/rodapé do painel,
+  // mesmo padrão de affordance de scroll usado em outras listas do painel) —
+  // sem isso a lista cortada no meio (ex.: primeiro/último item pela metade)
+  // não deixava claro que dava pra rolar mais.
+  const [podeRolarCima, setPodeRolarCima] = useState(false)
+  const [podeRolarBaixo, setPodeRolarBaixo] = useState(false)
+
+  function atualizarAfordanceScroll(el: HTMLDivElement) {
+    setPodeRolarCima(el.scrollTop > 4)
+    setPodeRolarBaixo(el.scrollTop + el.clientHeight < el.scrollHeight - 4)
+  }
+
+  useEffect(() => {
+    if (containerRef.current) atualizarAfordanceScroll(containerRef.current)
+  }, [mostrarSugestoes, doProprioCatalogo.length, listaGlobal.length])
+
   function aoRolarSugestoes(e: React.UIEvent<HTMLDivElement>) {
     const el = e.currentTarget
+    atualizarAfordanceScroll(el)
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 48) {
       carregarMaisDoCatalogoGlobal()
     }
+  }
+
+  function rolarSugestoes(delta: number) {
+    containerRef.current?.scrollBy({ top: delta, behavior: 'smooth' })
   }
 
   function selecionarProduto(p: Produto) {
@@ -497,6 +518,29 @@ export function NovoPedidoAvulsoPage() {
                     </div>
                   )}
                 </div>
+
+                {podeRolarCima && (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => rolarSugestoes(-120)}
+                    aria-label="Rolar sugestões para cima"
+                    className="absolute inset-x-0 top-0 flex h-6 items-center justify-center rounded-t-md bg-gradient-to-b from-popover to-transparent text-muted-foreground hover:text-foreground"
+                  >
+                    <CaretUp className="size-3.5" weight="bold" />
+                  </button>
+                )}
+                {podeRolarBaixo && (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => rolarSugestoes(120)}
+                    aria-label="Rolar sugestões para baixo"
+                    className="absolute inset-x-0 bottom-0 flex h-6 items-center justify-center rounded-b-md bg-gradient-to-t from-popover to-transparent text-muted-foreground hover:text-foreground"
+                  >
+                    <CaretDown className="size-3.5" weight="bold" />
+                  </button>
+                )}
               </div>
             )}
           </div>
