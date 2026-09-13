@@ -3,7 +3,8 @@ name: CI e Deploy
 on:
   push:
     # `redesign/painel-dark` é a implantação de transição em novo.simplecote.app
-    # (job `deploy-novo`); `main` é a produção em simplecote.app (job `deploy`).
+    # (job `deploy-novo`); `main` é a produção deste app em *.simplecote.app
+    # (job `deploy`) — `simplecote.app` (apex) é outro projeto (site institucional).
     branches: [main, redesign/painel-dark]
     paths-ignore:
       - 'openspec/**'
@@ -80,11 +81,13 @@ jobs:
       # rollback`), mas a pipeline fica vermelha e você sabe na hora, não pelo cliente.
       - name: Smoke — bundle publicado fala com o back
         run: |
-          # Domínio canônico de produção (apex). `app.simplecote.app` e
-          # `app.simplecote.com.br` fazem 307 pra cá (vercel.json), então servem
-          # `/assets/*.js` como redirect, não 200 — não usar em CI. O
-          # `<projeto>.vercel.app` fica pra proteção de deploy.
-          alias_url="https://simplecote.app"
+          # `simplecote.app` (apex) virou o site institucional (projeto Vercel
+          # separado, `simplecote-institucional`) — não usar aqui. O domínio de
+          # produção deste projeto (`simplecote-front`) é o curinga
+          # `*.simplecote.app`; `app.simplecote.app` é a instância canônica
+          # sem loja específica, sem redirect (vercel.json não tem mais
+          # `redirects` desde a correção do login pós-reapontamento de domínio).
+          alias_url="https://app.simplecote.app"
           host="${VITE_API_BASE_URL#https://}"
           ok=""
           for i in 1 2 3 4 5; do
