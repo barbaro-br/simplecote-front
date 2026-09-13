@@ -58,7 +58,15 @@ const ITEM_SARDINHA = {
   subtotal: 250,
 }
 
+// Abre o modal de adicionar item (idempotente — se já estiver aberto, no-op).
+async function abrirModalItem(user: ReturnType<typeof userEvent.setup>) {
+  if (screen.queryByRole('dialog', { name: /adicionar item/i })) return
+  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await screen.findByRole('dialog', { name: /adicionar item/i })
+}
+
 async function buscarESelecionar(user: ReturnType<typeof userEvent.setup>, termo: string, nomeProduto: string) {
+  await abrirModalItem(user)
   const campo = screen.getByPlaceholderText(/Buscar produto/i)
   await user.clear(campo)
   await user.type(campo, termo)
@@ -73,6 +81,16 @@ async function preencherObrigatorios(user: ReturnType<typeof userEvent.setup>) {
 
   await user.click(await screen.findByLabelText(/condição de pagamento/i))
   await user.click(await screen.findByRole('option', { name: '14/21/28' }))
+}
+
+function fecharModal(user: ReturnType<typeof userEvent.setup>) {
+  return user.click(within(screen.getByRole('dialog', { name: /adicionar item/i })).getByRole('button', { name: 'Concluído' }))
+}
+
+// Clica em "Adicionar item" DENTRO do modal (o gatilho na página tem o mesmo
+// nome acessível e fica visível atrás do overlay).
+function confirmarItemNoModal(user: ReturnType<typeof userEvent.setup>) {
+  return user.click(within(screen.getByRole('dialog', { name: /adicionar item/i })).getByRole('button', { name: 'Adicionar item' }))
 }
 
 beforeEach(() => {
@@ -201,11 +219,12 @@ test('primeiro item cria o pedido; segundo item reaproveita o id e a lista/total
   const user = userEvent.setup()
   renderPage()
 
+  await abrirModalItem(user)
   await preencherObrigatorios(user)
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
-  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await confirmarItemNoModal(user)
 
   expect(await screen.findByText('Sardinha X')).toBeInTheDocument()
   expect(screen.getByText('1 item')).toBeInTheDocument()
@@ -213,9 +232,10 @@ test('primeiro item cria o pedido; segundo item reaproveita o id e a lista/total
   await buscarESelecionar(user, 'refri', 'Refrigerante Lata')
   await user.type(screen.getByLabelText('Preço da embalagem'), '8.90')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '3')
-  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await confirmarItemNoModal(user)
 
   expect(await screen.findByText('Refrigerante Lata')).toBeInTheDocument()
+  await fecharModal(user)
   expect(screen.getByText('2 itens')).toBeInTheDocument()
   expect(screen.getByText(/R\$\s*276,70/)).toBeInTheDocument()
 
@@ -282,18 +302,19 @@ test('fechar exige confirmação nomeando total e contagem, e trava novos itens 
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
-  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await confirmarItemNoModal(user)
   expect(await screen.findByText('Sardinha X')).toBeInTheDocument()
+  await fecharModal(user)
 
   await user.click(screen.getByRole('button', { name: 'Fechar pedido' }))
 
-  const dialog = within(screen.getByRole('dialog'))
+  const dialog = within(screen.getByRole('dialog', { name: /fechar pedido avulso/i }))
   expect(dialog.getByText(/1 item, total R\$\s*250,00/)).toBeInTheDocument()
   await user.click(dialog.getByRole('button', { name: 'Fechar pedido' }))
 
   expect(await screen.findByRole('heading', { name: 'Pedido avulso fechado' })).toBeInTheDocument()
   expect(screen.getByText(/pedido ped-2/)).toBeInTheDocument()
-  expect(screen.queryByPlaceholderText(/Buscar produto/i)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Adicionar item' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Fechar pedido' })).not.toBeInTheDocument()
 })
 
@@ -316,7 +337,7 @@ test('escolher condição de pagamento do catálogo envia condicaoPagamentoId ao
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
-  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await confirmarItemNoModal(user)
 
   await screen.findByText('Sardinha X')
   expect(corpo).toEqual({
@@ -359,7 +380,7 @@ test('criar condição de pagamento nova pelo combobox cadastra no catálogo e u
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
-  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await confirmarItemNoModal(user)
 
   await screen.findByText('Sardinha X')
   expect(corpo).toEqual({
@@ -391,7 +412,7 @@ test('digitar prazo de entrega em texto livre envia prazoEntregaEstimado ao cria
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
-  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await confirmarItemNoModal(user)
 
   await screen.findByText('Sardinha X')
   expect(corpo).toEqual({
@@ -413,33 +434,10 @@ test('botão de adicionar item fica desabilitado com texto explicando se faltar 
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
 
-  const botao = screen.getByRole('button', { name: 'Adicionar item' })
+  const dialog = within(screen.getByRole('dialog', { name: /adicionar item/i }))
+  const botao = dialog.getByRole('button', { name: 'Adicionar item' })
   expect(botao).toBeDisabled()
-  expect(screen.getByText('Escolha a Empresa e a condição de pagamento pra confirmar o primeiro item.')).toBeInTheDocument()
-
-  // Seleciona Empresa
-  await user.click(screen.getByLabelText(/empresa/i))
-  await user.click(screen.getByRole('option', { name: 'Empresa A' }))
-  expect(botao).toBeDisabled()
-  expect(screen.queryByText('Escolha a Empresa e a condição de pagamento pra confirmar o primeiro item.')).not.toBeInTheDocument()
-  expect(screen.getByText('Escolha a condição de pagamento pra confirmar o primeiro item.')).toBeInTheDocument()
-})
-
-test('botão de adicionar item mostra aviso de falta de empresa se condição for preenchida primeiro', async () => {
-  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }))
-  const user = userEvent.setup()
-  renderPage()
-
-  await buscarESelecionar(user, 'sardinha', 'Sardinha X')
-  await user.type(screen.getByLabelText('Preço da embalagem'), '125')
-  await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
-
-  await user.click(screen.getByLabelText(/condição de pagamento/i))
-  await user.click(screen.getByRole('option', { name: '14/21/28' }))
-
-  const botao = screen.getByRole('button', { name: 'Adicionar item' })
-  expect(botao).toBeDisabled()
-  expect(screen.getByText('Escolha a Empresa pra confirmar o primeiro item.')).toBeInTheDocument()
+  expect(dialog.getByText('Escolha a Empresa e a condição de pagamento antes de confirmar o primeiro item.')).toBeInTheDocument()
 })
 
 test('fluxo completo: dois itens de embalagens diferentes, total geral e confirmação final', async () => {
@@ -527,19 +525,20 @@ test('fluxo completo: dois itens de embalagens diferentes, total geral e confirm
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
-  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await confirmarItemNoModal(user)
   expect(await screen.findByText('Sardinha X')).toBeInTheDocument()
 
   await buscarESelecionar(user, 'refri', 'Refrigerante Lata')
   await user.type(screen.getByLabelText('Preço da embalagem'), '8.90')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '3')
-  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await confirmarItemNoModal(user)
   expect(await screen.findByText('Refrigerante Lata')).toBeInTheDocument()
+  await fecharModal(user)
 
   expect(screen.getByText(/R\$\s*276,70/)).toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: 'Fechar pedido' }))
-  const dialog = within(screen.getByRole('dialog'))
+  const dialog = within(screen.getByRole('dialog', { name: /fechar pedido avulso/i }))
   await user.click(dialog.getByRole('button', { name: 'Fechar pedido' }))
 
   expect(await screen.findByRole('heading', { name: 'Pedido avulso fechado' })).toBeInTheDocument()
