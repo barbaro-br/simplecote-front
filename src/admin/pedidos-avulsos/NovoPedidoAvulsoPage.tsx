@@ -315,6 +315,7 @@ export function NovoPedidoAvulsoPage() {
         empresaId={empresaId}
         condicaoPagamentoId={condicaoPagamentoId}
         prazoEntregaEstimado={prazoEntregaEstimado}
+        itens={itens}
         quantidadeItens={quantidadeItens}
         total={total}
         onPedidoAtualizado={setPedido}
