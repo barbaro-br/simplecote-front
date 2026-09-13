@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CaretDown, CaretUp, MagnifyingGlass, Package, Sparkle, X } from '@phosphor-icons/react'
+import { CaretDown, CaretUp, CircleNotch, MagnifyingGlass, Package, Sparkle, X } from '@phosphor-icons/react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Dialog } from '@/shared/components/ui/dialog'
 import { moeda } from '@/shared/format/formatters'
 import { useDebounce } from '@/shared/hooks/useDebounce'
+import { useAtrasarIndicador } from '@/shared/hooks/useAtrasarIndicador'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import {
   useSugestoesCadastro,
@@ -93,6 +94,12 @@ export function AdicionarItemPedidoAvulsoModal({
   const sugestoes = useSugestoesCadastro(buscaDebounced)
   const doProprioCatalogo = sugestoes.data?.doProprioCatalogo ?? []
   const paginaZeroGlobal = sugestoes.data?.doCatalogoGlobal ?? []
+
+  // Spinner só depois de um pequeno atraso (evita flicker quando a resposta
+  // já volta rápido) — cobre tanto o debounce quanto o fetch em si, porque as
+  // duas partes juntas são o "pequeno delay" que a pessoa percebe ao buscar.
+  const carregandoBusca = busca.trim().length >= 2 && (busca !== buscaDebounced || sugestoes.isFetching)
+  const mostrarSpinnerBusca = useAtrasarIndicador(carregandoBusca)
 
   const maisSugestoes = useMaisSugestoesDoCatalogoGlobal()
   const [paginasExtras, setPaginasExtras] = useState<SugestaoCatalogoGlobal[]>([])
@@ -269,7 +276,11 @@ export function AdicionarItemPedidoAvulsoModal({
           <>
             <div className="relative shrink-0 border-b border-muted px-6 py-3">
               <span className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 text-muted-foreground/70">
-                <MagnifyingGlass className="size-4" />
+                {mostrarSpinnerBusca ? (
+                  <CircleNotch className="size-4 animate-spin" />
+                ) : (
+                  <MagnifyingGlass className="size-4" />
+                )}
               </span>
               <Input
                 autoFocus
