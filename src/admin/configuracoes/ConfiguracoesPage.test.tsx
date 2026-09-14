@@ -19,6 +19,7 @@ beforeEach(() => {
     layoutEmail: 'Olá...',
     estiloNavegacao: 'LATERAL',
     tema: 'CLARO',
+    mostrarMargemLucro: false,
     linkColaboradorToken: 'token-real',
   }
 
@@ -107,6 +108,29 @@ test('estilo de navegação selecionado persiste ao salvar', async () => {
   renderPage()
   await user.click(await screen.findByRole('tab', { name: /Aparência/i }))
   expect(await screen.findByRole('radio', { name: 'Inferior' })).toBeChecked()
+})
+
+test('margem de lucro vem desativada por padrão e persiste ao ligar', async () => {
+  const user = userEvent.setup()
+  const { unmount } = renderPage()
+
+  await user.click(await screen.findByRole('tab', { name: /Avançado/i }))
+
+  const chk = await screen.findByRole('checkbox', { name: /Mostrar margem de lucro na apuração/i })
+  expect(chk).not.toBeChecked()
+
+  await user.click(chk)
+  await user.click(screen.getByRole('button', { name: 'Salvar configurações' }))
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Salvar configurações' })).toBeEnabled()
+  })
+
+  unmount()
+
+  renderPage()
+  await user.click(await screen.findByRole('tab', { name: /Avançado/i }))
+  expect(await screen.findByRole('checkbox', { name: /Mostrar margem de lucro na apuração/i })).toBeChecked()
 })
 
 test('exibe o link do colaborador e o botão de copiar escreve na área de transferência', async () => {

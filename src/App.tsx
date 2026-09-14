@@ -8,6 +8,7 @@ import { ConfiguracaoLojaProvider } from './admin/configuracoes/ConfiguracaoLoja
 import { TenantProvider } from './shared/tenant/TenantContext'
 import { Toaster } from 'sonner'
 import { IconProvider } from './shared/components/ui/icon'
+import { VisualNovoProvider } from './shared/hooks/useVisualNovo'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,19 +20,21 @@ const queryClient = new QueryClient({
 
 export function App() {
   return (
-    <IconProvider>
-      <AuthProvider>
-        <SessaoExpiradaBridge />
-        <AcessoBloqueadoBridge />
-        <QueryClientProvider client={queryClient}>
-          <TenantProvider>
-            <ConfiguracaoLojaProvider>
-              <RouterProvider router={routes} />
-            </ConfiguracaoLojaProvider>
-            <Toaster richColors position="bottom-right" />
-          </TenantProvider>
-        </QueryClientProvider>
-      </AuthProvider>
-    </IconProvider>
+    <VisualNovoProvider>
+      <IconProvider>
+        <AuthProvider>
+          <SessaoExpiradaBridge />
+          <AcessoBloqueadoBridge />
+          <QueryClientProvider client={queryClient}>
+            <TenantProvider>
+              <ConfiguracaoLojaProvider>
+                <RouterProvider router={routes} />
+              </ConfiguracaoLojaProvider>
+              <Toaster richColors position="bottom-right" />
+            </TenantProvider>
+          </QueryClientProvider>
+        </AuthProvider>
+      </IconProvider>
+    </VisualNovoProvider>
   )
 }

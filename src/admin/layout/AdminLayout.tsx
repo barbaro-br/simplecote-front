@@ -20,6 +20,7 @@ import { useAuth } from '@/shared/auth/useAuth'
 import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
 import { CREDITO_DESENVOLVEDOR } from '@/shared/creditos-desenvolvedor'
 import { VoltarLayoutAntigo } from '@/shared/components/VoltarLayoutAntigo'
+import { VisualNovoToggle } from '@/shared/components/VisualNovoToggle'
 import { BottomNavBar } from './BottomNavBar'
 import { BotaoAjudaFlutuante } from '../ajuda/BotaoAjudaFlutuante'
 import { ModoSuporteBanner } from '@/backoffice/ModoSuporteBanner'
@@ -167,7 +168,8 @@ function Sidebar({ nome, onLogout, itens }: { nome: string; onLogout: () => void
         </span>
       </button>
 
-      {isExpanded && <VoltarLayoutAntigo className="mt-1" />}
+      {isExpanded && <VisualNovoToggle className="mt-1" />}
+      {isExpanded && <VoltarLayoutAntigo />}
 
       <div
         className={`overflow-hidden whitespace-nowrap transition-all duration-300 text-[11px] text-muted-foreground/60 ${
@@ -254,7 +256,8 @@ function SidebarMobile({ nome, onLogout, aberta, aoFechar, itens }: { nome: stri
           <span className="ui-uppercase">Sair</span>
         </button>
 
-        <VoltarLayoutAntigo className="mt-1" />
+        <VisualNovoToggle className="mt-1" />
+        <VoltarLayoutAntigo />
       </aside>
     </>
   )
@@ -298,7 +301,7 @@ export function AdminLayout() {
   const nomeLoja = configuracao?.nome ?? ''
 
   return (
-    <div data-painel="dark" className="flex h-screen flex-col overflow-hidden text-foreground">
+    <div data-painel="dark" className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <ModoSuporteBanner nomeComprador={nomeLoja} />
       <AvisosBanner />
       <div className="flex min-h-0 flex-1 overflow-hidden flex-col md:flex-row">

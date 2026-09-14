@@ -486,6 +486,6 @@ test('botão WhatsApp monta a mensagem pelo helper (nome, título e link)', asyn
   const decodificada = decodeURIComponent(url)
   expect(decodificada).toContain('Rep de Mercado A')
   expect(decodificada).toContain('Compra semanal')
-  expect(decodificada).toContain('https://exemplo.com/token')
+  expect(decodificada).toContain('http://localhost:3000/token')
   openSpy.mockRestore()
 })

@@ -20,6 +20,7 @@ beforeEach(() => {
     layoutEmail: 'Olá...',
     estiloNavegacao: 'LATERAL',
     tema: 'CLARO',
+    mostrarMargemLucro: false,
     linkColaboradorToken: 'token-card',
   }
   corpoEnviado = null

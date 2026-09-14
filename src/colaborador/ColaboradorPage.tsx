@@ -28,7 +28,7 @@ const LeitorCodigoBarras = lazy(() =>
 
 function Casca({ children }: { children: ReactNode }) {
   return (
-    <div data-painel="dark" className="min-h-screen">
+    <div data-painel="dark" className="min-h-screen bg-background">
       {children}
     </div>
   )

@@ -60,7 +60,7 @@ export function LoginPage() {
   // sem um formulário de login que só falharia.
   if (slug !== null && existe === false) {
     return (
-      <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden">
+      <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
         <HeroFundo variant="simples" />
         <div className="relative z-10 w-full max-w-sm space-y-8 px-4">
           <div className="flex flex-col items-center gap-3 text-center">
@@ -85,7 +85,7 @@ export function LoginPage() {
   }
 
   return (
-    <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden">
+    <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
       <HeroFundo variant="simples" />
       <div className="relative z-10 w-full max-w-sm space-y-8 px-4">
         {/* Logo / título — identidade do produto, igual para qualquer visitante */}

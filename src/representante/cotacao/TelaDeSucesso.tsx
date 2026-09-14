@@ -15,7 +15,7 @@ export function TelaDeSucesso({ nome, aoFechar }: { nome: string; aoFechar: () =
   return (
     <div
       data-painel="dark"
-      className="fade-in fixed inset-0 z-50 flex flex-col items-center justify-center"
+      className="fade-in fixed inset-0 z-50 flex flex-col items-center justify-center bg-background"
     >
       <div className="success-pop flex flex-col items-center gap-4">
         <div className="flex size-24 items-center justify-center rounded-full bg-[var(--pnl-acento,#57bf8e)] shadow-xl">
