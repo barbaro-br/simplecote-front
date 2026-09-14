@@ -22,7 +22,7 @@ function estaVencido(prazo: string | null): boolean {
 /** Casca escura das rotas por token (Fase 1 do redesign). */
 function Casca({ children }: { children: ReactNode }) {
   return (
-    <div data-painel="dark" className="min-h-screen">
+    <div data-painel="dark" className="min-h-screen bg-background">
       {children}
     </div>
   )

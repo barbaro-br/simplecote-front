@@ -20,6 +20,7 @@ import {
   useResultado,
 } from './cotacoes.api'
 import { ConfirmarDialog } from './ConfirmarDialog'
+import { useConfiguracaoLoja } from '../configuracoes/configuracoes.api'
 
 const ROTULO_PEDIDO: Record<string, string> = {
   GERADO: 'Gerado',
@@ -48,6 +49,8 @@ export function ResultadoPage() {
   const cotacao = useCotacao(id)
   const enviar = useEnviarPedido(id)
   const recotar = useRecotarSemVencedor(id)
+  const configuracao = useConfiguracaoLoja()
+  const mostrarMargem = configuracao.data?.mostrarMargemLucro ?? false
   const [erro, setErro] = useState<string | null>(null)
   const [confirmarRecotar, setConfirmarRecotar] = useState(false)
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set())
@@ -99,7 +102,7 @@ export function ResultadoPage() {
   const listaPedidos = pedidos.data ?? resultado.data.pedidos
 
   return (
-    <div data-painel="dark" className="min-h-screen">
+    <div data-painel="dark" className="min-h-screen bg-background">
       <PageContainer maxWidth="5xl" className="space-y-6 py-6">
         <Breadcrumb
           items={[
@@ -133,29 +136,31 @@ export function ResultadoPage() {
 
         <Superficie>
           <SubFaixa esquerda="Pedidos Gerados" />
-          <div className="px-4 py-3">
-            <label htmlFor="margem-global" className="text-sm font-medium ui-uppercase">
-              Margem de lucro (%)
-            </label>
-            <div className="mt-1 flex items-center gap-2">
-              <Input
-                id="margem-global"
-                value={margemGlobal}
-                onChange={(e) => {
-                  const s = sanitizarEntradaValor(e.target.value)
-                  if (s !== null) setMargemGlobal(s)
-                }}
-                placeholder="Ex: 30"
-                inputMode="decimal"
-                className="max-w-40"
-              />
-              <span className="text-sm text-muted-foreground">%</span>
+          {mostrarMargem && (
+            <div className="px-4 py-3">
+              <label htmlFor="margem-global" className="text-sm font-medium ui-uppercase">
+                Margem de lucro (%)
+              </label>
+              <div className="mt-1 flex items-center gap-2">
+                <Input
+                  id="margem-global"
+                  value={margemGlobal}
+                  onChange={(e) => {
+                    const s = sanitizarEntradaValor(e.target.value)
+                    if (s !== null) setMargemGlobal(s)
+                  }}
+                  placeholder="Ex: 30"
+                  inputMode="decimal"
+                  className="max-w-40"
+                />
+                <span className="text-sm text-muted-foreground">%</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Prévia de preço de venda — não afeta o pedido enviado. Aplica a todos os itens e pode ser
+                ajustada por item.
+              </p>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Prévia de preço de venda — não afeta o pedido enviado. Aplica a todos os itens e pode ser
-              ajustada por item.
-            </p>
-          </div>
+          )}
           <div className="overflow-x-auto border-t">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
@@ -233,8 +238,12 @@ export function ResultadoPage() {
                                 <th className="py-1.5 font-medium ui-uppercase text-right">Quantidade</th>
                                 <th className="py-1.5 font-medium ui-uppercase text-right">Preço embalagem</th>
                                 <th className="py-1.5 font-medium ui-uppercase text-right">Preço unitário</th>
-                                <th className="py-1.5 font-medium ui-uppercase text-right">Margem (%)</th>
-                                <th className="py-1.5 font-medium ui-uppercase text-right">Preço de venda</th>
+                                {mostrarMargem && (
+                                  <>
+                                    <th className="py-1.5 font-medium ui-uppercase text-right">Margem (%)</th>
+                                    <th className="py-1.5 font-medium ui-uppercase text-right">Preço de venda</th>
+                                  </>
+                                )}
                                 <th className="py-1.5 font-medium ui-uppercase text-right">Subtotal</th>
                               </tr>
                             </thead>
@@ -257,23 +266,27 @@ export function ResultadoPage() {
                                         </span>
                                       )}
                                     </td>
-                                    <td className="py-2 text-right">
-                                      <Input
-                                        value={margemEfetiva(item.id)}
-                                        onChange={(e) => {
-                                          const s = sanitizarEntradaValor(e.target.value)
-                                          if (s !== null)
-                                            setMargensPorItem((prev) => ({ ...prev, [item.id]: s }))
-                                        }}
-                                        placeholder="—"
-                                        inputMode="decimal"
-                                        aria-label={`Margem (%) de ${item.nomeSnapshot}`}
-                                        className="ml-auto h-8 w-20 text-right tabular-nums"
-                                      />
-                                    </td>
-                                    <td className="py-2 text-right tabular-nums text-foreground font-medium">
-                                      {precoVenda === null ? '—' : moeda(precoVenda)}
-                                    </td>
+                                    {mostrarMargem && (
+                                      <>
+                                        <td className="py-2 text-right">
+                                          <Input
+                                            value={margemEfetiva(item.id)}
+                                            onChange={(e) => {
+                                              const s = sanitizarEntradaValor(e.target.value)
+                                              if (s !== null)
+                                                setMargensPorItem((prev) => ({ ...prev, [item.id]: s }))
+                                            }}
+                                            placeholder="—"
+                                            inputMode="decimal"
+                                            aria-label={`Margem (%) de ${item.nomeSnapshot}`}
+                                            className="ml-auto h-8 w-20 text-right tabular-nums"
+                                          />
+                                        </td>
+                                        <td className="py-2 text-right tabular-nums text-foreground font-medium">
+                                          {precoVenda === null ? '—' : moeda(precoVenda)}
+                                        </td>
+                                      </>
+                                    )}
                                     <td className="py-2 text-right tabular-nums text-foreground font-medium">{moeda(item.subtotal)}</td>
                                   </tr>
                                 )

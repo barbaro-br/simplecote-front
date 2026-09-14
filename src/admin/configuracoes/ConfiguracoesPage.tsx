@@ -136,6 +136,17 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
 
           {/* ABA AVANÇADO */}
           <TabsContent value="avancado" className="space-y-6 mt-0">
+            <div className="space-y-2 rounded-lg border p-4">
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer ui-uppercase">
+                <input type="checkbox" {...form.register('mostrarMargemLucro')} />
+                Mostrar margem de lucro na apuração
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Adiciona um campo de margem (%) e a coluna "Preço de venda" na tela de Resultado da
+                apuração. Desativado por padrão.
+              </p>
+            </div>
+
             <div className="space-y-3">
               <label htmlFor="layoutEmail" className="text-sm font-medium ui-uppercase">Layout de e-mail</label>
               <textarea

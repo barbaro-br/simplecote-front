@@ -100,7 +100,7 @@ export function Dialog({ open, onClose, title, ariaLabel, size = 'md', className
         aria-labelledby={title ? tituloId : undefined}
         aria-label={title ? undefined : (ariaLabel ?? 'Diálogo')}
         tabIndex={-1}
-        className={`w-full ${size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] flex flex-col rounded-xl border bg-card/95 shadow-2xl backdrop-blur-md outline-none animate-in zoom-in-95 duration-200 ${className || 'p-6 space-y-4'}`}
+        className={`w-full ${size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] flex flex-col overflow-y-auto rounded-xl border bg-card/95 shadow-2xl backdrop-blur-md outline-none animate-in zoom-in-95 duration-200 ${className || 'p-6 space-y-4'}`}
       >
         {title && (
           <div className="flex items-start justify-between">

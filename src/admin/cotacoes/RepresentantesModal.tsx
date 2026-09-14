@@ -20,6 +20,17 @@ import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { toast } from 'sonner'
 
+function getLinkCorrigido(link: string): string {
+  try {
+    const url = new URL(link)
+    // Força o link mágico a usar o mesmo domínio da aplicação frontend atual,
+    // garantindo que ele não aponte para o site institucional incorretamente.
+    return window.location.origin + url.pathname + url.search + url.hash
+  } catch {
+    return link
+  }
+}
+
 type Props = {
   cotacaoId: string
   status: string
@@ -52,7 +63,6 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const { data: empresas } = useEmpresas()
   const { data: reps } = useRepresentantes()
   const [loadingMailId, setLoadingMailId] = useState<string | null>(null)
-  const [isEnviando, setIsEnviando] = useState(false)
   const [alvoDesconvidar, setAlvoDesconvidar] = useState<{ participanteId: string; nome: string; status?: string } | null>(null)
 
   const [search, setSearch] = useState('')
@@ -109,31 +119,78 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const totalSelecionados = lista.filter(l => l.isChecked).length
   const totalConvidados = lista.filter(l => l.part).length
   const naoEnviadoCount = lista.filter(l => l.part && l.part.conviteStatus !== 'ENVIADO').length
+  const finalizaveisCount = lista.filter(l => l.part && l.part.participanteStatus !== 'RESPONDIDO').length
+  const reabriveisCount = lista.filter(l => l.part && l.part.participanteStatus === 'RESPONDIDO').length
+  const [processandoLote, setProcessandoLote] = useState<'fechar' | 'abrir' | 'reenviar' | null>(null)
+
+  async function dispararEmLote(
+    tipo: 'fechar' | 'abrir' | 'reenviar',
+    alvos: { participanteId: string }[],
+    mutar: (id: string) => Promise<unknown>,
+    rotuloSucesso: string,
+    rotuloFalha: string,
+  ) {
+    if (alvos.length === 0) return
+    setProcessandoLote(tipo)
+    const toastId = toast.loading(`${rotuloSucesso}...`)
+    const results = await Promise.allSettled(alvos.map((a) => mutar(a.participanteId)))
+    setProcessandoLote(null)
+    const sucesso = results.filter((r) => r.status === 'fulfilled').length
+    const falha = results.filter((r) => r.status === 'rejected').length
+    if (falha === 0) {
+      toast.success(`${sucesso} ${rotuloSucesso.toLowerCase()}(s) com sucesso!`, { id: toastId })
+    } else if (sucesso === 0) {
+      toast.error(`${rotuloFalha} (${falha}).`, { id: toastId })
+    } else {
+      toast.warning(`${sucesso} com sucesso, ${falha} falharam.`, { id: toastId })
+    }
+  }
+
+  // Diferente de finalizar/reabrir (cujo sucesso da chamada já garante o
+  // resultado), o envio de convite pode "suceder" no HTTP e ainda assim o
+  // e-mail falhar de verdade (ex.: sem SMTP configurado no ambiente) — o
+  // back devolve `conviteStatus: 'FALHOU'` nesse caso. Por isso, depois das
+  // chamadas, refaz a leitura e confere o `conviteStatus` real de cada
+  // participante antes de anunciar sucesso, em vez de confiar só no HTTP
+  // não ter lançado erro.
+  async function dispararConvitesEmLote(alvos: { participanteId: string }[]) {
+    if (alvos.length === 0) return
+    setProcessandoLote('reenviar')
+    const toastId = toast.loading('Enviando convites...')
+    await Promise.allSettled(alvos.map((a) => reenviar.mutateAsync(a.participanteId)))
+    const fresco = await participantes.refetch()
+    setProcessandoLote(null)
+    const idsAlvo = new Set(alvos.map((a) => a.participanteId))
+    const atualizados = (fresco.data ?? []).filter((p) => idsAlvo.has(p.participanteId))
+    const enviados = atualizados.filter((p) => p.conviteStatus === 'ENVIADO').length
+    const falharam = atualizados.length - enviados
+    if (falharam === 0) {
+      toast.success(`${enviados} convite(s) enviado(s) com sucesso!`, { id: toastId })
+    } else if (enviados === 0) {
+      toast.error(`Falha ao enviar ${falharam} convite(s) — confira a configuração de e-mail.`, { id: toastId })
+    } else {
+      toast.warning(`${enviados} enviado(s), ${falharam} falharam.`, { id: toastId })
+    }
+  }
 
   const handleDispararTodosEmail = async () => {
     const pendentes = lista.filter(l => l.part && l.part.conviteStatus !== 'ENVIADO')
-    if (pendentes.length === 0) return
+    await dispararConvitesEmLote(pendentes.map(p => p.part!))
+  }
 
-    setIsEnviando(true)
-    const toastId = toast.loading('Reenviando convites...')
+  const handleReenviarParaTodos = async () => {
+    const todos = lista.filter(l => l.part)
+    await dispararConvitesEmLote(todos.map(p => p.part!))
+  }
 
-    const results = await Promise.allSettled(
-      pendentes.map(p => reenviar.mutateAsync(p.part!.participanteId))
-    )
+  const handleFecharTodos = async () => {
+    const alvos = lista.filter(l => l.part && l.part.participanteStatus !== 'RESPONDIDO')
+    await dispararEmLote('fechar', alvos.map(p => p.part!), (id) => finalizar.mutateAsync(id), 'Cotação fechada', 'Falha ao fechar cotações')
+  }
 
-    setIsEnviando(false)
-
-    const sucesso = results.filter(r => r.status === 'fulfilled').length
-    const falha = results.filter(r => r.status === 'rejected').length
-
-    if (falha === 0) {
-      toast.success(`${sucesso} convite(s) reenviado(s) com sucesso!`, { id: toastId })
-      onClose()
-    } else if (sucesso === 0) {
-      toast.error(`Falha ao reenviar ${falha} convite(s).`, { id: toastId })
-    } else {
-      toast.warning(`${sucesso} convite(s) reenviado(s), mas ${falha} falharam.`, { id: toastId })
-    }
+  const handleAbrirTodos = async () => {
+    const alvos = lista.filter(l => l.part && l.part.participanteStatus === 'RESPONDIDO')
+    await dispararEmLote('abrir', alvos.map(p => p.part!), (id) => reabrir.mutateAsync(id), 'Cotação reaberta', 'Falha ao reabrir cotações')
   }
 
   return (
@@ -314,7 +371,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                         {e.repEmail && (
                           <a
                             href={urlMailto(
-                              `Olá ${e.part?.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação.${e.part?.linkMagico ? ` Acesse: ${e.part.linkMagico}` : ''}`,
+                              `Olá ${e.part?.representanteNome || e.repNome || 'Representante'}, aqui está o link da cotação.${e.part?.linkMagico ? ` Acesse: ${getLinkCorrigido(e.part.linkMagico)}` : ''}`,
                               'Cotação — link de acesso',
                               e.repEmail,
                             )}
@@ -404,7 +461,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                                   titulo: cotacao?.titulo ?? '',
                                   empresaNome: e.nome,
                                   prazo: cotacao?.prazo ?? null,
-                                  link: e.part!.linkMagico,
+                                  link: getLinkCorrigido(e.part!.linkMagico),
                                 })
                                 const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
                                 window.open(url, '_blank')
@@ -421,7 +478,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                             className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
                             onClick={(ev) => {
                               ev.stopPropagation()
-                              navigator.clipboard.writeText(e.part!.linkMagico)
+                              navigator.clipboard.writeText(getLinkCorrigido(e.part!.linkMagico))
                               toast.success('Link copiado com sucesso!')
                             }}
                           >
@@ -444,24 +501,57 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
         </div>
 
         {/* Footer */}
-        <div className="p-4 px-6 border-t border-border/50 bg-background/50 backdrop-blur-md shrink-0 rounded-b-xl z-20">
+        <div className="p-4 px-6 border-t border-border/50 bg-background/50 backdrop-blur-md shrink-0 rounded-b-xl z-20 space-y-2.5">
           {isAberta ? (
-            naoEnviadoCount > 0 ? (
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[13px] text-muted-foreground">
-                  <strong className="text-foreground">{naoEnviadoCount}</strong> {naoEnviadoCount === 1 ? 'convite pendente' : 'convites pendentes'}
-                </span>
-                <Button disabled={isEnviando} onClick={handleDispararTodosEmail} className="h-9 px-4 text-[13px] rounded-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow transition-all">
-                  {isEnviando ? <CircleNotch className="size-3.5 animate-spin" /> : <PaperPlaneRight className="size-3.5" />}
-                  {isEnviando ? 'Enviando...' : 'Enviar Restantes'}
-                </Button>
+            <>
+              <span className="text-[13px] text-muted-foreground block">
+                {naoEnviadoCount > 0 ? (
+                  <>
+                    <strong className="text-foreground">{naoEnviadoCount}</strong> {naoEnviadoCount === 1 ? 'convite pendente' : 'convites pendentes'}
+                  </>
+                ) : (
+                  <span className="text-success-foreground font-medium inline-flex items-center gap-1.5">
+                    <CheckCircle className="size-3.5" /> Todos os convites foram enviados.
+                  </span>
+                )}
+              </span>
+              <div className="flex items-center justify-end gap-2 flex-nowrap">
+                {podeGerenciarResposta && reabriveisCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={processandoLote !== null}
+                    onClick={handleAbrirTodos}
+                    className="h-8 text-[12px] px-3 rounded-full gap-1.5 whitespace-nowrap"
+                  >
+                    {processandoLote === 'abrir' ? <CircleNotch className="size-3.5 animate-spin" /> : <ArrowCounterClockwise className="size-3.5" />}
+                    Abrir todos
+                  </Button>
+                )}
+                {podeGerenciarResposta && finalizaveisCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={processandoLote !== null}
+                    onClick={handleFecharTodos}
+                    className="h-8 text-[12px] px-3 rounded-full gap-1.5 whitespace-nowrap"
+                  >
+                    {processandoLote === 'fechar' ? <CircleNotch className="size-3.5 animate-spin" /> : <CheckCircle className="size-3.5" />}
+                    Fechar todos
+                  </Button>
+                )}
+                {totalConvidados > 0 && (
+                  <Button
+                    disabled={processandoLote !== null}
+                    onClick={naoEnviadoCount > 0 ? handleDispararTodosEmail : handleReenviarParaTodos}
+                    className="h-8 text-[12px] px-3 rounded-full gap-1.5 whitespace-nowrap bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow transition-all"
+                  >
+                    {processandoLote === 'reenviar' ? <CircleNotch className="size-3.5 animate-spin" /> : <PaperPlaneRight className="size-3.5" />}
+                    {naoEnviadoCount > 0 ? 'Enviar restantes' : 'Reenviar a todos'}
+                  </Button>
+                )}
               </div>
-            ) : (
-              <div className="text-[13px] text-success-foreground font-medium py-1.5 flex items-center gap-2">
-                <CheckCircle className="size-4" />
-                Todos os convites foram enviados.
-              </div>
-            )
+            </>
           ) : (
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-[12px] text-muted-foreground/80">

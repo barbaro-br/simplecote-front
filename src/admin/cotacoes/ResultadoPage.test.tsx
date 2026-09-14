@@ -68,6 +68,7 @@ function setup(
   itensSemVencedor: Array<{ id: string; nomeSnapshot: string }> = [],
   itens: ReturnType<typeof item>[] = [item()],
   extra: { condicaoPagamento?: string | null; prazoEntregaEstimado?: string | null } = {},
+  opts: { mostrarMargemLucro?: boolean } = {},
 ) {
   const state = { status: 'GERADO' }
   let xlsxChamado = false
@@ -104,6 +105,9 @@ function setup(
         headers: { 'Content-Type': 'application/octet-stream' },
       })
     }),
+    // Ligada por padrão nesse arquivo — os testes de margem já assumiam a coluna
+    // visível antes de virar opcional; o gating em si tem teste próprio abaixo.
+    http.get('*/api/configuracoes', () => HttpResponse.json({ mostrarMargemLucro: opts.mostrarMargemLucro ?? true })),
   )
   const router = createMemoryRouter(
     [
@@ -219,6 +223,20 @@ test('"Baixar XLSX" chama o endpoint binário', async () => {
 
   await waitFor(() => expect(getXlsxChamado()).toBe(true))
   expect(criarObjectURL).toHaveBeenCalled()
+})
+
+test('com "mostrar margem de lucro" desligado (padrão), a margem/preço de venda não aparecem', async () => {
+  setup(undefined, [], [item()], {}, { mostrarMargemLucro: false })
+  const user = userEvent.setup()
+  await screen.findByText('Atacadão Central')
+
+  expect(screen.queryByLabelText('Margem de lucro (%)')).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Expandir itens de Atacadão Central' }))
+  await screen.findByText('Arroz Tipo 1 5kg')
+
+  expect(screen.queryByText('Preço de venda')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Margem (%) de Arroz Tipo 1 5kg')).not.toBeInTheDocument()
 })
 
 test('margem global calcula o preço de venda dos itens (precoUnitario × 1,30 para "30")', async () => {

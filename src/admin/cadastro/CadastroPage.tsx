@@ -121,7 +121,7 @@ export function CadastroPage() {
 
   if (cadastrado) {
     return (
-      <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden">
+      <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
         <HeroFundo variant="simples" />
         <div className="relative z-10 w-full max-w-sm space-y-6 px-4">
           <div className="flex flex-col items-center gap-3 text-center">
@@ -153,7 +153,7 @@ export function CadastroPage() {
   }
 
   return (
-    <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden">
+    <div data-painel="dark" className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
       <HeroFundo variant="simples" />
       <div className="relative z-10 w-full max-w-sm space-y-6 px-4 py-10">
         <div className="flex flex-col items-center gap-3 text-center">

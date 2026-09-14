@@ -155,7 +155,7 @@ test('salvar configurações não transporta identificador de inquilino', async 
     telefone: '(11) 99999-0000',
     layoutEmail: 'PADRAO',
     estiloNavegacao: 'LATERAL',
-    tema: 'CLARO',
+    tema: 'CLARO', mostrarMargemLucro: false,
   })
 
   expect(capturas).toHaveLength(1)
