@@ -165,9 +165,9 @@ export function EmpresasPage() {
                       key={empresa.id}
                       className={`transition-colors hover:bg-white/[0.03] ${empresa.ativo ? '' : 'opacity-60'}`}
                     >
-                      <td className="px-4 py-3 font-medium ui-uppercase text-[var(--pnl-txt,#fff)]">
-                        <div>
-                          <span>{empresa.nome}</span>
+                      <td className="px-4 py-3 font-medium text-[var(--pnl-txt,#fff)]">
+                        <div className="flex items-center">
+                          <span className="uppercase font-semibold">{empresa.nome}</span>
                           {!empresa.ativo && (
                             <Selo tom="neutro" className="ml-2">
                               Inativa
@@ -183,7 +183,7 @@ export function EmpresasPage() {
                       <td className="px-4 py-3 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
                         {rep ? (
                           <div>
-                            <div className="font-medium text-[var(--pnl-txt,#fff)]">{rep.nome}</div>
+                            <div className="font-medium text-[var(--pnl-txt,#fff)] uppercase">{rep.nome}</div>
                             <div className="text-xs text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{rep.email}</div>
                           </div>
                         ) : (

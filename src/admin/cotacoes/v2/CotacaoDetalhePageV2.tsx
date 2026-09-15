@@ -583,6 +583,42 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
     staleTime: 30_000,
   })
 
+  // Paginação e scroll infinito do catálogo global
+  const [paginasExtras, setPaginasExtras] = useState<any[]>([])
+  const [proximaPagina, setProximaPagina] = useState(1)
+  const [carregandoMais, setCarregandoMais] = useState(false)
+  const [acabouGlobais, setAcabouGlobais] = useState(false)
+
+  // Reseta paginação quando o termo de busca mudar (padrão oficial React "Adjusting some state when a prop changes")
+  const [termoAnterior, setTermoAnterior] = useState(termoDebounced)
+  if (termoAnterior !== termoDebounced) {
+    setTermoAnterior(termoDebounced)
+    setPaginasExtras([])
+    setProximaPagina(1)
+    setAcabouGlobais(false)
+  }
+
+  const carregarMaisGlobais = useCallback(async () => {
+    if (carregandoMais || acabouGlobais || termoDebounced.trim().length < 2) return
+    setCarregandoMais(true)
+    try {
+      const novos = await produtosApi.sugestoesCatalogoGlobal(termoDebounced.trim(), proximaPagina)
+      if (!novos || novos.length === 0) {
+        setAcabouGlobais(true)
+      } else {
+        setPaginasExtras((prev) => [...prev, ...novos])
+        setProximaPagina((prev) => prev + 1)
+        if (novos.length < 30) {
+          setAcabouGlobais(true)
+        }
+      }
+    } catch {
+      setAcabouGlobais(true)
+    } finally {
+      setCarregandoMais(false)
+    }
+  }, [carregandoMais, acabouGlobais, termoDebounced, proximaPagina])
+
   // Fechar dropdown ao clicar fora
   useEffect(() => {
     function aoClicarFora(e: MouseEvent) {
@@ -606,32 +642,38 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
     )
   }, [produtos, termo])
 
+  // Todos os itens globais combinados (página 0 + extras carregadas sob demanda)
+  const todosGlobais = useMemo(() => {
+    const paginaZero = sugestoesGlobais?.doCatalogoGlobal ?? []
+    return [...paginaZero, ...paginasExtras]
+  }, [sugestoesGlobais, paginasExtras])
+
   // Sugestões do catálogo global que ainda não existem no catálogo local
   const sugestoesGlobaisFiltradas = useMemo(() => {
-    if (!sugestoesGlobais?.doCatalogoGlobal) return []
+    if (!todosGlobais.length) return []
     const codigosLocais = new Set((produtos ?? []).map((p) => p.codigoBarras).filter(Boolean))
     const nomesLocais = new Set((produtos ?? []).map((p) => p.nome?.trim().toLowerCase()).filter(Boolean))
-    return sugestoesGlobais.doCatalogoGlobal.filter((g) => {
+    return todosGlobais.filter((g) => {
       if (g.codigoBarras && codigosLocais.has(g.codigoBarras)) return false
       if (g.nome && nomesLocais.has(g.nome.trim().toLowerCase())) return false
       return true
     })
-  }, [sugestoesGlobais, produtos])
+  }, [todosGlobais, produtos])
 
-  // Lista unificada para o dropdown do buscador
+  // Lista unificada para o dropdown do buscador (sem cortes arbitrários de 10 itens)
   const listaSugestoes = useMemo(() => {
-    const locais = produtosLocaisFiltrados.slice(0, 15).map((p: any) => ({
+    const locais = produtosLocaisFiltrados.slice(0, 50).map((p: any) => ({
       id: p.id,
-      nome: p.nome || 'Produto sem nome',
+      nome: (p.nome || 'Produto sem nome').toUpperCase(),
       codigoBarras: p.codigoBarras,
       unidade: p.unidade || 'Unidade',
       quantidadePorEmbalagem: p.quantidadePorEmbalagem || 1,
       isGlobal: false,
     }))
 
-    const globais = sugestoesGlobaisFiltradas.slice(0, 10).map((g: any) => ({
+    const globais = sugestoesGlobaisFiltradas.map((g: any) => ({
       id: undefined,
-      nome: g.nome || 'Produto global',
+      nome: (g.nome || 'Produto global').toUpperCase(),
       codigoBarras: g.codigoBarras,
       unidade: 'Unidade',
       quantidadePorEmbalagem: 1,
@@ -771,7 +813,13 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
 
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setIndiceAtivo((prev) => (prev + 1) % listaSugestoes.length)
+      setIndiceAtivo((prev) => {
+        const prox = (prev + 1) % listaSugestoes.length
+        if (prox >= listaSugestoes.length - 4) {
+          carregarMaisGlobais()
+        }
+        return prox
+      })
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setIndiceAtivo((prev) => (prev - 1 + listaSugestoes.length) % listaSugestoes.length)
@@ -849,7 +897,15 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
 
             {/* 📋 MENU FLUTUANTE COM SCROLL AMPLO DE SUGESTÕES */}
             {dropdownAberto && termo.trim().length > 0 && (
-              <div className="absolute left-0 right-0 z-[150] mt-1 max-h-96 overflow-y-auto rounded-none bg-[#0d1410] border border-white/20 shadow-2xl divide-y divide-white/10 animate-in fade-in duration-150 font-mono">
+              <div
+                onScroll={(e) => {
+                  const el = e.currentTarget
+                  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 80) {
+                    carregarMaisGlobais()
+                  }
+                }}
+                className="absolute left-0 right-0 z-[150] mt-1.5 max-h-[min(70vh,620px)] overflow-y-auto rounded-none bg-[#0d1410] border border-white/20 shadow-2xl divide-y divide-white/10 animate-in fade-in duration-150 font-mono"
+              >
                 {listaSugestoes.length === 0 ? (
                   <div className="p-6 text-center text-on-surface-variant flex flex-col items-center gap-3">
                     <Icon name="inventory_2" className="text-3xl opacity-50 block mx-auto text-primary" />
@@ -883,7 +939,7 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono font-medium text-xs text-[#dde4dd] truncate">{item.nome}</span>
+                              <span className="font-mono font-bold text-xs text-[#dde4dd] truncate uppercase">{item.nome}</span>
                               {item.isGlobal && (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-mono font-semibold bg-tertiary/20 text-tertiary border border-tertiary/30">
                                   🌐 Catálogo Global
@@ -916,6 +972,12 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                         </div>
                       )
                     })}
+                    {carregandoMais && (
+                      <div className="p-3 text-center text-xs font-mono text-primary flex items-center justify-center gap-2 bg-[#131b15]">
+                        <Icon name="sync" className="animate-spin text-sm" />
+                        <span>Carregando mais produtos do catálogo global...</span>
+                      </div>
+                    )}
                     <div className="p-2.5 px-4 bg-[#131b15] border-t border-white/10 flex items-center justify-between gap-2">
                       <span className="text-xs font-mono text-on-surface-variant">Não achou o que procura?</span>
                       <button
@@ -1042,7 +1104,7 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                           quantidadeSolicitada: it.quantidadeSolicitada,
                         })
                       }
-                      className="hover:text-primary hover:underline transition-colors text-left font-medium cursor-pointer py-0.5 truncate block w-full"
+                      className="hover:text-primary hover:underline transition-colors text-left font-medium cursor-pointer py-0.5 truncate block w-full uppercase"
                       title={it.nomeSnapshot}
                     >
                       {it.nomeSnapshot}
@@ -1314,7 +1376,7 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                       className="p-3 px-4 flex items-center justify-between gap-4 hover:bg-white/5 transition-colors rounded-none"
                     >
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-xs font-mono font-semibold text-[#dde4dd] truncate">{p.nome}</h4>
+                        <h4 className="text-xs font-mono font-semibold text-[#dde4dd] truncate uppercase">{p.nome}</h4>
                         <div className="flex items-center gap-3 text-[11px] text-on-surface-variant font-mono mt-0.5">
                           <span>GTIN: {p.codigoBarras || '—'}</span>
                           <span>Embalagem: {p.unidade || 'Unidade'} ({p.quantidadePorEmbalagem || 1} un)</span>
@@ -2662,7 +2724,7 @@ function AbaAoVivo({
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                        <span className="font-medium text-on-surface text-[13px] truncate" title={item.nome}>
+                        <span className="font-medium text-on-surface text-[13px] truncate uppercase" title={item.nome}>
                           {item.nome}
                         </span>
 
