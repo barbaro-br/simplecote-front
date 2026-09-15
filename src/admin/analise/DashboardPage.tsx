@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom'
 import { PainelDashboard } from './PainelDashboard'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { CabecalhoPagina } from '@/shared/ui'
-import { LinkColaboradorCard } from '@/admin/configuracoes/LinkColaboradorCard'
 import { OnboardingChecklist } from '@/admin/onboarding/OnboardingChecklist'
 import { useDispensarOnboarding, useOnboarding } from '@/admin/onboarding/onboarding.api'
 import { Button } from '@/shared/components/ui/button'
@@ -24,7 +23,20 @@ export function DashboardPage() {
 
   return (
     <PageContainer maxWidth="5xl" className="space-y-5">
-      <CabecalhoPagina titulo="Dashboard" subtitulo="Visão geral das suas cotações, gastos e economia." />
+      <CabecalhoPagina
+        titulo="Dashboard"
+        subtitulo="Visão geral das suas cotações, gastos e economia."
+        acao={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate('/admin/cotacoes')}>
+              Ver Cotações
+            </Button>
+            <Button onClick={() => navigate('/admin/cotacoes/nova')}>
+              Nova Cotação
+            </Button>
+          </div>
+        }
+      />
       {mostrarChecklist && <OnboardingChecklist />}
       {mostrarReexibir && (
         <div>
@@ -34,7 +46,6 @@ export function DashboardPage() {
         </div>
       )}
       <PainelDashboard onStatusClick={irParaStatus} />
-      <LinkColaboradorCard />
     </PageContainer>
   )
 }

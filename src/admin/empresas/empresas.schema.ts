@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 export const empresaSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
+  pedidoMinimo: z.number().min(0, 'Pedido mínimo não pode ser negativo').nullable().optional(),
   nomeRepresentante: z.string().min(1, 'Nome do representante é obrigatório'),
   emailRepresentante: z.string().min(1, 'E-mail é obrigatório').email('E-mail inválido'),
   whatsappRepresentante: z.string().optional(),
@@ -13,6 +14,7 @@ export type Empresa = {
   id: string
   nome: string
   ativo: boolean
+  pedidoMinimo?: number | null
   /** `false` quando a empresa já participou de alguma cotação — só então a exclusão é bloqueada. */
   podeExcluir: boolean
 }

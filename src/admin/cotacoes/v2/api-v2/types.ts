@@ -596,6 +596,7 @@ export interface ParticipanteDaCotacaoResponse {
   respondidoEm?: string
   emailRepresentante?: string
   whatsappRepresentante?: string
+  pedidoMinimo?: number | null
 }
 
 export interface ParticipanteResponse {
@@ -616,6 +617,7 @@ export interface PedidoAvulsoResponse {
   prazoEntregaEstimado?: string
   empresaNome?: string
   representanteNome?: string
+  pedidoMinimo?: number | null
 }
 
 export interface PedidoDTO {
@@ -633,6 +635,7 @@ export interface PedidoDTO {
   total?: number
   condicaoPagamento?: string
   prazoEntregaEstimado?: string
+  pedidoMinimo?: number | null
 }
 
 export interface PedidoResumoDTO {
@@ -645,6 +648,7 @@ export interface PedidoResumoDTO {
   condicaoPagamento?: string
   prazoEntregaEstimado?: string
   geradoEm?: string
+  pedidoMinimo?: number | null
 }
 
 export interface PedidosAgrupadosResponse {

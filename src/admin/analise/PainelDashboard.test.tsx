@@ -57,13 +57,11 @@ describe('PainelDashboard', () => {
     expect(screen.getByText('Pedidos gerados')).toBeInTheDocument()
     expect(screen.queryByText('Apurada')).not.toBeInTheDocument()
 
-    // Próximo prazo
-    expect(screen.getByText('Material Expediente')).toBeInTheDocument()
-    expect(screen.getByText('vence hoje')).toBeInTheDocument()
-
-    // Top 5
-    expect(screen.getByText('Papel A4')).toBeInTheDocument()
+    // Rankings
+    expect(screen.getByText('Fornecedores que mais vendem')).toBeInTheDocument()
     expect(screen.getByText('Kalunga')).toBeInTheDocument()
+    expect(screen.getByText('Produtos mais comprados')).toBeInTheDocument()
+    expect(screen.getByText('Papel A4')).toBeInTheDocument()
 
     // "Precisa de ação" filtra a lista
     await userEvent.click(screen.getByRole('button', { name: /encerradas sem apurar/i }))

@@ -8,6 +8,7 @@ import { Tooltip } from '@/shared/components/ui/tooltip'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import { CabecalhoPagina, Superficie, Selo, ChipsFiltro, type OpcaoChip } from '@/shared/ui'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
+import { moeda } from '@/shared/format/formatters'
 import { ConfirmarDialog } from '../cotacoes/ConfirmarDialog'
 import { useEmpresas, useInativarEmpresa, useAtivarEmpresa, useExcluirEmpresa } from './empresas.api'
 import { useRepresentantes, useExcluirRepresentante } from '../representantes/representantes.api'
@@ -165,11 +166,18 @@ export function EmpresasPage() {
                       className={`transition-colors hover:bg-white/[0.03] ${empresa.ativo ? '' : 'opacity-60'}`}
                     >
                       <td className="px-4 py-3 font-medium ui-uppercase text-[var(--pnl-txt,#fff)]">
-                        {empresa.nome}
-                        {!empresa.ativo && (
-                          <Selo tom="neutro" className="ml-2">
-                            Inativa
-                          </Selo>
+                        <div>
+                          <span>{empresa.nome}</span>
+                          {!empresa.ativo && (
+                            <Selo tom="neutro" className="ml-2">
+                              Inativa
+                            </Selo>
+                          )}
+                        </div>
+                        {empresa.pedidoMinimo != null && empresa.pedidoMinimo > 0 && (
+                          <div className="text-xs font-normal text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] font-mono lowercase mt-0.5">
+                            pedido mín: {moeda(empresa.pedidoMinimo)}
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-3 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">

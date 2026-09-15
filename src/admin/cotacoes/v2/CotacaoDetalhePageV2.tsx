@@ -32,6 +32,7 @@ import {
   SearchSelect,
 } from './ui-v2'
 import { useToast, mensagemErro } from './Toast-v2'
+import { PrazoPickerModal } from './PrazoPickerModal'
 
 export function IconeAoVivoTransmissao({ className = '' }: { className?: string }) {
   return (
@@ -103,7 +104,7 @@ export function CotacaoDetalhePageV2() {
     )
   }
   const [abrindoPrazo, setAbrindoPrazo] = useState(false)
-  const [prazo, setPrazo] = useState('')
+  const [prorrogandoPrazo, setProrrogandoPrazo] = useState(false)
 
   const { data: cotacao, isLoading } = useQuery({ queryKey: ['cotacao', id], queryFn: () => cotacoesApi.buscar(id) })
 
@@ -138,14 +139,94 @@ export function CotacaoDetalhePageV2() {
   })
 
   const abrir = useMutation({
-    mutationFn: () => cotacoesApi.abrir(id, { prazo: new Date(prazo).toISOString() }),
+    mutationFn: (prazoIso: string) => cotacoesApi.abrir(id, { prazo: prazoIso }),
     onSuccess: () => {
-      mostrar('Cotação aberta.')
+      mostrar('Cotação aberta para recebimento de lances!')
       setAbrindoPrazo(false)
       invalidarCotacao()
+      qc.invalidateQueries({ queryKey: ['cotacoes'] })
     },
     onError: (e) => mostrar(mensagemErro(e), 'erro'),
   })
+
+  const prorrogar = useMutation({
+    mutationFn: (prazoIso: string) => cotacoesApi.alterarPrazo(id, { prazo: prazoIso }),
+    onSuccess: () => {
+      mostrar('Prazo da cotação prorrogado com sucesso!')
+      setProrrogandoPrazo(false)
+      invalidarCotacao()
+      qc.invalidateQueries({ queryKey: ['cotacoes'] })
+    },
+    onError: (e) => mostrar(mensagemErro(e), 'erro'),
+  })
+
+  const [encerrando, setEncerrando] = useState(false)
+
+  async function handleEncerrar() {
+    try {
+      setEncerrando(true)
+      mostrar('Encerrando cotação e finalizando participantes…')
+      await cotacoesApi.encerrar(id)
+      await invalidarCotacao()
+      await qc.invalidateQueries({ queryKey: ['cotacoes'] })
+      mostrar('Cotação encerrada com sucesso!')
+      setAba('resultado')
+    } catch (e) {
+      mostrar(mensagemErro(e), 'erro')
+    } finally {
+      setEncerrando(false)
+    }
+  }
+
+  const [executandoApuracao, setExecutandoApuracao] = useState(false)
+
+  async function handleExecutarApuracao() {
+    try {
+      setExecutandoApuracao(true)
+      mostrar('Verificando respostas e preparando apuração…')
+
+      // 1. Busca os participantes da cotação e a grade ao vivo
+      const [parts, grid] = await Promise.all([
+        cotacoesApi.participantes(id).catch(() => []),
+        cotacoesApi.aoVivo(id).catch(() => null),
+      ])
+
+      // 2. Identifica participantes que preencheram preço mas não finalizaram a resposta
+      const pendentesComLance = (parts ?? []).filter(
+        (p): p is typeof p & { participanteId: string } => {
+          if (!p.participanteId) return false
+          if (p.participanteStatus === 'RESPONDIDO') return false
+          const temLanceCotado = (grid?.itens ?? []).some((item) =>
+            (item.precos ?? []).some(
+              (c) =>
+                c.status === 'COTADO' &&
+                ((c.participanteId && c.participanteId === p.participanteId) ||
+                  (c.empresa && p.empresaNome && c.empresa === p.empresaNome))
+            )
+          )
+          return temLanceCotado
+        }
+      )
+
+      // 3. Finaliza todos em massa antes de apurar
+      if (pendentesComLance.length > 0) {
+        await Promise.allSettled(
+          pendentesComLance
+            .filter((p) => Boolean(p.participanteId))
+            .map((p) => participantesApi.finalizar(p.participanteId!))
+        )
+      }
+
+      // 4. Executa a apuração no backend
+      await cotacoesApi.apurar(id)
+      await qc.invalidateQueries({ queryKey: ['cotacao', id] })
+      mostrar('Cotação apurada e pedidos gerados com sucesso!')
+    } catch (e) {
+      mostrar(mensagemErro(e), 'erro')
+    } finally {
+      setExecutandoApuracao(false)
+    }
+  }
 
   if (isLoading) return <Spinner />
   if (!cotacao) return <EmptyState icon="error" title="Cotação não encontrada" />
@@ -175,14 +256,19 @@ export function CotacaoDetalhePageV2() {
               </Button>
             )}
             {status === 'ABERTA' && (
-              <Button onClick={() => acao.mutate(() => cotacoesApi.encerrar(id))}>
-                <Icon name="stop" className="text-[16px]" /> Encerrar
-              </Button>
+              <>
+                <Button variant="ghost" onClick={() => setProrrogandoPrazo(true)}>
+                  <Icon name="schedule" className="text-[16px]" /> Prorrogar Prazo
+                </Button>
+                <Button onClick={handleEncerrar} disabled={encerrando}>
+                  <Icon name="stop" className="text-[16px]" /> {encerrando ? 'Encerrando…' : 'Encerrar Cotação'}
+                </Button>
+              </>
             )}
             {status === 'ENCERRADA' && (
               <>
-                <Button onClick={() => acao.mutate(() => cotacoesApi.apurar(id))}>
-                  <Icon name="task_alt" className="text-[16px]" /> Apurar
+                <Button onClick={handleExecutarApuracao} disabled={executandoApuracao || acao.isPending}>
+                  <Icon name="task_alt" className="text-[16px]" /> {executandoApuracao ? 'Apurando…' : 'Apurar'}
                 </Button>
                 <Button variant="ghost" onClick={() => acao.mutate(() => cotacoesApi.reabrir(id))}>
                   <Icon name="lock_open" className="text-[16px]" /> Reabrir
@@ -263,7 +349,8 @@ export function CotacaoDetalhePageV2() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col pt-4 min-w-0 w-full overflow-hidden">
+      {/* 📌 CONTEÚDO PRINCIPAL (COM SCROLL INTERNO CONTROLADO POR CADA ABA) */}
+      <div className="flex-1 min-h-0 flex flex-col min-w-0 w-full overflow-hidden mt-2 pb-2">
         <motion.div
           key={aba}
           initial={{ opacity: 0, y: 6 }}
@@ -273,36 +360,55 @@ export function CotacaoDetalhePageV2() {
         >
           {aba === 'itens' && <AbaItens cotacaoId={id} itens={cotacao.itens ?? []} editavel={status !== 'PEDIDOS_GERADOS' && status !== 'CANCELADA'} />}
           {aba === 'participantes' && <AbaParticipantes cotacaoId={id} cotacao={cotacao} editavel={status === 'RASCUNHO' || status === 'ABERTA'} />}
-          {aba === 'ao-vivo' && <AbaAoVivo cotacaoId={id} cotacao={cotacao} editavel={status !== 'PEDIDOS_GERADOS' && status !== 'CANCELADA'} />}
+          {aba === 'ao-vivo' && (
+            <AbaAoVivo
+              cotacaoId={id}
+              cotacao={cotacao}
+              editavel={status !== 'PEDIDOS_GERADOS' && status !== 'CANCELADA'}
+              onEncerrar={handleEncerrar}
+              encerrando={encerrando}
+              onProrrogarPrazo={() => setProrrogandoPrazo(true)}
+              onIrParaResultado={() => setAba('resultado')}
+            />
+          )}
           {aba === 'resultado' && (
             <AbaResultado
               cotacaoId={id}
               cotacao={cotacao}
-              onApurar={() => acao.mutate(() => cotacoesApi.apurar(id))}
-              apurando={acao.isPending}
-              onEncerrar={() => acao.mutate(() => cotacoesApi.encerrar(id))}
-              encerrando={acao.isPending}
+              onApurar={handleExecutarApuracao}
+              apurando={executandoApuracao || acao.isPending}
+              onEncerrar={handleEncerrar}
+              encerrando={encerrando}
+              onReabrir={() => acao.mutate(() => cotacoesApi.reabrir(id))}
+              reabrindo={acao.isPending}
               onIrParaAoVivo={() => setAba('ao-vivo')}
             />
           )}
         </motion.div>
       </div>
 
-      <Modal
+      <PrazoPickerModal
         open={abrindoPrazo}
         onClose={() => setAbrindoPrazo(false)}
-        title="Abrir cotação"
-        onSubmit={(e) => {
-          e.preventDefault()
-          abrir.mutate()
-        }}
+        onConfirmar={(prazoIso) => abrir.mutate(prazoIso)}
         submitting={abrir.isPending}
-        submitLabel="Abrir"
-      >
-        <Field label="Prazo final para lances">
-          <Input type="datetime-local" value={prazo} onChange={(e) => setPrazo(e.target.value)} required autoFocus />
-        </Field>
-      </Modal>
+        titulo="Abrir Cotação para Lances"
+        descricao="Defina a data e hora limite para os representantes convidados enviarem suas cotações."
+        submitLabel="Abrir Cotação"
+        totalItens={cotacao.itens?.length}
+      />
+
+      <PrazoPickerModal
+        open={prorrogandoPrazo}
+        onClose={() => setProrrogandoPrazo(false)}
+        onConfirmar={(prazoIso) => prorrogar.mutate(prazoIso)}
+        submitting={prorrogar.isPending}
+        titulo="Prorrogar Prazo da Cotação"
+        descricao="Estenda o período de recebimento de lances para permitir que mais fornecedores participem."
+        submitLabel="Confirmar Novo Prazo"
+        prazoInicialIso={cotacao.prazo}
+        totalItens={cotacao.itens?.length}
+      />
     </div>
   )
 }
@@ -828,28 +934,47 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                 onResize={(e) => iniciarRedimensionamento('produto', e)}
                 onDoubleClickResize={() => resetarColuna('produto')}
               >
-                Produto
+                <div className="flex items-center gap-1.5">
+                  <Icon name="inventory_2" className="text-base text-primary shrink-0" />
+                  <span>Produto</span>
+                </div>
               </Th>
               <Th
                 onResize={(e) => iniciarRedimensionamento('codigoBarras', e)}
                 onDoubleClickResize={() => resetarColuna('codigoBarras')}
               >
-                Código de barras
+                <div className="flex items-center gap-1.5">
+                  <Icon name="qr_code" className="text-base text-primary shrink-0" />
+                  <span>Código de barras</span>
+                </div>
               </Th>
               <Th
                 onResize={(e) => iniciarRedimensionamento('embalagem', e)}
                 onDoubleClickResize={() => resetarColuna('embalagem')}
               >
-                Embalagem
+                <div className="flex items-center gap-1.5">
+                  <Icon name="package_2" className="text-base text-primary shrink-0" />
+                  <span>Embalagem</span>
+                </div>
               </Th>
               <Th
                 right
                 onResize={(e) => iniciarRedimensionamento('quantidade', e)}
                 onDoubleClickResize={() => resetarColuna('quantidade')}
               >
-                Qtd. Solicitada
+                <div className="flex items-center justify-end gap-1.5">
+                  <Icon name="pin" className="text-base text-primary shrink-0" />
+                  <span>Qtd. Solicitada</span>
+                </div>
               </Th>
-              {editavel && <Th right>Ações</Th>}
+              {editavel && (
+                <Th right>
+                  <div className="flex items-center justify-end gap-1.5">
+                    <Icon name="tune" className="text-base text-primary shrink-0" />
+                    <span>Ações</span>
+                  </div>
+                </Th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.04] text-sm text-on-surface">
@@ -1401,10 +1526,30 @@ function AbaParticipantes({
         <Table containerClassName="shadow-md border border-white/15 rounded-none max-h-[560px] flex flex-col" tableClassName="w-full">
           <thead>
             <tr className="bg-[#1a231d] sticky top-0 z-10">
-              <Th className="w-[46%]">Empresa / Representante</Th>
-              <Th center className="w-[16%]">Status</Th>
-              <Th className="w-[16%]">Data</Th>
-              <Th right className="w-[22%]">Ações</Th>
+              <Th className="w-[46%]">
+                <div className="flex items-center gap-1.5">
+                  <Icon name="storefront" className="text-base text-primary shrink-0" />
+                  <span>Empresa / Representante</span>
+                </div>
+              </Th>
+              <Th center className="w-[16%]">
+                <div className="flex items-center justify-center gap-1.5">
+                  <Icon name="flag" className="text-base text-primary shrink-0" />
+                  <span>Status</span>
+                </div>
+              </Th>
+              <Th className="w-[16%]">
+                <div className="flex items-center gap-1.5">
+                  <Icon name="event" className="text-base text-primary shrink-0" />
+                  <span>Data</span>
+                </div>
+              </Th>
+              <Th right className="w-[22%]">
+                <div className="flex items-center justify-end gap-1.5">
+                  <Icon name="tune" className="text-base text-primary shrink-0" />
+                  <span>Ações</span>
+                </div>
+              </Th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10 text-sm">
@@ -1942,10 +2087,18 @@ function AbaAoVivo({
   cotacaoId,
   cotacao,
   editavel = false,
+  onEncerrar,
+  encerrando,
+  onProrrogarPrazo,
+  onIrParaResultado,
 }: {
   cotacaoId: string
   cotacao?: CotacaoResponse
   editavel?: boolean
+  onEncerrar?: () => void
+  encerrando?: boolean
+  onProrrogarPrazo?: () => void
+  onIrParaResultado?: () => void
 }) {
   const qc = useQueryClient()
   const { mostrar } = useToast()
@@ -2248,13 +2401,47 @@ function AbaAoVivo({
           )}
 
           <StatusBadge status={grid.status} />
+
+          {grid.status === 'ABERTA' && onProrrogarPrazo && (
+            <Button
+              variant="ghost"
+              onClick={onProrrogarPrazo}
+              className="!py-1.5 !px-3 !text-xs border border-white/10"
+              title="Prorrogar prazo para lances"
+            >
+              <Icon name="schedule" className="text-[15px]" />
+              Prorrogar Prazo
+            </Button>
+          )}
+
+          {grid.status === 'ABERTA' && onEncerrar && (
+            <Button
+              onClick={onEncerrar}
+              disabled={encerrando}
+              className="!py-1.5 !px-3 !text-xs bg-amber-500 hover:bg-amber-400 text-black font-semibold shadow-[0_0_12px_rgba(245,158,11,0.3)]"
+              title="Finalizar participantes pendentes e ir para a apuração"
+            >
+              <Icon name="stop" className="text-[15px]" />
+              {encerrando ? 'Encerrando…' : 'Encerrar Cotação'}
+            </Button>
+          )}
+
+          {(grid.status === 'ENCERRADA' || grid.status === 'PEDIDOS_GERADOS') && onIrParaResultado && (
+            <Button
+              onClick={onIrParaResultado}
+              className="!py-1.5 !px-3 !text-xs shadow-[0_0_12px_rgba(78,222,163,0.3)]"
+            >
+              <Icon name="analytics" className="text-[15px]" />
+              Ver Resultado
+            </Button>
+          )}
         </div>
       </Card>
 
       {/* Tabela estilo planilha contábil com coluna de produto congelada e barra de rolagem oculta */}
       <div
         ref={tabelaContainerRef}
-        className="flex-1 min-h-[420px] w-full min-w-0 overflow-x-auto overflow-y-auto rounded-xl border border-white/15 bg-[#0d1410] shadow-2xl relative [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="flex-1 min-h-[420px] w-full min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-white/15 bg-[#0d1410] shadow-2xl relative [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         <table className="min-w-full w-max text-left border-separate border-spacing-0 table-fixed">
           <thead>
@@ -2628,6 +2815,8 @@ interface AbaResultadoProps {
   apurando?: boolean
   onEncerrar?: () => void
   encerrando?: boolean
+  onReabrir?: () => void
+  reabrindo?: boolean
   onIrParaAoVivo?: () => void
 }
 
@@ -2638,6 +2827,8 @@ function AbaResultado({
   apurando,
   onEncerrar,
   encerrando,
+  onReabrir,
+  reabrindo,
   onIrParaAoVivo,
 }: AbaResultadoProps) {
   const queryClient = useQueryClient()
@@ -2654,12 +2845,12 @@ function AbaResultado({
     refetchInterval: status === 'ABERTA' ? 10000 : false,
   })
 
-  // Grade ao vivo para capturar todos os lances digitados (mesmo de representantes que ainda não finalizaram)
+  // Grade ao vivo para capturar lances e servir de fallback caso a cotação tenha sido apurada sem pedidos no back
   const { data: gridAoVivo, isLoading: loadingGrid } = useQuery<GridAoVivoDTO>({
     queryKey: ['cotacao', cotacaoId, 'ao-vivo'],
     queryFn: () => cotacoesApi.aoVivo(cotacaoId),
     refetchInterval: status === 'ABERTA' ? 10000 : false,
-    enabled: !ehApurada,
+    enabled: true,
   })
 
   // Participantes da cotação para puxar WhatsApp e nome do representante
@@ -2785,7 +2976,7 @@ function AbaResultado({
   // Unificação Inteligente de Dados (Prévia Ao Vivo + Apuração Oficial)
   // ============================================================
   const itensComVencedor = useMemo(() => {
-    if (ehApurada) {
+    if (ehApurada && (resultadoData?.pedidos?.length ?? 0) > 0) {
       const list: Array<{
         id: string
         itemCotacaoId: string
@@ -2821,7 +3012,8 @@ function AbaResultado({
       return list
     }
 
-    // Se a cotação não foi apurada, computa os vencedores a partir dos menores lances do grid ao vivo
+    // Se a cotação não foi apurada OU se foi apurada sem pedidos gravados no back,
+    // computa os vencedores a partir dos menores lances da grade
     const list: Array<{
       id: string
       itemCotacaoId: string
@@ -2868,7 +3060,7 @@ function AbaResultado({
   }, [ehApurada, resultadoData?.pedidos, gridAoVivo?.itens])
 
   const itensSemVencedor = useMemo(() => {
-    if (ehApurada) {
+    if (ehApurada && (resultadoData?.pedidos?.length ?? 0) > 0) {
       return (resultadoData?.itensSemVencedor ?? []).map((it) => ({
         id: it.id || '',
         nome: it.nomeSnapshot || 'Produto',
@@ -2878,7 +3070,7 @@ function AbaResultado({
       }))
     }
 
-    // Na prévia, itens que não possuem nenhuma cotação válida no grid
+    // Na prévia ou fallback, itens que não possuem nenhuma cotação válida no grid
     const list: Array<{
       id: string
       nome: string
@@ -2901,7 +3093,7 @@ function AbaResultado({
     }
 
     return list
-  }, [ehApurada, resultadoData?.itensSemVencedor, gridAoVivo?.itens])
+  }, [ehApurada, resultadoData?.pedidos, resultadoData?.itensSemVencedor, gridAoVivo?.itens])
 
   // Pedidos consolidados agrupados por fornecedor
   const pedidosAgrupados = useMemo<PedidoDTO[]>(() => {
@@ -2915,6 +3107,9 @@ function AbaResultado({
     for (const item of itensComVencedor) {
       const chave = item.empresaVencedora
       if (!mapa.has(chave)) {
+        const partInfo = participantes?.find(
+          (p) => (item.participanteId && p.participanteId === item.participanteId) || p.empresaNome === chave
+        )
         mapa.set(chave, {
           id: `simulacao-${chave}`,
           empresaNome: chave,
@@ -2922,6 +3117,7 @@ function AbaResultado({
           total: 0,
           itens: [],
           status: 'SIMULADO',
+          pedidoMinimo: partInfo?.pedidoMinimo ?? null,
         })
       }
       const ped = mapa.get(chave)!
@@ -2941,7 +3137,7 @@ function AbaResultado({
     }
 
     return Array.from(mapa.values())
-  }, [ehApurada, resultadoData?.pedidos, itensComVencedor])
+  }, [ehApurada, resultadoData?.pedidos, itensComVencedor, participantes])
 
   // Sub-abas de visualização (Por Produto / Por Fornecedor / Sem Vencedor)
   const [visualizacao, setVisualizacao] = useState<'produtos' | 'fornecedores' | 'sem_vencedor'>('produtos')
@@ -3068,27 +3264,60 @@ function AbaResultado({
             </div>
           </div>
         ) : (
-          <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent px-3.5 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div
+            className={`rounded-xl border px-3.5 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+              (resultadoData?.pedidos?.length ?? 0) === 0
+                ? 'border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent'
+                : 'border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent'
+            }`}
+          >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
-                <Icon name="verified" className="text-base" />
+              <div
+                className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${
+                  (resultadoData?.pedidos?.length ?? 0) === 0
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                    : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                }`}
+              >
+                <Icon name={(resultadoData?.pedidos?.length ?? 0) === 0 ? 'warning' : 'verified'} className="text-base" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs sm:text-sm font-bold text-on-surface tracking-tight">
-                    Apuração Oficial Concluída — Pedidos Gerados
+                    {(resultadoData?.pedidos?.length ?? 0) === 0
+                      ? 'Apuração Concluída Sem Pedidos Gravados'
+                      : 'Apuração Oficial Concluída — Pedidos Gerados'}
                   </span>
-                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    Definitivo
+                  <span
+                    className={`inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-semibold border ${
+                      (resultadoData?.pedidos?.length ?? 0) === 0
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                        : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                    }`}
+                  >
+                    {(resultadoData?.pedidos?.length ?? 0) === 0 ? 'Ação Recomendada' : 'Definitivo'}
                   </span>
                 </div>
                 <p className="text-[11px] text-on-surface-variant truncate">
-                  Pedidos consolidados. Baixe romaneios em PDF, envie no WhatsApp ou exporte a planilha.
+                  {(resultadoData?.pedidos?.length ?? 0) === 0
+                    ? 'Os fornecedores cotaram preços, mas a cotação foi apurada sem finalizar as respostas. Reabra para salvar os pedidos oficiais com um clique.'
+                    : 'Pedidos consolidados. Baixe romaneios em PDF, envie no WhatsApp ou exporte a planilha.'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {(resultadoData?.pedidos?.length ?? 0) === 0 && onReabrir && (
+                <Button
+                  onClick={onReabrir}
+                  disabled={reabrindo}
+                  className="!py-1.5 !px-3 !text-xs bg-amber-400 hover:bg-amber-300 text-black font-bold shadow-[0_0_12px_rgba(251,191,36,0.3)]"
+                >
+                  <Icon name="lock_open" className="text-[15px]" />
+                  {reabrindo ? 'Reabrindo…' : 'Reabrir para Salvar Pedidos'}
+                </Button>
+              )}
+
               <Button
                 variant="ghost"
                 onClick={() => exportar.mutate()}
@@ -3255,7 +3484,7 @@ function AbaResultado({
       {/* ============================================================ */}
       {/* 4. Área Principal da Planilha (Fixa com Scroll Interno)      */}
       {/* ============================================================ */}
-      <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-white/10 bg-[#111813]/60">
+      <div className="flex-1 min-h-0 overflow-y-auto rounded-none border border-white/15 bg-[#111813]/60 shadow-lg">
         {/* ============================================================ */}
         {/* ABA 1: VENCEDORES POR PRODUTO (Tabela Contábil Item a Item)   */}
         {/* ============================================================ */}
@@ -3416,6 +3645,23 @@ function AbaResultado({
                                 Menor Preço
                               </span>
                             )}
+
+                            {pedido.pedidoMinimo != null && pedido.pedidoMinimo > 0 && (
+                              (pedido.total ?? 0) >= pedido.pedidoMinimo ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                  <Icon name="check_circle" className="text-[12px]" />
+                                  Mínimo atingido ({formatarMoeda(pedido.pedidoMinimo)})
+                                </span>
+                              ) : (
+                                <span
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                                  title={`Pedido mínimo exigido: ${formatarMoeda(pedido.pedidoMinimo)}. Ajuste as quantidades dos itens para atingir o valor.`}
+                                >
+                                  <Icon name="warning" className="text-[12px]" />
+                                  Abaixo do mín.: faltam {formatarMoeda(pedido.pedidoMinimo - (pedido.total ?? 0))} (mín: {formatarMoeda(pedido.pedidoMinimo)})
+                                </span>
+                              )
+                            )}
                           </div>
 
                           <div className="flex items-center gap-3 text-xs text-on-surface-variant/70 mt-0.5 flex-wrap">
@@ -3458,7 +3704,7 @@ function AbaResultado({
                     {/* Corpo do Pedido em Sanfona */}
                     {aberto && (
                       <div className="border-t border-white/10 p-3 sm:p-4 space-y-3 bg-[#111813]/60">
-                        <div className="overflow-x-auto rounded-lg border border-white/5">
+                        <div className="overflow-x-auto rounded-none border border-white/10">
                           <table className="w-full text-left text-xs sm:text-sm border-separate border-spacing-0">
                             <thead>
                               <tr className="bg-[#18231c] text-on-surface-variant text-[11px] uppercase tracking-wider">
@@ -3647,7 +3893,7 @@ function AbaResultado({
                   )}
                 </div>
 
-                <div className="overflow-x-auto rounded-lg border border-white/5">
+                <div className="overflow-x-auto rounded-none border border-white/10">
                   <table className="w-full text-left text-xs sm:text-sm border-separate border-spacing-0">
                     <thead>
                       <tr className="bg-[#18231c] text-on-surface-variant text-[11px] uppercase tracking-wider">
