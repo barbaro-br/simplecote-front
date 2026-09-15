@@ -24,7 +24,7 @@ const MARGEM = 6
  * estourava a largura de containers com `overflow-x-auto` (ex.: tabelas),
  * criando um scroll horizontal fantasma só de passar o mouse.
  */
-export function Tooltip({ content, delay = 300, side = 'top', children }: Props) {
+export function Tooltip({ content, delay = 100, side = 'top', children }: Props) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const gatilhoRef = useRef<HTMLSpanElement>(null)
@@ -70,7 +70,7 @@ export function Tooltip({ content, delay = 300, side = 'top', children }: Props)
             role="tooltip"
             style={{ position: 'fixed', top: pos.top, left: pos.left, transform: transformPorLado[side] }}
             className={cn(
-              'fade-in pointer-events-none z-50 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-[11px] font-medium text-background shadow-md',
+              'fade-in pointer-events-none z-50 whitespace-nowrap rounded-lg bg-[#1a231d] text-[#e1e9e3] border border-white/20 px-2.5 py-1 text-[11.5px] font-medium shadow-2xl backdrop-blur-md',
             )}
           >
             {content}

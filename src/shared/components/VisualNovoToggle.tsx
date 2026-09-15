@@ -7,22 +7,85 @@ import { useVisualNovo } from '@/shared/hooks/useVisualNovo'
  * a paleta/tipografia nova sem forçar a troca em ninguém — preferência por
  * navegador (localStorage), reversível a qualquer momento no mesmo botão.
  */
-export function VisualNovoToggle({ className }: { className?: string }) {
+interface VisualNovoToggleProps {
+  className?: string
+  recolhido?: boolean
+}
+
+export function VisualNovoToggle({ className, recolhido = false }: VisualNovoToggleProps) {
   const { ligado, alternar } = useVisualNovo()
+
+  if (recolhido) {
+    return (
+      <button
+        type="button"
+        onClick={alternar}
+        aria-pressed={ligado}
+        title={ligado ? 'Visual novo (ativo) — clique para alternar' : 'Experimentar visual novo'}
+        className={cn(
+          'relative flex items-center justify-center size-10 rounded-xl transition-all mx-auto',
+          ligado
+            ? 'bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20'
+            : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/25 shadow-[0_0_12px_rgba(16,185,129,0.25)]',
+          className,
+        )}
+      >
+        <Sparkle className="size-5 shrink-0" weight={ligado ? 'fill' : 'regular'} aria-hidden />
+        {!ligado && (
+          <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+          </span>
+        )}
+      </button>
+    )
+  }
+
+  if (!ligado) {
+    return (
+      <button
+        type="button"
+        onClick={alternar}
+        aria-pressed={false}
+        className={cn(
+          'w-full relative group overflow-hidden rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/5 hover:from-emerald-500/25 hover:to-teal-500/20 p-2.5 text-left transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] cursor-pointer',
+          className,
+        )}
+      >
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+            <Sparkle className="size-4 shrink-0 animate-pulse text-emerald-300" weight="fill" />
+            <span>Experimentar Visual Novo</span>
+          </div>
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </span>
+        </div>
+        <p className="text-[11px] text-muted-foreground group-hover:text-foreground/90 transition-colors leading-tight">
+          Ative a nova grade contábil, prévia de apuração e layout moderno.
+        </p>
+      </button>
+    )
+  }
 
   return (
     <button
       type="button"
       onClick={alternar}
-      aria-pressed={ligado}
+      aria-pressed={true}
       className={cn(
-        'flex items-center gap-2 rounded-md px-3 py-2 text-[13px] font-medium transition-colors',
-        ligado ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+        'w-full flex items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/15 transition-colors cursor-pointer',
         className,
       )}
     >
-      <Sparkle className="size-4 shrink-0" weight={ligado ? 'fill' : 'regular'} aria-hidden />
-      <span className="whitespace-nowrap">{ligado ? 'Visual novo (ativo)' : 'Experimentar visual novo'}</span>
+      <div className="flex items-center gap-1.5">
+        <Sparkle className="size-3.5 shrink-0" weight="fill" aria-hidden />
+        <span>Visual novo ativo</span>
+      </div>
+      <span className="text-[10px] text-primary/70 hover:text-primary transition-colors underline">
+        Desativar
+      </span>
     </button>
   )
 }
