@@ -154,6 +154,7 @@ export function ProdutosPage() {
         onClose={fecharForm}
         size="lg"
         ariaLabel={produtoEditando ? 'Editar produto' : 'Novo produto'}
+        className="p-0 bg-transparent border-0 shadow-none rounded-none"
       >
         <ProdutoForm aoSalvar={fecharForm} produtoParaEditar={produtoEditando} />
       </Dialog>

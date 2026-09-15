@@ -1,9 +1,9 @@
 import { z } from 'zod'
 
 export const empresaSchema = z.object({
-  nome: z.string().min(1, 'Nome é obrigatório'),
+  nome: z.string().min(1, 'Nome é obrigatório').transform((v) => v.trim().toUpperCase()),
   pedidoMinimo: z.number().min(0, 'Pedido mínimo não pode ser negativo').nullable().optional(),
-  nomeRepresentante: z.string().min(1, 'Nome do representante é obrigatório'),
+  nomeRepresentante: z.string().min(1, 'Nome do representante é obrigatório').transform((v) => v.trim().toUpperCase()),
   emailRepresentante: z.string().min(1, 'E-mail é obrigatório').email('E-mail inválido'),
   whatsappRepresentante: z.string().optional(),
 })

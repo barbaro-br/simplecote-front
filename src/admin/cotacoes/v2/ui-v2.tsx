@@ -239,6 +239,7 @@ export function Modal({
   submitLabel = 'Salvar',
   submitting,
   width = 'max-w-md',
+  overlayClassName = 'bg-black/10',
 }: {
   open: boolean
   onClose: () => void
@@ -248,6 +249,7 @@ export function Modal({
   submitLabel?: string
   submitting?: boolean
   width?: string
+  overlayClassName?: string
 }) {
   useEffect(() => {
     if (!open) return
@@ -260,26 +262,40 @@ export function Modal({
 
   const content = (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
-        <h2 className="text-lg font-semibold text-on-surface tracking-tight">{title}</h2>
+      <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-white/15 bg-[#131b15] -mx-6 -mt-6 px-5 py-3.5">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xs font-mono font-bold text-[#dde4dd] uppercase tracking-wider">{title}</h2>
+          <span className="px-1.5 py-0.5 rounded-none text-[10px] font-mono font-semibold bg-primary/15 text-primary border border-primary/30">
+            ITEM
+          </span>
+        </div>
         <button
           type="button"
           onClick={onClose}
-          className="text-on-surface-variant hover:text-on-surface rounded-lg p-1.5 hover:bg-white/5 transition-colors"
+          className="text-on-surface-variant hover:text-on-surface rounded-none p-1 hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-white/10"
           aria-label="Fechar"
         >
-          <Icon name="close" className="text-xl" />
+          <Icon name="close" className="text-base" />
         </button>
       </div>
 
       <div className="space-y-4 flex-1">{children}</div>
 
       {onSubmit && (
-        <div className="flex justify-end items-center gap-3 mt-6 pt-4 border-t border-white/10">
-          <Button type="button" variant="ghost" onClick={onClose}>
+        <div className="flex justify-end items-center gap-2 mt-6 pt-3.5 border-t border-white/15 -mx-6 -mb-6 px-5 py-3.5 bg-[#131b15]/40">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            className="rounded-none border border-white/15 bg-transparent hover:bg-white/5 text-[#dde4dd] text-xs font-mono uppercase px-4 py-2"
+          >
             Cancelar
           </Button>
-          <Button type="submit" disabled={submitting}>
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="bg-primary hover:bg-primary/90 text-black font-bold text-xs uppercase font-mono tracking-wider rounded-none px-6 py-2 shadow-[0_0_16px_rgba(78,222,163,0.3)] transition-all"
+          >
             {submitting ? 'Salvando…' : submitLabel}
           </Button>
         </div>
@@ -289,9 +305,9 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className={`fixed inset-0 transition-opacity ${overlayClassName}`} onClick={onClose} />
       <div
-        className={`relative z-10 w-full ${width} min-h-[380px] bg-[#161d19] bg-surface-container-low border border-white/15 rounded-2xl shadow-2xl p-6 overflow-visible`}
+        className={`relative z-10 w-full ${width} min-h-[380px] bg-[#0d1410] border border-white/20 rounded-none shadow-[0_25px_60px_rgba(0,0,0,0.85)] p-6 overflow-visible text-[#dde4dd]`}
       >
         {onSubmit ? <form onSubmit={onSubmit} className="h-full">{content}</form> : content}
       </div>
@@ -374,14 +390,14 @@ export function SearchSelect({
         <Icon name="expand_more" className={`text-lg text-on-surface-variant transition-transform ${aberto ? 'rotate-180' : ''}`} />
       </button>
       {aberto && (
-        <div className="absolute left-0 right-0 z-[120] mt-1.5 w-full rounded-xl bg-[#242c27] bg-surface-container-high border border-white/20 shadow-2xl overflow-hidden backdrop-blur-md">
-          <div className="p-2 border-b border-white/10 bg-[#1a211d]">
+        <div className="absolute left-0 right-0 z-[120] mt-1.5 w-full rounded-none bg-[#0d1410] border border-white/20 shadow-2xl overflow-hidden font-mono text-xs">
+          <div className="p-2 border-b border-white/10 bg-[#131b15]">
             <input
               autoFocus
               value={termo}
               onChange={(e) => setTermo(e.target.value)}
               placeholder="Digite para buscar…"
-              className="w-full bg-[#2f3632] bg-surface-container-highest text-[#dde4dd] text-on-surface text-sm rounded-lg px-3 py-2 border border-white/10 focus:outline-none focus:border-primary"
+              className="w-full bg-[#16201a] text-[#dde4dd] text-xs font-mono rounded-none px-3 py-2 border border-white/15 focus:outline-none focus:border-primary"
             />
           </div>
           <div className="max-h-56 overflow-y-auto divide-y divide-white/5">

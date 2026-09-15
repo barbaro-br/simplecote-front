@@ -8,7 +8,7 @@ import { useBiparItemCotacao, useCotacao } from '../cotacoes.api'
 import { useCriarProduto } from '../../produtos/produtos.api'
 import { ProdutoForm } from '../../produtos/ProdutoForm'
 import { Dialog } from '@/shared/components/ui/dialog'
-import { tiposDeEmbalagem, type TipoDeEmbalagem } from '../../produtos/produtos.schema'
+import { tiposDeEmbalagem, rotulosEmbalagem, type TipoDeEmbalagem } from '../../produtos/produtos.schema'
 import { ApiError } from '@/shared/api/api-client'
 import { Input } from '@/shared/components/ui/input'
 
@@ -101,7 +101,7 @@ export function BipagemPage() {
     try {
       // 1. Criar o produto local
       await criarProduto.mutateAsync({
-        nome: sugestao202.nome,
+        nome: sugestao202.nome.trim().toUpperCase(),
         codigoBarras: sugestao202.codigoBarras,
         unidade,
         quantidadePorEmbalagem: qtd
@@ -254,7 +254,7 @@ export function BipagemPage() {
               <p className="text-sm text-muted-foreground mt-1">
                 O código <strong>{sugestao202?.codigoBarras}</strong> foi encontrado na rede com o nome:
               </p>
-              <p className="text-sm font-medium bg-muted p-2 rounded-md mt-2 border">
+              <p className="text-sm font-medium bg-muted p-2 rounded-md mt-2 border uppercase">
                 {sugestao202?.nome}
               </p>
             </div>
@@ -268,7 +268,7 @@ export function BipagemPage() {
                   onChange={e => setUnidade(e.target.value as TipoDeEmbalagem)}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  {tiposDeEmbalagem.map(t => <option key={t} value={t}>{t}</option>)}
+                  {tiposDeEmbalagem.map(t => <option key={t} value={t}>{rotulosEmbalagem[t] || t}</option>)}
                 </select>
               </div>
               <div className="space-y-2">

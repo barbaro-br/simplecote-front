@@ -46,6 +46,8 @@ export function EmpresaForm({
 
   async function aoEnviar(valores: EmpresaFormValues) {
     setGenericError(null)
+    const nomeEmpresa = valores.nome.trim().toUpperCase()
+    const nomeRepresentante = valores.nomeRepresentante.trim().toUpperCase()
     const whatsapp = valores.whatsappRepresentante
       ? apenasNumeros(valores.whatsappRepresentante)
       : undefined
@@ -53,13 +55,13 @@ export function EmpresaForm({
       if (isEdit) {
         await atualizarEmpresa.mutateAsync({
           id: empresaParaEditar.id,
-          valores: { nome: valores.nome, pedidoMinimo: valores.pedidoMinimo },
+          valores: { nome: nomeEmpresa, pedidoMinimo: valores.pedidoMinimo },
         })
         if (representanteParaEditar) {
           await atualizarRepresentante.mutateAsync({
             id: representanteParaEditar.id,
             body: {
-              nome: valores.nomeRepresentante,
+              nome: nomeRepresentante,
               email: valores.emailRepresentante,
               whatsapp,
             },
@@ -67,7 +69,7 @@ export function EmpresaForm({
         } else {
           await criarRepresentante.mutateAsync({
             empresaId: empresaParaEditar.id,
-            nome: valores.nomeRepresentante,
+            nome: nomeRepresentante,
             email: valores.emailRepresentante,
             whatsapp,
           })
@@ -76,7 +78,7 @@ export function EmpresaForm({
         let empresaId = empresaIdCriada
         if (!empresaId) {
           const empresaCriada = await criarEmpresa.mutateAsync({
-            nome: valores.nome,
+            nome: nomeEmpresa,
             pedidoMinimo: valores.pedidoMinimo,
           })
           empresaId = empresaCriada.id
@@ -85,7 +87,7 @@ export function EmpresaForm({
         try {
           await criarRepresentante.mutateAsync({
             empresaId,
-            nome: valores.nomeRepresentante,
+            nome: nomeRepresentante,
             email: valores.emailRepresentante,
             whatsapp,
           })
@@ -127,8 +129,8 @@ export function EmpresaForm({
             <Input
               id="nome"
               {...form.register('nome')}
-              placeholder="Ex: Atacadão S/A"
-              className={form.formState.errors.nome ? 'border-destructive focus-visible:ring-destructive' : ''}
+              placeholder="Ex: ATACADÃO S/A"
+              className={`uppercase ${form.formState.errors.nome ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
             {form.formState.errors.nome && (
               <p className="text-[13px] text-destructive font-medium">{form.formState.errors.nome.message}</p>
@@ -170,8 +172,8 @@ export function EmpresaForm({
             <Input
               id="nomeRepresentante"
               {...form.register('nomeRepresentante')}
-              placeholder="Ex: João Silva"
-              className={form.formState.errors.nomeRepresentante ? 'border-destructive focus-visible:ring-destructive' : ''}
+              placeholder="Ex: JOÃO SILVA"
+              className={`uppercase ${form.formState.errors.nomeRepresentante ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
             {form.formState.errors.nomeRepresentante && (
               <p className="text-[13px] text-destructive font-medium">{form.formState.errors.nomeRepresentante.message}</p>

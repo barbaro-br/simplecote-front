@@ -33,6 +33,9 @@ import {
 } from './ui-v2'
 import { useToast, mensagemErro } from './Toast-v2'
 import { PrazoPickerModal } from './PrazoPickerModal'
+import { tiposDeEmbalagem, rotulosEmbalagem, normalizarTipoEmbalagem } from '../../produtos/produtos.schema'
+import { Dialog } from '@/shared/components/ui/dialog'
+import { ProdutoForm } from '../../produtos/ProdutoForm'
 
 export function IconeAoVivoTransmissao({ className = '' }: { className?: string }) {
   return (
@@ -529,13 +532,21 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
   // Estado de modais
   const [modalCatalogoAberto, setModalCatalogoAberto] = useState(false)
   const [buscaCatalogo, setBuscaCatalogo] = useState('')
+  const [modalNovoProdutoAberto, setModalNovoProdutoAberto] = useState(false)
+  const [termoNovoProduto, setTermoNovoProduto] = useState('')
+
+  const abrirCadastroNovoProduto = (nomeInicial?: string) => {
+    setTermoNovoProduto((nomeInicial || termo || '').trim().toUpperCase())
+    setDropdownAberto(false)
+    setModalNovoProdutoAberto(true)
+  }
 
   // Item selecionado para inclusão (com quantidade e embalagem)
   const [itemSelecionado, setItemSelecionado] = useState<{
     id?: string
     itemId?: string
     nome: string
-    codigoBarras?: string
+    codigoBarras?: string | null
     unidade: string
     quantidadePorEmbalagem: number
     isGlobal?: boolean
@@ -640,25 +651,26 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
     id?: string
     itemId?: string
     nome?: string
-    codigoBarras?: string
-    unidade?: string
+    codigoBarras?: string | null
+    unidade?: string | null
     quantidadePorEmbalagem?: number
     quantidadeSolicitada?: number
     isGlobal?: boolean
   }) => {
     const existente = p.id ? itensNaCotacaoMap.get(p.id) : null
     const finalItemId = p.itemId || existente?.id
+    const unidadePadrao = normalizarTipoEmbalagem(p.unidade)
 
     setItemSelecionado({
       id: p.id,
       itemId: finalItemId,
-      nome: p.nome || 'Produto sem nome',
+      nome: p.nome || 'PRODUTO SEM NOME',
       codigoBarras: p.codigoBarras,
-      unidade: p.unidade || 'Unidade',
+      unidade: unidadePadrao,
       quantidadePorEmbalagem: p.quantidadePorEmbalagem || 1,
       isGlobal: p.isGlobal,
     })
-    setUnidadeEditada(p.unidade || 'Unidade')
+    setUnidadeEditada(unidadePadrao)
     setFatorEmbalagemEditado(String(p.quantidadePorEmbalagem || 1))
     
     // Se já estiver na cotação, usa a quantidade solicitada dele; senão, 1
@@ -674,13 +686,14 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
       if (!itemSelecionado) return
 
       let produtoIdFinal = itemSelecionado.id
+      const nomeProdutoMaiusculo = itemSelecionado.nome.trim().toUpperCase()
 
       // 1. Se for produto novo do catálogo global, cria primeiro
       if (itemSelecionado.isGlobal || !produtoIdFinal) {
         const novoProduto = await produtosApi.criar({
-          nome: itemSelecionado.nome,
-          codigoBarras: itemSelecionado.codigoBarras,
-          unidade: unidadeEditada || 'Unidade',
+          nome: nomeProdutoMaiusculo,
+          codigoBarras: itemSelecionado.codigoBarras || undefined,
+          unidade: unidadeEditada || 'Caixa',
           quantidadePorEmbalagem: fatorNumero || 1,
         })
         produtoIdFinal = novoProduto.id
@@ -691,7 +704,7 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
           fatorNumero !== itemSelecionado.quantidadePorEmbalagem
         ) {
           await produtosApi.atualizar(produtoIdFinal, {
-            nome: itemSelecionado.nome,
+            nome: nomeProdutoMaiusculo,
             unidade: unidadeEditada,
             quantidadePorEmbalagem: fatorNumero,
           })
@@ -836,66 +849,98 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
 
             {/* 📋 MENU FLUTUANTE COM SCROLL AMPLO DE SUGESTÕES */}
             {dropdownAberto && termo.trim().length > 0 && (
-              <div className="absolute left-0 right-0 z-[150] mt-2 max-h-96 overflow-y-auto rounded-2xl bg-[#1a211d] border border-white/20 shadow-2xl divide-y divide-white/5 backdrop-blur-lg animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute left-0 right-0 z-[150] mt-1 max-h-96 overflow-y-auto rounded-none bg-[#0d1410] border border-white/20 shadow-2xl divide-y divide-white/10 animate-in fade-in duration-150 font-mono">
                 {listaSugestoes.length === 0 ? (
-                  <div className="p-6 text-center text-on-surface-variant">
-                    <Icon name="inventory_2" className="text-3xl mb-2 opacity-50 block mx-auto" />
-                    <p className="text-sm font-medium">Nenhum produto encontrado com "{termo}"</p>
-                    <p className="text-xs opacity-70 mt-1">Verifique o código ou nome digitado.</p>
+                  <div className="p-6 text-center text-on-surface-variant flex flex-col items-center gap-3">
+                    <Icon name="inventory_2" className="text-3xl opacity-50 block mx-auto text-primary" />
+                    <div>
+                      <p className="text-sm font-bold text-[#dde4dd]">Nenhum produto encontrado com "{termo}"</p>
+                      <p className="text-xs text-on-surface-variant/70 mt-0.5">Não encontramos no seu catálogo nem no catálogo global.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => abrirCadastroNovoProduto(termo)}
+                      className="mt-1 inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-black font-bold text-xs uppercase tracking-wider rounded-none shadow-[0_0_16px_rgba(78,222,163,0.3)] transition-all cursor-pointer font-mono"
+                    >
+                      <Icon name="add" className="text-base" />
+                      Cadastrar novo produto: "{termo.toUpperCase()}"
+                    </button>
                   </div>
                 ) : (
-                  listaSugestoes.map((item: any, idx: number) => {
-                    const ativo = idx === indiceAtivo
-                    const jaNaCotacao = item.id ? itensNaCotacaoMap.get(item.id) : null
-                    return (
-                      <div
-                        key={item.id || item.codigoBarras || idx}
-                        ref={(el) => { itemRefs.current[idx] = el }}
-                        onMouseEnter={() => setIndiceAtivo(idx)}
-                        onClick={() => abrirConfirmacao(item)}
-                        className={`p-3.5 px-4 flex items-center justify-between gap-4 cursor-pointer transition-colors ${
-                          ativo ? 'bg-[#242c27] border-l-4 border-primary pl-3' : 'hover:bg-white/5'
-                        }`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm text-[#dde4dd] truncate">{item.nome}</span>
-                            {item.isGlobal && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-tertiary/20 text-tertiary border border-tertiary/30">
-                                🌐 Catálogo Global
-                              </span>
-                            )}
+                  <>
+                    {listaSugestoes.map((item: any, idx: number) => {
+                      const ativo = idx === indiceAtivo
+                      const jaNaCotacao = item.id ? itensNaCotacaoMap.get(item.id) : null
+                      return (
+                        <div
+                          key={item.id || item.codigoBarras || idx}
+                          ref={(el) => { itemRefs.current[idx] = el }}
+                          onMouseEnter={() => setIndiceAtivo(idx)}
+                          onClick={() => abrirConfirmacao(item)}
+                          className={`p-3 px-4 flex items-center justify-between gap-4 cursor-pointer transition-colors rounded-none ${
+                            ativo ? 'bg-[#1a251f] border-l-4 border-primary pl-3' : 'hover:bg-white/5'
+                          }`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-medium text-xs text-[#dde4dd] truncate">{item.nome}</span>
+                              {item.isGlobal && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-mono font-semibold bg-tertiary/20 text-tertiary border border-tertiary/30">
+                                  🌐 Catálogo Global
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 text-[11px] text-on-surface-variant mt-1 font-mono">
+                              {item.codigoBarras && (
+                                <span className="bg-white/5 border border-white/10 px-1 py-0.5 rounded-none text-[10px]">
+                                  {item.codigoBarras}
+                                </span>
+                              )}
+                              <span className="text-primary font-semibold">Embalagem: {item.unidade}{item.quantidadePorEmbalagem > 1 ? `/${item.quantidadePorEmbalagem}` : ''}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-on-surface-variant mt-1 font-mono">
-                            {item.codigoBarras && (
-                              <span className="bg-surface-container-highest px-1.5 py-0.5 rounded text-[11px]">
-                                {item.codigoBarras}
-                              </span>
-                            )}
-                            <span className="text-[#4edea3] font-semibold">Embalagem: {item.unidade}{item.quantidadePorEmbalagem > 1 ? `/${item.quantidadePorEmbalagem}` : ''}</span>
-                          </div>
-                        </div>
 
-                        <div className="shrink-0 flex items-center gap-2">
-                          {jaNaCotacao ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/15 text-primary border border-primary/30">
-                              <Icon name="check_circle" className="text-sm" />
-                              Na cotação ({jaNaCotacao.quantidadeSolicitada} {item.unidade})
-                            </span>
-                          ) : (
-                            <span className="text-xs font-semibold text-primary/90 bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 flex items-center gap-1">
-                              <Icon name="add" className="text-sm" />
-                              Selecionar
-                            </span>
-                          )}
+                          <div className="shrink-0 flex items-center gap-2 font-mono">
+                            {jaNaCotacao ? (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none text-xs font-semibold bg-primary/15 text-primary border border-primary/30">
+                                <Icon name="check_circle" className="text-xs" />
+                                Na cotação ({jaNaCotacao.quantidadeSolicitada} {item.unidade})
+                              </span>
+                            ) : (
+                              <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-none border border-primary/20 flex items-center gap-1">
+                                <Icon name="add" className="text-xs" />
+                                Selecionar
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })
+                      )
+                    })}
+                    <div className="p-2.5 px-4 bg-[#131b15] border-t border-white/10 flex items-center justify-between gap-2">
+                      <span className="text-xs font-mono text-on-surface-variant">Não achou o que procura?</span>
+                      <button
+                        type="button"
+                        onClick={() => abrirCadastroNovoProduto(termo)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-none text-xs font-mono font-semibold transition-colors cursor-pointer"
+                      >
+                        <Icon name="add" className="text-sm" />
+                        Cadastrar novo produto
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             )}
           </div>
+
+          {/* Botão rápido para cadastrar novo produto */}
+          <Button
+            onClick={() => abrirCadastroNovoProduto('')}
+            className="whitespace-nowrap py-3.5 px-4 shrink-0 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 font-semibold"
+          >
+            <Icon name="add" className="text-lg" />
+            Novo produto
+          </Button>
 
           {/* Botão para abrir o Modal Amplo do Catálogo Completo */}
           <Button
@@ -1098,15 +1143,15 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
         }
       >
         {itemSelecionado && (
-          <div className="space-y-4">
-            {/* Header do produto selecionado */}
-            <div className="bg-[#1a211d] p-4 rounded-xl border border-white/10 flex flex-col gap-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-primary">Produto selecionado</span>
-              <h3 className="text-base font-bold text-[#dde4dd]">{itemSelecionado.nome}</h3>
-              <div className="flex items-center gap-3 text-xs text-on-surface-variant font-mono mt-1">
+          <div className="space-y-4 font-mono">
+            {/* Header do produto selecionado estilo planilha */}
+            <div className="bg-[#131b15] p-3.5 rounded-none border border-white/15 flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Produto selecionado</span>
+              <h3 className="text-sm font-bold text-[#dde4dd] tracking-tight">{itemSelecionado.nome}</h3>
+              <div className="flex items-center gap-3 text-xs text-on-surface-variant font-mono mt-0.5">
                 <span>GTIN: {itemSelecionado.codigoBarras || 'Sem código'}</span>
                 {itemSelecionado.isGlobal && (
-                  <span className="bg-tertiary/20 text-tertiary px-1.5 py-0.5 rounded text-[10px]">🌐 Do Catálogo Global</span>
+                  <span className="bg-tertiary/20 text-tertiary px-1.5 py-0.5 rounded-none text-[10px] border border-tertiary/30">🌐 Do Catálogo Global</span>
                 )}
               </div>
             </div>
@@ -1114,26 +1159,56 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
             {/* Configuração de Embalagem para o Representante */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Embalagem (para o representante)">
-                <input
+                <select
                   value={unidadeEditada}
                   onChange={(e) => setUnidadeEditada(e.target.value)}
-                  placeholder="Ex: Caixa, Fardo, Unidade"
-                  className="w-full bg-[#242c27] text-on-surface text-sm rounded-xl px-3.5 py-2.5 border border-white/10 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full bg-[#16201a] text-[#dde4dd] text-xs font-mono rounded-none px-3 py-2 border border-white/15 focus:border-primary focus:outline-none cursor-pointer"
                   required
-                />
+                >
+                  {tiposDeEmbalagem.map((tipo) => (
+                    <option key={tipo} value={tipo} className="bg-[#0d1410] text-[#dde4dd]">
+                      {rotulosEmbalagem[tipo] || tipo}
+                    </option>
+                  ))}
+                  {unidadeEditada && !tiposDeEmbalagem.includes(unidadeEditada as any) && (
+                    <option value={unidadeEditada} className="bg-[#0d1410] text-[#dde4dd]">
+                      {unidadeEditada}
+                    </option>
+                  )}
+                </select>
               </Field>
               <Field label="Qtd. por Embalagem (Fator)">
-                <input
-                  type="number"
-                  min={1}
-                  value={fatorEmbalagemEditado}
-                  onChange={(e) => setFatorEmbalagemEditado(e.target.value)}
-                  placeholder="Ex: 12"
-                  className={`w-full bg-[#242c27] text-on-surface text-sm rounded-xl px-3.5 py-2.5 border transition-all ${
-                    fatorNumero > 0 ? 'border-white/10 focus:border-primary focus:ring-1 focus:ring-primary' : 'border-error text-error focus:border-error focus:ring-1 focus:ring-error'
-                  } focus:outline-none`}
-                  required
-                />
+                <div className="relative flex items-stretch">
+                  <input
+                    type="number"
+                    min={1}
+                    value={fatorEmbalagemEditado}
+                    onChange={(e) => setFatorEmbalagemEditado(e.target.value)}
+                    placeholder="Ex: 12"
+                    className={`w-full bg-[#16201a] text-[#dde4dd] text-xs font-mono rounded-none pl-3 pr-7 py-2 border transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                      fatorNumero > 0 ? 'border-white/15 focus:border-primary' : 'border-error text-error focus:border-error'
+                    } focus:outline-none`}
+                    required
+                  />
+                  <div className="absolute right-0 top-0 bottom-0 w-6 border-l border-white/15 flex flex-col divide-y divide-white/15 bg-[#131b15]">
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setFatorEmbalagemEditado((prev) => String((Number(prev) || 0) + 1))}
+                      className="flex-1 flex items-center justify-center hover:bg-primary/20 text-on-surface-variant hover:text-primary transition-colors cursor-pointer select-none"
+                    >
+                      <Icon name="expand_less" className="text-xs" />
+                    </button>
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setFatorEmbalagemEditado((prev) => String(Math.max(1, (Number(prev) || 1) - 1)))}
+                      className="flex-1 flex items-center justify-center hover:bg-primary/20 text-on-surface-variant hover:text-primary transition-colors cursor-pointer select-none"
+                    >
+                      <Icon name="expand_more" className="text-xs" />
+                    </button>
+                  </div>
+                </div>
               </Field>
             </div>
 
@@ -1148,12 +1223,12 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                     value={qtdSolicitada}
                     onChange={(e) => setQtdSolicitada(e.target.value)}
                     placeholder="Qtd"
-                    className={`flex-1 bg-[#242c27] text-2xl font-bold rounded-xl px-4 py-2 border transition-all text-center ${
-                      qtdNumero > 0 ? 'text-primary border-white/10 focus:border-primary focus:ring-1 focus:ring-primary' : 'text-error border-error focus:border-error focus:ring-1 focus:ring-error'
+                    className={`flex-1 bg-[#16201a] text-2xl font-bold font-mono rounded-none px-4 py-2 border transition-all text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                      qtdNumero > 0 ? 'text-primary border-white/15 focus:border-primary' : 'text-error border-error focus:border-error'
                     } focus:outline-none`}
                     required
                   />
-                  <span className="text-sm font-semibold text-on-surface-variant">{unidadeEditada || 'embalagens'}</span>
+                  <span className="text-xs font-mono font-semibold text-on-surface-variant uppercase">{unidadeEditada || 'embalagens'}</span>
                 </div>
 
                 {/* Botões de incremento rápido */}
@@ -1163,7 +1238,7 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                       key={num}
                       type="button"
                       onClick={() => setQtdSolicitada((prev) => String((Number(prev) || 0) + num))}
-                      className="px-2.5 py-1 text-xs font-mono bg-[#242c27] hover:bg-[#2f3632] text-on-surface-variant hover:text-white rounded-lg border border-white/5 transition-colors cursor-pointer"
+                      className="px-2.5 py-1 text-xs font-mono bg-[#16201a] hover:bg-[#223028] text-[#dde4dd] rounded-none border border-white/15 transition-colors cursor-pointer"
                     >
                       +{num}
                     </button>
@@ -1171,7 +1246,7 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                   <button
                     type="button"
                     onClick={() => setQtdSolicitada('1')}
-                    className="px-2.5 py-1 text-xs text-on-surface-variant hover:text-white rounded-lg transition-colors cursor-pointer ml-auto"
+                    className="px-2.5 py-1 text-xs font-mono text-on-surface-variant hover:text-white rounded-none border border-white/10 transition-colors cursor-pointer ml-auto"
                   >
                     Resetar (1)
                   </button>
@@ -1180,7 +1255,7 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
             </Field>
 
             {/* Preview do que o fornecedor verá */}
-            <div className="text-xs text-on-surface-variant bg-[#1a211d]/60 p-3 rounded-xl border border-white/5 flex items-center gap-2">
+            <div className="text-xs font-mono text-on-surface-variant bg-[#131b15] p-3 rounded-none border border-white/15 flex items-center gap-2">
               <Icon name="info" className="text-primary text-base shrink-0" />
               <span>
                 O representante verá: <strong>{qtdNumero > 0 ? qtdNumero : '—'} {unidadeEditada || 'Embalagem'}{fatorNumero > 1 ? `/${fatorNumero}` : ''}</strong> {fatorNumero > 1 && qtdNumero > 0 ? `(${qtdNumero * fatorNumero} unidades totais)` : ''}.
@@ -1197,20 +1272,20 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
         title="Catálogo de Produtos da Loja"
         width="max-w-4xl"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 font-mono">
           {/* Busca interna do catálogo amplo */}
           <div className="relative">
-            <Icon name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg" />
+            <Icon name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary text-base" />
             <input
               value={buscaCatalogo}
               onChange={(e) => setBuscaCatalogo(e.target.value)}
               placeholder="Filtrar por nome ou código de barras no catálogo..."
-              className="w-full bg-[#242c27] text-on-surface text-sm rounded-xl pl-10 pr-4 py-3 border border-white/10 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full bg-[#16201a] text-[#dde4dd] text-xs font-mono rounded-none pl-10 pr-4 py-2.5 border border-white/15 focus:border-primary focus:outline-none"
             />
           </div>
 
-          {/* Lista com scroll amplo */}
-          <div className="max-h-[55vh] overflow-y-auto divide-y divide-white/5 border border-white/10 rounded-xl bg-[#1a211d]">
+          {/* Lista com scroll amplo estilo grade contábil */}
+          <div className="max-h-[55vh] overflow-y-auto divide-y divide-white/10 border border-white/15 rounded-none bg-[#080d0a]">
             {((produtos ?? []).filter(
               (p) =>
                 p.ativo !== false &&
@@ -1218,8 +1293,8 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                   p.nome?.toLowerCase().includes(buscaCatalogo.trim().toLowerCase()) ||
                   (p.codigoBarras && p.codigoBarras.includes(buscaCatalogo.trim())))
             )).length === 0 ? (
-              <div className="p-8 text-center text-on-surface-variant">
-                <Icon name="search_off" className="text-4xl opacity-50 block mx-auto mb-2" />
+              <div className="p-8 text-center text-on-surface-variant font-mono">
+                <Icon name="search_off" className="text-4xl opacity-50 block mx-auto mb-2 text-primary" />
                 Nenhum produto encontrado no catálogo próprio.
               </div>
             ) : (
@@ -1236,11 +1311,11 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                   return (
                     <div
                       key={p.id}
-                      className="p-3.5 px-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors"
+                      className="p-3 px-4 flex items-center justify-between gap-4 hover:bg-white/5 transition-colors rounded-none"
                     >
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-[#dde4dd] truncate">{p.nome}</h4>
-                        <div className="flex items-center gap-3 text-xs text-on-surface-variant font-mono mt-0.5">
+                        <h4 className="text-xs font-mono font-semibold text-[#dde4dd] truncate">{p.nome}</h4>
+                        <div className="flex items-center gap-3 text-[11px] text-on-surface-variant font-mono mt-0.5">
                           <span>GTIN: {p.codigoBarras || '—'}</span>
                           <span>Embalagem: {p.unidade || 'Unidade'} ({p.quantidadePorEmbalagem || 1} un)</span>
                         </div>
@@ -1248,7 +1323,7 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
 
                       <div className="shrink-0 flex items-center gap-2">
                         {jaTem && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/15 text-primary border border-primary/30">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-xs font-mono font-semibold bg-primary/15 text-primary border border-primary/30">
                             <Icon name="check" className="text-xs" />
                             {jaTem.quantidadeSolicitada} {p.unidade} na cotação
                           </span>
@@ -1259,7 +1334,7 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
                             setModalCatalogoAberto(false)
                             abrirConfirmacao(p)
                           }}
-                          className="py-1.5 px-3 text-xs"
+                          className="py-1 px-3 text-xs font-mono rounded-none"
                         >
                           {jaTem ? 'Alterar qtd' : '+ Adicionar'}
                         </Button>
@@ -1271,6 +1346,25 @@ function AbaItens({ cotacaoId, itens, editavel }: { cotacaoId: string; itens: an
           </div>
         </div>
       </Modal>
+
+      {/* 📦 MODAL DE CADASTRO RÁPIDO DE NOVO PRODUTO NA COTAÇÃO */}
+      <Dialog
+        open={modalNovoProdutoAberto}
+        onClose={() => setModalNovoProdutoAberto(false)}
+        size="lg"
+        ariaLabel="Cadastrar novo produto"
+        className="p-0 bg-transparent border-0 shadow-none rounded-none"
+      >
+        <ProdutoForm
+          valoresIniciais={{ nome: termoNovoProduto, codigoBarras: '' }}
+          aoSalvar={(produtoCriado) => {
+            setModalNovoProdutoAberto(false)
+            if (produtoCriado) {
+              abrirConfirmacao(produtoCriado)
+            }
+          }}
+        />
+      </Dialog>
     </div>
   )
 }
@@ -1765,6 +1859,7 @@ function formatarEmbalagemDesc(qtdPorEmbalagem?: number | null, unidade?: string
       .replace(/^caixa\//i, 'cx/')
       .replace(/^fardo\//i, 'fardo/')
       .replace(/^pacote\//i, 'pct/')
+      .replace(/^display\//i, 'dp/')
     if (limpo.includes('/')) {
       if (!limpo.toLowerCase().includes('un')) {
         limpo += ' un'
@@ -1783,6 +1878,21 @@ function formatarEmbalagemDesc(qtdPorEmbalagem?: number | null, unidade?: string
   if (u.includes('PCT') || u.includes('PACOTE')) {
     return `pct/${qtdPorEmbalagem} un`
   }
+  if (u.includes('DP') || u.includes('DISPLAY')) {
+    return `dp/${qtdPorEmbalagem} un`
+  }
+  if (u.includes('DZ') || u.includes('DÚZIA') || u.includes('DUZIA')) {
+    return `dz/${qtdPorEmbalagem} un`
+  }
+  if (u.includes('CRT') || u.includes('CARTELA')) {
+    return `cartela/${qtdPorEmbalagem} un`
+  }
+  if (u.includes('BD') || u.includes('BALDE')) {
+    return `balde/${qtdPorEmbalagem} un`
+  }
+  if (u.includes('LT') || u.includes('LATA')) {
+    return `lata/${qtdPorEmbalagem} un`
+  }
   return `cx/${qtdPorEmbalagem} un`
 }
 
@@ -1793,6 +1903,21 @@ function rotuloUnidade(qtd: number, qtdPorEmbalagem?: number | null, unidade?: s
   }
   if (u.includes('PCT') || u.includes('PACOTE')) {
     return qtd === 1 ? 'pct' : 'pcts'
+  }
+  if (u.includes('DP') || u.includes('DISPLAY')) {
+    return qtd === 1 ? 'display' : 'displays'
+  }
+  if (u.includes('DZ') || u.includes('DÚZIA') || u.includes('DUZIA')) {
+    return qtd === 1 ? 'dúzia' : 'dúzias'
+  }
+  if (u.includes('CRT') || u.includes('CARTELA')) {
+    return qtd === 1 ? 'cartela' : 'cartelas'
+  }
+  if (u.includes('BD') || u.includes('BALDE')) {
+    return qtd === 1 ? 'balde' : 'baldes'
+  }
+  if (u.includes('LT') || u.includes('LATA')) {
+    return qtd === 1 ? 'lata' : 'latas'
   }
   if ((qtdPorEmbalagem && qtdPorEmbalagem > 1) || u.includes('CX') || u.includes('CAIXA')) {
     return qtd === 1 ? 'caixa' : 'caixas'

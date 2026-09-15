@@ -249,11 +249,11 @@ test('3.5 — cadastra Produto novo no modal aninhado e adiciona à cotação', 
   const dialogLista = within(screen.getByRole('dialog', { name: 'Adicionar Itens' }))
 
   // Adiciona o produto recém-criado à cotação
-  await dialogLista.findByText('Feijão Carioca 1kg')
-  await user.click(dialogLista.getByRole('button', { name: 'Adicionar Feijão Carioca 1kg à cotação' }))
+  await dialogLista.findByText(/Feijão Carioca 1kg/i)
+  await user.click(dialogLista.getByRole('button', { name: /Adicionar Feijão Carioca 1kg à cotação/i }))
   await user.click(dialogLista.getByRole('button', { name: 'Concluído' }))
 
-  expect(await screen.findByRole('cell', { name: 'Feijão Carioca 1kg' })).toBeInTheDocument()
+  expect(await screen.findByRole('cell', { name: /Feijão Carioca 1kg/i })).toBeInTheDocument()
 })
 
 test('editar um produto no modal não perde os itens já adicionados à cotação', async () => {
@@ -299,8 +299,8 @@ test('editar um produto no modal não perde os itens já adicionados à cotaçã
   )
 
   // O Feijão continua marcado como "Na cotação" e o Arroz aparece com o nome novo
-  expect(await lista().findByText('Arroz Integral 5kg')).toBeInTheDocument()
-  const linhaFeijao = screen.getByText('Feijão Carioca 1kg').closest('li') as HTMLElement
+  expect(await lista().findByText(/Arroz Integral 5kg/i)).toBeInTheDocument()
+  const linhaFeijao = screen.getByText(/Feijão Carioca 1kg/i).closest('li') as HTMLElement
   expect(within(linhaFeijao).getByText('Na cotação')).toBeInTheDocument()
 })
 
