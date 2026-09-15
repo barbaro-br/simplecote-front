@@ -11,8 +11,12 @@ import type { StatusCelula } from './useFilaDeSincronizacao'
 const UNIT_ABBR: Record<string, string> = {
   Fardo: 'fd',
   Caixa: 'cx',
+  Pacote: 'pct',
+  Display: 'dp',
   Cartela: 'crt',
   Dúzia: 'dz',
+  Balde: 'bd',
+  Lata: 'lt',
   Unidade: 'un',
 }
 
@@ -144,10 +148,22 @@ export function LinhaPreco({
   // real: o representante não sabia se era preço da unidade ou da caixa
   // inteira. A versão completa já existia (label sr-only abaixo, só pra
   // leitor de tela); essa é a mesma frase, só que visível.
+  const uTexto = (item.unidade || '').toLowerCase()
+  const nomeArtigo =
+    uTexto.includes('fardo') ? 'o fardo' :
+    uTexto.includes('pacote') ? 'o pacote' :
+    uTexto.includes('display') ? 'o display' :
+    uTexto.includes('balde') ? 'o balde' :
+    uTexto.includes('caixa') ? 'a caixa' :
+    uTexto.includes('cartela') ? 'a cartela' :
+    uTexto.includes('dúzia') || uTexto.includes('duzia') ? 'a dúzia' :
+    uTexto.includes('lata') ? 'a lata' :
+    `a embalagem (${item.unidade || 'un'})`
+
   const instrucaoPreco =
-    item.unidade === 'Unidade'
+    uTexto === 'unidade' || uTexto === 'un'
       ? 'Preço de 1 unidade'
-      : `Preço d${item.unidade === 'Caixa' ? 'a caixa' : item.unidade === 'Fardo' ? 'o fardo' : 'a cartela'} com ${item.quantidadePorEmbalagemSnapshot}`
+      : `Preço d${nomeArtigo} com ${item.quantidadePorEmbalagemSnapshot}`
 
   // Um campo só. O preço por unidade vira uma dica discreta abaixo do campo,
   // e só quando a embalagem tem >1 unidade (senão é o mesmo número — ruído).

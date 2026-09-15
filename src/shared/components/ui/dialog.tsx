@@ -10,6 +10,7 @@ type Props = {
   ariaLabel?: string
   size?: 'md' | 'lg' | 'xl'
   className?: string
+  overlayClassName?: string
   children: ReactNode
 }
 
@@ -24,7 +25,7 @@ const pilhaAberta: symbol[] = []
  * scroll-lock do body com cleanup, foco no container ao abrir e devolvido ao gatilho
  * ao fechar, `role="dialog"`/`aria-modal` e um focus-trap simples de Tab.
  */
-export function Dialog({ open, onClose, title, ariaLabel, size = 'md', className, children }: Props) {
+export function Dialog({ open, onClose, title, ariaLabel, size = 'md', className, overlayClassName, children }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const gatilhoRef = useRef<Element | null>(null)
   const onCloseRef = useRef(onClose)
@@ -87,20 +88,20 @@ export function Dialog({ open, onClose, title, ariaLabel, size = 'md', className
 
   return createPortal(
     <div
-      data-painel="dark"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200 text-foreground"
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 text-foreground ${overlayClassName ?? 'bg-black/75'}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
     >
       <div
         ref={containerRef}
+        data-painel="dark"
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? tituloId : undefined}
         aria-label={title ? undefined : (ariaLabel ?? 'Diálogo')}
         tabIndex={-1}
-        className={`w-full ${size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] flex flex-col overflow-y-auto rounded-xl border bg-card/95 shadow-2xl backdrop-blur-md outline-none animate-in zoom-in-95 duration-200 ${className || 'p-6 space-y-4'}`}
+        className={`w-full ${size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] flex flex-col overflow-y-auto border bg-card/95 shadow-2xl outline-none animate-in zoom-in-95 duration-200 ${className || 'p-6 space-y-4 rounded-xl'}`}
       >
         {title && (
           <div className="flex items-start justify-between">
