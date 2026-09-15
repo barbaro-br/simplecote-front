@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { Tooltip } from '@/shared/components/ui/tooltip'
 
 export function Icon({ name, className = '' }: { name: string; className?: string }) {
   return <span className={`material-symbols-outlined select-none align-middle ${className}`}>{name}</span>
@@ -43,17 +44,20 @@ export function IconButton({
   icon,
   danger,
   className = '',
+  title,
   ...props
 }: {
   children?: ReactNode
   icon?: string
   danger?: boolean
   className?: string
+  title?: string
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const dangerCls = danger
     ? 'text-[#ffb4ab] text-error hover:bg-[#ffb4ab]/10'
     : 'text-[#bbcabf] text-on-surface-variant hover:text-white hover:bg-white/5'
-  return (
+
+  const botao = (
     <button
       className={`p-1.5 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center ${dangerCls} ${className}`}
       {...props}
@@ -61,6 +65,16 @@ export function IconButton({
       {icon ? <Icon name={icon} className="text-base" /> : children}
     </button>
   )
+
+  if (title) {
+    return (
+      <Tooltip content={title} delay={80} side="top">
+        {botao}
+      </Tooltip>
+    )
+  }
+
+  return botao
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -106,7 +120,7 @@ export function Table({
   return (
     <div className={`bg-[#161d19] bg-surface-container-low border border-white/15 rounded-none shadow-md overflow-hidden flex flex-col ${containerClassName}`}>
       <div className={`overflow-auto flex-1 min-h-0 ${className}`}>
-        <table style={tableStyle} className={`text-left border-collapse ${tableClassName}`}>{children}</table>
+        <table style={tableStyle} className={`w-full text-left border-collapse ${tableClassName}`}>{children}</table>
       </div>
     </div>
   )
@@ -321,11 +335,15 @@ export function SearchSelect({
   onChange,
   options,
   placeholder = 'Selecione…',
+  emptyMessage = 'Nenhum resultado encontrado.',
+  itemPlural = 'itens',
 }: {
   value: string
   onChange: (value: string) => void
   options: { value: string; label: string; sublabel?: string }[]
   placeholder?: string
+  emptyMessage?: string
+  itemPlural?: string
 }) {
   const [termo, setTermo] = useState('')
   const [aberto, setAberto] = useState(false)
@@ -368,7 +386,7 @@ export function SearchSelect({
           </div>
           <div className="max-h-56 overflow-y-auto divide-y divide-white/5">
             {filtrados.length === 0 ? (
-              <div className="px-4 py-3 text-on-surface-variant text-sm text-center">Nenhum produto encontrado.</div>
+              <div className="px-4 py-3 text-on-surface-variant text-sm text-center">{emptyMessage}</div>
             ) : (
               filtrados.map((o) => (
                 <button
@@ -390,7 +408,7 @@ export function SearchSelect({
             )}
             {options.length > LIMITE && filtrados.length === LIMITE && (
               <div className="px-4 py-2 text-on-surface-variant text-xs border-t border-white/10 bg-[#1a211d] text-center">
-                Mostrando {LIMITE} de {options.length} produtos — digite para refinar.
+                Mostrando {LIMITE} de {options.length} {itemPlural} — digite para refinar.
               </div>
             )}
           </div>

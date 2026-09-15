@@ -168,7 +168,7 @@ function Sidebar({ nome, onLogout, itens }: { nome: string; onLogout: () => void
         </span>
       </button>
 
-      {isExpanded && <VisualNovoToggle className="mt-1" />}
+      <VisualNovoToggle className="mt-2" recolhido={!isExpanded} />
       {isExpanded && <VoltarLayoutAntigo />}
 
       <div
