@@ -31,6 +31,7 @@ export function EmpresaForm({
     resolver: zodResolver(empresaSchema),
     defaultValues: {
       nome: empresaParaEditar?.nome ?? '',
+      pedidoMinimo: empresaParaEditar?.pedidoMinimo ?? null,
       nomeRepresentante: representanteParaEditar?.nome ?? '',
       emailRepresentante: representanteParaEditar?.email ?? '',
       whatsappRepresentante: aplicarMascaraTelefone(representanteParaEditar?.whatsapp ?? ''),
@@ -50,7 +51,10 @@ export function EmpresaForm({
       : undefined
     try {
       if (isEdit) {
-        await atualizarEmpresa.mutateAsync({ id: empresaParaEditar.id, valores: { nome: valores.nome } })
+        await atualizarEmpresa.mutateAsync({
+          id: empresaParaEditar.id,
+          valores: { nome: valores.nome, pedidoMinimo: valores.pedidoMinimo },
+        })
         if (representanteParaEditar) {
           await atualizarRepresentante.mutateAsync({
             id: representanteParaEditar.id,
@@ -71,7 +75,10 @@ export function EmpresaForm({
       } else {
         let empresaId = empresaIdCriada
         if (!empresaId) {
-          const empresaCriada = await criarEmpresa.mutateAsync({ nome: valores.nome })
+          const empresaCriada = await criarEmpresa.mutateAsync({
+            nome: valores.nome,
+            pedidoMinimo: valores.pedidoMinimo,
+          })
           empresaId = empresaCriada.id
           setEmpresaIdCriada(empresaId)
         }
@@ -112,19 +119,42 @@ export function EmpresaForm({
       </div>
 
       <div className="space-y-6">
-        <div className="space-y-2">
-          <label htmlFor="nome" className="text-sm font-medium ui-uppercase">
-            Nome da empresa
-          </label>
-          <Input
-            id="nome"
-            {...form.register('nome')}
-            placeholder="Ex: Atacadão S/A"
-            className={form.formState.errors.nome ? 'border-destructive focus-visible:ring-destructive' : ''}
-          />
-          {form.formState.errors.nome && (
-            <p className="text-[13px] text-destructive font-medium">{form.formState.errors.nome.message}</p>
-          )}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label htmlFor="nome" className="text-sm font-medium ui-uppercase">
+              Nome da empresa
+            </label>
+            <Input
+              id="nome"
+              {...form.register('nome')}
+              placeholder="Ex: Atacadão S/A"
+              className={form.formState.errors.nome ? 'border-destructive focus-visible:ring-destructive' : ''}
+            />
+            {form.formState.errors.nome && (
+              <p className="text-[13px] text-destructive font-medium">{form.formState.errors.nome.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="pedidoMinimo" className="text-sm font-medium ui-uppercase flex items-center justify-between">
+              <span>Pedido Mínimo Padrão</span>
+              <span className="text-xs text-muted-foreground font-normal lowercase">(opcional)</span>
+            </label>
+            <Input
+              id="pedidoMinimo"
+              type="number"
+              step="0.01"
+              min="0"
+              {...form.register('pedidoMinimo', {
+                setValueAs: (v) => (v === '' || v === null || isNaN(Number(v)) ? null : Number(v)),
+              })}
+              placeholder="Ex: 1000,00"
+              className={form.formState.errors.pedidoMinimo ? 'border-destructive focus-visible:ring-destructive' : ''}
+            />
+            {form.formState.errors.pedidoMinimo && (
+              <p className="text-[13px] text-destructive font-medium">{form.formState.errors.pedidoMinimo.message}</p>
+            )}
+          </div>
         </div>
 
         <div className="space-y-4 rounded-md border p-4 bg-muted/10">

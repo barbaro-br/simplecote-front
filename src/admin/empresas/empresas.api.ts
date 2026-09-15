@@ -19,7 +19,8 @@ export function useEmpresas(opts?: { incluirInativos?: boolean }) {
 export function useCriarEmpresa() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (valores: { nome: string }) => api.post<Empresa>('/api/empresas', valores),
+    mutationFn: (valores: { nome: string; pedidoMinimo?: number | null }) =>
+      api.post<Empresa>('/api/empresas', valores),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: chave }),
   })
 }
@@ -43,7 +44,7 @@ export function useAtivarEmpresa() {
 export function useAtualizarEmpresa() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, valores }: { id: string, valores: { nome: string } }) => 
+    mutationFn: ({ id, valores }: { id: string; valores: { nome: string; pedidoMinimo?: number | null } }) =>
       api.put<Empresa>(`/api/empresas/${id}`, valores),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: chave }),
   })

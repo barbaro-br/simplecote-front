@@ -236,6 +236,7 @@ export function CotacaoPorTokenPage() {
             token={token}
             condicaoPagamento={d.condicaoPagamento}
             prazoEntregaEstimado={d.prazoEntregaEstimado}
+            pedidoMinimo={d.pedidoMinimo}
             condicoesPagamentoDisponiveis={d.condicoesPagamentoDisponiveis}
             podeEditar={d.podeEditar}
           />

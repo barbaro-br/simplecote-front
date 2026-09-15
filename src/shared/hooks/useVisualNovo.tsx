@@ -11,9 +11,11 @@ const VisualNovoContext = createContext<VisualNovoContextValue | null>(null)
 
 function lerPreferencia(): boolean {
   try {
-    return localStorage.getItem(CHAVE_STORAGE) === '1'
+    const salvo = localStorage.getItem(CHAVE_STORAGE)
+    if (salvo === null) return true
+    return salvo === '1'
   } catch {
-    return false
+    return true
   }
 }
 

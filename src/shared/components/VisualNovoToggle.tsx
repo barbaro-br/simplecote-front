@@ -21,16 +21,16 @@ export function VisualNovoToggle({ className, recolhido = false }: VisualNovoTog
         type="button"
         onClick={alternar}
         aria-pressed={ligado}
-        title={ligado ? 'Visual novo (ativo) — clique para alternar' : 'Experimentar visual novo'}
+        title={ligado ? 'Voltar para o visual clássico' : 'Ativar novo visual (Recomendado)'}
         className={cn(
-          'relative flex items-center justify-center size-10 rounded-xl transition-all mx-auto',
+          'relative flex items-center justify-center size-10 rounded-xl transition-all mx-auto cursor-pointer',
           ligado
-            ? 'bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20'
+            ? 'bg-white/5 text-on-surface-variant hover:text-on-surface hover:bg-white/10 border border-white/10'
             : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/25 shadow-[0_0_12px_rgba(16,185,129,0.25)]',
           className,
         )}
       >
-        <Sparkle className="size-5 shrink-0" weight={ligado ? 'fill' : 'regular'} aria-hidden />
+        <Sparkle className="size-5 shrink-0" weight={ligado ? 'regular' : 'fill'} aria-hidden />
         {!ligado && (
           <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -41,6 +41,7 @@ export function VisualNovoToggle({ className, recolhido = false }: VisualNovoTog
     )
   }
 
+  // Se o usuário desativou o novo visual, exibe card chamando para reativar
   if (!ligado) {
     return (
       <button
@@ -55,7 +56,7 @@ export function VisualNovoToggle({ className, recolhido = false }: VisualNovoTog
         <div className="flex items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
             <Sparkle className="size-4 shrink-0 animate-pulse text-emerald-300" weight="fill" />
-            <span>Experimentar Visual Novo</span>
+            <span>Ativar Visual Novo</span>
           </div>
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -63,28 +64,30 @@ export function VisualNovoToggle({ className, recolhido = false }: VisualNovoTog
           </span>
         </div>
         <p className="text-[11px] text-muted-foreground group-hover:text-foreground/90 transition-colors leading-tight">
-          Ative a nova grade contábil, prévia de apuração e layout moderno.
+          Voltar para a nova grade contábil, prévia de apuração e dashboard financeiro.
         </p>
       </button>
     )
   }
 
+  // Visual novo ativo (padrão): botão discreto para voltar ao visual clássico se desejado
   return (
     <button
       type="button"
       onClick={alternar}
       aria-pressed={true}
+      title="Alternar para a versão anterior do painel"
       className={cn(
-        'w-full flex items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/15 transition-colors cursor-pointer',
+        'w-full flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs font-medium text-on-surface-variant hover:text-on-surface hover:bg-white/[0.07] transition-colors cursor-pointer',
         className,
       )}
     >
       <div className="flex items-center gap-1.5">
-        <Sparkle className="size-3.5 shrink-0" weight="fill" aria-hidden />
-        <span>Visual novo ativo</span>
+        <Sparkle className="size-3.5 shrink-0 text-primary" weight="fill" aria-hidden />
+        <span className="text-[11px]">Visual novo padrão</span>
       </div>
-      <span className="text-[10px] text-primary/70 hover:text-primary transition-colors underline">
-        Desativar
+      <span className="text-[10px] text-on-surface-variant/70 hover:text-on-surface underline">
+        Visual clássico
       </span>
     </button>
   )

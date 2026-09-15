@@ -34,6 +34,7 @@ export type CotacaoPorToken = {
   itens: ItemLance[]
   condicaoPagamento: string | null
   prazoEntregaEstimado: string | null
+  pedidoMinimo?: number | null
   condicoesPagamentoDisponiveis: CondicaoPagamentoDisponivel[]
 }
 
@@ -42,6 +43,7 @@ export type CotacaoPorToken = {
 export type PatchCondicoes = {
   condicaoPagamentoId?: string | null
   prazoEntregaEstimado?: string | null
+  pedidoMinimo?: number | null
 }
 
 // Um item do PUT /public/cotacoes/{token}/lances (o front manda sempre 1).
