@@ -1,12 +1,22 @@
 import { useMemo, useState } from 'react'
-import { Eye, EyeSlash, Pencil, PlusCircle, Trash, UserMinus } from '@phosphor-icons/react'
+import {
+  Buildings,
+  CurrencyDollar,
+  Eye,
+  EyeSlash,
+  Gear,
+  MagnifyingGlass,
+  Pencil,
+  Plus,
+  Trash,
+  User,
+  UserMinus,
+} from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import { Button } from '@/shared/components/ui/button'
 import { Dialog } from '@/shared/components/ui/dialog'
-import { IconButton } from '@/shared/components/ui/icon-button'
 import { Tooltip } from '@/shared/components/ui/tooltip'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
-import { CabecalhoPagina, Superficie, Selo, ChipsFiltro, type OpcaoChip } from '@/shared/ui'
+import { Selo, type OpcaoChip } from '@/shared/ui'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { moeda } from '@/shared/format/formatters'
 import { ConfirmarDialog } from '../cotacoes/ConfirmarDialog'
@@ -22,6 +32,10 @@ const FILTROS: OpcaoChip[] = [
   { valor: 'inativos', rotulo: 'Inativos' },
 ]
 
+function normalizar(termo: string): string {
+  return termo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
 export function EmpresasPage() {
   const { data: empresas, isLoading, error } = useEmpresas({ incluirInativos: true })
   const { data: representantes } = useRepresentantes()
@@ -34,23 +48,49 @@ export function EmpresasPage() {
   const [empresaParaExcluir, setEmpresaParaExcluir] = useState<Empresa | null>(null)
   const [representanteParaExcluir, setRepresentanteParaExcluir] = useState<Representante | null>(null)
   const [filtro, setFiltro] = useState('todos')
+  const [busca, setBusca] = useState('')
 
   const representantePorEmpresa = useMemo(
     () => new Map((representantes ?? []).map((r) => [r.empresaId, r] as const)),
     [representantes],
   )
 
-  // Ativas primeiro — inativa não compete por atenção no meio da lista.
-  const empresasOrdenadas = useMemo(
-    () =>
-      [...(empresas ?? [])]
-        .filter((e) => filtro === 'todos' || (filtro === 'ativos' ? e.ativo : !e.ativo))
-        .sort((a, b) => Number(b.ativo) - Number(a.ativo)),
-    [empresas, filtro],
-  )
+  const palavras = normalizar(busca.trim()).split(/\s+/).filter(Boolean)
 
-  if (isLoading) return <p className="p-6 text-muted-foreground">Carregando fornecedores…</p>
-  if (error) return <p className="p-6 text-destructive">Erro ao carregar fornecedores: {error.message}</p>
+  // Ativas primeiro — inativa não compete por atenção no meio da lista.
+  const empresasFiltradas = useMemo(() => {
+    return [...(empresas ?? [])]
+      .filter((e) => {
+        if (filtro === 'ativos' && !e.ativo) return false
+        if (filtro === 'inativos' && e.ativo) return false
+        if (palavras.length === 0) return true
+
+        const rep = representantePorEmpresa.get(e.id)
+        const alvo = `${normalizar(e.nome)} ${rep ? `${normalizar(rep.nome)} ${normalizar(rep.email ?? '')}` : ''}`
+        return palavras.every((p) => alvo.includes(p))
+      })
+      .sort((a, b) => Number(b.ativo) - Number(a.ativo))
+  }, [empresas, filtro, palavras, representantePorEmpresa])
+
+  if (isLoading) {
+    return (
+      <PageContainer maxWidth="5xl" className="space-y-5">
+        <div className="rounded-none border border-white/15 bg-[#0d1410] p-8 text-center text-on-surface-variant">
+          <p className="text-sm">Carregando fornecedores…</p>
+        </div>
+      </PageContainer>
+    )
+  }
+
+  if (error) {
+    return (
+      <PageContainer maxWidth="5xl" className="space-y-5">
+        <div className="rounded-none border border-rose-500/30 bg-rose-500/10 p-6 text-rose-300 text-center">
+          <p className="text-sm font-semibold">Erro ao carregar fornecedores: {error.message}</p>
+        </div>
+      </PageContainer>
+    )
+  }
 
   function abrirNovo() {
     setEmpresaEditando(undefined)
@@ -95,18 +135,85 @@ export function EmpresasPage() {
     }
   }
 
-  return (
-    <PageContainer maxWidth="5xl" className="space-y-6">
-      <CabecalhoPagina titulo="Fornecedores (Empresas)" subtitulo="Gerencie as empresas e seus respectivos representantes." acao={<Button onClick={abrirNovo}>
-          <PlusCircle className="mr-2 size-4" />
-          Nova Empresa
-        </Button>} />
 
+  return (
+    <PageContainer maxWidth="5xl" className="space-y-4 text-on-surface">
+      {/* 1. CABEÇALHO DA PÁGINA */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+        <div className="flex items-center gap-3">
+          <div className="size-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+            <Buildings className="size-5" weight="bold" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-on-surface">
+                Fornecedores e empresas
+              </h1>
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                {empresas?.length ?? 0}
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">
+              Gerencie fornecedores, representantes e pedidos mínimos para cotação.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={abrirNovo}
+          className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg bg-primary hover:bg-primary/90 text-black font-semibold text-xs transition-all cursor-pointer shrink-0 shadow-[0_0_15px_rgba(78,222,163,0.25)]"
+        >
+          <Plus className="size-4" weight="bold" />
+          Nova empresa
+        </button>
+      </div>
+
+      {/* 2. BARRA DE BUSCA E FILTROS (Soltos, sem card envolvente) */}
+      <div className="shrink-0 flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.03] border border-white/10 select-none overflow-x-auto max-w-full">
+          {FILTROS.map((f) => {
+            const ativo = filtro === f.valor
+            return (
+              <button
+                key={f.valor}
+                type="button"
+                onClick={() => setFiltro(f.valor)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                  ativo
+                    ? 'bg-primary text-black font-bold shadow-sm'
+                    : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
+                }`}
+              >
+                {f.rotulo}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="relative w-full sm:w-80 shrink-0">
+          <MagnifyingGlass
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant/50"
+            aria-hidden
+          />
+          <input
+            type="search"
+            aria-label="Buscar fornecedor"
+            placeholder="Buscar por empresa, contato ou e-mail…"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="w-full h-8 pl-9 pr-3 rounded-xl border border-white/15 bg-black/40 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-medium"
+          />
+        </div>
+      </div>
+
+      {/* 3. MODAL DE FORMULÁRIO (NOVA EMPRESA / EDITAR) */}
       <Dialog
         open={mostrarForm}
         onClose={fecharForm}
         size="lg"
         ariaLabel={empresaEditando ? 'Editar empresa' : 'Nova empresa'}
+        className="p-0 bg-transparent border-0 shadow-none rounded-none"
       >
         <EmpresaForm
           aoSalvar={fecharForm}
@@ -117,6 +224,7 @@ export function EmpresasPage() {
         />
       </Dialog>
 
+      {/* 4. MODAIS DE CONFIRMAÇÃO */}
       {empresaParaExcluir && (
         <ConfirmarDialog
           titulo="Excluir empresa"
@@ -139,117 +247,205 @@ export function EmpresasPage() {
         />
       )}
 
-      <Superficie>
-        <ChipsFiltro opcoes={FILTROS} valor={filtro} aoTrocar={setFiltro} />
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[500px]">
-            <thead className="bg-white/[0.03] border-b border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
-              <tr className="text-left text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
-                <th className="px-4 py-3 font-medium ui-uppercase">Nome</th>
-                <th className="px-4 py-3 font-medium ui-uppercase">Representante</th>
-                <th className="px-4 py-3 font-medium ui-uppercase text-right">Ações</th>
+      {/* 5. PLANILHA DE FORNECEDORES (Sem bordas de coluna, cabeçalho no padrão cotações) */}
+      <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-white/10 bg-[#111813]/60 shadow-inner">
+        <table className="w-full text-left text-xs sm:text-sm border-separate border-spacing-0">
+          <thead className="sticky top-0 z-10 bg-[#17221b] text-on-surface text-xs font-bold uppercase tracking-wider select-none shadow-sm">
+            <tr>
+              <th className="py-3 px-3.5 font-bold border-b border-white/10">
+                <div className="flex items-center gap-1.5">
+                  <Buildings className="size-4 text-primary shrink-0" weight="bold" />
+                  <span>Empresa</span>
+                </div>
+              </th>
+              <th className="py-3 px-3.5 font-bold border-b border-white/10">
+                <div className="flex items-center gap-1.5">
+                  <User className="size-4 text-primary shrink-0" weight="bold" />
+                  <span>Representante</span>
+                </div>
+              </th>
+              <th className="py-3 px-3.5 font-bold border-b border-white/10 text-right w-36">
+                <div className="flex items-center justify-end gap-1.5">
+                  <CurrencyDollar className="size-4 text-primary shrink-0" weight="bold" />
+                  <span>Pedido mín.</span>
+                </div>
+              </th>
+              <th className="py-3 px-3.5 font-bold border-b border-white/10 text-center w-28">
+                <div className="flex items-center justify-center gap-1.5">
+                  <Eye className="size-4 text-primary shrink-0" weight="bold" />
+                  <span>Status</span>
+                </div>
+              </th>
+              <th className="py-3 px-3.5 font-bold border-b border-white/10 text-center w-[124px]">
+                <div className="flex items-center justify-center gap-1.5">
+                  <Gear className="size-4 text-primary shrink-0" weight="bold" />
+                  <span>Ações</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {!empresas?.length ? (
+              <tr>
+                <td colSpan={5} className="py-12 px-3.5 text-center text-on-surface-variant">
+                  Nenhum fornecedor cadastrado.
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]">
-              {!empresas?.length ? (
-                <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-[var(--pnl-txt-2,rgba(255,255,255,0.7))]">
-                    Nenhum fornecedor cadastrado.
-                  </td>
-                </tr>
-              ) : (
-                empresasOrdenadas.map((empresa) => {
-                  const rep: Representante | undefined = representantePorEmpresa.get(empresa.id)
-                  return (
-                    <tr
-                      key={empresa.id}
-                      className={`transition-colors hover:bg-white/[0.03] ${empresa.ativo ? '' : 'opacity-60'}`}
-                    >
-                      <td className="px-4 py-3 font-medium text-[var(--pnl-txt,#fff)]">
-                        <div className="flex items-center">
-                          <span className="uppercase font-semibold">{empresa.nome}</span>
-                          {!empresa.ativo && (
-                            <Selo tom="neutro" className="ml-2">
-                              Inativa
-                            </Selo>
-                          )}
-                        </div>
-                        {empresa.pedidoMinimo != null && empresa.pedidoMinimo > 0 && (
-                          <div className="text-xs font-normal text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] font-mono lowercase mt-0.5">
-                            pedido mín: {moeda(empresa.pedidoMinimo)}
-                          </div>
+            ) : empresasFiltradas.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-12 px-3.5 text-center text-on-surface-variant">
+                  Nenhuma empresa encontrada com os filtros atuais.
+                </td>
+              </tr>
+            ) : (
+              empresasFiltradas.map((empresa) => {
+                const rep: Representante | undefined = representantePorEmpresa.get(empresa.id)
+                return (
+                  <tr
+                    key={empresa.id}
+                    className={`transition-colors hover:bg-white/[0.03] group ${empresa.ativo ? '' : 'opacity-60 bg-black/20'}`}
+                  >
+                    {/* Empresa com título aumentado */}
+                    <td className="py-3 px-3.5">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => abrirEditar(empresa)}
+                          className="font-bold text-sm sm:text-base text-on-surface text-left hover:text-primary transition-colors cursor-pointer group-hover:underline"
+                        >
+                          {empresa.nome}
+                        </button>
+                        {!empresa.ativo && (
+                          <Selo tom="neutro" className="text-[10px]">
+                            Inativa
+                          </Selo>
                         )}
-                      </td>
-                      <td className="px-4 py-3 text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">
-                        {rep ? (
-                          <div>
-                            <div className="font-medium text-[var(--pnl-txt,#fff)] uppercase">{rep.nome}</div>
-                            <div className="text-xs text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">{rep.email}</div>
+                      </div>
+                    </td>
+
+                    {/* Representante */}
+                    <td className="py-3 px-3.5 text-on-surface-variant">
+                      {rep ? (
+                        <div>
+                          <div className="font-semibold text-on-surface">{rep.nome}</div>
+                          <div className="text-[11px] font-mono text-on-surface-variant/70">
+                            {rep.email}
+                            {rep.whatsapp ? ` • ${rep.whatsapp}` : ''}
                           </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-on-surface-variant/40 italic">
+                          Sem contato cadastrado
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Pedido Mínimo */}
+                    <td className="py-3 px-3.5 text-right font-mono">
+                      {empresa.pedidoMinimo != null && empresa.pedidoMinimo > 0 ? (
+                        <span className="text-on-surface font-semibold">
+                          {moeda(empresa.pedidoMinimo)}
+                        </span>
+                      ) : (
+                        <span className="text-on-surface-variant/30 text-xs">—</span>
+                      )}
+                    </td>
+
+                    {/* Status Badge Moderno */}
+                    <td className="py-3 px-3.5 text-center">
+                      {empresa.ativo ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          Ativa
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/5 text-on-surface-variant border border-white/10">
+                          Inativa
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Ações com botões estilizados no padrão dark */}
+                    <td className="py-3 px-3.5 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        {empresa.ativo ? (
+                          <>
+                            <button
+                              type="button"
+                              title="Editar"
+                              aria-label="Editar"
+                              onClick={() => abrirEditar(empresa)}
+                              className="size-8 rounded-lg bg-white/5 border border-white/10 text-on-surface hover:text-primary hover:bg-white/10 hover:border-primary/30 transition-colors inline-flex items-center justify-center cursor-pointer"
+                            >
+                              <Pencil className="size-4" weight="bold" />
+                            </button>
+                            <button
+                              type="button"
+                              title="Inativar"
+                              aria-label="Inativar"
+                              onClick={() => inativar.mutate(empresa.id)}
+                              disabled={inativar.isPending}
+                              className="size-8 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30 transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-50"
+                            >
+                              <EyeSlash className="size-4" weight="bold" />
+                            </button>
+                          </>
                         ) : (
-                          <span className="text-xs text-[var(--pnl-txt-3,rgba(255,255,255,0.45))]">sem representante</span>
+                          <button
+                            type="button"
+                            title="Ativar"
+                            aria-label="Ativar"
+                            onClick={() => ativar.mutate(empresa.id)}
+                            disabled={ativar.isPending}
+                            className="size-8 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-50"
+                          >
+                            <Eye className="size-4" weight="bold" />
+                          </button>
                         )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex gap-1 justify-end">
-                          {empresa.ativo ? (
-                            <>
-                              <IconButton
-                                icon={Pencil}
-                                label="Editar"
-                                onClick={() => abrirEditar(empresa)}
-                              />
-                              <IconButton
-                                icon={EyeSlash}
-                                label="Inativar"
-                                onClick={() => inativar.mutate(empresa.id)}
-                                disabled={inativar.isPending}
-                              />
-                            </>
-                          ) : (
-                            <IconButton
-                              icon={Eye}
-                              label="Ativar"
-                              onClick={() => ativar.mutate(empresa.id)}
-                              disabled={ativar.isPending}
-                            />
-                          )}
-                          {rep && (
-                            <IconButton
-                              icon={UserMinus}
-                              label="Excluir contato"
-                              tone="destructive"
-                              onClick={() => setRepresentanteParaExcluir(rep)}
-                            />
-                          )}
-                          {empresa.podeExcluir ? (
-                            <IconButton
-                              icon={Trash}
-                              label="Excluir"
-                              tone="destructive"
+                        {rep && (
+                          <button
+                            type="button"
+                            title="Excluir contato"
+                            aria-label="Excluir contato"
+                            onClick={() => setRepresentanteParaExcluir(rep)}
+                            className="size-8 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30 transition-colors inline-flex items-center justify-center cursor-pointer"
+                          >
+                            <UserMinus className="size-4" weight="bold" />
+                          </button>
+                        )}
+                        {empresa.podeExcluir ? (
+                          <button
+                            type="button"
+                            title="Excluir"
+                            aria-label="Excluir"
+                            onClick={() => setEmpresaParaExcluir(empresa)}
+                            className="size-8 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30 transition-colors inline-flex items-center justify-center cursor-pointer"
+                          >
+                            <Trash className="size-4" weight="bold" />
+                          </button>
+                        ) : (
+                          <Tooltip content="Não é possível excluir: a empresa já participou de uma cotação. Use Inativar.">
+                            <button
+                              type="button"
+                              title="Excluir"
+                              aria-label="Excluir"
+                              disabled
                               onClick={() => setEmpresaParaExcluir(empresa)}
-                            />
-                          ) : (
-                            <Tooltip content="Não é possível excluir: a empresa já participou de uma cotação. Use Inativar.">
-                              <IconButton
-                                icon={Trash}
-                                label="Excluir"
-                                tone="destructive"
-                                disabled
-                                onClick={() => setEmpresaParaExcluir(empresa)}
-                              />
-                            </Tooltip>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Superficie>
+                              className="size-8 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant/40 transition-colors inline-flex items-center justify-center cursor-not-allowed opacity-50"
+                            >
+                              <Trash className="size-4" weight="bold" />
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
     </PageContainer>
   )
 }

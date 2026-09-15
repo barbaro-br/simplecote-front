@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { cn } from '@/shared/lib/utils'
 
 type Props = {
   open: boolean
@@ -101,7 +102,11 @@ export function Dialog({ open, onClose, title, ariaLabel, size = 'md', className
         aria-labelledby={title ? tituloId : undefined}
         aria-label={title ? undefined : (ariaLabel ?? 'Diálogo')}
         tabIndex={-1}
-        className={`w-full ${size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] flex flex-col overflow-y-auto border bg-card/95 shadow-2xl outline-none animate-in zoom-in-95 duration-200 ${className || 'p-6 space-y-4 rounded-xl'}`}
+        className={cn(
+          'w-full max-h-[90vh] flex flex-col overflow-y-auto border bg-card/95 shadow-2xl outline-none animate-in zoom-in-95 duration-200',
+          size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-md',
+          className || 'p-6 space-y-4 rounded-xl'
+        )}
       >
         {title && (
           <div className="flex items-start justify-between">
