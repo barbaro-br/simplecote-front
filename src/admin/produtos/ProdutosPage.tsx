@@ -241,7 +241,7 @@ export function ProdutosPage() {
                           type="button"
                           onClick={() => setHistoricoDe(produto)}
                           title="Ver histórico de compras"
-                          className="text-left font-semibold text-on-surface hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:underline"
+                          className="text-left font-semibold text-on-surface hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:underline uppercase font-mono"
                         >
                           {produto.nome}
                         </button>

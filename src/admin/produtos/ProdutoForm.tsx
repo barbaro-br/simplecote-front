@@ -411,7 +411,7 @@ export function ProdutoForm({ aoSalvar, produtoParaEditar, valoresIniciais }: Pr
               {/* Sugestões do catálogo com estilo de planilha contábil */}
               {mostrarSugestoes && (
                 <div className="absolute left-2.5 right-2.5 z-30 mt-1 border border-white/20 bg-[#0d1410] text-on-surface shadow-2xl rounded-none divide-y divide-white/10">
-                  <div ref={containerRef} onScroll={aoRolarSugestoes} className="max-h-60 overflow-y-auto divide-y divide-white/10">
+                  <div ref={containerRef} onScroll={aoRolarSugestoes} className="max-h-[min(70vh,460px)] overflow-y-auto divide-y divide-white/10">
                     {sugestoes.data!.doProprioCatalogo.length > 0 && (
                       <div className="p-2 bg-[#131b15]">
                         <p className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
