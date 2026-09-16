@@ -83,6 +83,8 @@ export function CondicoesResposta({
           placeholder="Nenhuma"
           emptyMessage="Nenhuma condição de pagamento cadastrada"
           disabled={!podeEditar}
+          className="text-[var(--pnl-txt,#fff)]"
+          popupClassName="bg-[#12263f] text-white border-white/10"
         />
       </div>
       <div className="space-y-1.5">
@@ -99,7 +101,7 @@ export function CondicoesResposta({
           disabled={!podeEditar}
           onChange={(e) => setPrazo(e.target.value)}
           placeholder="Ex: 5 dias úteis"
-          className="h-9 w-full rounded-none font-mono border border-input bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+          className="h-9 w-full rounded-none font-mono border border-input bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 text-[var(--pnl-txt,#fff)]"
         />
       </div>
       <div className="space-y-1.5">
@@ -118,7 +120,7 @@ export function CondicoesResposta({
           disabled={!podeEditar}
           onChange={(e) => setMinimo(e.target.value)}
           placeholder="Ex: 1500,00"
-          className="h-9 w-full rounded-none font-mono border border-input bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+          className="h-9 w-full rounded-none font-mono border border-input bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 text-[var(--pnl-txt,#fff)]"
         />
       </div>
     </div>

@@ -15,7 +15,7 @@ export function Superficie({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border shadow-[0_24px_60px_-24px_rgba(0,0,0,0.6)]',
+        'overflow-hidden rounded-none border shadow-[0_24px_60px_-24px_rgba(0,0,0,0.6)]',
         'border-[var(--pnl-borda,rgba(255,255,255,0.1))]',
         'bg-[var(--pnl-superficie,#12263f)]',
         'ring-1 ring-inset ring-[var(--pnl-ring,rgba(255,255,255,0.06))]',

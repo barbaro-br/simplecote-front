@@ -86,7 +86,7 @@ test('token válido: mostra a saudação, o contexto e os itens, com a bolha de 
 
   // Redesign: a saudação/contexto aparecem uma vez, na SubFaixa do card.
   expect(await screen.findByText(/olá, francisco/i)).toHaveTextContent(
-    'Olá, Francisco · Atacadão Central · cotação de Supermercado X',
+    'Olá, Francisco. Você está representando a Atacadão Central na cotação de Supermercado X.',
   )
   expect(screen.getByText('Arroz Tipo 1 5kg')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /enviar respostas/i })).toBeInTheDocument()

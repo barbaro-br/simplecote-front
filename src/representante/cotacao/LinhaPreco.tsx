@@ -229,7 +229,7 @@ export function LinhaPreco({
   return (
     <div
       className={cn(
-        'rounded-none border bg-[var(--pnl-superficie,#12263f)] px-3.5 py-3 transition-colors',
+        'rounded-none border bg-black/20 px-3.5 py-3 transition-colors',
         'border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]',
         flash && 'flash-green',
       )}

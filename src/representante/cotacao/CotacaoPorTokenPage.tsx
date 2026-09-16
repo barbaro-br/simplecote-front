@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { dataHoraBr } from '@/shared/format/formatters'
 import { ApiError } from '@/shared/api/api-client'
 import { cn } from '@/shared/lib/utils'
-import { Superficie, SecaoCabecalho, SubFaixa, Selo, BotaoPrimario } from '@/shared/ui'
+import { Superficie, SecaoCabecalho, SubFaixa,  BotaoPrimario } from '@/shared/ui'
 import { usePullToRefresh } from '@/shared/hooks/usePullToRefresh'
 import { LinhaPreco } from './LinhaPreco'
 import { CondicoesResposta } from './CondicoesResposta'
@@ -196,19 +196,26 @@ export function CotacaoPorTokenPage() {
       <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-40">
         <Superficie>
           <SecaoCabecalho
-            titulo={d.titulo}
+            titulo={<span className="uppercase">{d.titulo}</span>}
             acao={
               somenteLeitura ? (
-                <Selo tom={d.participanteStatus === 'RESPONDIDO' ? 'sucesso' : 'neutro'}>
+                <span className="inline-flex items-center gap-1.5 rounded-none border border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-white/[0.06] px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide text-white/60">
                   {d.participanteStatus === 'RESPONDIDO' ? 'Respondido' : 'Fechada'}
-                </Selo>
+                </span>
               ) : (
-                <Selo tom="info">Aberta</Selo>
+                <span className="inline-flex items-center gap-2 rounded-none border border-[var(--info,#6ab0ff)]/30 bg-[var(--info,#6ab0ff)]/10 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide text-[var(--info,#6ab0ff)]">
+                  <span className="relative flex size-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-none bg-[var(--info,#6ab0ff)] opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-none bg-[var(--info,#6ab0ff)]" />
+                  </span>
+                  Aberta
+                </span>
               )
             }
           />
           <SubFaixa
-            esquerda={`Olá, ${primeiroNome} · ${d.empresaNome} · cotação de ${d.compradorNome}`}
+            className="text-[13px] py-3.5"
+            esquerda={`Olá, ${primeiroNome}. Você está representando a ${d.empresaNome} na cotação de ${d.compradorNome}.`}
             direita={
               d.prazo ? (
                 <span
