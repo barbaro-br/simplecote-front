@@ -48,11 +48,18 @@ Roteiro para rodar front + backend juntos, com autenticação real:
 | `npm run build` | Type-check (`tsc -b`) + build de produção    |
 | `npm run lint`  | Oxlint                                       |
 | `npm run preview` | Serve o `dist/` gerado pelo build          |
+| `npm run gen:api-types` | Gera `src/shared/api/generated/openapi-types.ts` a partir do OpenAPI do back (opcional — ver abaixo) |
 
 ## Ambiente
 
 `VITE_API_BASE_URL` — base URL da API. Definida em `.env.development` (local, não versionado);
 `.env.example` é o template versionado. Ver `spec.md` §6.
+
+`API_TYPES_SOURCE_URL` — usada só por `npm run gen:api-types` (não pelo app em si). URL do back de
+onde o schema OpenAPI é buscado (`{URL}/v3/api-docs`); default `http://localhost:8080`. O comando é
+opcional e aditivo: gera tipos TypeScript a partir do schema real do back para reduzir divergência
+com os tipos escritos à mão em `shared/domain` e nos `*.schema.ts` de cada feature — nada no código
+existente depende dele, e o arquivo gerado é commitado no repositório.
 
 ## Deploy na Vercel
 
