@@ -222,7 +222,7 @@ export function ResultadoPage() {
                               disabled={enviar.isPending}
                             >
                               <PaperPlaneRight className="mr-2 size-3.5" />
-                              Enviar
+                              Enviar por e-mail
                             </Button>
                           )}
                         </div>
@@ -230,10 +230,11 @@ export function ResultadoPage() {
                     </tr>
                     {expandido && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-3 bg-muted/20">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="text-left text-muted-foreground">
+                        <td colSpan={6} className="p-0 bg-muted/20">
+                          <div className="max-h-[300px] overflow-y-auto scrollbar-thin px-4 py-3">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="text-left text-muted-foreground">
                                 <th className="py-1.5 font-medium ui-uppercase">Produto</th>
                                 <th className="py-1.5 font-medium ui-uppercase text-right">Quantidade</th>
                                 <th className="py-1.5 font-medium ui-uppercase text-right">Preço embalagem</th>
@@ -293,6 +294,7 @@ export function ResultadoPage() {
                               })}
                             </tbody>
                           </table>
+                          </div>
                         </td>
                       </tr>
                     )}

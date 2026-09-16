@@ -229,7 +229,7 @@ export function LinhaPreco({
   return (
     <div
       className={cn(
-        'rounded-xl border bg-[var(--pnl-superficie,#12263f)] px-3.5 py-3 transition-colors',
+        'rounded-none border bg-[var(--pnl-superficie,#12263f)] px-3.5 py-3 transition-colors',
         'border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))]',
         flash && 'flash-green',
       )}
@@ -239,7 +239,7 @@ export function LinhaPreco({
           {item.nome}
         </span>
         {novo && (
-          <span className="shrink-0 rounded-full bg-[var(--pnl-acento,#57bf8e)]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[var(--pnl-acento-hi,#6fe6ac)]">
+          <span className="shrink-0 rounded-none bg-[var(--pnl-acento,#57bf8e)]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[var(--pnl-acento-hi,#6fe6ac)]">
             Novo
           </span>
         )}
@@ -264,7 +264,7 @@ export function LinhaPreco({
           <span
             data-estado={estado}
             className={cn(
-              'flex w-[108px] items-center gap-1 rounded-lg border px-2 py-1.5 transition-colors',
+              'flex w-[108px] items-center gap-1 rounded-none font-mono border px-2 py-1.5 transition-colors',
               classeEstadoCaixa(estado),
               'focus-within:border-[var(--pnl-acento,#57bf8e)] focus-within:ring-1 focus-within:ring-[var(--pnl-acento,#57bf8e)]/50',
             )}

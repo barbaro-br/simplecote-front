@@ -8,7 +8,7 @@
 ## 2. Geração inicial e isolamento
 
 - [x] 2.1 Subir o back localmente e rodar `npm run gen:api-types`; verificar que `src/shared/api/generated/openapi-types.ts` é criado com um tipo/interface por schema exposto no OpenAPI do back
-- [ ] 2.2 Commitar o arquivo gerado no repositório
+- [x] 2.2 Commitar o arquivo gerado no repositório
 - [x] 2.3 Verificar que nenhum arquivo fora de `src/shared/api/generated/` foi alterado pela geração (isolamento da spec "Arquivo gerado é identificável e isolado")
 
 ## 3. Não regressão

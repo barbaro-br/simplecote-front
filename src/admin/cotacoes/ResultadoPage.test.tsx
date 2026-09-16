@@ -204,12 +204,12 @@ test('"Itens sem vencedor" aparece independente da expansão dos pedidos', async
 test('"Enviar" atualiza o status do pedido', async () => {
   setup()
   const user = userEvent.setup()
-  await screen.findByRole('button', { name: 'Enviar' })
+  await screen.findByRole('button', { name: 'Enviar por e-mail' })
 
-  await user.click(screen.getByRole('button', { name: 'Enviar' }))
+  await user.click(screen.getByRole('button', { name: 'Enviar por e-mail' }))
 
   await waitFor(() => {
-    expect(screen.queryByRole('button', { name: 'Enviar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Enviar por e-mail' })).not.toBeInTheDocument()
   })
   expect(screen.getAllByText('Enviado').length).toBeGreaterThan(0)
 })
@@ -315,9 +315,9 @@ test('a margem não é enviada na chamada de enviar pedido', async () => {
   await screen.findByText('Atacadão Central')
 
   await user.type(screen.getByLabelText('Margem de lucro (%)'), '30')
-  await user.click(screen.getByRole('button', { name: 'Enviar' }))
+  await user.click(screen.getByRole('button', { name: 'Enviar por e-mail' }))
 
-  await waitFor(() => expect(screen.queryByRole('button', { name: 'Enviar' })).not.toBeInTheDocument())
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Enviar por e-mail' })).not.toBeInTheDocument())
   expect(getEnviarBody()).not.toContain('margem')
 })
 

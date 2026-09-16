@@ -9,7 +9,7 @@ import { LinhaPreco } from './LinhaPreco'
 import { CondicoesResposta } from './CondicoesResposta'
 import { ConfirmarEnvioDialog } from './ConfirmarEnvioDialog'
 import { TelaDeSucesso } from './TelaDeSucesso'
-import { useCotacaoPorToken, useFinalizar } from './cotacao-token.api'
+import { useCotacaoPorToken, useFinalizar, baixarReciboPdf } from './cotacao-token.api'
 import { useFilaDeSincronizacao } from './useFilaDeSincronizacao'
 import { useRodapeEscondido } from './useRodapeEscondido'
 import { prazoExpirando, contarComPreco, itemEhNovo } from './cotacao-token.derivados'
@@ -225,10 +225,21 @@ export function CotacaoPorTokenPage() {
           />
 
           {somenteLeitura && (
-            <div className="border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-white/[0.03] px-4 py-2.5 text-[13px] text-[var(--pnl-txt-2,rgba(255,255,255,0.7))] sm:px-5">
-              {d.participanteStatus === 'RESPONDIDO'
-                ? 'Sua resposta já foi enviada. Os preços abaixo são só para conferência.'
-                : 'Esta cotação não está aberta para respostas.'}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-white/[0.03] px-4 py-3 text-[13px] text-[var(--pnl-txt-2,rgba(255,255,255,0.7))] sm:px-5">
+              <span>
+                {d.participanteStatus === 'RESPONDIDO'
+                  ? 'Sua resposta já foi enviada. Os preços abaixo são só para conferência.'
+                  : 'Esta cotação já foi finalizada. A fase de negociação está encerrada.'}
+              </span>
+              {d.participanteStatus === 'RESPONDIDO' && (
+                <button
+                  type="button"
+                  onClick={() => baixarReciboPdf(token).catch(console.error)}
+                  className="flex font-semibold items-center gap-1.5 rounded-none border border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-white/5 px-3 py-1.5 transition-colors hover:bg-white/10 text-[var(--pnl-txt,#fff)]"
+                >
+                  Baixar Recibo (PDF)
+                </button>
+              )}
             </div>
           )}
 
@@ -277,12 +288,12 @@ export function CotacaoPorTokenPage() {
           aria-hidden={rodapeEscondido}
         >
           <div className="mx-auto w-full max-w-3xl px-4">
-            <div className="flex items-center justify-between gap-3 rounded-t-2xl border border-b-0 border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-[var(--pnl-superficie,#12263f)] px-4 py-3 shadow-[0_-16px_44px_-16px_rgba(0,0,0,0.7)] sm:px-5">
+            <div className="flex items-center justify-between gap-3 rounded-none border border-b-0 border-[var(--pnl-borda,rgba(255,255,255,0.1))] bg-[var(--pnl-superficie,#12263f)] px-4 py-3 shadow-[0_-16px_44px_-16px_rgba(0,0,0,0.7)] sm:px-5">
               <div
                 role="status"
                 aria-label={`${comPreco} de ${total} itens com preço`}
                 className={cn(
-                  'flex items-baseline gap-1 rounded-full px-3 py-1 transition-colors',
+                  'flex items-baseline gap-1 rounded-none px-3 font-mono py-1 transition-colors',
                   completo ? 'bg-primary text-primary-foreground' : 'bg-white/10 text-[var(--pnl-txt,#fff)]',
                 )}
               >

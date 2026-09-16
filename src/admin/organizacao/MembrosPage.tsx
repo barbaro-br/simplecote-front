@@ -129,7 +129,7 @@ export function MembrosPage() {
       {/* 1. CABEÇALHO DA PÁGINA */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
         <div className="flex items-center gap-3">
-          <div className="size-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <div className="size-9 rounded-none bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
             <Users className="size-5" weight="bold" />
           </div>
           <div>
@@ -137,7 +137,7 @@ export function MembrosPage() {
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-on-surface">
                 Membros da organização
               </h1>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+              <span className="px-2 py-0.5 rounded-none text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                 {membros?.length ?? 0}
               </span>
             </div>
@@ -150,7 +150,7 @@ export function MembrosPage() {
         <button
           type="button"
           onClick={() => setConvidarAberto(true)}
-          className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg bg-primary hover:bg-primary/90 text-black font-semibold text-xs transition-all cursor-pointer shrink-0 shadow-[0_0_15px_rgba(78,222,163,0.25)]"
+          className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-none bg-primary hover:bg-primary/90 text-black font-semibold text-xs transition-all cursor-pointer shrink-0 shadow-[0_0_15px_rgba(78,222,163,0.25)]"
         >
           <UserPlus className="size-4" weight="bold" />
           Convidar membro
@@ -159,7 +159,7 @@ export function MembrosPage() {
 
       {/* 2. BARRA DE BUSCA E FILTROS (Soltos, sem card envolvente) */}
       <div className="shrink-0 flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.03] border border-white/10 select-none overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1.5 p-1 rounded-none bg-white/[0.03] border border-white/10 select-none overflow-x-auto max-w-full">
           {FILTROS.map((f) => {
             const ativo = filtro === f.valor
             return (
@@ -167,7 +167,7 @@ export function MembrosPage() {
                 key={f.valor}
                 type="button"
                 onClick={() => setFiltro(f.valor)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                className={`px-3 py-1 rounded-none text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
                   ativo
                     ? 'bg-primary text-black font-bold shadow-sm'
                     : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
@@ -190,7 +190,7 @@ export function MembrosPage() {
             placeholder="Buscar por nome ou e-mail…"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full h-8 pl-9 pr-3 rounded-xl border border-white/15 bg-black/40 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-medium"
+            className="w-full h-8 pl-9 pr-3 rounded-none border border-white/15 bg-black/40 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-medium"
           />
         </div>
       </div>
@@ -230,7 +230,7 @@ export function MembrosPage() {
       )}
 
       {/* 5. PLANILHA DE MEMBROS (Sem bordas de coluna, cabeçalho no padrão cotações) */}
-      <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-white/10 bg-[#111813]/60 shadow-inner">
+      <div className="flex-1 min-h-0 overflow-y-auto rounded-none border border-white/10 bg-[#111813]/60 shadow-inner">
         <table className="w-full text-left text-xs sm:text-sm border-separate border-spacing-0">
           <thead className="sticky top-0 z-10 bg-[#17221b] text-on-surface text-xs font-bold uppercase tracking-wider select-none shadow-sm">
             <tr>
@@ -300,17 +300,17 @@ export function MembrosPage() {
                     {/* Papel */}
                     <td className="py-3 px-3.5">
                       {isOwner ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-mono uppercase tracking-wider font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 rounded">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-mono uppercase tracking-wider font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 rounded-none">
                           <Crown className="size-3.5 text-amber-400" weight="fill" />
                           {rotuloPapel(m.papel)}
                         </span>
                       ) : m.papel === 'ADMIN' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-mono uppercase tracking-wider font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 rounded">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-mono uppercase tracking-wider font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 rounded-none">
                           <ShieldCheck className="size-3.5 text-cyan-400" weight="bold" />
                           {rotuloPapel(m.papel)}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-mono uppercase tracking-wider font-medium bg-white/5 text-on-surface-variant border border-white/10 rounded">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-mono uppercase tracking-wider font-medium bg-white/5 text-on-surface-variant border border-white/10 rounded-none">
                           {rotuloPapel(m.papel)}
                         </span>
                       )}
@@ -319,17 +319,17 @@ export function MembrosPage() {
                     {/* Status Badge Moderno */}
                     <td className="py-3 px-3.5 text-center">
                       {m.status === 'ATIVO' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                          <span className="w-1.5 h-1.5 bg-emerald-400 animate-pulse" />
                           {ROTULO_STATUS[m.status]}
                         </span>
                       ) : m.status === 'CONVITE_PENDENTE' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
                           <PaperPlaneTilt className="size-3.5 text-amber-400" />
                           {ROTULO_STATUS[m.status]}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/5 text-on-surface-variant border border-white/10">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-none text-xs font-medium bg-white/5 text-on-surface-variant border border-white/10">
                           {ROTULO_STATUS[m.status]}
                         </span>
                       )}
@@ -345,7 +345,7 @@ export function MembrosPage() {
                               title="Reenviar"
                               aria-label="Reenviar"
                               onClick={() => aoReenviar(m.id)}
-                              className="size-8 rounded-lg bg-white/5 border border-white/10 text-on-surface hover:text-primary hover:bg-white/10 hover:border-primary/30 transition-colors inline-flex items-center justify-center cursor-pointer"
+                              className="size-8 rounded-none bg-white/5 border border-white/10 text-on-surface hover:text-primary hover:bg-white/10 hover:border-primary/30 transition-colors inline-flex items-center justify-center cursor-pointer"
                             >
                               <PaperPlaneTilt className="size-4" weight="bold" />
                             </button>
@@ -356,7 +356,7 @@ export function MembrosPage() {
                               onClick={() =>
                                 setConfirmar({ tipo: 'revogar', conviteId: m.id, email: m.email })
                               }
-                              className="size-8 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30 transition-colors inline-flex items-center justify-center cursor-pointer"
+                              className="size-8 rounded-none bg-white/5 border border-white/10 text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30 transition-colors inline-flex items-center justify-center cursor-pointer"
                             >
                               <Trash className="size-4" weight="bold" />
                             </button>
@@ -368,7 +368,7 @@ export function MembrosPage() {
                             title="Inativar"
                             aria-label="Inativar"
                             onClick={() => setConfirmar({ tipo: 'inativar', membro: m })}
-                            className="size-8 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30 transition-colors inline-flex items-center justify-center cursor-pointer"
+                            className="size-8 rounded-none bg-white/5 border border-white/10 text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30 transition-colors inline-flex items-center justify-center cursor-pointer"
                           >
                             <UserMinus className="size-4" weight="bold" />
                           </button>
