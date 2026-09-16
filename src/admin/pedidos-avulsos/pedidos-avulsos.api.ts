@@ -74,3 +74,16 @@ export function usePedidoAvulso(pedidoId: string | undefined) {
     staleTime: 30_000,
   })
 }
+
+// Exclui um Pedido avulso ainda em `ABERTO`.
+export function useExcluirPedidoAvulso() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (pedidoId: string) => api.delete<void>(`/api/pedidos/avulsos/${pedidoId}`),
+    onSuccess: (_, pedidoId) => {
+      queryClient.removeQueries({ queryKey: [...chave, pedidoId] })
+      queryClient.invalidateQueries({ queryKey: ['pedidos-agrupados'] })
+    },
+  })
+}
+

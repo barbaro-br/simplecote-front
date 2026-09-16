@@ -10,12 +10,13 @@ import { NovoPedidoAvulsoPage } from './NovoPedidoAvulsoPage'
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const APOS_DEBOUNCE = 400
 
-function renderPage(caminhoInicial = '/admin/pedidos-avulsos/novo') {
+function renderPage(caminhoInicial = '/admin/pedidos-avulsos/ped-1') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const router = createMemoryRouter(
     [
       { path: '/admin/pedidos-avulsos/novo', element: <NovoPedidoAvulsoPage /> },
       { path: '/admin/pedidos-avulsos/:id', element: <NovoPedidoAvulsoPage /> },
+      { path: '/admin/pedidos', element: <div data-testid="tela-pedidos">Lista de Pedidos</div> },
     ],
     { initialEntries: [caminhoInicial] },
   )
@@ -36,30 +37,6 @@ function sugestoesHandler(porTermo: Record<string, { doProprioCatalogo?: unknown
   })
 }
 
-// Handler padrão de criação (pedido vazio, ABERTO) — cobre o "clicar em
-// Adicionar item pela primeira vez" da maioria dos testes. Testes que
-// precisam inspecionar o corpo do POST ou devolver algo diferente registram
-// o próprio handler por cima deste (server.use empilha, o último vence).
-function criarPedidoVazioHandler(pedidoId = 'ped-1') {
-  return http.post('*/api/pedidos/avulsos', () =>
-    HttpResponse.json(
-      {
-        id: pedidoId,
-        status: 'ABERTO',
-        itens: [],
-        quantidadeItens: 0,
-        total: 0,
-        geradoEm: '2026-09-12T12:00:00Z',
-        condicaoPagamento: '14/21/28',
-        prazoEntregaEstimado: null,
-        empresaNome: 'Empresa A',
-        representanteNome: 'João Rep',
-      },
-      { status: 201 },
-    ),
-  )
-}
-
 const SARDINHA = {
   id: 'p-sardinha',
   nome: 'Sardinha X',
@@ -78,23 +55,9 @@ const REFRIGERANTE = {
   ativo: true,
 }
 
-async function preencherObrigatorios(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByLabelText(/empresa/i))
-  await user.click(await screen.findByRole('option', { name: 'Empresa A' }))
-  await screen.findByText('Rep: João Rep')
-
-  await user.click(await screen.findByLabelText(/condição de pagamento/i))
-  await user.click(await screen.findByRole('option', { name: '14/21/28' }))
-}
-
-// Abre o modal de adicionar item (idempotente — se já estiver aberto, no-op).
-// Sob o fluxo novo, o primeiro clique em "Adicionar item" cria o pedido no
-// back (POST /api/pedidos/avulsos, sem item nenhum) antes de abrir o modal —
-// por isso todo teste que chama isto precisa ter chamado
-// `preencherObrigatorios` (e registrado um handler de criação) antes.
 async function abrirModalItem(user: ReturnType<typeof userEvent.setup>) {
   if (screen.queryByRole('dialog', { name: /adicionar item/i })) return
-  await user.click(screen.getByRole('button', { name: /adicionar item/i }))
+  await user.click(await screen.findByRole('button', { name: /adicionar item/i }))
   await screen.findByRole('dialog', { name: /adicionar item/i })
 }
 
@@ -108,93 +71,79 @@ async function buscarESelecionar(user: ReturnType<typeof userEvent.setup>, termo
 }
 
 function fecharModal(user: ReturnType<typeof userEvent.setup>) {
-  return user.click(within(screen.getByRole('dialog', { name: /adicionar item/i })).getByRole('button', { name: 'Concluído' }))
+  const dialog = screen.queryByRole('dialog', { name: /adicionar item/i })
+  if (!dialog) return Promise.resolve()
+  return user.click(
+    within(dialog).getByRole('button', { name: 'Concluído' }),
+  )
 }
 
-// Clica em "Adicionar item" DENTRO do modal (o gatilho na página tem o mesmo
-// nome acessível e fica visível atrás do overlay).
 function confirmarItemNoModal(user: ReturnType<typeof userEvent.setup>) {
-  return user.click(within(screen.getByRole('dialog', { name: /adicionar item/i })).getByRole('button', { name: 'Adicionar item' }))
+  return user.click(
+    within(screen.getByRole('dialog', { name: /adicionar item/i })).getByRole('button', { name: 'Adicionar item' }),
+  )
 }
 
 beforeEach(() => {
   server.use(
-    http.get('*/api/condicoes-pagamento', () =>
-      HttpResponse.json([{ id: 'cp-1', descricao: '14/21/28', ativo: true }]),
-    ),
-    http.get('*/api/empresas', () =>
-      HttpResponse.json([{ id: '323e4567-e89b-12d3-a456-426614174000', nome: 'Empresa A', ativo: true, podeExcluir: true }]),
-    ),
-    http.get('*/api/representantes', () =>
-      HttpResponse.json([{ id: '423e4567-e89b-12d3-a456-426614174000', empresaId: '323e4567-e89b-12d3-a456-426614174000', nome: 'João Rep', email: 'joao@rep.com', ativo: true, whatsapp: null }]),
+    http.get('*/api/produtos', () => HttpResponse.json([SARDINHA, REFRIGERANTE])),
+    http.get('*/api/pedidos/avulsos/:id', ({ params }) =>
+      HttpResponse.json({
+        id: params.id,
+        status: 'ABERTO',
+        itens: [],
+        quantidadeItens: 0,
+        total: 0,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '14/21/28',
+        prazoEntregaEstimado: null,
+        empresaNome: 'Empresa A',
+        representanteNome: 'João Rep',
+      }),
     ),
   )
 })
 
-test('abre vazia: sem itens, "Fechar pedido" desabilitado', async () => {
-  renderPage()
+test('sem rotaId (/novo), redireciona imediatamente para /admin/pedidos com aviso', async () => {
+  const { router } = renderPage('/admin/pedidos-avulsos/novo')
+  await screen.findByTestId('tela-pedidos')
+  expect(router.state.location.pathname).toBe('/admin/pedidos')
+  expect(await screen.findByText(/Inicie o pedido pelo botão "Novo pedido avulso"/i)).toBeInTheDocument()
+})
 
-  expect(screen.getByRole('heading', { name: 'Novo pedido' })).toBeInTheDocument()
+test('ao carregar pedido, exibe cabeçalho somente-leitura com empresa, representante, condição e prazo', async () => {
+  server.use(
+    http.get('*/api/pedidos/avulsos/:id', () =>
+      HttpResponse.json({
+        id: 'ped-1',
+        status: 'ABERTO',
+        itens: [],
+        quantidadeItens: 0,
+        total: 0,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '30 dias',
+        prazoEntregaEstimado: '5 dias úteis',
+        empresaNome: 'Empresa ABC',
+        representanteNome: 'Carlos Rep',
+      }),
+    ),
+  )
+
+  renderPage('/admin/pedidos-avulsos/ped-1')
+
+  expect(await screen.findByText('Empresa ABC')).toBeInTheDocument()
+  expect(screen.getByText('Carlos Rep')).toBeInTheDocument()
+  expect(screen.getByText('30 dias')).toBeInTheDocument()
+  expect(screen.getByText('5 dias úteis')).toBeInTheDocument()
   expect(screen.getByText('Nenhum item adicionado ainda.')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Fechar pedido' })).toBeDisabled()
 })
 
-test('clicar em "Adicionar item" sem Empresa/condição escolhidas avisa e não abre o modal', async () => {
-  const user = userEvent.setup()
-  renderPage()
-
-  await user.click(screen.getByRole('button', { name: /adicionar item/i }))
-
-  expect(await screen.findByText('Escolha a Empresa e a condição de pagamento antes de adicionar itens.')).toBeInTheDocument()
-  expect(screen.queryByRole('dialog', { name: /adicionar item/i })).not.toBeInTheDocument()
-})
-
-test('escolher Empresa e condição, depois clicar em Adicionar item cria o pedido vazio e troca a URL', async () => {
-  server.use(sugestoesHandler({}))
-  let corpo: any
-  server.use(
-    http.post('*/api/pedidos/avulsos', async ({ request }) => {
-      corpo = await request.json()
-      return HttpResponse.json(
-        {
-          id: 'ped-vazio',
-          status: 'ABERTO',
-          itens: [],
-          quantidadeItens: 0,
-          total: 0,
-          geradoEm: '2026-09-12T12:00:00Z',
-          condicaoPagamento: '14/21/28',
-          prazoEntregaEstimado: null,
-          empresaNome: 'Empresa A',
-          representanteNome: 'João Rep',
-        },
-        { status: 201 },
-      )
-    }),
-  )
-
-  const user = userEvent.setup()
-  const { router } = renderPage()
-
-  await preencherObrigatorios(user)
-  await abrirModalItem(user)
-
-  expect(corpo).toEqual({
-    empresaId: '323e4567-e89b-12d3-a456-426614174000',
-    condicaoPagamentoId: 'cp-1',
-  })
-  expect(router.state.location.pathname).toBe('/admin/pedidos-avulsos/ped-vazio')
-  await fecharModal(user)
-  expect(screen.getByText('Empresa A', { selector: 'strong' })).toBeInTheDocument()
-  expect(screen.getByText('João Rep', { selector: 'strong' })).toBeInTheDocument()
-})
-
 test('item com embalagem de mais de uma unidade deriva preço unitário e total da linha', async () => {
-  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }), criarPedidoVazioHandler())
+  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }))
   const user = userEvent.setup()
   renderPage()
 
-  await preencherObrigatorios(user)
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
@@ -204,11 +153,10 @@ test('item com embalagem de mais de uma unidade deriva preço unitário e total 
 })
 
 test('item de unidade única deriva preço unitário igual ao preço informado', async () => {
-  server.use(sugestoesHandler({ refri: { doProprioCatalogo: [REFRIGERANTE] } }), criarPedidoVazioHandler())
+  server.use(sugestoesHandler({ refri: { doProprioCatalogo: [REFRIGERANTE] } }))
   const user = userEvent.setup()
   renderPage()
 
-  await preencherObrigatorios(user)
   await buscarESelecionar(user, 'refri', 'Refrigerante Lata')
   await user.type(screen.getByLabelText('Preço da embalagem'), '8.90')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '3')
@@ -223,7 +171,6 @@ test('primeiro item confirmado; segundo item reaproveita o id e a lista/total ac
       sardinha: { doProprioCatalogo: [SARDINHA] },
       refri: { doProprioCatalogo: [REFRIGERANTE] },
     }),
-    criarPedidoVazioHandler('ped-1'),
   )
   const chamadas: string[] = []
   server.use(
@@ -299,7 +246,6 @@ test('primeiro item confirmado; segundo item reaproveita o id e a lista/total ac
   const user = userEvent.setup()
   renderPage()
 
-  await preencherObrigatorios(user)
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
@@ -321,8 +267,22 @@ test('primeiro item confirmado; segundo item reaproveita o id e a lista/total ac
 })
 
 test('fechar exige confirmação nomeando total e contagem, e trava novos itens após fechar', async () => {
-  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }), criarPedidoVazioHandler('ped-2'))
   server.use(
+    sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }),
+    http.get('*/api/pedidos/avulsos/:id', () =>
+      HttpResponse.json({
+        id: 'ped-2',
+        status: 'ABERTO',
+        itens: [],
+        quantidadeItens: 0,
+        total: 0,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '14/21/28',
+        prazoEntregaEstimado: null,
+        empresaNome: 'Empresa A',
+        representanteNome: 'João Rep',
+      }),
+    ),
     http.post('*/api/pedidos/avulsos/:id/itens', () =>
       HttpResponse.json({
         id: 'ped-2',
@@ -379,9 +339,8 @@ test('fechar exige confirmação nomeando total e contagem, e trava novos itens 
   )
 
   const user = userEvent.setup()
-  renderPage()
+  renderPage('/admin/pedidos-avulsos/ped-2')
 
-  await preencherObrigatorios(user)
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
@@ -399,99 +358,44 @@ test('fechar exige confirmação nomeando total e contagem, e trava novos itens 
   expect(screen.getByText(/pedido ped-2/)).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Adicionar item' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Fechar pedido' })).not.toBeInTheDocument()
-})
-
-test('escolher condição de pagamento do catálogo envia condicaoPagamentoId ao criar o pedido', async () => {
-  let corpo: any
-  server.use(
-    http.post('*/api/pedidos/avulsos', async ({ request }) => {
-      corpo = await request.json()
-      return HttpResponse.json(
-        { id: 'ped-4', status: 'ABERTO', itens: [], quantidadeItens: 0, total: 0, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: '14/21/28', prazoEntregaEstimado: null, empresaNome: 'Empresa A', representanteNome: 'João Rep' },
-        { status: 201 },
-      )
-    }),
-  )
-  const user = userEvent.setup()
-  renderPage()
-
-  await preencherObrigatorios(user)
-  await abrirModalItem(user)
-
-  expect(corpo).toEqual({
-    empresaId: '323e4567-e89b-12d3-a456-426614174000',
-    condicaoPagamentoId: 'cp-1',
-  })
-})
-
-test('criar condição de pagamento nova pelo combobox cadastra no catálogo e usa o id ao criar o pedido', async () => {
-  server.use(
-    http.post('*/api/condicoes-pagamento', async ({ request }) => {
-      const body = (await request.json()) as { descricao: string }
-      return HttpResponse.json({ id: 'cp-nova', descricao: body.descricao, ativo: true }, { status: 201 })
-    }),
-  )
-  let corpo: any
-  server.use(
-    http.post('*/api/pedidos/avulsos', async ({ request }) => {
-      corpo = await request.json()
-      return HttpResponse.json(
-        { id: 'ped-5', status: 'ABERTO', itens: [], quantidadeItens: 0, total: 0, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: '10 dias direto', prazoEntregaEstimado: null, empresaNome: 'Empresa A', representanteNome: 'João Rep' },
-        { status: 201 },
-      )
-    }),
-  )
-  const user = userEvent.setup()
-  renderPage()
-
-  await user.click(await screen.findByLabelText(/empresa/i))
-  await user.click(await screen.findByRole('option', { name: 'Empresa A' }))
-
-  await user.click(await screen.findByLabelText('Condição de pagamento'))
-  await user.type(screen.getByPlaceholderText('Buscar…'), '10 dias direto')
-  await user.click(await screen.findByRole('option', { name: 'Criar "10 dias direto"' }))
-
-  await abrirModalItem(user)
-
-  expect(corpo).toEqual({
-    empresaId: '323e4567-e89b-12d3-a456-426614174000',
-    condicaoPagamentoId: 'cp-nova',
-  })
-})
-
-test('digitar prazo de entrega em texto livre envia prazoEntregaEstimado ao criar o pedido', async () => {
-  let corpo: any
-  server.use(
-    http.post('*/api/pedidos/avulsos', async ({ request }) => {
-      corpo = await request.json()
-      return HttpResponse.json(
-        { id: 'ped-6', status: 'ABERTO', itens: [], quantidadeItens: 0, total: 0, geradoEm: '2026-09-12T12:00:00Z', condicaoPagamento: '14/21/28', prazoEntregaEstimado: '3 dias úteis', empresaNome: 'Empresa A', representanteNome: 'João Rep' },
-        { status: 201 },
-      )
-    }),
-  )
-  const user = userEvent.setup()
-  renderPage()
-
-  await preencherObrigatorios(user)
-  await user.type(screen.getByLabelText('Prazo de entrega'), '3 dias úteis')
-  await abrirModalItem(user)
-
-  expect(corpo).toEqual({
-    empresaId: '323e4567-e89b-12d3-a456-426614174000',
-    condicaoPagamentoId: 'cp-1',
-    prazoEntregaEstimado: '3 dias úteis',
-  })
+  expect(screen.getByRole('button', { name: 'Baixar PDF' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reenviar e-mail' })).toBeInTheDocument()
 })
 
 test('clicar numa linha abre a edição pré-preenchida e salvar atualiza preço/quantidade/total', async () => {
-  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }), criarPedidoVazioHandler('ped-7'))
   server.use(
+    sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }),
+    http.get('*/api/pedidos/avulsos/:id', () =>
+      HttpResponse.json({
+        id: 'ped-7',
+        status: 'ABERTO',
+        itens: [],
+        quantidadeItens: 0,
+        total: 0,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '14/21/28',
+        prazoEntregaEstimado: null,
+        empresaNome: 'Empresa A',
+        representanteNome: 'João Rep',
+      }),
+    ),
     http.post('*/api/pedidos/avulsos/:id/itens', () =>
       HttpResponse.json({
         id: 'ped-7',
         status: 'ABERTO',
-        itens: [{ id: 'item-1', produtoId: 'p-sardinha', nomeSnapshot: 'Sardinha X', unidadeSnapshot: 'Caixa', quantidadePorEmbalagemSnapshot: 50, precoEmbalagem: 125, precoUnitario: 2.5, quantidade: 2, subtotal: 250 }],
+        itens: [
+          {
+            id: 'item-1',
+            produtoId: 'p-sardinha',
+            nomeSnapshot: 'Sardinha X',
+            unidadeSnapshot: 'Caixa',
+            quantidadePorEmbalagemSnapshot: 50,
+            precoEmbalagem: 125,
+            precoUnitario: 2.5,
+            quantidade: 2,
+            subtotal: 250,
+          },
+        ],
         quantidadeItens: 1,
         total: 250,
         geradoEm: '2026-09-12T12:00:00Z',
@@ -510,7 +414,19 @@ test('clicar numa linha abre a edição pré-preenchida e salvar atualiza preço
       return HttpResponse.json({
         id: 'ped-7',
         status: 'ABERTO',
-        itens: [{ id: 'item-1', produtoId: 'p-sardinha', nomeSnapshot: 'Sardinha X', unidadeSnapshot: 'Caixa', quantidadePorEmbalagemSnapshot: 50, precoEmbalagem: 200, precoUnitario: 4, quantidade: 5, subtotal: 1000 }],
+        itens: [
+          {
+            id: 'item-1',
+            produtoId: 'p-sardinha',
+            nomeSnapshot: 'Sardinha X',
+            unidadeSnapshot: 'Caixa',
+            quantidadePorEmbalagemSnapshot: 50,
+            precoEmbalagem: 200,
+            precoUnitario: 4,
+            quantidade: 5,
+            subtotal: 1000,
+          },
+        ],
         quantidadeItens: 1,
         total: 1000,
         geradoEm: '2026-09-12T12:00:00Z',
@@ -523,9 +439,8 @@ test('clicar numa linha abre a edição pré-preenchida e salvar atualiza preço
   )
 
   const user = userEvent.setup()
-  renderPage()
+  renderPage('/admin/pedidos-avulsos/ped-7')
 
-  await preencherObrigatorios(user)
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
@@ -549,13 +464,39 @@ test('clicar numa linha abre a edição pré-preenchida e salvar atualiza preço
 })
 
 test('remover item exige confirmação e some da tabela e do total', async () => {
-  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }), criarPedidoVazioHandler('ped-8'))
   server.use(
+    sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }),
+    http.get('*/api/pedidos/avulsos/:id', () =>
+      HttpResponse.json({
+        id: 'ped-8',
+        status: 'ABERTO',
+        itens: [],
+        quantidadeItens: 0,
+        total: 0,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '14/21/28',
+        prazoEntregaEstimado: null,
+        empresaNome: 'Empresa A',
+        representanteNome: 'João Rep',
+      }),
+    ),
     http.post('*/api/pedidos/avulsos/:id/itens', () =>
       HttpResponse.json({
         id: 'ped-8',
         status: 'ABERTO',
-        itens: [{ id: 'item-1', produtoId: 'p-sardinha', nomeSnapshot: 'Sardinha X', unidadeSnapshot: 'Caixa', quantidadePorEmbalagemSnapshot: 50, precoEmbalagem: 125, precoUnitario: 2.5, quantidade: 2, subtotal: 250 }],
+        itens: [
+          {
+            id: 'item-1',
+            produtoId: 'p-sardinha',
+            nomeSnapshot: 'Sardinha X',
+            unidadeSnapshot: 'Caixa',
+            quantidadePorEmbalagemSnapshot: 50,
+            precoEmbalagem: 125,
+            precoUnitario: 2.5,
+            quantidade: 2,
+            subtotal: 250,
+          },
+        ],
         quantidadeItens: 1,
         total: 250,
         geradoEm: '2026-09-12T12:00:00Z',
@@ -586,9 +527,8 @@ test('remover item exige confirmação e some da tabela e do total', async () =>
   )
 
   const user = userEvent.setup()
-  renderPage()
+  renderPage('/admin/pedidos-avulsos/ped-8')
 
-  await preencherObrigatorios(user)
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
@@ -608,18 +548,49 @@ test('remover item exige confirmação e some da tabela e do total', async () =>
 })
 
 test('seta pra baixo move o foco entre linhas e Enter abre a edição', async () => {
-  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }), criarPedidoVazioHandler('ped-9'))
-  // A confirmação do 1º item já devolve os dois itens (não importa pra este
-  // teste simular duas chamadas de POST reais — só precisamos de 2 linhas na
-  // tabela pra testar navegação por teclado entre elas).
   server.use(
+    sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }),
+    http.get('*/api/pedidos/avulsos/:id', () =>
+      HttpResponse.json({
+        id: 'ped-9',
+        status: 'ABERTO',
+        itens: [],
+        quantidadeItens: 0,
+        total: 0,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '14/21/28',
+        prazoEntregaEstimado: null,
+        empresaNome: 'Empresa A',
+        representanteNome: 'João Rep',
+      }),
+    ),
     http.post('*/api/pedidos/avulsos/:id/itens', () =>
       HttpResponse.json({
         id: 'ped-9',
         status: 'ABERTO',
         itens: [
-          { id: 'item-1', produtoId: 'p-sardinha', nomeSnapshot: 'Sardinha X', unidadeSnapshot: 'Caixa', quantidadePorEmbalagemSnapshot: 50, precoEmbalagem: 125, precoUnitario: 2.5, quantidade: 2, subtotal: 250 },
-          { id: 'item-2', produtoId: 'p-refri', nomeSnapshot: 'Refrigerante Lata', unidadeSnapshot: 'Unidade', quantidadePorEmbalagemSnapshot: 1, precoEmbalagem: 8.9, precoUnitario: 8.9, quantidade: 3, subtotal: 26.7 },
+          {
+            id: 'item-1',
+            produtoId: 'p-sardinha',
+            nomeSnapshot: 'Sardinha X',
+            unidadeSnapshot: 'Caixa',
+            quantidadePorEmbalagemSnapshot: 50,
+            precoEmbalagem: 125,
+            precoUnitario: 2.5,
+            quantidade: 2,
+            subtotal: 250,
+          },
+          {
+            id: 'item-2',
+            produtoId: 'p-refri',
+            nomeSnapshot: 'Refrigerante Lata',
+            unidadeSnapshot: 'Unidade',
+            quantidadePorEmbalagemSnapshot: 1,
+            precoEmbalagem: 8.9,
+            precoUnitario: 8.9,
+            quantidade: 3,
+            subtotal: 26.7,
+          },
         ],
         quantidadeItens: 2,
         total: 276.7,
@@ -633,9 +604,8 @@ test('seta pra baixo move o foco entre linhas e Enter abre a edição', async ()
   )
 
   const user = userEvent.setup()
-  renderPage()
+  renderPage('/admin/pedidos-avulsos/ped-9')
 
-  await preencherObrigatorios(user)
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
@@ -654,13 +624,39 @@ test('seta pra baixo move o foco entre linhas e Enter abre a edição', async ()
 })
 
 test('buscar um produto que já está no pedido mostra o selo "Já no pedido"', async () => {
-  server.use(sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }), criarPedidoVazioHandler('ped-10'))
   server.use(
+    sugestoesHandler({ sardinha: { doProprioCatalogo: [SARDINHA] } }),
+    http.get('*/api/pedidos/avulsos/:id', () =>
+      HttpResponse.json({
+        id: 'ped-10',
+        status: 'ABERTO',
+        itens: [],
+        quantidadeItens: 0,
+        total: 0,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '14/21/28',
+        prazoEntregaEstimado: null,
+        empresaNome: 'Empresa A',
+        representanteNome: 'João Rep',
+      }),
+    ),
     http.post('*/api/pedidos/avulsos/:id/itens', () =>
       HttpResponse.json({
         id: 'ped-10',
         status: 'ABERTO',
-        itens: [{ id: 'item-1', produtoId: 'p-sardinha', nomeSnapshot: 'Sardinha X', unidadeSnapshot: 'Caixa', quantidadePorEmbalagemSnapshot: 50, precoEmbalagem: 125, precoUnitario: 2.5, quantidade: 2, subtotal: 250 }],
+        itens: [
+          {
+            id: 'item-1',
+            produtoId: 'p-sardinha',
+            nomeSnapshot: 'Sardinha X',
+            unidadeSnapshot: 'Caixa',
+            quantidadePorEmbalagemSnapshot: 50,
+            precoEmbalagem: 125,
+            precoUnitario: 2.5,
+            quantidade: 2,
+            subtotal: 250,
+          },
+        ],
         quantidadeItens: 1,
         total: 250,
         geradoEm: '2026-09-12T12:00:00Z',
@@ -673,9 +669,8 @@ test('buscar um produto que já está no pedido mostra o selo "Já no pedido"', 
   )
 
   const user = userEvent.setup()
-  renderPage()
+  renderPage('/admin/pedidos-avulsos/ped-10')
 
-  await preencherObrigatorios(user)
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
@@ -698,7 +693,20 @@ test('fluxo completo: dois itens de embalagens diferentes, total geral e confirm
       sardinha: { doProprioCatalogo: [SARDINHA] },
       refri: { doProprioCatalogo: [REFRIGERANTE] },
     }),
-    criarPedidoVazioHandler('ped-3'),
+    http.get('*/api/pedidos/avulsos/:id', () =>
+      HttpResponse.json({
+        id: 'ped-3',
+        status: 'ABERTO',
+        itens: [],
+        quantidadeItens: 0,
+        total: 0,
+        geradoEm: '2026-09-12T12:00:00Z',
+        condicaoPagamento: '14/21/28',
+        prazoEntregaEstimado: null,
+        empresaNome: 'Empresa A',
+        representanteNome: 'João Rep',
+      }),
+    ),
   )
   let itensChamadas = 0
   server.use(
@@ -706,10 +714,42 @@ test('fluxo completo: dois itens de embalagens diferentes, total geral e confirm
       itensChamadas += 1
       const itens =
         itensChamadas === 1
-          ? [{ id: 'item-1', produtoId: 'p-sardinha', nomeSnapshot: 'Sardinha X', unidadeSnapshot: 'Caixa', quantidadePorEmbalagemSnapshot: 50, precoEmbalagem: 125, precoUnitario: 2.5, quantidade: 2, subtotal: 250 }]
+          ? [
+              {
+                id: 'item-1',
+                produtoId: 'p-sardinha',
+                nomeSnapshot: 'Sardinha X',
+                unidadeSnapshot: 'Caixa',
+                quantidadePorEmbalagemSnapshot: 50,
+                precoEmbalagem: 125,
+                precoUnitario: 2.5,
+                quantidade: 2,
+                subtotal: 250,
+              },
+            ]
           : [
-              { id: 'item-1', produtoId: 'p-sardinha', nomeSnapshot: 'Sardinha X', unidadeSnapshot: 'Caixa', quantidadePorEmbalagemSnapshot: 50, precoEmbalagem: 125, precoUnitario: 2.5, quantidade: 2, subtotal: 250 },
-              { id: 'item-2', produtoId: 'p-refri', nomeSnapshot: 'Refrigerante Lata', unidadeSnapshot: 'Unidade', quantidadePorEmbalagemSnapshot: 1, precoEmbalagem: 8.9, precoUnitario: 8.9, quantidade: 3, subtotal: 26.7 },
+              {
+                id: 'item-1',
+                produtoId: 'p-sardinha',
+                nomeSnapshot: 'Sardinha X',
+                unidadeSnapshot: 'Caixa',
+                quantidadePorEmbalagemSnapshot: 50,
+                precoEmbalagem: 125,
+                precoUnitario: 2.5,
+                quantidade: 2,
+                subtotal: 250,
+              },
+              {
+                id: 'item-2',
+                produtoId: 'p-refri',
+                nomeSnapshot: 'Refrigerante Lata',
+                unidadeSnapshot: 'Unidade',
+                quantidadePorEmbalagemSnapshot: 1,
+                precoEmbalagem: 8.9,
+                precoUnitario: 8.9,
+                quantidade: 3,
+                subtotal: 26.7,
+              },
             ]
       const total = itensChamadas === 1 ? 250 : 276.7
       return HttpResponse.json({
@@ -742,9 +782,8 @@ test('fluxo completo: dois itens de embalagens diferentes, total geral e confirm
   )
 
   const user = userEvent.setup()
-  renderPage()
+  renderPage('/admin/pedidos-avulsos/ped-3')
 
-  await preencherObrigatorios(user)
   await buscarESelecionar(user, 'sardinha', 'Sardinha X')
   await user.type(screen.getByLabelText('Preço da embalagem'), '125')
   await user.type(screen.getByLabelText('Quantidade de embalagens'), '2')
@@ -776,7 +815,19 @@ test('abrir a URL de um pedido já existente (F5) recarrega Empresa/Representant
       return HttpResponse.json({
         id: 'ped-recuperado',
         status: 'ABERTO',
-        itens: [{ id: 'item-1', produtoId: 'p-sardinha', nomeSnapshot: 'Sardinha X', unidadeSnapshot: 'Caixa', quantidadePorEmbalagemSnapshot: 50, precoEmbalagem: 125, precoUnitario: 2.5, quantidade: 2, subtotal: 250 }],
+        itens: [
+          {
+            id: 'item-1',
+            produtoId: 'p-sardinha',
+            nomeSnapshot: 'Sardinha X',
+            unidadeSnapshot: 'Caixa',
+            quantidadePorEmbalagemSnapshot: 50,
+            precoEmbalagem: 125,
+            precoUnitario: 2.5,
+            quantidade: 2,
+            subtotal: 250,
+          },
+        ],
         quantidadeItens: 1,
         total: 250,
         geradoEm: '2026-09-12T12:00:00Z',
@@ -808,4 +859,111 @@ test('URL de pedido que não existe (ou não é seu) mostra estado de erro em ve
   renderPage('/admin/pedidos-avulsos/ped-inexistente')
 
   expect(await screen.findByRole('heading', { name: 'Pedido não encontrado' })).toBeInTheDocument()
+})
+
+test('ao abrir o modal de adicionar item, itens do catálogo próprio já aparecem pré-carregados e busca normaliza acentos', async () => {
+  const ACUCAR = {
+    id: 'p-acucar',
+    nome: 'Açúcar Cristal 1kg',
+    codigoBarras: '7891112223334',
+    unidade: 'Fardo',
+    quantidadePorEmbalagem: 10,
+    ativo: true,
+  }
+
+  server.use(
+    http.get('*/api/produtos', () => HttpResponse.json([ACUCAR, SARDINHA])),
+  )
+
+  const user = userEvent.setup()
+  renderPage('/admin/pedidos-avulsos/ped-1')
+
+  await user.click(await screen.findByRole('button', { name: /adicionar item/i }))
+  const modal = await screen.findByRole('dialog', { name: /adicionar item/i })
+
+  // Itens já estão pré-carregados na tela sem digitar nada
+  expect(within(modal).getByText('Açúcar Cristal 1kg')).toBeInTheDocument()
+  expect(within(modal).getByText('Sardinha X')).toBeInTheDocument()
+
+  // Digitar "acucar" (sem acento) encontra "Açúcar Cristal 1kg"
+  const campo = within(modal).getByPlaceholderText(/Buscar produto/i)
+  await user.type(campo, 'acucar')
+  expect(within(modal).getByText('Açúcar Cristal 1kg')).toBeInTheDocument()
+  expect(within(modal).queryByText('Sardinha X')).not.toBeInTheDocument()
+})
+
+test('tabela de itens exibe coluna Cód. Barras com o GTIN do produto', async () => {
+  const PROD_COM_GTIN = {
+    id: 'p-gtin',
+    nome: 'Leite Integral 1L',
+    codigoBarras: '7890001112223',
+    unidade: 'Caixa',
+    quantidadePorEmbalagem: 12,
+    ativo: true,
+  }
+
+  server.use(
+    http.get('*/api/produtos', () => HttpResponse.json([PROD_COM_GTIN])),
+    http.get('*/api/pedidos/avulsos/:id', () =>
+      HttpResponse.json({
+        id: 'ped-gtin',
+        status: 'ABERTO',
+        empresaNome: 'Laticínios Sul',
+        condicaoPagamento: 'À vista',
+        total: 120,
+        quantidadeItens: 1,
+        itens: [
+          {
+            id: 'item-gtin',
+            produtoId: 'p-gtin',
+            nomeSnapshot: 'Leite Integral 1L',
+            unidadeSnapshot: 'Caixa',
+            quantidadePorEmbalagemSnapshot: 12,
+            precoEmbalagem: 60,
+            precoUnitario: 5,
+            quantidade: 2,
+            subtotal: 120,
+          },
+        ],
+      }),
+    ),
+  )
+
+  renderPage('/admin/pedidos-avulsos/ped-gtin')
+
+  expect(await screen.findByText('Cód. Barras')).toBeInTheDocument()
+  expect(screen.getByText('7890001112223')).toBeInTheDocument()
+})
+
+test('permite excluir pedido avulso em aberto pelo cabeçalho', async () => {
+  let excluiu = false
+  server.use(
+    http.get('*/api/pedidos/avulsos/:id', () =>
+      HttpResponse.json({
+        id: 'ped-del-header',
+        status: 'ABERTO',
+        empresaNome: 'Empresa Teste',
+        condicaoPagamento: 'À vista',
+        total: 0,
+        quantidadeItens: 0,
+        itens: [],
+      }),
+    ),
+    http.delete('*/api/pedidos/avulsos/ped-del-header', () => {
+      excluiu = true
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+
+  const user = userEvent.setup()
+  renderPage('/admin/pedidos-avulsos/ped-del-header')
+
+  const btnExcluir = await screen.findByRole('button', { name: /Excluir pedido/i })
+  await user.click(btnExcluir)
+
+  const dialog = screen.getByRole('dialog', { name: /Excluir pedido avulso/i })
+  expect(dialog).toBeInTheDocument()
+
+  await user.click(within(dialog).getByRole('button', { name: /Sim, excluir pedido/i }))
+  expect(excluiu).toBe(true)
 })

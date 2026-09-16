@@ -48,12 +48,21 @@ export const itemPedidoAvulsoSchema = z.object({
     .refine((n) => !Number.isNaN(n) && n !== 0, 'Informe a quantidade')
     .refine((n) => Number.isInteger(n), 'A quantidade deve ser um número inteiro')
     .refine((n) => n >= 1, 'A quantidade deve ser no mínimo 1'),
+  unidade: z.string().optional(),
+  quantidadePorEmbalagem: z
+    .any()
+    .transform((v) => {
+      if (v == null || v === '' || Number.isNaN(Number(v))) return undefined
+      return Number(v)
+    })
+    .refine((n) => n === undefined || (Number.isInteger(n) && n >= 1), 'Quantidade por embalagem deve ser no mínimo 1')
+    .optional(),
 })
 
 export type ItemPedidoAvulsoFormValues = z.infer<typeof itemPedidoAvulsoSchema>
 
 // Espelha EditarItemPedidoAvulsoRequest do backend — não troca o produto, só
-// corrige preço da embalagem/quantidade de um item já adicionado.
+// corrige preço da embalagem/quantidade e opcionalmente unidade/fator.
 export const editarItemPedidoAvulsoSchema = itemPedidoAvulsoSchema.omit({ produtoId: true })
 
 export type EditarItemPedidoAvulsoFormValues = z.infer<typeof editarItemPedidoAvulsoSchema>

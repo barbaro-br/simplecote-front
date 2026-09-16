@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { CaretDown, PlusCircle } from '@phosphor-icons/react'
+import { CaretDown, Check, MagnifyingGlass, PlusCircle } from '@phosphor-icons/react'
 import { Popover } from '@base-ui/react'
 import { cn } from '@/shared/lib/utils'
 
@@ -13,6 +13,8 @@ export type ComboboxProps = {
   emptyMessage?: string
   id?: string
   disabled?: boolean
+  className?: string
+  popupClassName?: string
   /**
    * Opcional: quando o texto digitado não bate com nenhuma opção existente,
    * mostra um item "+ Criar…" no topo da lista que chama isto em vez de
@@ -33,6 +35,8 @@ export function Combobox({
   emptyMessage = 'Nenhum resultado encontrado',
   id,
   disabled = false,
+  className,
+  popupClassName,
   onCriarNova,
   rotuloCriar = (texto) => `Criar "${texto}"`,
 }: ComboboxProps) {
@@ -110,40 +114,47 @@ export function Combobox({
         id={id}
         disabled={disabled}
         className={cn(
-          'flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-10 w-full items-center justify-between gap-2 rounded-none border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary/40 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+          className,
         )}
         aria-haspopup="listbox"
         aria-expanded={aberto}
       >
-        <span className={cn('truncate', !selecionada && 'text-muted-foreground')}>
+        <span className={cn('truncate text-left', !selecionada && 'text-muted-foreground')}>
           {selecionada ? selecionada.label : placeholder}
         </span>
-        <CaretDown className="size-4 shrink-0 opacity-50" />
+        <CaretDown className="size-4 shrink-0 opacity-70" />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner sideOffset={4} className="z-50">
           <Popover.Popup
             initialFocus={buscaRef}
-            className="w-[var(--anchor-width)] rounded-md border bg-popover text-popover-foreground shadow-md outline-none"
+            className={cn(
+              'w-[var(--anchor-width)] min-w-[240px] rounded-none border border-border bg-popover text-popover-foreground shadow-2xl outline-none overflow-hidden',
+              popupClassName,
+            )}
           >
-            <div className="p-2">
-              <input
-                id={id ? `${id}-input` : undefined}
-                name={id ? `${id}-input` : 'combobox-input'}
-                ref={buscaRef}
-                type="text"
-                value={filtro}
-                placeholder="Buscar…"
-                aria-label="Buscar"
-                onChange={(e) => {
-                  setFiltro(e.target.value)
-                  setIndice(0)
-                }}
-                onKeyDown={aoTeclar}
-                className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-              />
+            <div className="border-b border-border/40 p-2 bg-muted/10">
+              <div className="relative flex items-center">
+                <MagnifyingGlass className="absolute left-2.5 size-3.5 text-muted-foreground pointer-events-none" />
+                <input
+                  id={id ? `${id}-input` : undefined}
+                  name={id ? `${id}-input` : 'combobox-input'}
+                  ref={buscaRef}
+                  type="text"
+                  value={filtro}
+                  placeholder="Buscar…"
+                  aria-label="Buscar"
+                  onChange={(e) => {
+                    setFiltro(e.target.value)
+                    setIndice(0)
+                  }}
+                  onKeyDown={aoTeclar}
+                  className="h-8 w-full rounded-none border border-input bg-background/50 pl-8 pr-2 text-xs text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+                />
+              </div>
             </div>
-            <ul role="listbox" className="max-h-60 overflow-auto p-1">
+            <ul role="listbox" className="max-h-60 overflow-y-auto overscroll-contain p-1 divide-y divide-border/20">
               {podeCriar && (
                 <li
                   role="option"
@@ -151,8 +162,8 @@ export function Combobox({
                   onClick={criar}
                   onMouseEnter={() => setIndice(0)}
                   className={cn(
-                    'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-primary',
-                    indice === 0 ? 'bg-accent' : 'hover:bg-accent',
+                    'flex cursor-pointer items-center gap-2 rounded-none px-3 py-2 text-xs font-medium text-primary transition-colors',
+                    indice === 0 ? 'bg-primary/15' : 'hover:bg-primary/10',
                   )}
                 >
                   <PlusCircle className="size-4 shrink-0" />
@@ -160,28 +171,41 @@ export function Combobox({
                 </li>
               )}
               {filtradas.length === 0 && !podeCriar ? (
-                <li className="px-3 py-2 text-sm text-muted-foreground">{emptyMessage}</li>
+                <li className="px-3 py-4 text-center text-xs text-muted-foreground">{emptyMessage}</li>
               ) : (
                 filtradas.map((o, i) => {
                   const idx = podeCriar ? i + 1 : i
+                  const isSelecionado = o.value === value
+                  const isHighlighted = idx === indice
                   return (
                     <li
                       key={o.value}
                       role="option"
-                      aria-selected={o.value === value}
+                      aria-selected={isSelecionado}
                       onClick={() => selecionar(o)}
                       onMouseEnter={() => setIndice(idx)}
                       className={cn(
-                        'cursor-pointer rounded-md px-3 py-2 text-sm',
-                        idx === indice ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground',
+                        'flex cursor-pointer items-center justify-between gap-2 rounded-none px-3 py-2 text-xs transition-colors',
+                        isSelecionado
+                          ? 'bg-primary/15 text-primary font-semibold'
+                          : isHighlighted
+                            ? 'bg-muted/80 text-foreground font-medium'
+                            : 'text-foreground/90 hover:bg-muted/40 hover:text-foreground',
                       )}
                     >
-                      {o.label}
+                      <span className="truncate">{o.label}</span>
+                      {isSelecionado && <Check className="size-3.5 shrink-0 text-primary" weight="bold" />}
                     </li>
                   )
                 })
               )}
             </ul>
+            {options.length > 0 && (
+              <div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-3 py-1.5 text-[10px] font-mono text-muted-foreground select-none">
+                <span>{filtradas.length} {filtradas.length === 1 ? 'opção' : 'opções'}</span>
+                {filtradas.length > 6 && <span>Role para ver mais</span>}
+              </div>
+            )}
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>
