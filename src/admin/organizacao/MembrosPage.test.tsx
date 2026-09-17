@@ -56,7 +56,7 @@ test('convidar chama POST /api/organizacao/convites com e-mail e papel', async (
   renderPage()
   await screen.findByText('Ana')
 
-  await user.click(screen.getByRole('button', { name: /Convidar membro/i }))
+  await user.click(screen.getByRole('button', { name: /Adicionar membro/i }))
   const dialog = within(await screen.findByRole('dialog'))
   await user.type(dialog.getByLabelText('E-mail'), 'nova@x.com')
   await user.selectOptions(dialog.getByLabelText('Papel'), 'ADMIN')
@@ -108,7 +108,8 @@ test('OWNER não tem ações destrutivas', async () => {
   await screen.findByText('Dona Loja')
 
   const linhaOwner = screen.getByText('Dona Loja').closest('tr') as HTMLElement
-  expect(within(linhaOwner).queryByRole('button')).toBeNull()
+  expect(within(linhaOwner).queryByRole('button', { name: 'Inativar' })).toBeNull()
+  expect(within(linhaOwner).queryByRole('button', { name: 'Revogar' })).toBeNull()
 
   // Ana (ADMIN ativo) é a única com "Inativar".
   expect(screen.getAllByRole('button', { name: 'Inativar' })).toHaveLength(1)

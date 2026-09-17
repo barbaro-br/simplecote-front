@@ -3,12 +3,22 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { Check, Eye, EyeSlash, Key, X } from '@phosphor-icons/react'
-import {
-  SENHA_MIN,
-  redefinirSenhaFormSchema,
-  type RedefinirSenhaFormValues,
-} from './usuarios.schema'
-import { useRedefinirSenhaUsuario } from './usuarios.api'
+import { z } from 'zod'
+import { useRedefinirSenhaMembro } from './organizacao.api'
+
+const SENHA_MIN = 8
+
+export const redefinirSenhaFormSchema = z
+  .object({
+    senha: z.string().min(1, 'Informe a nova senha').min(SENHA_MIN, 'A senha deve ter ao menos 8 caracteres'),
+    confirmar: z.string().min(1, 'Confirme a senha'),
+  })
+  .refine((data) => data.senha === data.confirmar, {
+    message: 'As senhas não coincidem',
+    path: ['confirmar'],
+  })
+
+export type RedefinirSenhaFormValues = z.infer<typeof redefinirSenhaFormSchema>
 
 type Props = {
   usuarioId: string
@@ -17,7 +27,7 @@ type Props = {
 }
 
 export function RedefinirSenhaForm({ usuarioId, usuarioNome, aoSalvar }: Props) {
-  const redefinir = useRedefinirSenhaUsuario()
+  const redefinir = useRedefinirSenhaMembro()
   const [erro, setErro] = useState<string | null>(null)
   const [mostrarNovaSenha, setMostrarNovaSenha] = useState(false)
   const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false)

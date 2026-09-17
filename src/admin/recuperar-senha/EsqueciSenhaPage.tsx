@@ -9,7 +9,7 @@ import { Button } from '@/shared/components/ui/button'
 import { buttonClasses } from '@/shared/components/ui/button-classes'
 import { Warning } from '@phosphor-icons/react'
 import { codigoSchema, esqueciSenhaSchema, type EsqueciSenhaFormValues } from './recuperar-senha.schema'
-import { redefinirSenhaFormSchema, type RedefinirSenhaFormValues } from '../usuarios/usuarios.schema'
+import { redefinirSenhaFormSchema, type RedefinirSenhaFormValues } from '../organizacao/RedefinirSenhaForm'
 import { useSolicitarRecuperacao, useRedefinirSenha } from './recuperar-senha.api'
 
 type Etapa = 'email' | 'codigo' | 'senha' | 'sucesso'

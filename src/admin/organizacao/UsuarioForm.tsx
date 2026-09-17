@@ -2,25 +2,45 @@ import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
-import { Check, Eye, EyeSlash, User, UserPlus, X } from '@phosphor-icons/react'
-import {
-  ROTULO_PAPEL,
-  SENHA_MIN,
-  usuarioFormSchema,
-  type Usuario,
-  type UsuarioFormValues,
-} from './usuarios.schema'
-import { useAtualizarUsuario, useCriarUsuario } from './usuarios.api'
+import { Check, Eye, EyeSlash } from '@phosphor-icons/react'
+import { z } from 'zod'
+import { ROTULO_PAPEL } from '@/shared/domain/papel'
+import type { Membro } from './organizacao.schema'
+import { useAtualizarMembro, useCriarMembroComSenha } from './organizacao.api'
+
+const SENHA_MIN = 8
+
+// Schema temporário ou replicado do original (já que excluímos usuarios.schema)
+export const usuarioFormSchema = z
+  .object({
+    nome: z.string().trim().min(1, 'Informe o nome').min(3, 'Nome muito curto'),
+    email: z.string().trim().min(1, 'Informe o e-mail').email('E-mail inválido'),
+    papel: z.enum(['ADMIN', 'OPERADOR']),
+    senha: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    // Na edição, não tem input de senha, então a string vazia é válida
+    // Na criação, precisa ter 8+
+    if (data.senha && data.senha.length > 0 && data.senha.length < SENHA_MIN) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['senha'],
+        message: 'A senha deve ter ao menos 8 caracteres',
+      })
+    }
+  })
+
+export type UsuarioFormValues = z.infer<typeof usuarioFormSchema>
 
 type Props = {
   aoSalvar: () => void
-  usuarioParaEditar?: Usuario
+  usuarioParaEditar?: Membro
 }
 
 export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
   const isEdit = !!usuarioParaEditar
-  const criar = useCriarUsuario()
-  const atualizar = useAtualizarUsuario()
+  const criar = useCriarMembroComSenha()
+  const atualizar = useAtualizarMembro()
   const [erro, setErro] = useState<string | null>(null)
   const [mostrarSenha, setMostrarSenha] = useState(false)
 
@@ -71,36 +91,7 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
   }
 
   return (
-    <div className="w-full max-w-xl mx-auto rounded-none border border-white/15 bg-[#0d1410] shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden text-on-surface">
-      {/* CABEÇALHO DO MODAL */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#131b15]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-none bg-primary/15 border border-primary/30 flex items-center justify-center text-primary">
-            {isEdit ? <User className="text-xl" weight="bold" /> : <UserPlus className="text-xl" weight="bold" />}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold tracking-widest text-primary uppercase">
-                ACESSO AO SISTEMA
-              </span>
-            </div>
-            <h2 className="text-base font-bold text-on-surface tracking-tight">
-              {isEdit ? 'Editar usuário' : 'Novo usuário'}
-            </h2>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={aoSalvar}
-          aria-label="Fechar"
-          className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors cursor-pointer"
-        >
-          <X className="size-5" />
-        </button>
-      </div>
-
-      <form onSubmit={form.handleSubmit(aoEnviar)} noValidate className="p-6 space-y-5">
+    <form onSubmit={form.handleSubmit(aoEnviar)} noValidate className="p-6 space-y-5">
         <div className="space-y-4">
           {/* Nome */}
           <div className="space-y-1.5">
@@ -245,6 +236,5 @@ export function UsuarioForm({ aoSalvar, usuarioParaEditar }: Props) {
           </button>
         </div>
       </form>
-    </div>
   )
 }

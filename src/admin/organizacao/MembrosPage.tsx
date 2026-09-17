@@ -1,6 +1,7 @@
+
 import { useMemo, useState } from 'react'
 import {
-  Crown,
+  Key, PencilSimple, Crown,
   Envelope,
   Eye,
   Gear,
@@ -19,7 +20,8 @@ import { Dialog } from '@/shared/components/ui/dialog'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
 import type { OpcaoChip } from '@/shared/ui'
 import { ConfirmarDialog } from '@/admin/cotacoes/ConfirmarDialog'
-import { ConvidarMembroDialog } from './ConvidarMembroDialog'
+import { AdicionarMembroModal } from './AdicionarMembroModal'
+import { RedefinirSenhaForm } from './RedefinirSenhaForm'
 import {
   useInativarMembro,
   useMembros,
@@ -50,6 +52,8 @@ export function MembrosPage() {
   const reenviar = useReenviarConvite()
   const inativar = useInativarMembro()
   const [convidarAberto, setConvidarAberto] = useState(false)
+  const [editando, setEditando] = useState<Membro | null>(null)
+  const [trocandoSenha, setTrocandoSenha] = useState<Membro | null>(null)
   const [confirmar, setConfirmar] = useState<AcaoConfirmar>(null)
   const [filtro, setFiltro] = useState('todos')
   const [busca, setBusca] = useState('')
@@ -153,7 +157,7 @@ export function MembrosPage() {
           className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-none bg-primary hover:bg-primary/90 text-black font-semibold text-xs transition-all cursor-pointer shrink-0 shadow-[0_0_15px_rgba(78,222,163,0.25)]"
         >
           <UserPlus className="size-4" weight="bold" />
-          Convidar membro
+          Adicionar membro
         </button>
       </div>
 
@@ -200,10 +204,30 @@ export function MembrosPage() {
         open={convidarAberto}
         onClose={() => setConvidarAberto(false)}
         size="lg"
-        ariaLabel="Convidar membro"
+        ariaLabel="Adicionar membro"
         className="p-0 bg-transparent border-0 shadow-none rounded-none"
       >
-        <ConvidarMembroDialog aoFechar={() => setConvidarAberto(false)} />
+        <AdicionarMembroModal aoFechar={() => setConvidarAberto(false)} />
+      </Dialog>
+
+      <Dialog
+        open={!!editando}
+        onClose={() => setEditando(null)}
+        size="lg"
+        ariaLabel="Editar membro"
+        className="p-0 bg-transparent border-0 shadow-none rounded-none"
+      >
+        {editando && <AdicionarMembroModal aoFechar={() => setEditando(null)} membroParaEditar={editando} />}
+      </Dialog>
+
+      <Dialog
+        open={!!trocandoSenha}
+        onClose={() => setTrocandoSenha(null)}
+        size="lg"
+        ariaLabel="Redefinir senha"
+        className="p-0 bg-transparent border-0 shadow-none rounded-none"
+      >
+        {trocandoSenha && <RedefinirSenhaForm usuarioId={trocandoSenha.id} usuarioNome={trocandoSenha.nome || trocandoSenha.email} aoSalvar={() => setTrocandoSenha(null)} />}
       </Dialog>
 
       {/* 4. DIÁLOGOS DE CONFIRMAÇÃO */}
@@ -359,6 +383,28 @@ export function MembrosPage() {
                               className="size-8 rounded-none bg-white/5 border border-white/10 text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30 transition-colors inline-flex items-center justify-center cursor-pointer"
                             >
                               <Trash className="size-4" weight="bold" />
+                            </button>
+                          </>
+                        )}
+                        {(m.status === 'ATIVO' || m.status === 'INATIVO') && (
+                          <>
+                            <button
+                              type="button"
+                              title="Editar"
+                              aria-label="Editar"
+                              onClick={() => setEditando(m)}
+                              className="size-8 rounded-none bg-white/5 border border-white/10 text-on-surface hover:text-primary hover:bg-white/10 hover:border-primary/30 transition-colors inline-flex items-center justify-center cursor-pointer"
+                            >
+                              <PencilSimple className="size-4" weight="bold" />
+                            </button>
+                            <button
+                              type="button"
+                              title="Trocar senha"
+                              aria-label="Trocar senha"
+                              onClick={() => setTrocandoSenha(m)}
+                              className="size-8 rounded-none bg-white/5 border border-white/10 text-on-surface hover:text-primary hover:bg-white/10 hover:border-primary/30 transition-colors inline-flex items-center justify-center cursor-pointer"
+                            >
+                              <Key className="size-4" weight="bold" />
                             </button>
                           </>
                         )}

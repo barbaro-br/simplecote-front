@@ -7,7 +7,7 @@ import { useCriarProduto } from '@/admin/produtos/produtos.api'
 import { useCriarEmpresa } from '@/admin/empresas/empresas.api'
 import { useAbrir } from '@/admin/cotacoes/cotacoes.api'
 import { useAtualizarConfiguracao } from '@/admin/configuracoes/configuracoes.api'
-import { useCriarUsuario } from '@/admin/usuarios/usuarios.api'
+import { useCriarMembroComSenha } from '@/admin/organizacao/organizacao.api'
 import {
   useCriarRepresentante,
   useAtualizarRepresentante,
@@ -166,7 +166,7 @@ test('salvar configurações não transporta identificador de inquilino', async 
 
 test('criar usuário não transporta identificador de inquilino', async () => {
   capturar('*/api/usuarios')
-  const { result } = renderHook(() => useCriarUsuario(), { wrapper: wrapperFactory() })
+  const { result } = renderHook(() => useCriarMembroComSenha(), { wrapper: wrapperFactory() })
 
   await result.current.mutateAsync({
     nome: 'Maria Silva',

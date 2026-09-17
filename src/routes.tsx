@@ -120,7 +120,7 @@ export const routes = createBrowserRouter([
           },
           {
             path: 'usuarios',
-            lazy: () => import('./admin/usuarios/UsuariosPage').then(m => ({ Component: m.UsuariosPage })),
+            element: <Navigate to="/admin/membros" replace />,
           },
           {
             path: 'membros',
