@@ -156,7 +156,7 @@ test('confirmação de senha divergente aponta o erro e não envia', async () =>
   await user.type(screen.getByLabelText('Confirmar senha'), 'senha-diferente')
   await user.click(screen.getByRole('button', { name: 'Redefinir senha' }))
 
-  expect(await screen.findByText('As senhas não conferem')).toBeInTheDocument()
+  expect(await screen.findByText('As senhas não coincidem')).toBeInTheDocument()
 })
 
 test('"Trocar e-mail" volta para a etapa de e-mail preservando o valor', async () => {
