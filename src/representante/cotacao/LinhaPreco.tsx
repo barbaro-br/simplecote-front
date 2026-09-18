@@ -167,13 +167,21 @@ export function LinhaPreco({
 
   // Um campo só. O preço por unidade vira uma dica discreta abaixo do campo,
   // e só quando a embalagem tem >1 unidade (senão é o mesmo número — ruído).
+  
   const mostrarUnitario = item.quantidadePorEmbalagemSnapshot > 1
+  
+  // Calcula o subtotal projetado usando o `texto` (preço da embalagem digitado)
+  const precoDigitadoVal = sanitizarEntradaValor(texto)
+  const precoNumerico = precoDigitadoVal ? parseFloat(precoDigitadoVal.replace(',', '.')) : 0
+  const subtotalProjetado = precoNumerico > 0 ? precoNumerico * item.quantidadeSolicitada : 0
+
   const dicaUnitario =
     item.precoUnitario != null
       ? `≈ ${moeda(item.precoUnitario)}/un`
       : status === 'enviando' && temPreco
         ? 'calculando…'
         : null
+
 
   const estado: EstadoCaixa = mensagemErro
     ? 'erro'
