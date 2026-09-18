@@ -321,16 +321,16 @@ test('a margem não é enviada na chamada de enviar pedido', async () => {
   expect(getEnviarBody()).not.toContain('margem')
 })
 
-test('botão "Recotar itens sem vencedor" ausente sem itens sem vencedor', async () => {
+test('botão "Recotar desassistidos" ausente sem itens sem vencedor', async () => {
   setup()
   await screen.findByText('Pedidos Gerados')
-  expect(screen.queryByRole('button', { name: 'Recotar itens sem vencedor' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Recotar desassistidos' })).not.toBeInTheDocument()
 })
 
-test('botão "Recotar itens sem vencedor" presente com itens sem vencedor', async () => {
+test('botão "Recotar desassistidos" presente com itens sem vencedor', async () => {
   setup(undefined, [{ id: 'isv1', nomeSnapshot: 'Feijão Carioca 1kg' }])
   await screen.findByText('Itens sem vencedor:')
-  expect(screen.getByRole('button', { name: 'Recotar itens sem vencedor' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Recotar desassistidos' })).toBeInTheDocument()
 })
 
 test('recotar confirma, chama o endpoint e navega para a nova cotação', async () => {
@@ -346,9 +346,9 @@ test('recotar confirma, chama o endpoint e navega para a nova cotação', async 
     }),
   )
   const user = userEvent.setup()
-  await screen.findByRole('button', { name: 'Recotar itens sem vencedor' })
+  await screen.findByRole('button', { name: 'Recotar desassistidos' })
 
-  await user.click(screen.getByRole('button', { name: 'Recotar itens sem vencedor' }))
+  await user.click(screen.getByRole('button', { name: 'Recotar desassistidos' }))
   await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recotar' }))
 
   await waitFor(() => expect(chamou).toBe(true))
@@ -367,9 +367,9 @@ test('recotar com itens omitidos mostra aviso listando produto e motivo', async 
     ),
   )
   const user = userEvent.setup()
-  await screen.findByRole('button', { name: 'Recotar itens sem vencedor' })
+  await screen.findByRole('button', { name: 'Recotar desassistidos' })
 
-  await user.click(screen.getByRole('button', { name: 'Recotar itens sem vencedor' }))
+  await user.click(screen.getByRole('button', { name: 'Recotar desassistidos' }))
   await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recotar' }))
 
   await waitFor(() => {
@@ -386,9 +386,9 @@ test('erro na recotação mostra a mensagem da API', async () => {
     ),
   )
   const user = userEvent.setup()
-  await screen.findByRole('button', { name: 'Recotar itens sem vencedor' })
+  await screen.findByRole('button', { name: 'Recotar desassistidos' })
 
-  await user.click(screen.getByRole('button', { name: 'Recotar itens sem vencedor' }))
+  await user.click(screen.getByRole('button', { name: 'Recotar desassistidos' }))
   await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recotar' }))
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Não é possível recotar.')

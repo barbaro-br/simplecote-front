@@ -328,7 +328,7 @@ export function ResultadoPage() {
             <div className="mt-3">
               <Button variant="outline" onClick={() => setConfirmarRecotar(true)}>
                 <ArrowsClockwise className="mr-2 size-4" />
-                Recotar itens sem vencedor
+                Recotar desassistidos
               </Button>
             </div>
           </div>
@@ -337,7 +337,7 @@ export function ResultadoPage() {
 
       {confirmarRecotar && (
         <ConfirmarDialog
-          titulo="Recotar itens sem vencedor"
+          titulo="Recotar desassistidos"
           descricao="Será criada uma nova cotação (rascunho) apenas com os itens que ficaram sem vencedor."
           rotuloConfirmar="Recotar"
           pendente={recotar.isPending}

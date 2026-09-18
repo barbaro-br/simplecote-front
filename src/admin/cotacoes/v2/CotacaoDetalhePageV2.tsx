@@ -3080,7 +3080,7 @@ function AbaResultado({
     onSettled: () => setItemAtualizandoId(null),
   })
 
-  // Recotar itens sem vencedor
+  // Recotar desassistidos
   const [modalRecotarAberto, setModalRecotarAberto] = useState(false)
   const recotar = useMutation({
     mutationFn: () => cotacoesApi.recotarSemVencedor(cotacaoId),
