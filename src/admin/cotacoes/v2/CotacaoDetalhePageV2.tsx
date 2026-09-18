@@ -164,10 +164,12 @@ export function CotacaoDetalhePageV2() {
   })
 
   const [encerrando, setEncerrando] = useState(false)
+  const [modalEncerrarAberto, setModalEncerrarAberto] = useState(false)
 
   async function handleEncerrar() {
     try {
       setEncerrando(true)
+      setModalEncerrarAberto(false)
       mostrar('Encerrando cotação e finalizando participantes…')
       await cotacoesApi.encerrar(id)
       await invalidarCotacao()
@@ -183,18 +185,16 @@ export function CotacaoDetalhePageV2() {
 
   const [executandoApuracao, setExecutandoApuracao] = useState(false)
 
-  async function handleExecutarApuracao() {
+  async function handleExecutarApuracao(enviarAutomaticamente: boolean = false) {
     try {
       setExecutandoApuracao(true)
       mostrar('Verificando respostas e preparando apuração…')
 
-      // 1. Busca os participantes da cotação e a grade ao vivo
       const [parts, grid] = await Promise.all([
         cotacoesApi.participantes(id).catch(() => []),
         cotacoesApi.aoVivo(id).catch(() => null),
       ])
 
-      // 2. Identifica participantes que preencheram preço mas não finalizaram a resposta
       const pendentesComLance = (parts ?? []).filter(
         (p): p is typeof p & { participanteId: string } => {
           if (!p.participanteId) return false
@@ -211,7 +211,6 @@ export function CotacaoDetalhePageV2() {
         }
       )
 
-      // 3. Finaliza todos em massa antes de apurar
       if (pendentesComLance.length > 0) {
         await Promise.allSettled(
           pendentesComLance
@@ -220,10 +219,28 @@ export function CotacaoDetalhePageV2() {
         )
       }
 
-      // 4. Executa a apuração no backend
       await cotacoesApi.apurar(id)
+      
+      if (enviarAutomaticamente) {
+        mostrar('Enviando pedidos gerados aos representantes...')
+        try {
+          const res = await cotacoesApi.resultado(id)
+          const pedidosGerados = res.pedidos?.filter(p => p.status === 'GERADO') || []
+          if (pedidosGerados.length > 0) {
+            await Promise.allSettled(pedidosGerados.map(p => pedidosApi.enviar(p.id!)))
+            mostrar(`${pedidosGerados.length} pedido(s) despachado(s) com sucesso!`)
+          } else {
+            mostrar('Nenhum pedido foi gerado para enviar.')
+          }
+        } catch(e) {
+          console.error(e)
+          mostrar('Pedidos foram gerados, mas ocorreu um erro no envio automático.', 'erro')
+        }
+      } else {
+        mostrar('Cotação apurada e pedidos gerados com sucesso!')
+      }
+      
       await qc.invalidateQueries({ queryKey: ['cotacao', id] })
-      mostrar('Cotação apurada e pedidos gerados com sucesso!')
     } catch (e) {
       mostrar(mensagemErro(e), 'erro')
     } finally {
@@ -263,14 +280,14 @@ export function CotacaoDetalhePageV2() {
                 <Button variant="ghost" onClick={() => setProrrogandoPrazo(true)}>
                   <Icon name="schedule" className="text-[16px]" /> Prorrogar Prazo
                 </Button>
-                <Button onClick={handleEncerrar} disabled={encerrando}>
+                <Button onClick={() => setModalEncerrarAberto(true)} disabled={encerrando}>
                   <Icon name="stop" className="text-[16px]" /> {encerrando ? 'Encerrando…' : 'Encerrar Cotação'}
                 </Button>
               </>
             )}
             {status === 'ENCERRADA' && (
               <>
-                <Button onClick={handleExecutarApuracao} disabled={executandoApuracao || acao.isPending}>
+                <Button onClick={() => handleExecutarApuracao(false)} disabled={executandoApuracao || acao.isPending}>
                   <Icon name="task_alt" className="text-[16px]" /> {executandoApuracao ? 'Apurando…' : 'Apurar'}
                 </Button>
                 <Button variant="ghost" onClick={() => acao.mutate(() => cotacoesApi.reabrir(id))}>
@@ -368,7 +385,7 @@ export function CotacaoDetalhePageV2() {
               cotacaoId={id}
               cotacao={cotacao}
               editavel={status !== 'PEDIDOS_GERADOS' && status !== 'CANCELADA'}
-              onEncerrar={handleEncerrar}
+              onEncerrar={() => setModalEncerrarAberto(true)}
               encerrando={encerrando}
               onProrrogarPrazo={() => setProrrogandoPrazo(true)}
               onIrParaResultado={() => setAba('resultado')}
@@ -390,6 +407,33 @@ export function CotacaoDetalhePageV2() {
         </motion.div>
       </div>
 
+
+      {/* Modal de Confirmação de Encerramento */}
+      <Modal
+        open={modalEncerrarAberto}
+        onClose={() => setModalEncerrarAberto(false)}
+        title="Encerrar Cotação"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-on-surface-variant/90 leading-relaxed">
+            Após encerrar a cotação, os fornecedores não poderão mais enviar ou alterar lances.
+          </p>
+          <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-lg flex items-start gap-3">
+            <Icon name="lightbulb" className="text-amber-400 text-[20px] shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-200/90 leading-relaxed">
+              Não se preocupe! Você <strong>ainda poderá revisar e alterar os preços</strong> se precisar, e também poderá <strong>alterar a quantidade</strong> dos itens cotados livremente antes de gerar os pedidos.
+            </p>
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+            <Button variant="ghost" onClick={() => setModalEncerrarAberto(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEncerrar} disabled={encerrando}>
+              {encerrando ? 'Encerrando…' : 'Sim, Encerrar Cotação'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
       <PrazoPickerModal
         open={abrindoPrazo}
         onClose={() => setAbrindoPrazo(false)}
@@ -2998,7 +3042,7 @@ function AbaAoVivo({
 interface AbaResultadoProps {
   cotacaoId: string
   cotacao?: CotacaoResponse
-  onApurar?: () => void
+  onApurar?: (enviarAuto?: boolean) => void
   apurando?: boolean
   onEncerrar?: () => void
   encerrando?: boolean
@@ -3045,6 +3089,21 @@ function AbaResultado({
     queryKey: ['cotacao', cotacaoId, 'participantes'],
     queryFn: () => cotacoesApi.participantes(cotacaoId),
   })
+
+  // Enviar Lote
+  const [enviandoLote, setEnviandoLote] = useState(false)
+  const pedidosParaEnviar = resultadoData?.pedidos?.filter(p => p.status === 'GERADO') || []
+  const handleEnviarTodos = async () => {
+    if (pedidosParaEnviar.length === 0) return
+    setEnviandoLote(true)
+    mostrar(`Enviando ${pedidosParaEnviar.length} pedido(s)...`)
+    const res = await Promise.allSettled(pedidosParaEnviar.map(p => pedidosApi.enviar(p.id!)))
+    const falhas = res.filter(r => r.status === 'rejected').length
+    queryClient.invalidateQueries({ queryKey: ['cotacao', cotacaoId] })
+    setEnviandoLote(false)
+    if (falhas === 0) mostrar(`${pedidosParaEnviar.length} pedido(s) enviado(s) com sucesso!`)
+    else mostrar(`${pedidosParaEnviar.length - falhas} enviados, ${falhas} falhas.`, 'erro')
+  }
 
   // Exportar XLSX geral
   const exportar = useMutation({
@@ -3096,6 +3155,7 @@ function AbaResultado({
 
   // Modal de confirmação de apuração
   const [modalApurarAberto, setModalApurarAberto] = useState(false)
+  const [enviarAoApurar, setEnviarAoApurar] = useState(true)
 
   // Download individual do PDF do pedido
   const [baixandoPdfId, setBaixandoPdfId] = useState<string | null>(null)
@@ -3514,6 +3574,18 @@ function AbaResultado({
                 <Icon name="download" className="text-[15px]" />
                 {exportar.isPending ? 'Exportando…' : 'Exportar XLSX'}
               </Button>
+
+              {ehApurada && pedidosParaEnviar.length > 0 && (
+                <Button
+                  variant="primary"
+                  onClick={handleEnviarTodos}
+                  disabled={enviandoLote}
+                  className="!py-1.5 !px-3 !text-xs shadow-[0_0_15px_rgba(78,222,163,0.2)]"
+                >
+                  <Icon name="send_to_mobile" className="text-[15px]" />
+                  {enviandoLote ? 'Enviando…' : `Enviar Todos (${pedidosParaEnviar.length})`}
+                </Button>
+              )}
 
               {itensSemVencedor.length > 0 && (
                 <Button
@@ -4014,7 +4086,7 @@ function AbaResultado({
                                   className="!py-1 !px-2.5 !text-xs"
                                 >
                                   <Icon name="mark_email_read" className="text-[15px]" />
-                                  {enviandoPedidoId === pedido.id ? 'Marcando…' : 'Marcar como Enviado'}
+                                  {enviandoPedidoId === pedido.id ? 'Enviando…' : 'Enviar pedido'}
                                 </Button>
                               )}
                             </div>
@@ -4151,6 +4223,21 @@ function AbaResultado({
             ⚠️ <strong>Atenção:</strong> Após a apuração, os lances e fornecedores vencedores não poderão mais ser alterados.
           </div>
 
+          <label className="flex items-start gap-3 pt-2 cursor-pointer group">
+             <div className="pt-0.5">
+               <input 
+                 type="checkbox" 
+                 checked={enviarAoApurar} 
+                 onChange={e => setEnviarAoApurar(e.target.checked)}
+                 className="size-4 rounded-sm border-white/20 bg-surface-2 accent-primary" 
+               />
+             </div>
+             <div>
+               <div className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Enviar pedidos automaticamente</div>
+               <div className="text-xs text-on-surface-variant/80 mt-0.5">Disparar um e-mail para todos os vencedores imediatamente após apurar.</div>
+             </div>
+          </label>
+
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
             <Button variant="ghost" onClick={() => setModalApurarAberto(false)}>
               Cancelar
@@ -4158,7 +4245,7 @@ function AbaResultado({
             <Button
               onClick={() => {
                 setModalApurarAberto(false)
-                onApurar?.()
+                onApurar?.(enviarAoApurar)
               }}
               disabled={apurando}
             >
