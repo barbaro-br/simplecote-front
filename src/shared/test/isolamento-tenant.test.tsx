@@ -228,7 +228,7 @@ test('chamadas /public/** saem sem Authorization mesmo com sessão de admin na o
     quantidade: 2,
   })
   await cotacao.result.current.mutateAsync()
-  await pedido.result.current.mutateAsync('Sem observações.')
+  await pedido.result.current.mutateAsync({ observacao: 'Sem observações.' })
 
   expect(capturas).toHaveLength(3)
   for (const captura of capturas) {

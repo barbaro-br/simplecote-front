@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
-import { FileArrowDown, CheckCircle } from '@phosphor-icons/react'
+import { FileArrowDown, CheckCircle, Trash } from '@phosphor-icons/react'
 import { moeda } from '@/shared/format/formatters'
 import { ApiError } from '@/shared/api/api-client'
 import {
@@ -30,6 +30,8 @@ export function PedidoPorTokenPage() {
   const confirmar = useConfirmarPedido(token)
   const [observacao, setObservacao] = useState('')
   const [erro, setErro] = useState<string | null>(null)
+  const [itensCortados, setItensCortados] = useState<Set<string>>(new Set())
+  const [baixandoPdf, setBaixandoPdf] = useState(false)
 
   if (pedido.isLoading) {
     return (
@@ -56,10 +58,18 @@ export function PedidoPorTokenPage() {
   const confirmado = p.status === 'CONFIRMADO' || p.confirmadoEm != null
   const aguardandoEnvio = p.status === 'GERADO'
 
+  
+  function alternarCorte(id: string) {
+    const novo = new Set(itensCortados)
+    if (novo.has(id)) novo.delete(id)
+    else novo.add(id)
+    setItensCortados(novo)
+  }
+
   async function aoConfirmar() {
     setErro(null)
     try {
-      await confirmar.mutateAsync(observacao.trim() || undefined)
+      await confirmar.mutateAsync({ observacao: observacao.trim() || undefined, itensCortados: Array.from(itensCortados) })
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : 'Não foi possível confirmar. Tente novamente.')
     }
@@ -91,13 +101,29 @@ export function PedidoPorTokenPage() {
             rotuloItem="Item"
             minWidth={340}
             colunas={[
+              { chave: 'acoes', rotulo: '' },
               { chave: 'qtd', rotulo: 'Qtd.' },
               { chave: 'subtotal', rotulo: 'Subtotal' },
             ]}
             linhas={p.itens.map((item) => ({
               chave: item.id,
               titulo: item.nomeSnapshot,
-              celulas: [{ valor: item.quantidade }, { valor: moeda(item.subtotal) }],
+              cortado: itensCortados.has(item.id),
+              celulas: [
+                {
+                  valor: !confirmado && !aguardandoEnvio ? (
+                    <button
+                      type="button"
+                      onClick={() => alternarCorte(item.id)}
+                      className="text-[var(--pnl-txt-3,rgba(255,255,255,0.45))] hover:text-red-400 transition-colors"
+                      title="Avisar que faltou estoque"
+                    >
+                      <Trash className="size-4" />
+                    </button>
+                  ) : (
+                    <span />
+                  ),
+                },{ valor: item.quantidade }, { valor: moeda(item.subtotal) }],
             }))}
           />
 
@@ -158,9 +184,11 @@ export function PedidoPorTokenPage() {
           <div className="flex gap-2">
             <BotaoFantasma
               className="h-11 flex-1 text-[14px]"
-              onClick={() => {
+              carregando={baixandoPdf}
+              onClick={async () => {
                 setErro(null)
-                baixarPedidoPdfPublico(token).catch(() => setErro('Não foi possível baixar o PDF.'))
+                setBaixandoPdf(true)
+                try { await baixarPedidoPdfPublico(token) } catch { setErro('Não foi possível baixar o PDF.') } finally { setBaixandoPdf(false) }
               }}
             >
               <FileArrowDown className="size-4" aria-hidden />
@@ -170,7 +198,7 @@ export function PedidoPorTokenPage() {
             {!aguardandoEnvio && !confirmado && (
               <BotaoPrimario
                 className="h-11 flex-[2] text-[14px]"
-                disabled={confirmar.isPending}
+                carregando={confirmar.isPending}
                 onClick={aoConfirmar}
               >
                 {confirmar.isPending ? 'Confirmando…' : 'Confirmar'}

@@ -12,6 +12,7 @@ export type ItemPedido = {
   precoEmbalagem: number
   precoUnitario: number
   subtotal: number
+  cortado?: boolean
 }
 
 export type PedidoPorToken = {
@@ -41,8 +42,8 @@ export function usePedidoPorToken(token: string) {
 export function useConfirmarPedido(token: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (observacao?: string) =>
-      api.post<PedidoPorToken>(`/public/pedidos/${token}/confirmar`, observacao ? { observacao } : {}),
+    mutationFn: (req: { observacao?: string; itensCortados?: string[] }) =>
+      api.post<PedidoPorToken>(`/public/pedidos/${token}/confirmar`, req),
     onSuccess: (data) => queryClient.setQueryData(pedidoKey(token), data),
   })
 }

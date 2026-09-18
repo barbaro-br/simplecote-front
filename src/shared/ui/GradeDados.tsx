@@ -29,6 +29,7 @@ export type LinhaGrade = {
   titulo: ReactNode
   sub?: ReactNode
   codigo?: ReactNode
+  cortado?: boolean
   /** uma célula por coluna, na ordem de `colunas` */
   celulas: CelulaGrade[]
 }
@@ -120,10 +121,13 @@ export function GradeDados({
           {linhas.map((linha) => (
             <tr
               key={linha.chave}
-              className="border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))] align-top"
+              className={cn(
+              'border-t border-[var(--pnl-borda-fraca,rgba(255,255,255,0.07))] align-top',
+              linha.cortado && 'opacity-40 transition-opacity'
+            )}
             >
               <td className="whitespace-nowrap px-4 py-2 sm:px-5 sm:py-2.5">
-                <div className="text-[13px] font-semibold text-[var(--pnl-txt,#fff)]">
+                <div className={cn('text-[13px] font-semibold text-[var(--pnl-txt,#fff)]', linha.cortado && 'line-through')}>
                   {linha.titulo}
                 </div>
                 {linha.sub != null && (
