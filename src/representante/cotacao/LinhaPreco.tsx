@@ -305,6 +305,11 @@ export function LinhaPreco({
               {dicaUnitario}
             </span>
           )}
+          {subtotalProjetado > 0 && (
+            <span className="pr-1 text-[11px] font-semibold tabular-nums text-[var(--pnl-acento-hi,#6fe6ac)] mt-1">
+              Subtotal: {moeda(subtotalProjetado)}
+            </span>
+          )}
         </div>
       </div>
 
