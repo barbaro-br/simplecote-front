@@ -1,7 +1,5 @@
-import { render, screen, within, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, within} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi } from 'vitest'
-import { toast } from 'sonner'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/setupTests'
@@ -238,8 +236,6 @@ test('participante aberto exibe ações na ordem E-mail, WhatsApp e Copiar link 
   const linha = (await screen.findByText('Mercado A')).closest('li')!
 
   expect(within(linha).queryByRole('button', { name: 'Enviar por WhatsApp' })).not.toBeInTheDocument()
-  const emailBtn = within(linha).getByRole('button', { name: 'Reenviar convite' })
-  const copiarBtn = within(linha).getByRole('button', { name: 'Copiar link' })
   expect(within(linha).getByRole('button', { name: 'Fechar cotação' })).toBeInTheDocument()
   expect(within(linha).queryByTitle('Mais opções')).not.toBeInTheDocument()
 })
