@@ -226,6 +226,15 @@ export function useReenviarConvite(cotacaoId: string) {
   })
 }
 
+// Envia o convite só por WhatsApp (Evolution API). Não muda o estado do participante,
+// então não há o que invalidar.
+export function useEnviarWhatsApp() {
+  return useMutation({
+    mutationFn: (participanteId: string) =>
+      api.post<unknown>(`/api/participantes/${participanteId}/enviar-whatsapp`),
+  })
+}
+
 // Grade da tela de acompanhamento. Enquanto a cotação está ABERTA, faz polling
 // a cada 5s. (O SSE foi removido: `EventSource` não envia o header
 // `Authorization` e, em produção, o front é estático na Vercel enquanto a API

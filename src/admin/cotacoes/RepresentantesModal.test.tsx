@@ -1,7 +1,8 @@
-import { render, screen, within} from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
+import { toast } from 'sonner'
 import { server } from '@/setupTests'
 import { RepresentantesModal } from './RepresentantesModal'
 import type { ParticipanteDaCotacao } from './cotacoes.schema'
@@ -240,3 +241,47 @@ test('participante aberto exibe ações na ordem E-mail, WhatsApp e Copiar link 
   expect(within(linha).queryByTitle('Mais opções')).not.toBeInTheDocument()
 })
 
+
+test('participante com WhatsApp cadastrado mostra o botão e ele dispara o envio direto pela API do sistema', async () => {
+  const user = userEvent.setup()
+  const chamadas: string[] = []
+  server.use(
+    http.post('*/api/participantes/:participanteId/enviar-whatsapp', ({ params }) => {
+      chamadas.push(params.participanteId as string)
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+  setup('ABERTA', [{ ...participante('e1', 'Mercado A', 'VISUALIZOU'), whatsappRepresentante: '38997225058' }])
+
+  const linha = (await screen.findByText('Mercado A')).closest('li')!
+  await user.click(within(linha).getByRole('button', { name: 'Enviar por WhatsApp' }))
+
+  await waitFor(() => expect(chamadas).toEqual(['part-e1']))
+})
+
+test('falha no envio por WhatsApp mostra o motivo devolvido pelo back', async () => {
+  const user = userEvent.setup()
+  const erro = vi.spyOn(toast, 'error').mockImplementation(() => 'id')
+  server.use(
+    http.post('*/api/participantes/:participanteId/enviar-whatsapp', () =>
+      HttpResponse.json(
+        {
+          type: 'about:blank',
+          title: 'Regra de negócio violada',
+          status: 422,
+          detail: 'O número 5538997225058 não foi encontrado no WhatsApp.',
+        },
+        { status: 422 },
+      ),
+    ),
+  )
+  setup('ABERTA', [{ ...participante('e1', 'Mercado A', 'VISUALIZOU'), whatsappRepresentante: '38997225058' }])
+
+  const linha = (await screen.findByText('Mercado A')).closest('li')!
+  await user.click(within(linha).getByRole('button', { name: 'Enviar por WhatsApp' }))
+
+  await waitFor(() =>
+    expect(erro).toHaveBeenCalledWith('O número 5538997225058 não foi encontrado no WhatsApp.'),
+  )
+  erro.mockRestore()
+})

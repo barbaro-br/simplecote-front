@@ -155,6 +155,8 @@ export const cotacoesApi = {
 export const participantesApi = {
   desconvidar: (participanteId: string) => api.delete<void>(`/api/participantes/${participanteId}`),
   reenviarConvite: (participanteId: string) => api.post<void>(`/api/participantes/${participanteId}/reenviar-convite`),
+  // Envia o convite só por WhatsApp (Evolution API), sem e-mail — o back devolve 422 com o motivo se falhar.
+  enviarWhatsApp: (participanteId: string) => api.post<void>(`/api/participantes/${participanteId}/enviar-whatsapp`),
   reabrir: (participanteId: string) => api.post<void>(`/api/participantes/${participanteId}/reabrir`),
   finalizar: (participanteId: string) => api.post<void>(`/api/participantes/${participanteId}/finalizar`),
   corrigirLance: (participanteId: string, itemId: string, body: CorrigirLanceRequest) =>

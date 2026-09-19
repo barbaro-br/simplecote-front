@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
+import { WhatsappLogo } from '@phosphor-icons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { cotacoesApi, empresasApi, participantesApi, pedidosApi, produtosApi, representantesApi } from './api-v2/endpoints'
 import { getToken, baixarArquivo } from './api-v2/client'
@@ -1565,6 +1566,12 @@ function AbaParticipantes({
     onError: (e) => mostrar(mensagemErro(e), 'erro'),
   })
 
+  const enviarWhatsApp = useMutation({
+    mutationFn: (participanteId: string) => participantesApi.enviarWhatsApp(participanteId),
+    onSuccess: () => mostrar('WhatsApp enviado com sucesso!'),
+    onError: (e) => mostrar(mensagemErro(e), 'erro'),
+  })
+
   const reabrirParticipante = useMutation({
     mutationFn: (participanteId: string) => participantesApi.reabrir(participanteId),
     onSuccess: () => {
@@ -1808,6 +1815,18 @@ function AbaParticipantes({
                   {/* Ações (WhatsApp, E-mail, Copiar Link, Reabrir/Finalizar, Desconvidar) */}
                   <Td right>
                     <div className="flex items-center justify-end gap-1">
+                      {/* Enviar convite por WhatsApp (Evolution API), direto pro número do representante */}
+                      {p.whatsappRepresentante && (
+                        <IconButton
+                          title={`Enviar WhatsApp para ${aplicarMascaraTelefone(p.whatsappRepresentante)}`}
+                          className="!text-[#25D366] hover:!bg-[#25D366]/15"
+                          disabled={enviarWhatsApp.isPending}
+                          onClick={() => enviarWhatsApp.mutate(p.participanteId!)}
+                        >
+                          <WhatsappLogo size={16} weight="fill" />
+                        </IconButton>
+                      )}
+
                       {/* Reenviar E-mail oficial pelo sistema */}
                       <IconButton
                         icon="mail"

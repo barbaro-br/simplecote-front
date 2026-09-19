@@ -7,12 +7,13 @@ import { useRepresentantes } from '@/admin/representantes/representantes.api'
 import {
   useParticipantes,
   useReenviarConvite,
+  useEnviarWhatsApp,
   useConvidarEmpresas,
   useDesconvidarParticipante,
   useFinalizarParticipante,
   useReabrirParticipante,
 } from './cotacoes.api'
-import { PaperPlaneRight, Envelope, Phone, MagnifyingGlass, X, Info, CheckCircle, CircleNotch, Copy, ArrowCounterClockwise } from '@phosphor-icons/react'
+import { PaperPlaneRight, Envelope, Phone, MagnifyingGlass, X, Info, CheckCircle, CircleNotch, Copy, ArrowCounterClockwise, WhatsappLogo } from '@phosphor-icons/react'
 import { ConfirmarDialog } from './ConfirmarDialog'
 import { urlMailto } from './compartilhar-link'
 import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
@@ -54,6 +55,7 @@ const CLASSE_STATUS_RESPOSTA: Record<'CONVIDADO' | 'VISUALIZOU' | 'RESPONDIDO', 
 export function RepresentantesModal({ cotacaoId, status, open, onClose, selecionadas, onToggle }: Props) {
   const participantes = useParticipantes(cotacaoId)
   const reenviar = useReenviarConvite(cotacaoId)
+  const enviarWhatsApp = useEnviarWhatsApp()
   const convidar = useConvidarEmpresas(cotacaoId)
   const finalizar = useFinalizarParticipante(cotacaoId)
   const reabrir = useReabrirParticipante(cotacaoId)
@@ -61,6 +63,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const { data: empresas } = useEmpresas()
   const { data: reps } = useRepresentantes()
   const [loadingMailId, setLoadingMailId] = useState<string | null>(null)
+  const [loadingWhatsAppId, setLoadingWhatsAppId] = useState<string | null>(null)
   const [alvoDesconvidar, setAlvoDesconvidar] = useState<{ participanteId: string; nome: string; status?: string } | null>(null)
 
   const [search, setSearch] = useState('')
@@ -422,7 +425,6 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                     )}
 
                     {/* Ações Diretas na Linha (E-mail, WhatsApp, Copiar) */}
-                    {/* Ações Diretas na Linha (E-mail, Copiar) */}
                     {isAberta && e.part && (
                       <div className="flex flex-row items-center gap-1.5 ml-2 text-muted-foreground/60 border-l border-border/50 pl-4">
                         <Tooltip content="Reenviar convite">
@@ -447,6 +449,31 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                             {loadingMailId === e.id ? <CircleNotch className="size-5 animate-spin" /> : <Envelope className="size-5" />}
                           </button>
                         </Tooltip>
+                        {e.part.whatsappRepresentante && (
+                          <Tooltip content="Enviar por WhatsApp">
+                            <button
+                              type="button"
+                              title="Enviar por WhatsApp"
+                              disabled={loadingWhatsAppId === e.id}
+                              className="p-1.5 hover:text-success hover:bg-success/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={async (ev) => {
+                                ev.stopPropagation()
+                                setLoadingWhatsAppId(e.id)
+                                try {
+                                  await enviarWhatsApp.mutateAsync(e.part!.participanteId)
+                                  toast.success(`WhatsApp enviado para ${e.nome}`)
+                                } catch (err) {
+                                  if (err instanceof SessaoExpiradaError) return
+                                  toast.error(err instanceof ApiError ? err.message : `Falha ao enviar WhatsApp para ${e.nome}`)
+                                } finally {
+                                  setLoadingWhatsAppId(null)
+                                }
+                              }}
+                            >
+                              {loadingWhatsAppId === e.id ? <CircleNotch className="size-5 animate-spin" /> : <WhatsappLogo className="size-5" />}
+                            </button>
+                          </Tooltip>
+                        )}
                         <Tooltip content="Copiar link">
                           <button
                             type="button"
