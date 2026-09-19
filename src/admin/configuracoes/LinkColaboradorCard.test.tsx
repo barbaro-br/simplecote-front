@@ -21,6 +21,7 @@ beforeEach(() => {
     estiloNavegacao: 'LATERAL',
     tema: 'CLARO',
     mostrarMargemLucro: false,
+      usaWhatsAppProprio: false,
     linkColaboradorToken: 'token-card',
   }
   corpoEnviado = null

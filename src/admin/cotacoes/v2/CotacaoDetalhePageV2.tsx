@@ -6,13 +6,12 @@ import { cotacoesApi, empresasApi, participantesApi, pedidosApi, produtosApi, re
 import { getToken, baixarArquivo } from './api-v2/client'
 import type { Celula, CotacaoResponse, GridAoVivoDTO, ItemGrid, ParticipanteDaCotacaoResponse, PedidoDTO, ResultadoDTO } from './api-v2/types'
 import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
-import { Tooltip } from '@/shared/components/ui/tooltip'
 import { HoverCard } from '@/shared/components/ui/HoverCard'
 import { dataBr } from '@/shared/format/formatters'
 import { sanitizarEntradaValor, valorParaNumero } from '@/shared/utils/preco'
 import { useInsightProdutos } from '../../analise/analise.api'
 import type { InsightProduto } from '../../analise/analise.schema'
-import { montarMensagemConvite, urlWhatsApp } from '../compartilhar-link'
+import { urlWhatsApp } from '../compartilhar-link'
 import {
   Card,
   StatusBadge,
@@ -1487,22 +1486,6 @@ function getLinkCorrigido(link?: string): string {
   }
 }
 
-function IconeWhatsApp({ className = '', size = 16 }: { className?: string; size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={`shrink-0 inline-block ${className}`}
-      style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
-      aria-hidden="true"
-    >
-      <path d="M19.05 4.91A9.816 9.816 0 0 0 12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01zm-7.01 15.24c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.264 8.264 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.02 4.54-3.68 8.23-8.23 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.98-.15.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.66.31-.22.25-.86.84-.86 2.05 0 1.21.88 2.38 1.01 2.55.12.17 1.74 2.66 4.21 3.73.59.25 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.07-.12-.23-.19-.48-.31z" />
-    </svg>
-  )
-}
-
 function AbaParticipantes({
   cotacaoId,
   cotacao,
@@ -1755,13 +1738,6 @@ function AbaParticipantes({
           <tbody className="divide-y divide-white/10 text-sm">
             {participantesFiltrados.map((p: ParticipanteDaCotacaoResponse) => {
               const linkCompleto = getLinkCorrigido(p.linkMagico)
-              const msgCompartilhar = montarMensagemConvite({
-                representanteNome: p.representanteNome || 'Representante',
-                titulo: cotacao?.titulo ?? 'Cotação',
-                empresaNome: p.empresaNome ?? 'Fornecedor',
-                prazo: cotacao?.prazo ?? null,
-                link: linkCompleto,
-              })
 
               return (
                 <tr
@@ -1832,35 +1808,13 @@ function AbaParticipantes({
                   {/* Ações (WhatsApp, E-mail, Copiar Link, Reabrir/Finalizar, Desconvidar) */}
                   <Td right>
                     <div className="flex items-center justify-end gap-1">
-                      {/* WhatsApp com Tooltip customizado */}
-                      <Tooltip
-                        content={
-                          p.whatsappRepresentante
-                            ? `Enviar WhatsApp para ${aplicarMascaraTelefone(p.whatsappRepresentante)}`
-                            : 'Abrir WhatsApp com link da cotação'
-                        }
-                        delay={80}
-                        side="top"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const url = urlWhatsApp(msgCompartilhar, p.whatsappRepresentante)
-                            window.open(url, '_blank')
-                          }}
-                          className="p-1.5 rounded-lg text-[#25D366] hover:bg-[#25D366]/15 transition-colors cursor-pointer inline-flex items-center justify-center"
-                        >
-                          <IconeWhatsApp size={16} />
-                        </button>
-                      </Tooltip>
-
                       {/* Reenviar E-mail oficial pelo sistema */}
                       <IconButton
                         icon="mail"
                         title={
                           p.emailRepresentante
-                            ? `Reenviar convite por e-mail para ${p.emailRepresentante}`
-                            : 'Reenviar convite por e-mail pelo sistema'
+                            ? `Reenviar convite para ${p.emailRepresentante}`
+                            : 'Reenviar convite pelo sistema'
                         }
                         disabled={reenviar.isPending}
                         onClick={() => reenviar.mutate(p.participanteId!)}

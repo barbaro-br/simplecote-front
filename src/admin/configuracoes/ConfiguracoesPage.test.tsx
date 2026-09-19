@@ -20,6 +20,7 @@ beforeEach(() => {
     estiloNavegacao: 'LATERAL',
     tema: 'CLARO',
     mostrarMargemLucro: false,
+      usaWhatsAppProprio: false,
     linkColaboradorToken: 'token-real',
   }
 

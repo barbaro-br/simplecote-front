@@ -12,6 +12,7 @@ export const configuracaoSchema = z.object({
   estiloNavegacao: z.enum(['LATERAL', 'INFERIOR']),
   tema: z.enum(['CLARO', 'ESCURO']),
   mostrarMargemLucro: z.boolean(),
+  usaWhatsAppProprio: z.boolean().optional(),
 })
 
 export type ConfiguracaoFormValues = z.infer<typeof configuracaoSchema>
@@ -24,6 +25,7 @@ export type Configuracao = {
   estiloNavegacao: EstiloNavegacao
   tema: Tema
   mostrarMargemLucro: boolean
+  usaWhatsAppProprio: boolean
   // Somente leitura: token permanente do link público do colaborador
   // (`/colaborador/{linkColaboradorToken}`). Não faz parte do schema de submit.
   linkColaboradorToken: string

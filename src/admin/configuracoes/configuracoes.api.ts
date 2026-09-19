@@ -51,3 +51,28 @@ export function exportarDadosOrganizacao(): Promise<ResultadoBaixarArquivo> {
 export function encerrarOrganizacao(): Promise<void> {
   return api.delete<void>('/api/organizacao')
 }
+
+export function useQrCodeWhatsApp() {
+  return useQuery({
+    queryKey: ['configuracoes', 'whatsapp', 'qr-code'],
+    queryFn: () => api.get<{ base64: string }>('/api/configuracoes/whatsapp/qr-code'),
+    enabled: false,
+    staleTime: 0,
+    gcTime: 0,
+  })
+}
+
+export function useStatusWhatsApp(enabled: boolean) {
+  return useQuery({
+    queryKey: ['configuracoes', 'whatsapp', 'status'],
+    queryFn: () => api.get<{ state: string }>('/api/configuracoes/whatsapp/status'),
+    enabled,
+    refetchInterval: (q) => (q.state.data?.state === 'open' ? false : 3000),
+  })
+}
+
+export function useDesconectarWhatsApp() {
+  return useMutation({
+    mutationFn: () => api.post<void>('/api/configuracoes/whatsapp/disconnect'),
+  })
+}

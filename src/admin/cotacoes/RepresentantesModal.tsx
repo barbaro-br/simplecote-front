@@ -11,11 +11,10 @@ import {
   useDesconvidarParticipante,
   useFinalizarParticipante,
   useReabrirParticipante,
-  useCotacao,
 } from './cotacoes.api'
-import { PaperPlaneRight, Envelope, Phone, MagnifyingGlass, X, Info, CheckCircle, CircleNotch, Copy, ChatCircle, ArrowCounterClockwise } from '@phosphor-icons/react'
+import { PaperPlaneRight, Envelope, Phone, MagnifyingGlass, X, Info, CheckCircle, CircleNotch, Copy, ArrowCounterClockwise } from '@phosphor-icons/react'
 import { ConfirmarDialog } from './ConfirmarDialog'
-import { urlWhatsApp, urlMailto, montarMensagemConvite } from './compartilhar-link'
+import { urlMailto } from './compartilhar-link'
 import { aplicarMascaraTelefone } from '@/shared/utils/telefone'
 import { ApiError, SessaoExpiradaError } from '@/shared/api/api-client'
 import { toast } from 'sonner'
@@ -59,7 +58,6 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
   const finalizar = useFinalizarParticipante(cotacaoId)
   const reabrir = useReabrirParticipante(cotacaoId)
   const desconvidar = useDesconvidarParticipante(cotacaoId)
-  const { data: cotacao } = useCotacao(cotacaoId)
   const { data: empresas } = useEmpresas()
   const { data: reps } = useRepresentantes()
   const [loadingMailId, setLoadingMailId] = useState<string | null>(null)
@@ -424,6 +422,7 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                     )}
 
                     {/* Ações Diretas na Linha (E-mail, WhatsApp, Copiar) */}
+                    {/* Ações Diretas na Linha (E-mail, Copiar) */}
                     {isAberta && e.part && (
                       <div className="flex flex-row items-center gap-1.5 ml-2 text-muted-foreground/60 border-l border-border/50 pl-4">
                         <Tooltip content="Reenviar convite">
@@ -448,29 +447,6 @@ export function RepresentantesModal({ cotacaoId, status, open, onClose, selecion
                             {loadingMailId === e.id ? <CircleNotch className="size-5 animate-spin" /> : <Envelope className="size-5" />}
                           </button>
                         </Tooltip>
-                        {e.part.whatsappRepresentante && (
-                          <Tooltip content="Enviar por WhatsApp">
-                            <button
-                              type="button"
-                              title="Enviar por WhatsApp"
-                              className="p-1.5 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
-                              onClick={(ev) => {
-                                ev.stopPropagation()
-                                const msg = montarMensagemConvite({
-                                  representanteNome: e.part!.representanteNome || e.repNome || 'Representante',
-                                  titulo: cotacao?.titulo ?? '',
-                                  empresaNome: e.nome,
-                                  prazo: cotacao?.prazo ?? null,
-                                  link: getLinkCorrigido(e.part!.linkMagico),
-                                })
-                                const url = urlWhatsApp(msg, e.part!.whatsappRepresentante)
-                                window.open(url, '_blank')
-                              }}
-                            >
-                              <ChatCircle className="size-5" />
-                            </button>
-                          </Tooltip>
-                        )}
                         <Tooltip content="Copiar link">
                           <button
                             type="button"

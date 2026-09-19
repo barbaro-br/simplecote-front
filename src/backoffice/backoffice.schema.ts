@@ -20,6 +20,7 @@ export const compradorAdminSchema = z.object({
   cotacoesPorStatus: z.record(z.string(), z.number()).nullable(),
   primeiraCotacaoEm: z.string().nullable(),
   ultimaAtividadeEm: z.string().nullable(),
+  usaWhatsAppProprio: z.boolean(),
 })
 export const compradorAdminListaSchema = z.array(compradorAdminSchema)
 export type CompradorAdmin = z.infer<typeof compradorAdminSchema>
@@ -181,3 +182,13 @@ export const metricasCatalogoGlobalSchema = z.object({
   naoRevisados: z.number(),
 })
 export type MetricasCatalogoGlobal = z.infer<typeof metricasCatalogoGlobalSchema>
+
+export const qrCodeResponseSchema = z.object({
+  base64: z.string(),
+})
+export type QrCodeResponse = z.infer<typeof qrCodeResponseSchema>
+
+export const connectionStatusResponseSchema = z.object({
+  state: z.string(),
+})
+export type ConnectionStatusResponse = z.infer<typeof connectionStatusResponseSchema>

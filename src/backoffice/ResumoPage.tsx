@@ -1,3 +1,4 @@
+import { GlobalWhatsAppCard } from './GlobalWhatsAppCard';
 import { Link } from 'react-router-dom'
 import { Card } from '@/shared/components/ui/card'
 import { PageContainer } from '@/shared/components/layout/PageContainer'
@@ -71,6 +72,8 @@ export function ResumoPage() {
         <MetricaCard rotulo="Cotações no mês" valor={cotacoesNoMes} />
         <MetricaCard rotulo="GMV total" valor={moeda(gmvTotal)} />
       </div>
+
+      <GlobalWhatsAppCard />
 
       <Card className="p-6">
         <h2 className="mb-4 text-lg font-semibold ui-uppercase">Cadastros (últimos 30 dias)</h2>

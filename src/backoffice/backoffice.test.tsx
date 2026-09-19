@@ -43,6 +43,7 @@ const DETALHE = {
   cotacoesPorStatus: { ABERTA: 1, ENCERRADA: 2 },
   primeiraCotacaoEm: '2026-09-01T10:00:00Z',
   ultimaAtividadeEm: '2026-09-05T10:00:00Z',
+  usaWhatsAppProprio: false,
   admins: [
     { id: ADMIN_1, nome: 'Dono', email: 'dono@x.com', papel: 'OWNER', emailVerificado: false },
   ],
@@ -484,6 +485,10 @@ describe('CompradorDetalhePage', () => {
     server.use(http.get('*/api/admin/compradores/:id/cotacoes', () => HttpResponse.json(cotacoes)))
     server.use(http.get('*/api/admin/compradores/:id/notas', () => HttpResponse.json(notas)))
     server.use(http.get('*/api/admin/compradores/:id/timeline', () => HttpResponse.json(timeline)))
+    server.use(http.post('*/api/admin/compradores/:id/whatsapp-proprio', () => new HttpResponse(null, { status: 204 })))
+    server.use(http.get('*/api/admin/compradores/:id/whatsapp/qr-code', () => HttpResponse.json({ base64: 'data:image/png;base64,mock' })))
+    server.use(http.get('*/api/admin/compradores/:id/whatsapp/status', () => HttpResponse.json({ state: 'open' })))
+    server.use(http.post('*/api/admin/compradores/:id/whatsapp/disconnect', () => new HttpResponse(null, { status: 204 })))
     const router = createMemoryRouter(
       [
         { path: '/backoffice/lojas', element: <div>backoffice lista view</div> },
@@ -826,6 +831,49 @@ describe('CompradorDetalhePage', () => {
     expect(within(dialog).getAllByTestId('timeline-item')).toHaveLength(9)
     expect(within(dialog).getByText('Evento 8')).toBeInTheDocument()
   })
+
+  test('ativar WhatsApp Próprio chama a API e atualiza a UI para gerar QR Code', async () => {
+    let ativou: string | null = null
+    const user = userEvent.setup()
+    renderDetalhe([], DETALHE)
+    
+    server.use(
+      http.post('*/api/admin/compradores/:id/whatsapp-proprio', ({ request }) => {
+        const url = new URL(request.url)
+        ativou = url.searchParams.get('usa')
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
+    await screen.findByText('Mercado do Zé')
+    await user.click(screen.getByRole('button', { name: 'Ativar WhatsApp Próprio' }))
+    await user.click(screen.getByRole('button', { name: 'Ativar' }))
+
+    await waitFor(() => expect(ativou).toBe('true'))
+  })
+
+  test('quando WhatsApp Próprio está ativado, renderiza QR Code e Desconectar', async () => {
+    let desconectou = false
+    const user = userEvent.setup()
+    renderDetalhe([], { ...DETALHE, usaWhatsAppProprio: true })
+    
+    server.use(
+      http.post('*/api/admin/compradores/:id/whatsapp/disconnect', () => {
+        desconectou = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
+    await screen.findByText('WhatsApp Próprio')
+    expect(screen.getByText('Desativar WhatsApp Próprio')).toBeInTheDocument()
+    
+    // Mostra status conectado (open da msw)
+    expect(await screen.findByText('Conectado')).toBeInTheDocument()
+    
+    // Desconecta
+    await user.click(screen.getByRole('button', { name: 'Desconectar' }))
+    await waitFor(() => expect(desconectou).toBe(true))
+  })
 })
 
 describe('impersonação (entrar/sair do modo suporte)', () => {
@@ -900,3 +948,17 @@ describe('impersonação (entrar/sair do modo suporte)', () => {
     expect(await screen.findByText('backoffice view')).toBeInTheDocument()
   })
 })
+
+
+// Global WhatsApp Mock
+server.use(
+  http.get('/api/admin/whatsapp/status', () => {
+    return HttpResponse.json({ state: 'close' })
+  }),
+  http.get('/api/admin/whatsapp/qr-code', () => {
+    return HttpResponse.json({ base64: 'data:image/png;base64,mock' })
+  }),
+  http.post('/api/admin/whatsapp/disconnect', () => {
+    return new HttpResponse(null, { status: 204 })
+  })
+)

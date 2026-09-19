@@ -25,6 +25,10 @@ import {
   useReenviarVerificacao,
   useResetarSenhaAdmin,
   useSuspenderComprador,
+  useAlternarWhatsAppProprio,
+  useQrCodeWhatsApp,
+  useStatusWhatsApp,
+  useDesconectarWhatsApp,
 } from './backoffice.api'
 import { prazoLabel, rotuloStatus, type AdminComprador, type NivelPrazo } from './backoffice.schema'
 import { NotasEHistorico } from './NotasEHistorico'
@@ -64,6 +68,7 @@ type Acao =
   | { tipo: 'resetar'; admin: AdminComprador }
   | { tipo: 'suporte' }
   | { tipo: 'excluir' }
+  | { tipo: 'whatsapp'; ativar: boolean }
   | null
 
 function mensagemDeErro(e: unknown): string {
@@ -83,6 +88,12 @@ export function CompradorDetalhePage() {
   const excluir = useExcluirComprador(id)
   const definirPrazo = useDefinirPrazo(id)
   const reenviarVerificacao = useReenviarVerificacao(id)
+  
+  const alternarWhatsApp = useAlternarWhatsAppProprio(id)
+  const desconectarWhatsApp = useDesconectarWhatsApp(id)
+  const qrCodeEnabled = Boolean(comprador?.usaWhatsAppProprio)
+  const qrCodeData = useQrCodeWhatsApp(id, qrCodeEnabled)
+  const statusWhatsApp = useStatusWhatsApp(id, qrCodeEnabled)
 
   const [acao, setAcao] = useState<Acao>(null)
   const [motivo, setMotivo] = useState('')
@@ -147,6 +158,16 @@ export function CompradorDetalhePage() {
       const { token } = await entrarComoSuporte.mutateAsync({ id, motivo })
       trocarSessao(token)
       navigate('/admin')
+    } catch (e) {
+      tratarErro(e)
+    }
+  }
+
+  async function confirmarAlternarWhatsApp(ativar: boolean) {
+    try {
+      await alternarWhatsApp.mutateAsync(ativar)
+      setAcao(null)
+      toast.success(`WhatsApp Próprio ${ativar ? 'ativado' : 'desativado'}.`)
     } catch (e) {
       tratarErro(e)
     }
@@ -414,6 +435,73 @@ export function CompradorDetalhePage() {
         </div>
       </Card>
 
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold ui-uppercase">WhatsApp Próprio</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAcao({ tipo: 'whatsapp', ativar: !comprador.usaWhatsAppProprio })}
+            disabled={alternarWhatsApp.isPending}
+          >
+            {comprador.usaWhatsAppProprio ? 'Desativar WhatsApp Próprio' : 'Ativar WhatsApp Próprio'}
+          </Button>
+        </div>
+        
+        {comprador.usaWhatsAppProprio && (
+          <div className="rounded-md border p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Status da Conexão</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {statusWhatsApp.isLoading ? 'Buscando status...' : statusWhatsApp.data?.state === 'open' ? 'Conectado' : statusWhatsApp.data?.state || 'Não conectado'}
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => statusWhatsApp.refetch()}
+                disabled={statusWhatsApp.isFetching}
+              >
+                Atualizar Status
+              </Button>
+            </div>
+
+            {statusWhatsApp.data?.state === 'open' ? (
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setErro(null)
+                  desconectarWhatsApp.mutateAsync().then(() => {
+                    toast.success('WhatsApp desconectado.')
+                    statusWhatsApp.refetch()
+                  }).catch(tratarErro)
+                }}
+                disabled={desconectarWhatsApp.isPending}
+              >
+                Desconectar
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <Button
+                  variant="default"
+                  onClick={() => qrCodeData.refetch()}
+                  disabled={qrCodeData.isFetching}
+                >
+                  {qrCodeData.isFetching ? 'Gerando QR Code...' : 'Gerar QR Code'}
+                </Button>
+
+                {qrCodeData.data?.base64 && (
+                  <div className="mt-4 p-4 border rounded-md w-fit bg-white">
+                    <img src={qrCodeData.data.base64} alt="QR Code WhatsApp" className="w-64 h-64 object-contain" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
       <Card className="space-y-3 border-destructive/40 p-6">
         <div>
           <h2 className="text-lg font-semibold text-destructive ui-uppercase">Zona de perigo</h2>
@@ -435,6 +523,17 @@ export function CompradorDetalhePage() {
           Excluir loja permanentemente
         </Button>
       </Card>
+
+      {acao?.tipo === 'whatsapp' && (
+        <ConfirmarDialog
+          titulo={acao.ativar ? 'Ativar WhatsApp Próprio' : 'Desativar WhatsApp Próprio'}
+          descricao={acao.ativar ? 'O comprador poderá conectar seu próprio número de WhatsApp via Evolution API para enviar notificações aos representantes. Certifique-se de que a infraestrutura está preparada.' : 'A integração será desativada e a loja voltará a usar o WhatsApp padrão da plataforma (se disponível). A conexão atual (se houver) será perdida.'}
+          rotuloConfirmar={acao.ativar ? 'Ativar' : 'Desativar'}
+          pendente={alternarWhatsApp.isPending}
+          onConfirmar={() => confirmarAlternarWhatsApp(acao.ativar)}
+          onCancelar={() => setAcao(null)}
+        />
+      )}
 
       {acao?.tipo === 'suspender' && (
         <ConfirmarDialog

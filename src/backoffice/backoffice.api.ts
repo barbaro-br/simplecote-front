@@ -9,6 +9,8 @@ import {
   paginaCatalogoGlobalSchema,
   resumoSaasSchema,
   timelineListaSchema,
+  qrCodeResponseSchema,
+  connectionStatusResponseSchema,
   type CompradorAdmin,
   type CompradorAdminDetalhe,
   type CotacaoResumo,
@@ -208,5 +210,67 @@ export function useMarcarRevisadoCatalogoGlobal() {
   return useMutation({
     mutationFn: (id: string) => api.post<void>(`/api/admin/catalogo-global/${id}/revisar`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: chaveCatalogoGlobal }),
+  })
+}
+
+// Gerenciamento de WhatsApp Próprio via Evolution API
+export function useAlternarWhatsAppProprio(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (usa: boolean) => api.post<void>(`/api/admin/compradores/${id}/whatsapp-proprio?usa=${usa}`),
+    onSuccess: () => invalidar(queryClient),
+  })
+}
+
+export function useQrCodeWhatsApp(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['admin', 'compradores', id, 'whatsapp', 'qr-code'],
+    queryFn: () => api.get<unknown>(`/api/admin/compradores/${id}/whatsapp/qr-code`).then((d) => qrCodeResponseSchema.parse(d)),
+    enabled,
+    refetchInterval: false,
+  })
+}
+
+export function useStatusWhatsApp(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['admin', 'compradores', id, 'whatsapp', 'status'],
+    queryFn: () => api.get<unknown>(`/api/admin/compradores/${id}/whatsapp/status`).then((d) => connectionStatusResponseSchema.parse(d)),
+    enabled,
+    refetchInterval: false,
+  })
+}
+
+export function useDesconectarWhatsApp(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.post<void>(`/api/admin/compradores/${id}/whatsapp/disconnect`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'compradores', id, 'whatsapp'] })
+    },
+  })
+}
+
+export function useGlobalQrCodeWhatsApp() {
+  return useQuery({
+    queryKey: ['backoffice', 'whatsapp', 'qr-code'],
+    queryFn: () => api.get<{ base64: string }>('/api/admin/whatsapp/qr-code'),
+    enabled: false,
+    staleTime: 0,
+    gcTime: 0,
+  })
+}
+
+export function useGlobalStatusWhatsApp(enabled: boolean) {
+  return useQuery({
+    queryKey: ['backoffice', 'whatsapp', 'status'],
+    queryFn: () => api.get<{ state: string }>('/api/admin/whatsapp/status'),
+    enabled,
+    refetchInterval: (q) => (q.state.data?.state === 'open' ? false : 3000),
+  })
+}
+
+export function useGlobalDesconectarWhatsApp() {
+  return useMutation({
+    mutationFn: () => api.post<void>('/api/admin/whatsapp/disconnect'),
   })
 }

@@ -1,3 +1,4 @@
+import { ConfiguracoesWhatsApp } from './ConfiguracoesWhatsApp';
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
@@ -158,6 +159,7 @@ function ConfiguracoesForm({ configuracaoInicial }: { configuracaoInicial: Confi
 
             {/* Bloco Link do Colaborador */}
             <LinkColaboradorSection token={configuracaoInicial.linkColaboradorToken} />
+          <ConfiguracoesWhatsApp />
 
             {/* Botão Salvar */}
             <div className="flex justify-end pt-2">
